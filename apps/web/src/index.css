@@ -1,0 +1,91 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red:    #FF1C1C;
+  --chrome: #C0C0C0;
+  --black:  #0C0C0C;
+  --card:   #141414;
+  --card2:  #1C1C1C;
+  --border: #222222;
+  --white:  #ffffff;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease:   cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--black);
+  color: #fff;
+  overflow: hidden;
+}
+
+body {
+  font-family: Inter, 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea { font-family: inherit; }
+::-webkit-scrollbar { display: none; }
+* { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── TYPOGRAPHY ──────────────────────────────────────────── */
+.nrc-hero {
+  font-family: Inter, 'SF Pro Display', -apple-system, system-ui, sans-serif;
+  font-weight: 900;
+  font-style: normal;
+  letter-spacing: -2px;
+  line-height: 0.9;
+  color: #fff;
+}
+
+.nrc-label {
+  font-family: Inter, -apple-system, system-ui, sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--chrome);
+  font-size: 10px;
+}
+
+/* ── ENTRANCE ANIMATIONS ────────────────────────────────── */
+@keyframes nrcUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nrcFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.nrc-a  { animation: nrcUp 0.45s var(--spring) both; }
+.nrc-a1 { animation-delay:   0ms; }
+.nrc-a2 { animation-delay:  60ms; }
+.nrc-a3 { animation-delay: 120ms; }
+.nrc-a4 { animation-delay: 180ms; }
+.nrc-a5 { animation-delay: 240ms; }
+.nrc-a6 { animation-delay: 300ms; }
+
+/* ── PRESS SCALE ────────────────────────────────────────── */
+.nrc-press {
+  transition: transform 0.12s var(--spring);
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+.nrc-press:active { transform: scale(0.96) !important; }
+
+/* ── PROGRESS BAR ───────────────────────────────────────── */
+.volt-bar-track {
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.volt-bar-fill {
+  height: 100%;
+  background: var(--red);
+  border-radius: 2px;
+  transition: width 0.6s var(--ease);
+}
