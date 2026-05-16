@@ -19,6 +19,7 @@ export default function PinScreen() {
   const [wiped, setWiped]       = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [shaking, setShaking]   = useState(false);
+  const [confirmWipe, setConfirmWipe] = useState(false);
 
   useEffect(() => {
     if (!locked || lockMs <= 0) return;
@@ -160,6 +161,46 @@ export default function PinScreen() {
         {attemptsLeft <= 2 && !locked && (
           <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: '#CCC', fontWeight: 600 }}>
             {15 - attemptsLeft} of 15 attempts used · data wipes at 15
+          </div>
+        )}
+
+        {!confirmWipe ? (
+          <button onClick={() => setConfirmWipe(true)} style={{
+            marginTop: 36, background: 'none', border: 'none',
+            color: '#BBBBBB', fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', textDecoration: 'underline', padding: '8px 0',
+          }}>
+            Forgot PIN?
+          </button>
+        ) : (
+          <div style={{
+            marginTop: 28, background: 'rgba(255,59,48,0.06)', border: '1px solid rgba(255,59,48,0.2)',
+            borderRadius: 14, padding: '18px 20px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#FF3B30', marginBottom: 6 }}>
+              ⚠️ אין שחזור סיסמא
+            </div>
+            <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 16 }}>
+              שכחת PIN = אין דרך אחרת.<br />
+              המשך ימחק את <strong>כל הנתונים</strong> לצמיתות — תצטרך להתחיל מחדש.
+            </div>
+            <button onClick={async () => {
+              await indexedDB.deleteDatabase('FuelSyncDB');
+              window.location.reload();
+            }} style={{
+              width: '100%', padding: '12px 0', borderRadius: 10,
+              border: 'none', background: '#FF3B30', color: '#fff',
+              fontWeight: 800, fontSize: 13, cursor: 'pointer', marginBottom: 8,
+            }}>
+              מחק הכל והתחל מחדש
+            </button>
+            <button onClick={() => setConfirmWipe(false)} style={{
+              width: '100%', padding: '10px 0', borderRadius: 10,
+              border: 'none', background: 'none', color: '#AAAAAA',
+              fontWeight: 600, fontSize: 12, cursor: 'pointer',
+            }}>
+              ביטול
+            </button>
           </div>
         )}
       </div>
