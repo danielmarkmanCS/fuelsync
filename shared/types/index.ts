@@ -71,12 +71,19 @@ export interface EnvironmentAlert {
   extraHydrationMl?: number;
 }
 
+export interface LoggedRun {
+  km: number;
+  name: string;
+  source: 'strava' | 'manual';
+}
+
 export interface WeeklyLoad {
   weekStart: string; // ISO date Monday
   totalRunKm: number;
   totalStrengthSets: number;
   legFatigueScore: number; // 0-100, blocks high-intensity runs when high
   recoveryScore: number;   // 0-100
+  loggedRuns: LoggedRun[];
 }
 
 export interface NearbyVenue {

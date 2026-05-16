@@ -1,0 +1,11 @@
+name = "fuelsync-strava"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+APP_URL    = "https://foodaniel.danielmms.site"
+WORKER_URL = "https://fuelsync-strava.danielmarkman.workers.dev"
+
+# Set secrets via:
+# wrangler secret put STRAVA_CLIENT_ID
+# wrangler secret put STRAVA_CLIENT_SECRET

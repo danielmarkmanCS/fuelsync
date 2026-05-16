@@ -1,0 +1,111 @@
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_BASE  = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+interface Env {
+  GEMINI_API_KEY: string;
+  ALLOWED_ORIGIN: string;
+}
+
+function cors(origin: string): HeadersInit {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+}
+
+function json(data: unknown, status = 200, origin = '*'): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...cors(origin) },
+  });
+}
+
+function err(msg: string, status = 400, origin = '*'): Response {
+  return json({ error: msg }, status, origin);
+}
+
+async function gemini(apiKey: string, prompt: string, imageBase64?: string, imageMime?: string): Promise<string> {
+  const parts: unknown[] = [];
+  if (imageBase64 && imageMime) {
+    parts.push({ inlineData: { mimeType: imageMime, data: imageBase64 } });
+  }
+  parts.push({ text: prompt });
+
+  const res = await fetch(`${GEMINI_BASE}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
+    }),
+  });
+
+  if (res.status === 429) throw new Error('AI quota reached — Gemini free tier limit hit. Try again later.');
+  if (res.status === 401 || res.status === 403) throw new Error('Invalid Gemini API key.');
+  if (!res.ok) throw new Error(`Gemini error ${res.status}`);
+
+  const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }> };
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+function parseJSON(text: string): unknown {
+  try { return JSON.parse(text); } catch { /* try markdown extraction */ }
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (m) { try { return JSON.parse(m[1]); } catch { /* fall through */ } }
+  const obj = text.match(/\{[\s\S]*\}/);
+  if (obj) { try { return JSON.parse(obj[0]); } catch { /* fall through */ } }
+  throw new Error('Could not parse AI response as JSON');
+}
+
+const MACRO_SCHEMA = `Respond ONLY with valid JSON:
+{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high"|"medium"|"low"}`;
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const origin = request.headers.get('Origin') ?? '*';
+    const allowed = env.ALLOWED_ORIGIN ?? 'https://foodaniel.danielmms.site';
+    const allowedOrigin = origin === allowed || origin.startsWith('http://localhost') ? origin : allowed;
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: cors(allowedOrigin) });
+    }
+    if (request.method !== 'POST') return err('Method not allowed', 405, allowedOrigin);
+
+    const url = new URL(request.url);
+    let body: Record<string, unknown>;
+    try { body = await request.json() as Record<string, unknown>; }
+    catch { return err('Invalid JSON body', 400, allowedOrigin); }
+
+    try {
+      if (url.pathname.endsWith('/estimate')) {
+        const { food_name, weight_grams } = body;
+        if (!food_name || !weight_grams) return err('food_name and weight_grams required', 400, allowedOrigin);
+        const prompt = `For ${weight_grams}g of "${food_name}", give exact nutritional values.\n${MACRO_SCHEMA}`;
+        const text = await gemini(env.GEMINI_API_KEY, prompt);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
+      if (url.pathname.endsWith('/describe')) {
+        const { description } = body;
+        if (!description) return err('description required', 400, allowedOrigin);
+        const prompt = `Analyse this meal and sum all items: "${description}"\n${MACRO_SCHEMA}`;
+        const text = await gemini(env.GEMINI_API_KEY, prompt);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
+      if (url.pathname.endsWith('/analyze')) {
+        const { base64, mimeType } = body;
+        if (!base64 || !mimeType) return err('base64 and mimeType required', 400, allowedOrigin);
+        const prompt = `Identify the food(s) in this image and estimate total nutritional values.\n${MACRO_SCHEMA}`;
+        const text = await gemini(env.GEMINI_API_KEY, prompt, base64 as string, mimeType as string);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
+      return err('Not found', 404, allowedOrigin);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'AI request failed';
+      return err(msg, 500, allowedOrigin);
+    }
+  },
+};

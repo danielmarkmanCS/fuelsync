@@ -1,28 +1,25 @@
 import { create } from 'zustand';
 import type { BackendUser } from '../api/auth';
-import { token } from '../api/client';
+import { useNutritionStore } from './nutritionStore';
 
 interface AuthState {
   user: BackendUser | null;
-  hasToken: boolean;
-  setAuth: (t: string, u: BackendUser) => void;
+  pinVerified: boolean;
   setUser: (u: BackendUser) => void;
+  setPinVerified: (v: boolean) => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  hasToken: !!token.get(),
-
-  setAuth: (t, u) => {
-    token.set(t);
-    set({ user: u, hasToken: true });
-  },
+  pinVerified: false,
 
   setUser: (u) => set({ user: u }),
 
+  setPinVerified: (v) => set({ pinVerified: v }),
+
   logout: () => {
-    token.clear();
-    set({ user: null, hasToken: false });
+    useNutritionStore.getState().resetAll();
+    set({ pinVerified: false });
   },
 }));

@@ -1,45 +1,52 @@
-import { api, token } from './client';
+import { db, type LocalProfile } from '../lib/db';
 
+export type { LocalProfile };
+
+// BackendUser shape kept for compatibility with authStore / screens
 export interface BackendUser {
   id: string;
-  email: string;
-  dailyGoal: number;
+  displayName: string;
   weightKg: number | null;
   heightCm: number | null;
   age: number | null;
   gender: 'male' | 'female' | null;
   activityLevel: string;
+  dailyGoal: number;
 }
 
-interface AuthResponse { token: string; user: BackendUser; }
-
-export async function register(email: string, password: string): Promise<AuthResponse> {
-  const res = await api.post<AuthResponse>('/auth/register', { email, password });
-  token.set(res.token);
-  return res;
+function toBackendUser(p: LocalProfile): BackendUser {
+  return {
+    id: String(p.id ?? 0),
+    displayName: p.displayName,
+    weightKg: p.weightKg,
+    heightCm: p.heightCm,
+    age: p.age,
+    gender: p.gender,
+    activityLevel: p.activityLevel,
+    dailyGoal: p.dailyGoal,
+  };
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const res = await api.post<AuthResponse>('/auth/login', { email, password });
-  token.set(res.token);
-  return res;
+export async function getProfile(): Promise<BackendUser | null> {
+  const rows = await db.profile.toArray();
+  return rows[0] ? toBackendUser(rows[0]) : null;
 }
 
-export function getMe() {
-  return api.get<BackendUser>('/auth/me');
+export async function createProfile(data: Omit<LocalProfile, 'id'>): Promise<BackendUser> {
+  await db.profile.clear();
+  const id = await db.profile.add(data);
+  const profile = await db.profile.get(id);
+  return toBackendUser(profile!);
 }
 
-export function updateProfile(data: Partial<{
-  weightKg: number; heightCm: number; age: number;
-  gender: string; activityLevel: string;
-}>) {
-  return api.patch<BackendUser>('/auth/profile', data);
+export async function updateProfile(data: Partial<Omit<LocalProfile, 'id'>>): Promise<BackendUser> {
+  const rows = await db.profile.toArray();
+  if (!rows[0]?.id) throw new Error('No profile found');
+  await db.profile.update(rows[0].id, data);
+  const updated = await db.profile.get(rows[0].id);
+  return toBackendUser(updated!);
 }
 
-export function forgotPassword(email: string) {
-  return api.post<{ ok: boolean }>('/auth/forgot-password', { email });
-}
-
-export function resetPassword(token: string, password: string) {
-  return api.post<{ token: string; user: BackendUser }>('/auth/reset-password', { token, password });
+export async function clearProfile(): Promise<void> {
+  await db.profile.clear();
 }

@@ -1,175 +1,199 @@
 import type { StravaRun } from '../api/strava';
 
-const W = 1080;
-const H = 1350;
-const LIME = '#FF375F';
+const W      = 1080;
+const H      = 1350;
+const STRAVA = '#FC4C02';
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+// Photo zone covers top 58%, dark panel occupies bottom 42%
+const SPLIT  = Math.round(H * 0.58);  // ~783px
+
+function formatDuration(raw: string): string {
+  // raw is like "1:10:23" or "42:07" — return as-is, already formatted
+  return raw;
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = reject;
+    img.src = url;
   });
 }
 
-export function generateRunCard(run: StravaRun): HTMLCanvasElement {
+export function generateRunCard(run: StravaRun, photo: HTMLImageElement | null = null): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width  = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  // ── Background ──────────────────────────────────────────────────────────
-  ctx.fillStyle = '#050505';
-  ctx.fillRect(0, 0, W, H);
-
-  // Speed lines (diagonal)
-  ctx.save();
-  ctx.globalAlpha = 0.04;
-  ctx.strokeStyle = LIME;
-  ctx.lineWidth = 2;
-  for (let i = -5; i < 20; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * 120 - 200, 0);
-    ctx.lineTo(i * 120 + 200, H);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  // Track arc lines (bottom decoration)
-  ctx.save();
-  ctx.globalAlpha = 0.08;
-  ctx.strokeStyle = LIME;
-  for (let i = 0; i < 6; i++) {
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.ellipse(W / 2, H + 100, 200 + i * 80, 120 + i * 50, 0, Math.PI, 2 * Math.PI);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  // Lime top stripe
-  ctx.fillStyle = LIME;
-  ctx.fillRect(0, 0, W, 16);
-
-  // Left accent stripe
-  ctx.fillStyle = LIME;
-  ctx.fillRect(0, 0, 8, H);
-
-  // ── Header ───────────────────────────────────────────────────────────────
-  ctx.fillStyle = LIME;
-  ctx.font = '900 30px Arial';
-  ctx.letterSpacing = '10px';
-  ctx.textAlign = 'left';
-  ctx.fillText('FUELSYNC', 80, 90);
-
-  ctx.fillStyle = '#333';
-  ctx.font = '600 18px Arial';
-  ctx.letterSpacing = '5px';
-  ctx.fillText('HYBRID ATHLETE OS', 80, 124);
-
-  // Thin divider
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(80, 148, W - 160, 1);
-
-  // ── Distance hero ────────────────────────────────────────────────────────
-  ctx.textAlign = 'center';
-
-  // Number glow
-  ctx.save();
-  ctx.shadowColor = LIME;
-  ctx.shadowBlur  = 60;
-  ctx.fillStyle   = '#fff';
-  ctx.font        = '900 240px Arial';
-  ctx.letterSpacing = '-12px';
-  ctx.fillText(run.distanceKm.toFixed(1), W / 2, 450);
-  ctx.restore();
-
-  ctx.fillStyle = LIME;
-  ctx.font = '900 54px Arial';
-  ctx.letterSpacing = '12px';
-  ctx.fillText('KM', W / 2, 518);
-
-  // ── Run info ─────────────────────────────────────────────────────────────
-  ctx.fillStyle = '#888';
-  ctx.font = '400 34px Arial';
-  ctx.letterSpacing = '0px';
-  ctx.fillText(run.name, W / 2, 590);
-
-  ctx.fillStyle = '#333';
-  ctx.font = '400 26px Arial';
-  ctx.fillText(formatDate(run.date), W / 2, 632);
-
-  // ── Stats grid ───────────────────────────────────────────────────────────
-  const stats: Array<{ label: string; value: string; color: string }> = [
-    { label: 'PACE',      value: run.pace,                              color: '#0A84FF' },
-    { label: 'TIME',      value: run.duration,                          color: '#FF9F0A' },
-    { label: 'ELEV',      value: `${run.elevationM}m`,                  color: '#30D158' },
-    { label: 'HR',        value: run.hrAvg ? `${run.hrAvg}` : '—',     color: '#FF375F' },
-  ];
-
-  const cellW = (W - 160) / 4;
-  const sy = 690;
-
-  ctx.fillStyle = '#0d0d0d';
-  ctx.beginPath();
-  (ctx as CanvasRenderingContext2D & { roundRect: (...args: unknown[]) => void })
-    .roundRect(80, sy, W - 160, 220, 20);
-  ctx.fill();
-
-  stats.forEach((s, i) => {
-    const cx = 80 + cellW * i + cellW / 2;
-
-    // Colored top bar
-    ctx.fillStyle = s.color;
-    ctx.fillRect(80 + cellW * i + 12, sy, cellW - 24, 5);
-
-    // Value
+  // ── Photo zone (top) ────────────────────────────────────────────────────
+  if (photo) {
+    // Cover-fit photo into top zone
+    const scale = Math.max(W / photo.naturalWidth, SPLIT / photo.naturalHeight);
+    const sw = photo.naturalWidth  * scale;
+    const sh = photo.naturalHeight * scale;
     ctx.save();
-    ctx.shadowColor = s.color;
-    ctx.shadowBlur  = 20;
-    ctx.fillStyle   = s.color;
-    ctx.font        = '900 46px Arial';
-    ctx.letterSpacing = '-1px';
-    ctx.textAlign   = 'center';
-    ctx.fillText(s.value, cx, sy + 100);
+    ctx.beginPath();
+    ctx.rect(0, 0, W, SPLIT);
+    ctx.clip();
+    ctx.drawImage(photo, (W - sw) / 2, (SPLIT - sh) / 2, sw, sh);
     ctx.restore();
 
-    ctx.fillStyle = '#444';
-    ctx.font = '700 18px Arial';
-    ctx.letterSpacing = '4px';
-    ctx.fillText(s.label, cx, sy + 142);
+    // Subtle dark scrim on photo for readability of top label
+    const topScrim = ctx.createLinearGradient(0, 0, 0, 160);
+    topScrim.addColorStop(0, 'rgba(0,0,0,0.50)');
+    topScrim.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = topScrim;
+    ctx.fillRect(0, 0, W, 160);
+
+    // Scrim at photo→panel seam
+    const seamScrim = ctx.createLinearGradient(0, SPLIT - 120, 0, SPLIT);
+    seamScrim.addColorStop(0, 'rgba(15,12,10,0)');
+    seamScrim.addColorStop(1, 'rgba(15,12,10,0.85)');
+    ctx.fillStyle = seamScrim;
+    ctx.fillRect(0, SPLIT - 120, W, 120);
+  } else {
+    // No-photo: gradient photo zone
+    const photoBg = ctx.createLinearGradient(0, 0, W, SPLIT);
+    photoBg.addColorStop(0,   '#1A0A00');
+    photoBg.addColorStop(0.5, '#280C00');
+    photoBg.addColorStop(1,   '#0D0502');
+    ctx.fillStyle = photoBg;
+    ctx.fillRect(0, 0, W, SPLIT);
+
+    // Grain texture
+    ctx.save();
+    ctx.globalAlpha = 0.025;
+    for (let i = 0; i < 14000; i++) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(Math.random() * W, Math.random() * SPLIT, 1.5, 1.5);
+    }
+    ctx.restore();
+
+    // Big distance watermark in photo zone (low opacity)
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 420px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(run.distanceKm.toFixed(1), W / 2, SPLIT - 40);
+    ctx.restore();
+  }
+
+  // ── Dark panel (bottom) ──────────────────────────────────────────────────
+  ctx.fillStyle = '#0F0C0A';
+  ctx.fillRect(0, SPLIT, W, H - SPLIT);
+
+  // Strava orange stripe at panel top
+  ctx.fillStyle = STRAVA;
+  ctx.fillRect(0, SPLIT, W, 5);
+
+  // ── Top label: FUELSYNC ─────────────────────────────────────────────────
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.font = '700 22px Arial';
+  ctx.letterSpacing = '8px';
+  ctx.textAlign = 'left';
+  ctx.fillText('FUELSYNC', 72, 74);
+
+  // ── Run name in photo zone (bottom-left of photo) ───────────────────────
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = '700 34px Arial';
+  ctx.letterSpacing = '1px';
+  ctx.textAlign = 'left';
+  const runName = run.name.length > 28 ? run.name.slice(0, 27) + '…' : run.name;
+  ctx.fillText(runName, 72, SPLIT - 42);
+
+  // ── Dark panel content ───────────────────────────────────────────────────
+  const panelTop = SPLIT + 5; // below orange stripe
+
+  // Big distance
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 180px Arial';
+  ctx.letterSpacing = '-8px';
+  ctx.textAlign = 'left';
+  ctx.fillText(run.distanceKm.toFixed(1), 68, panelTop + 195);
+
+  // KM label next to distance
+  ctx.fillStyle = STRAVA;
+  ctx.font = '900 42px Arial';
+  ctx.letterSpacing = '12px';
+  ctx.textAlign = 'left';
+  // Measure distance text width for positioning KM label
+  ctx.font = '900 180px Arial';
+  ctx.letterSpacing = '-8px';
+  const distText = run.distanceKm.toFixed(1);
+  const distW = ctx.measureText(distText).width;
+  ctx.font = '900 42px Arial';
+  ctx.letterSpacing = '12px';
+  ctx.fillText('KM', 68 + distW + 12, panelTop + 165);
+
+  // ── Stats row ────────────────────────────────────────────────────────────
+  const statsY = panelTop + 240;
+  const stats: Array<{ value: string; label: string }> = [
+    { value: run.pace,                             label: '/km' },
+    { value: formatDuration(run.duration),         label: 'time' },
+    { value: `${run.elevationM}m`,                 label: 'elev' },
+    { value: run.hrAvg ? `${run.hrAvg}` : '—',    label: 'bpm'  },
+  ];
+
+  // Divider line above stats
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(68, statsY - 18, W - 136, 1);
+  ctx.restore();
+
+  const colW = (W - 136) / stats.length;
+  stats.forEach((s, i) => {
+    const x = 68 + colW * i;
+
+    // Stat value
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '800 44px Arial';
+    ctx.letterSpacing = '-1px';
+    ctx.textAlign = 'left';
+    ctx.fillText(s.value, x, statsY + 48);
+
+    // Stat label
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '600 18px Arial';
+    ctx.letterSpacing = '2px';
+    ctx.fillText(s.label.toUpperCase(), x, statsY + 78);
   });
 
-  // ── Strava badge ─────────────────────────────────────────────────────────
-  ctx.fillStyle = '#FC4C02';
-  ctx.font = '900 26px Arial';
-  ctx.letterSpacing = '2px';
-  ctx.textAlign = 'center';
-  ctx.fillText('▶  VIA STRAVA', W / 2, 1010);
+  // ── VIA STRAVA footer ────────────────────────────────────────────────────
+  const footerY = H - 68;
 
-  // ── Bottom bar ───────────────────────────────────────────────────────────
-  // Lime bottom stripe
-  ctx.fillStyle = LIME;
-  ctx.fillRect(0, H - 16, W, 16);
+  // Strava logo mark (simplified chevrons)
+  ctx.fillStyle = STRAVA;
+  ctx.font = '700 18px Arial';
+  ctx.letterSpacing = '4px';
+  ctx.textAlign = 'left';
+  ctx.fillText('▶  VIA STRAVA', 68, footerY);
 
-  // Dark footer band
-  ctx.fillStyle = '#0a0a0a';
-  ctx.fillRect(0, H - 110, W, 94);
-
-  ctx.fillStyle = LIME;
-  ctx.font = '900 40px Arial';
-  ctx.letterSpacing = '8px';
-  ctx.textAlign = 'center';
-  ctx.fillText('FUELSYNC', W / 2, H - 52);
-
-  ctx.fillStyle = '#222';
-  ctx.font = '600 22px Arial';
-  ctx.letterSpacing = '3px';
-  ctx.fillText('HYBRID ATHLETE OS', W / 2, H - 24);
+  // Right side: date
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font = '400 18px Arial';
+  ctx.letterSpacing = '1px';
+  ctx.textAlign = 'right';
+  ctx.fillText(
+    new Date(run.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(),
+    W - 68,
+    footerY,
+  );
 
   return canvas;
 }
 
-export async function shareRunCard(run: StravaRun): Promise<void> {
-  const canvas = generateRunCard(run);
+export async function shareRunCard(run: StravaRun, photoFile?: File | null): Promise<void> {
+  let photo: HTMLImageElement | null = null;
+  if (photoFile) {
+    try { photo = await loadImage(photoFile); } catch { /* ignore bad image */ }
+  }
+
+  const canvas = generateRunCard(run, photo);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(async (blob) => {
@@ -181,7 +205,7 @@ export async function shareRunCard(run: StravaRun): Promise<void> {
         try {
           await navigator.share({ files: [file], title: `${run.distanceKm} km — FuelSync` });
           resolve(); return;
-        } catch { /* user cancelled — fall through */ }
+        } catch { /* user cancelled */ }
       }
 
       // Fallback: download

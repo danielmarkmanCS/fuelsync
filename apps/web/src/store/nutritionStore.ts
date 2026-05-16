@@ -14,8 +14,12 @@ interface NutritionState {
   setTodayLog: (log: DailyLog) => void;
   setWeather: (weather: WeatherConditions, alert: EnvironmentAlert) => void;
   logWorkoutComplete: (km?: number, sets?: number) => void;
-  addRunKm: (km: number) => void;
+  addRunKm: (km: number, name?: string, source?: 'strava' | 'manual') => void;
+  removeRunKm: (km: number, name?: string) => void;
+  renameRun: (idx: number, newName: string) => void;
+  resetWeeklyRuns: () => void;
   resetDay: () => void;
+  resetAll: () => void;
 }
 
 const defaultWeeklyLoad = (): WeeklyLoad => ({
@@ -24,6 +28,7 @@ const defaultWeeklyLoad = (): WeeklyLoad => ({
   totalStrengthSets: 0,
   legFatigueScore: 0,
   recoveryScore: 80,
+  loggedRuns: [],
 });
 
 export const useNutritionStore = create<NutritionState>()(
@@ -41,18 +46,52 @@ export const useNutritionStore = create<NutritionState>()(
 
       setWeather: (weather, alert) => set({ weather, environmentAlert: alert }),
 
-      addRunKm: (km) => {
+      addRunKm: (km, name = 'Run', source = 'manual') => {
         const { weeklyLoad } = get();
-        set({ weeklyLoad: { ...weeklyLoad, totalRunKm: parseFloat((weeklyLoad.totalRunKm + km).toFixed(2)) } });
+        set({ weeklyLoad: {
+          ...weeklyLoad,
+          totalRunKm: parseFloat((weeklyLoad.totalRunKm + km).toFixed(2)),
+          loggedRuns: [...(weeklyLoad.loggedRuns ?? []), { km, name, source }],
+        }});
+      },
+
+      removeRunKm: (km, name) => {
+        const { weeklyLoad } = get();
+        const runs = weeklyLoad.loggedRuns ?? [];
+        const idx  = runs.findIndex((r) => r.km === km && (!name || r.name === name));
+        const loggedRuns = idx >= 0 ? [...runs.slice(0, idx), ...runs.slice(idx + 1)] : runs;
+        set({ weeklyLoad: {
+          ...weeklyLoad,
+          totalRunKm: parseFloat((Math.max(0, weeklyLoad.totalRunKm - km)).toFixed(2)),
+          loggedRuns,
+        }});
       },
 
       logWorkoutComplete: (km = 0, sets = 0) => {
         const { todayLog, weeklyLoad } = get();
         if (!todayLog) return;
-        set({ weeklyLoad: updateWeeklyLoad(weeklyLoad, todayLog, { addKm: km, addSets: sets }) });
+        const updated = updateWeeklyLoad(weeklyLoad, todayLog, { addKm: km, addSets: sets });
+        if (km > 0) {
+          updated.loggedRuns = [...(updated.loggedRuns ?? []), { km, name: 'Manual Run', source: 'manual' }];
+        }
+        set({ weeklyLoad: updated });
+      },
+
+      renameRun: (idx, newName) => {
+        const { weeklyLoad } = get();
+        const runs = [...(weeklyLoad.loggedRuns ?? [])];
+        if (idx >= 0 && idx < runs.length) runs[idx] = { ...runs[idx], name: newName };
+        set({ weeklyLoad: { ...weeklyLoad, loggedRuns: runs } });
+      },
+
+      resetWeeklyRuns: () => {
+        const { weeklyLoad } = get();
+        set({ weeklyLoad: { ...weeklyLoad, totalRunKm: 0, loggedRuns: [] } });
       },
 
       resetDay: () => set({ todayLog: null, targets: null }),
+
+      resetAll: () => set({ todayLog: null, targets: null, weeklyLoad: defaultWeeklyLoad(), weather: null, environmentAlert: null }),
     }),
     {
       name: 'fuelsync-nutrition-v2',

@@ -1,4 +1,5 @@
-import { api } from './client';
+import { db } from '../lib/db';
+import { workerGet, workerPost } from './client';
 
 export interface StravaRun {
   id: number;
@@ -22,7 +23,85 @@ export interface StravaStats {
 
 export type StravaData = StravaStats | { connected: false };
 
-export const getStravaAuthUrl = () => api.get<{ url: string }>('/strava/auth-url');
-export const connectStrava    = (code: string) => api.post<{ connected: boolean; athlete: { name: string; pic: string } }>('/strava/connect', { code });
-export const getStravaStats   = () => api.get<StravaData>('/strava/stats');
-export const disconnectStrava = () => api.delete<{ connected: false }>('/strava/disconnect');
+async function getProfile() {
+  const rows = await db.profile.toArray();
+  return rows[0] ?? null;
+}
+
+async function updateStravaTokens(tokens: {
+  stravaAccessToken: string;
+  stravaRefreshToken: string;
+  stravaExpiresAt: number;
+  stravaAthleteName?: string;
+  stravaAthletePic?: string;
+}) {
+  const rows = await db.profile.toArray();
+  if (!rows[0]?.id) return;
+  await db.profile.update(rows[0].id, tokens);
+}
+
+async function refreshIfNeeded(): Promise<string | null> {
+  const profile = await getProfile();
+  if (!profile?.stravaAccessToken) return null;
+  if (profile.stravaExpiresAt && Date.now() / 1000 < profile.stravaExpiresAt - 60) {
+    return profile.stravaAccessToken;
+  }
+  if (!profile.stravaRefreshToken) return null;
+  try {
+    const res = await workerPost<{ access_token: string; refresh_token: string; expires_at: number }>(
+      'strava', '/refresh', { refresh_token: profile.stravaRefreshToken }
+    );
+    await updateStravaTokens({
+      stravaAccessToken: res.access_token,
+      stravaRefreshToken: res.refresh_token,
+      stravaExpiresAt: res.expires_at,
+      stravaAthleteName: profile.stravaAthleteName,
+      stravaAthletePic: profile.stravaAthletePic,
+    });
+    return res.access_token;
+  } catch {
+    return null;
+  }
+}
+
+export async function getStravaAuthUrl(): Promise<{ url: string }> {
+  return workerGet<{ url: string }>('strava', '/auth-url');
+}
+
+// Called by App.tsx after Strava Worker redirects back with tokens in URL params
+export async function connectStrava(tokens: {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  athlete_name: string;
+  athlete_pic: string;
+}): Promise<{ connected: boolean; athlete: { name: string; pic: string } }> {
+  await updateStravaTokens({
+    stravaAccessToken: tokens.access_token,
+    stravaRefreshToken: tokens.refresh_token,
+    stravaExpiresAt: tokens.expires_at,
+    stravaAthleteName: tokens.athlete_name,
+    stravaAthletePic: tokens.athlete_pic,
+  });
+  return { connected: true, athlete: { name: tokens.athlete_name, pic: tokens.athlete_pic } };
+}
+
+export async function getStravaStats(): Promise<StravaData> {
+  const access_token = await refreshIfNeeded();
+  if (!access_token) return { connected: false };
+  return workerPost<StravaData>('strava', '/stats', { access_token });
+}
+
+export async function disconnectStrava(): Promise<{ connected: false }> {
+  const rows = await db.profile.toArray();
+  if (rows[0]?.id) {
+    await db.profile.update(rows[0].id, {
+      stravaAccessToken: undefined,
+      stravaRefreshToken: undefined,
+      stravaExpiresAt: undefined,
+      stravaAthleteName: undefined,
+      stravaAthletePic: undefined,
+    });
+  }
+  return { connected: false };
+}
