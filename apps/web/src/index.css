@@ -2,16 +2,18 @@
 
 :root {
   --red:     #FF3B30;
-  --protein: #22C55E;
-  --carbs:   #F97316;
-  --fat:     #EF4444;
-  --chrome:  #666666;
+  --protein: #4ADE80;
+  --carbs:   #FB923C;
+  --fat:     #F472B6;
+  --cyan:    #22D3EE;
+  --amber:   #FACC15;
+  --chrome:  #555555;
   --bg:      #0C0C0C;
-  --card:    #141414;
-  --card2:   #1C1C1E;
-  --border:  #2C2C2E;
+  --card:    #111111;
+  --card2:   #181818;
+  --border:  #222222;
   --text:    #FFFFFF;
-  --text2:   #999999;
+  --text2:   #666666;
   --spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease:    cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -55,7 +57,7 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ── ENTRANCE ANIMATIONS ────────────────────────────────── */
 @keyframes nrcUp {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -64,13 +66,18 @@ button, input, select, textarea { font-family: inherit; }
   to   { opacity: 1; }
 }
 
-.nrc-a  { animation: nrcUp 0.45s var(--spring) both; }
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.nrc-a  { animation: nrcUp 0.5s var(--spring) both; }
 .nrc-a1 { animation-delay:   0ms; }
-.nrc-a2 { animation-delay:  60ms; }
-.nrc-a3 { animation-delay: 120ms; }
-.nrc-a4 { animation-delay: 180ms; }
-.nrc-a5 { animation-delay: 240ms; }
-.nrc-a6 { animation-delay: 300ms; }
+.nrc-a2 { animation-delay:  70ms; }
+.nrc-a3 { animation-delay: 140ms; }
+.nrc-a4 { animation-delay: 210ms; }
+.nrc-a5 { animation-delay: 280ms; }
+.nrc-a6 { animation-delay: 350ms; }
 
 /* ── PRESS SCALE ────────────────────────────────────────── */
 .nrc-press {
@@ -83,7 +90,7 @@ button, input, select, textarea { font-family: inherit; }
 /* ── PROGRESS BAR ───────────────────────────────────────── */
 .volt-bar-track {
   height: 3px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -91,5 +98,15 @@ button, input, select, textarea { font-family: inherit; }
   height: 100%;
   background: var(--red);
   border-radius: 2px;
-  transition: width 0.6s var(--ease);
+  transition: width 0.7s var(--ease);
+}
+
+/* ── GLOW DOTS ──────────────────────────────────────────── */
+.glow-dot {
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* input placeholders */
+input::placeholder, textarea::placeholder {
+  color: #333333;
 }

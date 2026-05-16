@@ -4,8 +4,8 @@ import { db } from '../lib/db';
 import { useAuthStore } from '../store/authStore';
 
 const RED   = '#FF3B30';
-const CARD2 = '#1C1C1E';
-const BORD  = '#2C2C2E';
+const CARD2 = '#181818';
+const BORD  = '#222222';
 
 function fmt(ms: number) {
   const s = Math.ceil(ms / 1000);
@@ -314,7 +314,7 @@ const fullPage: React.CSSProperties = {
 };
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#1C1C1E', border: '1px solid #2C2C2E',
+  width: '100%', background: '#181818', border: '1px solid #222222',
   borderRadius: 10, color: '#FFFFFF', fontSize: 15, padding: '14px 15px',
   outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
   boxSizing: 'border-box',

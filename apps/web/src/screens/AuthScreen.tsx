@@ -4,9 +4,9 @@ import { setupPin, setupSecurityQuestion } from '../lib/pin';
 import { useAuthStore } from '../store/authStore';
 
 const RED   = '#FF3B30';
-const CARD  = '#141414';
-const CARD2 = '#1C1C1E';
-const BORD  = '#2C2C2E';
+const CARD  = '#111111';
+const CARD2 = '#181818';
+const BORD  = '#222222';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',   desc: 'Desk job, little or no exercise' },

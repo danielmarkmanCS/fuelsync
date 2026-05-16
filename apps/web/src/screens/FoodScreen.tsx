@@ -5,12 +5,12 @@ import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
 
 const RED  = '#FF3B30';
-const PRO  = '#22C55E';
-const CARB = '#F97316';
-const FAT  = '#EF4444';
-const CARD = '#141414';
-const CARD2= '#1C1C1E';
-const BORD = '#2C2C2E';
+const PRO  = '#4ADE80';
+const CARB = '#FB923C';
+const FAT  = '#F472B6';
+const CARD = '#111111';
+const CARD2= '#181818';
+const BORD = '#222222';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
