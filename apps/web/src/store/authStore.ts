@@ -10,15 +10,22 @@ interface AuthState {
   logout: () => void;
 }
 
+const SESSION_KEY = 'fuelsync_pin_verified';
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  pinVerified: false,
+  pinVerified: sessionStorage.getItem(SESSION_KEY) === '1',
 
   setUser: (u) => set({ user: u }),
 
-  setPinVerified: (v) => set({ pinVerified: v }),
+  setPinVerified: (v) => {
+    if (v) sessionStorage.setItem(SESSION_KEY, '1');
+    else sessionStorage.removeItem(SESSION_KEY);
+    set({ pinVerified: v });
+  },
 
   logout: () => {
+    sessionStorage.removeItem(SESSION_KEY);
     useNutritionStore.getState().resetAll();
     set({ pinVerified: false });
   },

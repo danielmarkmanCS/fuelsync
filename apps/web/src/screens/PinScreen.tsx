@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { verifyPin } from '../lib/pin';
+import { db } from '../lib/db';
 import { useAuthStore } from '../store/authStore';
 
 const RED = '#FF3B30';
@@ -18,8 +19,15 @@ export default function PinScreen() {
   const [lockMs, setLockMs]     = useState(0);
   const [wiped, setWiped]       = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
-  const [shaking, setShaking]   = useState(false);
+  const [shaking, setShaking]         = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [totalAttempts, setTotalAttempts] = useState(0);
+
+  useEffect(() => {
+    db.pin_state.toArray().then((rows) => {
+      if (rows[0]) setTotalAttempts(rows[0].totalAttempts);
+    });
+  }, []);
 
   useEffect(() => {
     if (!locked || lockMs <= 0) return;
@@ -43,6 +51,7 @@ export default function PinScreen() {
     if (result.ok) { setPinVerified(true); return; }
     shake();
     setDigits('');
+    setTotalAttempts((prev) => prev + 1);
     if (result.locked && result.lockedUntil) {
       setLocked(true);
       setLockMs(result.lockedUntil - Date.now());
@@ -158,9 +167,9 @@ export default function PinScreen() {
           })}
         </div>
 
-        {attemptsLeft <= 2 && !locked && (
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: '#CCC', fontWeight: 600 }}>
-            {15 - attemptsLeft} of 15 attempts used · data wipes at 15
+        {totalAttempts >= 10 && !locked && (
+          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: totalAttempts >= 13 ? '#FF3B30' : '#CCC', fontWeight: 600 }}>
+            {totalAttempts} of 15 attempts used · data wipes at 15
           </div>
         )}
 
@@ -219,9 +228,11 @@ export default function PinScreen() {
 }
 
 const fullPage: React.CSSProperties = {
-  minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+  display: 'flex', flexDirection: 'column',
   alignItems: 'center', justifyContent: 'center',
   background: '#F2F2F7',
+  overflowY: 'scroll', WebkitOverflowScrolling: 'touch' as never,
 };
 
 const btn: React.CSSProperties = {
