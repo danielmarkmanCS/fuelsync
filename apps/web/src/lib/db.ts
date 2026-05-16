@@ -33,9 +33,14 @@ export interface LocalFoodLog {
 export interface PinState {
   id?: number;
   hash: string;
+  salt: string;                    // PBKDF2 random salt (hex)
   attempts: number;
   lockedUntil: number | null;
-  totalAttempts: number; // cumulative wrong attempts (resets on correct PIN)
+  totalAttempts: number;           // cumulative wrong attempts (resets on correct PIN)
+  securityQuestion?: string;
+  securityAnswerHash?: string;
+  securityAnswerSalt?: string;
+  securityAnswerAttempts?: number;
 }
 
 class FuelSyncDB extends Dexie {

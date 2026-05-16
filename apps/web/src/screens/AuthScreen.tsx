@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createProfile } from '../api/auth';
-import { setupPin } from '../lib/pin';
+import { setupPin, setupSecurityQuestion } from '../lib/pin';
 import { useAuthStore } from '../store/authStore';
 
 const RED = '#FF3B30';
@@ -14,17 +14,24 @@ const ACTIVITY_LEVELS = [
 ] as const;
 type ActivityLevel = typeof ACTIVITY_LEVELS[number]['value'];
 
+const SECURITY_QUESTIONS = [
+  'What was the name of your first pet?',
+  'What city were you born in?',
+  "What is your mother's maiden name?",
+  'What was the name of your elementary school?',
+  'What was your childhood nickname?',
+] as const;
+
 const inp: React.CSSProperties = {
   width: '100%', background: '#FAFAFA', border: '1px solid #E5E5EA',
   borderRadius: 10, color: '#111111', fontSize: 15, padding: '14px 15px',
   outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
-type Step = 'profile' | 'pin';
+type Step = 'profile' | 'pin' | 'security';
 
 export default function AuthScreen() {
   const { setUser, setPinVerified } = useAuthStore();
-
   const [step, setStep] = useState<Step>('profile');
 
   // Profile fields
@@ -39,27 +46,38 @@ export default function AuthScreen() {
   const [pin,     setPin]     = useState('');
   const [pinConf, setPinConf] = useState('');
 
+  // Security question fields
+  const [secQuestion, setSecQuestion] = useState<string>(SECURITY_QUESTIONS[0]);
+  const [secAnswer,   setSecAnswer]   = useState('');
+  const [secConf,     setSecConf]     = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
   const validateProfile = () => {
     const w = parseFloat(weightKg), h = parseFloat(heightCm), a = parseInt(age, 10);
-    if (!displayName.trim()) { setError('Enter your name.'); return false; }
-    if (isNaN(w) || w < 30 || w > 300)  { setError('Valid weight: 30–300 kg.'); return false; }
-    if (isNaN(h) || h < 100 || h > 250) { setError('Valid height: 100–250 cm.'); return false; }
-    if (isNaN(a) || a < 10 || a > 100)  { setError('Valid age: 10–100.'); return false; }
+    if (!displayName.trim())              { setError('Enter your name.'); return false; }
+    if (isNaN(w) || w < 30 || w > 300)   { setError('Valid weight: 30–300 kg.'); return false; }
+    if (isNaN(h) || h < 100 || h > 250)  { setError('Valid height: 100–250 cm.'); return false; }
+    if (isNaN(a) || a < 10 || a > 100)   { setError('Valid age: 10–100.'); return false; }
     return true;
   };
 
   const goToPin = () => {
     if (!validateProfile()) return;
-    setError('');
-    setStep('pin');
+    setError(''); setStep('pin');
+  };
+
+  const goToSecurity = () => {
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { setError('PIN must be 4 digits.'); return; }
+    if (pin !== pinConf) { setError('PINs do not match.'); return; }
+    setError(''); setStep('security');
   };
 
   const finish = async () => {
-    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { setError('PIN must be 4 digits.'); return; }
-    if (pin !== pinConf) { setError('PINs do not match.'); return; }
+    if (!secAnswer.trim())          { setError('Enter your answer.'); return; }
+    if (secAnswer.trim().length < 2){ setError('Answer too short.'); return; }
+    if (secAnswer.trim() !== secConf.trim()) { setError('Answers do not match.'); return; }
     setLoading(true); setError('');
     try {
       const user = await createProfile({
@@ -67,17 +85,21 @@ export default function AuthScreen() {
         weightKg: parseFloat(weightKg),
         heightCm: parseFloat(heightCm),
         age: parseInt(age, 10),
-        gender,
-        activityLevel,
-        dailyGoal: 2000,
+        gender, activityLevel, dailyGoal: 2000,
       });
       await setupPin(pin);
+      await setupSecurityQuestion(secQuestion, secAnswer.trim());
       setUser(user);
       setPinVerified(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to set up. Try again.');
     } finally { setLoading(false); }
   };
+
+  const stepLabel =
+    step === 'profile'  ? 'Step 1 of 3 — Your Profile' :
+    step === 'pin'      ? 'Step 2 of 3 — Set PIN' :
+                          'Step 3 of 3 — Recovery Question';
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#F2F2F7', overflowY: 'scroll', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
@@ -89,13 +111,14 @@ export default function AuthScreen() {
         <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 0.88, color: RED, marginBottom: 6 }}>SYNC</div>
         <div style={{ width: 36, height: 3, background: RED, borderRadius: 2, marginTop: 20 }} />
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 3, color: '#CCCCCC', marginTop: 14, textTransform: 'uppercase' }}>
-          {step === 'profile' ? 'Step 1 of 2 — Your Profile' : 'Step 2 of 2 — Set PIN'}
+          {stepLabel}
         </div>
       </div>
 
       <div className="nrc-a nrc-a2">
         <div style={{ width: '100%', background: '#FFFFFF', borderRadius: '24px 24px 0 0', padding: '28px 24px 48px', borderTop: '1px solid #E5E5EA', boxShadow: '0 -4px 24px rgba(0,0,0,0.06)', minHeight: 'calc(100dvh - 260px)' }}>
 
+          {/* ── Step 1: Profile ── */}
           {step === 'profile' && (
             <>
               <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 20 }}>Tell us about yourself</div>
@@ -138,13 +161,13 @@ export default function AuthScreen() {
               </div>
 
               {error && <Msg type="error" msg={error} />}
-
               <button onClick={goToPin} className="nrc-press" style={primaryBtn(false)}>
                 Next: Set PIN →
               </button>
             </>
           )}
 
+          {/* ── Step 2: PIN ── */}
           {step === 'pin' && (
             <>
               <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8 }}>Secure your data</div>
@@ -163,15 +186,55 @@ export default function AuthScreen() {
                 placeholder="• • • •" value={pinConf} onChange={(e) => setPinConf(e.target.value.replace(/\D/g, '').slice(0, 4))} />
 
               {error && <Msg type="error" msg={error} />}
+              <button onClick={goToSecurity} className="nrc-press" style={primaryBtn(false)}>
+                Next: Recovery Question →
+              </button>
+              <button onClick={() => { setStep('profile'); setError(''); }} style={backBtn}>← Back</button>
+            </>
+          )}
 
+          {/* ── Step 3: Security Question ── */}
+          {step === 'security' && (
+            <>
+              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8 }}>Recovery Question</div>
+              <div style={{ color: '#888', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
+                If you forget your PIN, this question lets you set a new one instead of wiping all data.
+              </div>
+
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8 }}>Question</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+                {SECURITY_QUESTIONS.map((q) => {
+                  const active = secQuestion === q;
+                  return (
+                    <button key={q} onClick={() => setSecQuestion(q)} className="nrc-press" style={{
+                      textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                      background: active ? '#FFF5F4' : '#FAFAFA',
+                      border: '1px solid', borderColor: active ? RED : '#EEEEEE',
+                      borderLeft: active ? `3px solid ${RED}` : '1px solid #EEEEEE', transition: 'all 0.15s',
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? RED : '#BBBBBB' }}>{q}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8 }}>Your Answer</div>
+              <input style={inp} type="text" placeholder="Answer" value={secAnswer}
+                onChange={(e) => setSecAnswer(e.target.value)} autoComplete="off" />
+
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm Answer</div>
+              <input style={inp} type="text" placeholder="Repeat answer" value={secConf}
+                onChange={(e) => setSecConf(e.target.value)} autoComplete="off" />
+
+              <div style={{ fontSize: 11, color: '#BBBBBB', marginBottom: 20, lineHeight: 1.5 }}>
+                Answer is case-insensitive. 5 wrong answers = data wipe.
+              </div>
+
+              {error && <Msg type="error" msg={error} />}
               <button onClick={finish} disabled={loading} className="nrc-press" style={primaryBtn(loading)}>
                 {loading ? 'Setting up…' : 'Start Training →'}
               </button>
-
-              <button onClick={() => { setStep('profile'); setError(''); }} style={{
-                width: '100%', background: 'none', border: 'none', color: '#AAA',
-                fontSize: 13, cursor: 'pointer', marginTop: 8, padding: '10px 0',
-              }}>← Back</button>
+              <button onClick={() => { setStep('pin'); setError(''); }} style={backBtn}>← Back</button>
             </>
           )}
         </div>
@@ -201,3 +264,8 @@ function primaryBtn(disabled: boolean): React.CSSProperties {
     cursor: disabled ? 'not-allowed' : 'pointer',
   };
 }
+
+const backBtn: React.CSSProperties = {
+  width: '100%', background: 'none', border: 'none', color: '#AAA',
+  fontSize: 13, cursor: 'pointer', marginTop: 8, padding: '10px 0',
+};
