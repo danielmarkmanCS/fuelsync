@@ -26,9 +26,13 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Install dependencies
+      - name: Install web dependencies
         working-directory: apps/web
         run: npm ci
+
+      - name: Install mobile dependencies
+        working-directory: apps/mobile
+        run: npm install --ignore-scripts
 
       - name: Build
         working-directory: apps/web
