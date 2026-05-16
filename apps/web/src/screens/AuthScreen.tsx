@@ -80,10 +80,10 @@ export default function AuthScreen() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F2F2F7', display: 'flex', flexDirection: 'column', position: 'relative', overflowY: 'auto' }}>
+    <div style={{ height: '100%', background: '#F2F2F7', overflowY: 'auto', position: 'relative' }}>
       <div style={{ position: 'absolute', top: -120, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,59,48,0.06) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-      <div className="nrc-a nrc-a1" style={{ padding: '72px 32px 0', flex: 0 }}>
+      <div className="nrc-a nrc-a1" style={{ padding: '72px 32px 28px' }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#AAAAAA', marginBottom: 20, textTransform: 'uppercase' }}>Performance Nutrition</div>
         <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 0.88, color: '#111111' }}>FUEL</div>
         <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 0.88, color: RED, marginBottom: 6 }}>SYNC</div>
@@ -93,8 +93,8 @@ export default function AuthScreen() {
         </div>
       </div>
 
-      <div className="nrc-a nrc-a2" style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
-        <div style={{ width: '100%', background: '#FFFFFF', borderRadius: '24px 24px 0 0', padding: '28px 24px 48px', borderTop: '1px solid #E5E5EA', boxShadow: '0 -4px 24px rgba(0,0,0,0.06)' }}>
+      <div className="nrc-a nrc-a2">
+        <div style={{ width: '100%', background: '#FFFFFF', borderRadius: '24px 24px 0 0', padding: '28px 24px 48px', borderTop: '1px solid #E5E5EA', boxShadow: '0 -4px 24px rgba(0,0,0,0.06)', minHeight: 'calc(100dvh - 260px)' }}>
 
           {step === 'profile' && (
             <>
@@ -175,7 +175,6 @@ export default function AuthScreen() {
             </>
           )}
         </div>
-      </div>
     </div>
   );
 }
