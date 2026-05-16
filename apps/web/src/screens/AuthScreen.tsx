@@ -80,7 +80,7 @@ export default function AuthScreen() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F2F2F7', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100dvh', background: '#F2F2F7', display: 'flex', flexDirection: 'column', position: 'relative', overflowY: 'auto' }}>
       <div style={{ position: 'absolute', top: -120, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,59,48,0.06) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
       <div className="nrc-a nrc-a1" style={{ padding: '72px 32px 0', flex: 0 }}>
