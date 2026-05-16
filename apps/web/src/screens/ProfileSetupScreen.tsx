@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile } from '../api/auth';
 
-const RED = '#FF3B30';
+const RED   = '#FF3B30';
+const CARD  = '#141414';
+const CARD2 = '#1C1C1E';
+const BORD  = '#2C2C2E';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',   desc: 'Desk job, little or no exercise' },
@@ -14,8 +17,8 @@ const ACTIVITY_LEVELS = [
 type ActivityLevel = typeof ACTIVITY_LEVELS[number]['value'];
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#FAFAFA', border: '1px solid #E5E5EA',
-  borderRadius: 10, color: '#111111', fontSize: 15, padding: '14px 15px', outline: 'none',
+  width: '100%', background: CARD2, border: `1px solid ${BORD}`,
+  borderRadius: 10, color: '#FFFFFF', fontSize: 15, padding: '14px 15px', outline: 'none',
   marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
@@ -49,13 +52,13 @@ export default function ProfileSetupScreen() {
   const profileComplete = user?.weightKg && user?.heightCm && user?.age;
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7' }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#0C0C0C' }}>
 
       <div className="nrc-a nrc-a1" style={{ padding: '28px 20px 0', marginBottom: 24 }}>
         <div className="nrc-label" style={{ marginBottom: 6 }}>Athlete Profile</div>
         <div className="nrc-hero" style={{ fontSize: 44 }}>{name.toUpperCase()}</div>
         {!profileComplete && (
-          <div style={{ color: '#888888', fontSize: 13, marginTop: 10, fontWeight: 500, lineHeight: 1.5 }}>
+          <div style={{ color: '#555555', fontSize: 13, marginTop: 10, fontWeight: 500, lineHeight: 1.5 }}>
             Complete your profile to unlock personalised targets.
           </div>
         )}
@@ -70,12 +73,12 @@ export default function ProfileSetupScreen() {
               { label: 'Age',    value: `${user!.age}`,      unit: 'YR' },
             ].map(({ label, value, unit }) => (
               <div key={label} className="nrc-press" style={{
-                background: '#FFFFFF', borderRadius: 16, padding: '16px 12px',
-                border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
+                background: CARD, borderRadius: 16, padding: '16px 12px',
+                border: `1px solid ${BORD}`,
               }}>
                 <div className="nrc-hero" style={{ fontSize: 32, color: RED, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#AAAAAA', textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#BBBBBB', letterSpacing: 1 }}>{unit}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#555555', textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#444444', letterSpacing: 1 }}>{unit}</div>
               </div>
             ))}
           </div>
@@ -83,43 +86,43 @@ export default function ProfileSetupScreen() {
       )}
 
       <div style={{ padding: '0 20px 40px' }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 12 }}>Display Name</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 12 }}>Display Name</div>
         <input style={{ ...inp, marginBottom: 24 }} type="text" value={displayName}
           onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 12 }}>Body Stats</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 12 }}>Body Stats</div>
         <div style={{ display: 'flex', gap: 10 }}>
           <input style={{ ...inp, flex: 1 }} type="number" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Weight (kg)" />
           <input style={{ ...inp, flex: 1 }} type="number" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} placeholder="Height (cm)" />
         </div>
         <input style={inp} type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" />
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 12, marginTop: 6 }}>Biological Sex</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 12, marginTop: 6 }}>Biological Sex</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
           {(['male', 'female'] as const).map((g) => (
             <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
               flex: 1, padding: 15, borderRadius: 12, cursor: 'pointer', border: '1px solid',
-              borderColor: gender === g ? RED : '#E5E5EA',
-              background: gender === g ? 'rgba(255,59,48,0.06)' : '#FAFAFA',
-              color: gender === g ? RED : '#888888',
+              borderColor: gender === g ? RED : BORD,
+              background: gender === g ? 'rgba(255,59,48,0.08)' : CARD2,
+              color: gender === g ? RED : '#666666',
               fontWeight: 800, fontSize: 14, letterSpacing: 0.5, transition: 'all 0.2s',
             }}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
           ))}
         </div>
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 12 }}>Activity Level</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 12 }}>Activity Level</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
           {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
             const active = activityLevel === value;
             return (
               <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
                 textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
-                background: active ? '#FFF5F4' : '#FAFAFA',
-                border: '1px solid', borderColor: active ? RED : '#EEEEEE',
-                borderLeft: active ? `3px solid ${RED}` : '1px solid #EEEEEE', transition: 'all 0.15s',
+                background: active ? 'rgba(255,59,48,0.08)' : CARD2,
+                border: '1px solid', borderColor: active ? RED : BORD,
+                borderLeft: active ? `3px solid ${RED}` : `1px solid ${BORD}`, transition: 'all 0.15s',
               }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: active ? RED : '#BBBBBB', marginBottom: 3, letterSpacing: -0.3 }}>{label}</div>
-                <div style={{ fontSize: 12, color: active ? '#666666' : '#CCCCCC', fontWeight: 500 }}>{desc}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: active ? RED : '#444444', marginBottom: 3, letterSpacing: -0.3 }}>{label}</div>
+                <div style={{ fontSize: 12, color: active ? '#888888' : '#333333', fontWeight: 500 }}>{desc}</div>
               </button>
             );
           })}
@@ -133,8 +136,8 @@ export default function ProfileSetupScreen() {
 
         <button onClick={handleSave} disabled={saving} className="nrc-press" style={{
           width: '100%', padding: '16px 0', borderRadius: 14, marginBottom: 20,
-          background: saved ? 'rgba(34,197,94,0.1)' : saving ? '#F2F2F7' : RED,
-          color: saved ? '#22c55e' : saving ? '#AAAAAA' : '#fff',
+          background: saved ? 'rgba(34,197,94,0.1)' : saving ? CARD2 : RED,
+          color: saved ? '#22c55e' : saving ? '#555555' : '#fff',
           fontWeight: 800, fontSize: 15, letterSpacing: 0.5,
           cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
           border: saved ? '1px solid rgba(34,197,94,0.2)' : '1px solid transparent',
@@ -142,8 +145,8 @@ export default function ProfileSetupScreen() {
           {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save Profile →'}
         </button>
 
-        <div style={{ background: '#FFFFFF', borderRadius: 16, padding: '16px 18px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#AAAAAA', textTransform: 'uppercase', marginBottom: 14 }}>Session</div>
+        <div style={{ background: CARD, borderRadius: 16, padding: '16px 18px', border: `1px solid ${BORD}` }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 14 }}>Session</div>
           <button onClick={() => { if (window.confirm('Lock the app?')) logout(); }} className="nrc-press" style={{
             width: '100%', padding: 13, borderRadius: 10,
             border: '1px solid rgba(255,28,28,0.2)',

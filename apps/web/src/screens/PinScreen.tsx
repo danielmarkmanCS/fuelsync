@@ -3,7 +3,9 @@ import { verifyPin, verifySecurityAnswer, resetPin, getSecurityQuestion } from '
 import { db } from '../lib/db';
 import { useAuthStore } from '../store/authStore';
 
-const RED = '#FF3B30';
+const RED   = '#FF3B30';
+const CARD2 = '#1C1C1E';
+const BORD  = '#2C2C2E';
 
 function fmt(ms: number) {
   const s = Math.ceil(ms / 1000);
@@ -127,8 +129,8 @@ export default function PinScreen() {
       <div style={fullPage}>
         <div style={{ textAlign: 'center', padding: '0 32px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#111', marginBottom: 10 }}>Data Wiped</div>
-          <div style={{ color: '#888', fontSize: 14, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF', marginBottom: 10 }}>Data Wiped</div>
+          <div style={{ color: '#666666', fontSize: 14, lineHeight: 1.6 }}>
             Too many failed attempts. All data has been erased.
           </div>
           <button onClick={() => window.location.reload()} style={redBtn}>Restart</button>
@@ -143,17 +145,17 @@ export default function PinScreen() {
       <div style={fullPage}>
         <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, color: '#111' }}>
+            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, color: '#FFFFFF' }}>
               FUEL<span style={{ color: RED }}>SYNC</span>
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#CCC', marginTop: 8, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#444444', marginTop: 8, textTransform: 'uppercase' }}>
               Recovery Question
             </div>
           </div>
 
           {secQuestion ? (
             <>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 16, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#CCCCCC', marginBottom: 16, lineHeight: 1.5 }}>
                 {secQuestion}
               </div>
               <input
@@ -170,7 +172,7 @@ export default function PinScreen() {
               </button>
             </>
           ) : (
-            <div style={{ textAlign: 'center', color: '#888', fontSize: 13, lineHeight: 1.6 }}>
+            <div style={{ textAlign: 'center', color: '#666666', fontSize: 13, lineHeight: 1.6 }}>
               No recovery question was set up.<br />You must wipe data to start fresh.
               <button onClick={async () => { await db.delete(); indexedDB.deleteDatabase('FuelSyncDB'); window.location.reload(); }}
                 style={{ ...redBtn, marginTop: 20 }}>
@@ -191,21 +193,21 @@ export default function PinScreen() {
       <div style={fullPage}>
         <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, color: '#111' }}>
+            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, color: '#FFFFFF' }}>
               FUEL<span style={{ color: RED }}>SYNC</span>
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#CCC', marginTop: 8, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#444444', marginTop: 8, textTransform: 'uppercase' }}>
               Set New PIN
             </div>
           </div>
 
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8 }}>New PIN</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8 }}>New PIN</div>
           <input style={{ ...inp, letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
             type="password" inputMode="numeric" maxLength={4}
             placeholder="• • • •" value={newPin}
             onChange={(e) => { setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4)); setPinError(''); }} />
 
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
           <input style={{ ...inp, letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
             type="password" inputMode="numeric" maxLength={4}
             placeholder="• • • •" value={newPinConf}
@@ -225,10 +227,10 @@ export default function PinScreen() {
     <div style={fullPage}>
       <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -3, color: '#111', lineHeight: 1 }}>
+          <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -3, color: '#FFFFFF', lineHeight: 1 }}>
             FUEL<span style={{ color: RED }}>SYNC</span>
           </div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#CCC', marginTop: 8, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#444444', marginTop: 8, textTransform: 'uppercase' }}>
             Enter PIN
           </div>
         </div>
@@ -240,7 +242,7 @@ export default function PinScreen() {
           {[0, 1, 2, 3].map((i) => (
             <div key={i} style={{
               width: 14, height: 14, borderRadius: '50%',
-              background: i < digits.length ? RED : '#E5E5EA',
+              background: i < digits.length ? RED : BORD,
               transition: 'background 0.15s',
             }} />
           ))}
@@ -252,7 +254,7 @@ export default function PinScreen() {
           </div>
         )}
         {locked && (
-          <div style={{ textAlign: 'center', fontSize: 13, color: '#888', marginBottom: 20, fontWeight: 600 }}>
+          <div style={{ textAlign: 'center', fontSize: 13, color: '#666666', marginBottom: 20, fontWeight: 600 }}>
             Try again in {fmt(lockMs)}
           </div>
         )}
@@ -263,9 +265,9 @@ export default function PinScreen() {
             return (
               <button key={k} onClick={() => k === '⌫' ? del() : press(k)}
                 disabled={locked} className="nrc-press" style={{
-                  height: 64, borderRadius: 16, border: '1px solid #E5E5EA',
-                  background: '#FFF', fontSize: k === '⌫' ? 20 : 22,
-                  fontWeight: 700, color: locked ? '#CCC' : '#111',
+                  height: 64, borderRadius: 16, border: `1px solid ${BORD}`,
+                  background: CARD2, fontSize: k === '⌫' ? 20 : 22,
+                  fontWeight: 700, color: locked ? '#444444' : '#FFFFFF',
                   cursor: locked ? 'not-allowed' : 'pointer', transition: 'background 0.1s',
                 }}>
                 {k}
@@ -275,14 +277,14 @@ export default function PinScreen() {
         </div>
 
         {totalAttempts >= 10 && !locked && (
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: totalAttempts >= 13 ? RED : '#CCC', fontWeight: 600 }}>
+          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: totalAttempts >= 13 ? RED : '#444444', fontWeight: 600 }}>
             {totalAttempts} of 15 attempts used · data wipes at 15
           </div>
         )}
 
         <button onClick={openForgot} style={{
           marginTop: 36, background: 'none', border: 'none',
-          color: '#BBBBBB', fontSize: 12, fontWeight: 600,
+          color: '#444444', fontSize: 12, fontWeight: 600,
           cursor: 'pointer', textDecoration: 'underline', padding: '8px 0',
           display: 'block', margin: '36px auto 0',
         }}>
@@ -307,13 +309,13 @@ const fullPage: React.CSSProperties = {
   position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
   display: 'flex', flexDirection: 'column',
   alignItems: 'center', justifyContent: 'center',
-  background: '#F2F2F7',
+  background: '#0C0C0C',
   overflowY: 'scroll', WebkitOverflowScrolling: 'touch' as never,
 };
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#FAFAFA', border: '1px solid #E5E5EA',
-  borderRadius: 10, color: '#111', fontSize: 15, padding: '14px 15px',
+  width: '100%', background: '#1C1C1E', border: '1px solid #2C2C2E',
+  borderRadius: 10, color: '#FFFFFF', fontSize: 15, padding: '14px 15px',
   outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
   boxSizing: 'border-box',
 };
@@ -325,6 +327,6 @@ const redBtn: React.CSSProperties = {
 };
 
 const backBtn: React.CSSProperties = {
-  width: '100%', background: 'none', border: 'none', color: '#AAA',
+  width: '100%', background: 'none', border: 'none', color: '#555555',
   fontSize: 13, cursor: 'pointer', marginTop: 12, padding: '10px 0',
 };

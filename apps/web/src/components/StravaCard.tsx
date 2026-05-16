@@ -40,7 +40,7 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '11px 16px',
         borderLeft: `3px solid ${logged ? '#22c55e' : STRAVA}`,
-        borderBottom: shareOpt ? 'none' : '1px solid #F5F5F5',
+        borderBottom: shareOpt ? 'none' : '1px solid #2C2C2E',
         background: logged ? 'rgba(34,197,94,0.025)' : 'transparent',
         transition: 'background 0.2s, border-color 0.2s',
       }}>
@@ -111,7 +111,7 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
           display: 'flex', gap: 8,
           padding: '8px 16px 10px',
           borderLeft: `3px solid ${STRAVA}`,
-          borderBottom: '1px solid #F5F5F5',
+          borderBottom: '1px solid #2C2C2E',
           background: `${STRAVA}05`,
         }}>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onFileChange} />
@@ -130,7 +130,7 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
             onClick={() => doShare(null)}
             style={{
               flex: 1, padding: '8px 0', borderRadius: 8,
-              background: 'rgba(0,0,0,0.04)', border: '1px solid #E5E5EA',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid #2C2C2E',
               color: '#888888', fontWeight: 700, fontSize: 11, letterSpacing: 0.5,
               cursor: 'pointer',
             }}
@@ -179,7 +179,7 @@ export default function StravaCard() {
   };
 
   if (loading) return (
-    <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+    <div style={{ background: '#141414', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
       <div style={{ color: '#CCCCCC', fontSize: 10, fontWeight: 700, letterSpacing: 2 }}>STRAVA</div>
       <div style={{ color: '#DDDDDD', fontSize: 12, marginTop: 6 }}>Loading…</div>
     </div>
@@ -187,7 +187,7 @@ export default function StravaCard() {
 
   if (notConnected) return (
     <div style={{
-      background: '#FFFFFF', borderRadius: 14,
+      background: '#141414', borderRadius: 14,
       border: '1px solid rgba(0,0,0,0.06)',
       boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
       overflow: 'hidden',
@@ -209,8 +209,8 @@ export default function StravaCard() {
         )}
         <button onClick={handleConnect} disabled={connecting} style={{
           width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
-          background: connecting ? '#F2F2F7' : STRAVA,
-          color: connecting ? '#AAAAAA' : '#fff',
+          background: connecting ? '#1C1C1E' : STRAVA,
+          color: connecting ? '#555555' : '#fff',
           fontWeight: 800, fontSize: 12, letterSpacing: 1.5,
           cursor: connecting ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -228,7 +228,7 @@ export default function StravaCard() {
 
   return (
     <div style={{
-      background: '#FFFFFF', borderRadius: 14,
+      background: '#141414', borderRadius: 14,
       border: '1px solid rgba(0,0,0,0.06)',
       boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
       overflow: 'hidden',
@@ -251,7 +251,7 @@ export default function StravaCard() {
           </div>
           <div>
             <div style={{ color: '#CCCCCC', fontSize: 9, fontWeight: 700, letterSpacing: 2 }}>STRAVA</div>
-            <div style={{ color: '#111111', fontSize: 13, fontWeight: 700, letterSpacing: -0.3 }}>{data.athlete.name}</div>
+            <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700, letterSpacing: -0.3 }}>{data.athlete.name}</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -260,8 +260,8 @@ export default function StravaCard() {
             <div style={{ color: '#CCCCCC', fontSize: 9, fontWeight: 700, letterSpacing: 1, marginTop: 1 }}>KM WEEK</div>
           </div>
           <button onClick={load} style={{
-            background: '#F5F5F5', border: 'none', borderRadius: 8,
-            color: '#AAAAAA', fontSize: 11, fontWeight: 700,
+            background: '#2C2C2E', border: 'none', borderRadius: 8,
+            color: '#666666', fontSize: 11, fontWeight: 700,
             width: 30, height: 30, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>↻</button>
@@ -281,7 +281,7 @@ export default function StravaCard() {
       <div style={{
         padding: '10px 16px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderTop: data.recentRuns.length > 0 ? 'none' : '1px solid #F5F5F5',
+        borderTop: data.recentRuns.length > 0 ? 'none' : '1px solid #2C2C2E',
       }}>
         <div style={{ color: '#BBBBBB', fontSize: 10, fontWeight: 600 }}>
           {data.weekly.runs} runs · {data.ytd.km} km YTD

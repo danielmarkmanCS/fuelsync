@@ -9,7 +9,13 @@ import StravaCard from '../components/StravaCard';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 
-const RED = '#FF3B30';
+const RED    = '#FF3B30';
+const PRO    = '#22C55E';
+const CARB   = '#F97316';
+const FAT    = '#EF4444';
+const CARD   = '#141414';
+const CARD2  = '#1C1C1E';
+const BORD   = '#2C2C2E';
 
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
 function sumLogs(logs: FoodLog[]): MacroTargets {
@@ -26,20 +32,19 @@ function MacroTile({ label, current, target, unit, color }: { label: string; cur
   const over = current > target && target > 0;
   return (
     <div className="nrc-press" style={{
-      background: '#FFFFFF', borderRadius: 16,
+      background: CARD, borderRadius: 16,
       padding: '16px 14px 14px',
       display: 'flex', flexDirection: 'column', gap: 10,
-      border: '1px solid rgba(0,0,0,0.05)',
-      boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
+      border: `1px solid ${BORD}`,
     }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#999999', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: over ? RED : '#111111' }}>
-        {Math.round(current)}<span style={{ fontSize: 14, color: '#BBBBBB', fontWeight: 600 }}>{unit}</span>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#666666', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: over ? RED : '#FFFFFF' }}>
+        {Math.round(current)}<span style={{ fontSize: 14, color: '#555555', fontWeight: 600 }}>{unit}</span>
       </div>
       <div className="volt-bar-track">
         <div className="volt-bar-fill" style={{ width: `${Math.min(pct, 100)}%`, background: over ? RED : color }} />
       </div>
-      <div style={{ fontSize: 10, color: '#AAAAAA', fontWeight: 600 }}>of {Math.round(target)}{unit}</div>
+      <div style={{ fontSize: 10, color: '#555555', fontWeight: 600 }}>of {Math.round(target)}{unit}</div>
     </div>
   );
 }
@@ -83,7 +88,7 @@ export default function HomeScreen() {
   const calPct = targets && targets.calories > 0 ? (consumed.calories / targets.calories) * 100 : 0;
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#F2F2F7' }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#0C0C0C' }}>
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <div className="nrc-a nrc-a1" style={{ padding: '28px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -104,16 +109,14 @@ export default function HomeScreen() {
       {!profileComplete && (
         <div className="nrc-a nrc-a2" style={{ padding: '16px 20px 0' }}>
           <div className="nrc-press" style={{
-            background: '#FFF5F4', borderRadius: 14,
+            background: 'rgba(255,59,48,0.1)', borderRadius: 14,
             padding: '14px 18px', display: 'flex',
             alignItems: 'center', gap: 14,
-            borderLeft: `3px solid ${RED}`,
-            border: `1px solid rgba(255,59,48,0.15)`,
+            border: `1px solid rgba(255,59,48,0.2)`,
             borderLeftColor: RED,
-            boxShadow: '0 2px 12px rgba(255,59,48,0.08)',
           }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: '#111111', marginBottom: 2, letterSpacing: -0.3 }}>Complete Your Profile</div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: '#FFFFFF', marginBottom: 2, letterSpacing: -0.3 }}>Complete Your Profile</div>
               <div style={{ fontSize: 12, color: '#888888' }}>Unlock personalised macro targets</div>
             </div>
             <div style={{ color: RED, fontSize: 18, fontWeight: 900 }}>→</div>
@@ -124,11 +127,10 @@ export default function HomeScreen() {
       {/* ── HERO CALORIES ──────────────────────────────────────── */}
       <div className="nrc-a nrc-a2" style={{ padding: '16px 20px 0' }}>
         <div style={{
-          background: '#FFFFFF', borderRadius: 20,
+          background: CARD, borderRadius: 20,
           padding: '22px 22px 18px',
           position: 'relative', overflow: 'hidden',
-          border: '1px solid rgba(0,0,0,0.05)',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+          border: `1px solid ${BORD}`,
         }}>
           {calPct > 0 && (
             <div style={{
@@ -142,7 +144,7 @@ export default function HomeScreen() {
           <div className="nrc-label" style={{ marginBottom: 14 }}>Calories Today</div>
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
-            <div className="nrc-hero" style={{ fontSize: 76, color: calPct >= 100 ? RED : '#111111' }}>
+            <div className="nrc-hero" style={{ fontSize: 76, color: calPct >= 100 ? RED : '#FFFFFF' }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
             {targets && (
@@ -179,18 +181,17 @@ export default function HomeScreen() {
       {targets && (
         <div className="nrc-a nrc-a3" style={{ padding: '10px 20px 0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <MacroTile label="Protein"  current={consumed.proteinG} target={targets.proteinG} unit="g" color={RED} />
-            <MacroTile label="Carbs"    current={consumed.carbsG}   target={targets.carbsG}   unit="g" color={RED} />
-            <MacroTile label="Fat"      current={consumed.fatG}     target={targets.fatG}     unit="g" color={RED} />
+            <MacroTile label="Protein"  current={consumed.proteinG} target={targets.proteinG} unit="g" color={PRO} />
+            <MacroTile label="Carbs"    current={consumed.carbsG}   target={targets.carbsG}   unit="g" color={CARB} />
+            <MacroTile label="Fat"      current={consumed.fatG}     target={targets.fatG}     unit="g" color={FAT} />
             <div className="nrc-press" style={{
-              background: '#FFFFFF', borderRadius: 16,
+              background: CARD, borderRadius: 16,
               padding: '16px 14px 14px',
-              border: '1px solid rgba(0,0,0,0.05)',
-              boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
+              border: `1px solid ${BORD}`,
             }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#999999', textTransform: 'uppercase', marginBottom: 10 }}>Recovery</div>
-              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: weeklyLoad.recoveryScore >= 70 ? '#22c55e' : weeklyLoad.recoveryScore >= 40 ? '#f59e0b' : RED }}>
-                {weeklyLoad.recoveryScore}<span style={{ fontSize: 14, color: '#BBBBBB', fontWeight: 600 }}>%</span>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#666666', textTransform: 'uppercase', marginBottom: 10 }}>Recovery</div>
+              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: weeklyLoad.recoveryScore >= 70 ? PRO : weeklyLoad.recoveryScore >= 40 ? '#f59e0b' : RED }}>
+                {weeklyLoad.recoveryScore}<span style={{ fontSize: 14, color: '#555555', fontWeight: 600 }}>%</span>
               </div>
               <div style={{ marginTop: 10 }}>
                 <div className="volt-bar-track">
@@ -223,11 +224,10 @@ export default function HomeScreen() {
       {todayLog?.trainingType && todayLog.trainingType !== 'rest' && (
         <div style={{ padding: '10px 20px 0' }}>
           <div style={{
-            background: '#FFFFFF', borderRadius: 14,
+            background: CARD, borderRadius: 14,
             padding: '12px 18px', display: 'flex',
             alignItems: 'center', justifyContent: 'space-between',
-            border: '1px solid rgba(0,0,0,0.05)',
-            boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
+            border: `1px solid ${BORD}`,
           }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#999999', textTransform: 'uppercase' }}>Workout Time</div>
             <input type="time" value={workoutTime}
@@ -242,16 +242,15 @@ export default function HomeScreen() {
       {carbWindow && (
         <div style={{ padding: '10px 20px 0' }}>
           <div style={{
-            background: '#FFFFFF', borderRadius: 14,
+            background: CARD, borderRadius: 14,
             padding: '12px 16px',
-            border: '1px solid rgba(245,158,11,0.2)',
+            border: '1px solid rgba(245,158,11,0.25)',
             borderLeft: '3px solid #f59e0b',
-            boxShadow: '0 1px 8px rgba(245,158,11,0.06)',
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             <div style={{ fontSize: 18 }}>⏱</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#111111', letterSpacing: -0.2 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF', letterSpacing: -0.2 }}>
                 Carb Window&nbsp;
                 <span style={{ color: '#f59e0b' }}>{carbWindow.preWorkoutStart}–{carbWindow.postWorkoutEnd}</span>
               </div>
@@ -279,7 +278,7 @@ export default function HomeScreen() {
             {loggedRuns.length > 0 && (
               <button
                 onClick={() => { if (window.confirm('Reset all logged runs this week?')) resetWeeklyRuns(); }}
-                style={{ background: 'none', border: '1px solid #E5E5EA', color: '#AAAAAA', borderRadius: 20, fontWeight: 700, fontSize: 11, letterSpacing: 1, cursor: 'pointer', padding: '4px 10px' }}
+                style={{ background: 'none', border: `1px solid ${BORD}`, color: '#666666', borderRadius: 20, fontWeight: 700, fontSize: 11, letterSpacing: 1, cursor: 'pointer', padding: '4px 10px' }}
               >RESET</button>
             )}
             <button onClick={() => setShowWorkoutForm(!showWorkoutForm)} className="nrc-press" style={{
@@ -296,13 +295,13 @@ export default function HomeScreen() {
             <input
               type="text" value={workoutName} placeholder="Run name (e.g. Morning Run)"
               onChange={(e) => setWorkoutName(e.target.value)}
-              style={{ background: '#FFFFFF', border: '1px solid #E5E5EA', borderRadius: 12, color: '#111111', fontSize: 15, padding: '12px 16px', outline: 'none' }}
+              style={{ background: CARD2, border: `1px solid ${BORD}`, borderRadius: 12, color: '#FFFFFF', fontSize: 15, padding: '12px 16px', outline: 'none' }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="number" value={workoutKm} placeholder="Distance (km)" min={0}
                 onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setWorkoutKm(v); }}
-                style={{ flex: 1, background: '#FFFFFF', border: '1px solid #E5E5EA', borderRadius: 12, color: '#111111', fontSize: 15, padding: '12px 16px', outline: 'none' }}
+                style={{ flex: 1, background: CARD2, border: `1px solid ${BORD}`, borderRadius: 12, color: '#FFFFFF', fontSize: 15, padding: '12px 16px', outline: 'none' }}
               />
               <button
                 onClick={() => {
@@ -320,13 +319,13 @@ export default function HomeScreen() {
         )}
 
         {/* Runs list — always visible */}
-        <div style={{ background: '#FFFFFF', borderRadius: 14, border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 1px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        <div style={{ background: CARD, borderRadius: 14, border: `1px solid ${BORD}`, overflow: 'hidden' }}>
           {loggedRuns.length === 0 ? (
-            <div style={{ padding: '20px 14px', textAlign: 'center', color: '#CCCCCC', fontSize: 12, fontWeight: 600 }}>
+            <div style={{ padding: '20px 14px', textAlign: 'center', color: '#444444', fontSize: 12, fontWeight: 600 }}>
               No runs logged this week
             </div>
           ) : loggedRuns.map((r, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderTop: i === 0 ? 'none' : '1px solid #F5F5F5', gap: 10 }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', borderTop: i === 0 ? 'none' : `1px solid ${BORD}`, gap: 10 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: r.source === 'strava' ? '#FC4C02' : RED, flexShrink: 0 }} />
 
               {editingRunIdx === i ? (
@@ -336,12 +335,12 @@ export default function HomeScreen() {
                   onChange={(e) => setEditingRunName(e.target.value)}
                   onBlur={() => { if (editingRunName.trim()) renameRun(i, editingRunName.trim()); setEditingRunIdx(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { if (editingRunName.trim()) renameRun(i, editingRunName.trim()); setEditingRunIdx(null); } if (e.key === 'Escape') setEditingRunIdx(null); }}
-                  style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#111111', border: 'none', borderBottom: `1px solid ${RED}`, outline: 'none', background: 'transparent', padding: '1px 0' }}
+                  style={{ flex: 1, fontSize: 12, fontWeight: 600, color: '#FFFFFF', border: 'none', borderBottom: `1px solid ${RED}`, outline: 'none', background: 'transparent', padding: '1px 0' }}
                 />
               ) : (
                 <div
                   onClick={() => { setEditingRunIdx(i); setEditingRunName(r.name); }}
-                  style={{ flex: 1, fontSize: 12, color: '#333333', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }}
+                  style={{ flex: 1, fontSize: 12, color: '#E0E0E0', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }}
                   title="Tap to rename"
                 >{r.name}</div>
               )}

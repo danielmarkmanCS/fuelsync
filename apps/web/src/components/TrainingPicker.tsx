@@ -1,6 +1,8 @@
 import type { TrainingType } from '@shared/types';
 
-const RED = '#FF3B30';
+const RED   = '#FF3B30';
+const CARD2 = '#1C1C1E';
+const BORD  = '#2C2C2E';
 
 interface Props { selected: TrainingType | null; onSelect: (t: TrainingType) => void; }
 
@@ -19,21 +21,21 @@ export default function TrainingPicker({ selected, onSelect }: Props) {
         return (
           <button key={value} onClick={() => onSelect(value)} className="nrc-press" style={{
             textAlign: 'left', padding: '14px 16px 12px',
-            background: active ? '#FFF5F4' : '#F5F0E8',
-            border: '1px solid', borderColor: active ? RED : '#E8DECE',
-            borderLeft: active ? `3px solid ${RED}` : '1px solid #E8DECE',
-            boxShadow: active ? `0 2px 12px rgba(255,59,48,0.10)` : '0 1px 6px rgba(0,0,0,0.04)',
+            background: active ? 'rgba(255,59,48,0.1)' : CARD2,
+            border: '1px solid', borderColor: active ? RED : BORD,
+            borderLeft: active ? `3px solid ${RED}` : `1px solid ${BORD}`,
+            boxShadow: active ? `0 2px 12px rgba(255,59,48,0.12)` : 'none',
             borderRadius: 14, cursor: 'pointer',
             transition: 'all 0.18s',
           }}>
             <div style={{
               fontSize: 17, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1,
-              color: active ? RED : '#BBAA99',
+              color: active ? RED : '#444444',
               marginBottom: 6,
             }}>{label}</div>
             <div style={{
               fontSize: 11, fontWeight: 500,
-              color: active ? '#888888' : '#CCBBA8',
+              color: active ? '#888888' : '#3A3A3A',
             }}>{tag}</div>
           </button>
         );

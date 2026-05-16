@@ -1,21 +1,25 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --red:    #FF3B30;
-  --chrome: #999999;
-  --black:  #F2F2F7;
-  --card:   #FFFFFF;
-  --card2:  #F0F0F0;
-  --border: #E5E5EA;
-  --white:  #111111;
-  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease:   cubic-bezier(0.4, 0, 0.2, 1);
+  --red:     #FF3B30;
+  --protein: #22C55E;
+  --carbs:   #F97316;
+  --fat:     #EF4444;
+  --chrome:  #666666;
+  --bg:      #0C0C0C;
+  --card:    #141414;
+  --card2:   #1C1C1E;
+  --border:  #2C2C2E;
+  --text:    #FFFFFF;
+  --text2:   #999999;
+  --spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease:    cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html, body, #root {
   height: 100%;
-  background: var(--black);
-  color: #111111;
+  background: var(--bg);
+  color: var(--text);
   overflow: hidden;
 }
 
@@ -36,7 +40,7 @@ button, input, select, textarea { font-family: inherit; }
   font-style: normal;
   letter-spacing: -2px;
   line-height: 0.9;
-  color: #111111;
+  color: var(--text);
 }
 
 .nrc-label {
@@ -79,7 +83,7 @@ button, input, select, textarea { font-family: inherit; }
 /* ── PROGRESS BAR ───────────────────────────────────────── */
 .volt-bar-track {
   height: 3px;
-  background: rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.08);
   border-radius: 2px;
   overflow: hidden;
 }

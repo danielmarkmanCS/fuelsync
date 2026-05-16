@@ -68,9 +68,9 @@ export default function App() {
     return (
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', background: '#F2F2F7',
+        alignItems: 'center', justifyContent: 'center', background: '#0C0C0C',
       }}>
-        <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#111111' }}>
+        <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF' }}>
           FUEL<span style={{ color: '#FF3B30' }}>SYNC</span>
         </div>
         <div style={{ width: 32, height: 2, background: '#FF3B30', marginTop: 14, borderRadius: 1 }} />
@@ -88,7 +88,7 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#F2F2F7', overflow: 'hidden',
+      background: '#0C0C0C', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {activeTab === 'home'    && <HomeScreen />}
@@ -98,7 +98,7 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: '#FFFFFF', borderTop: '1px solid #E5E5EA',
+        background: '#141414', borderTop: '1px solid #2C2C2E',
         display: 'flex', paddingBottom: 'env(safe-area-inset-bottom, 0px)', zIndex: 50,
       }}>
         {TABS.map(({ id, label }) => {
@@ -117,7 +117,7 @@ export default function App() {
               )}
               <span style={{
                 fontSize: 11, fontWeight: 700, letterSpacing: 2,
-                color: active ? '#111111' : '#C7C7CC', transition: 'color 0.2s',
+                color: active ? '#FFFFFF' : '#48484A', transition: 'color 0.2s',
               }}>{label}</span>
             </button>
           );

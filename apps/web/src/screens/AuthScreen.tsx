@@ -3,7 +3,10 @@ import { createProfile } from '../api/auth';
 import { setupPin, setupSecurityQuestion } from '../lib/pin';
 import { useAuthStore } from '../store/authStore';
 
-const RED = '#FF3B30';
+const RED   = '#FF3B30';
+const CARD  = '#141414';
+const CARD2 = '#1C1C1E';
+const BORD  = '#2C2C2E';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',   desc: 'Desk job, little or no exercise' },
@@ -23,8 +26,8 @@ const SECURITY_QUESTIONS = [
 ] as const;
 
 const inp: React.CSSProperties = {
-  width: '100%', background: '#FAFAFA', border: '1px solid #E5E5EA',
-  borderRadius: 10, color: '#111111', fontSize: 15, padding: '14px 15px',
+  width: '100%', background: CARD2, border: `1px solid ${BORD}`,
+  borderRadius: 10, color: '#FFFFFF', fontSize: 15, padding: '14px 15px',
   outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
@@ -102,26 +105,26 @@ export default function AuthScreen() {
                           'Step 3 of 3 — Recovery Question';
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#F2F2F7', overflowY: 'scroll', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-      <div style={{ position: 'absolute', top: -120, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,59,48,0.06) 0%, transparent 65%)', pointerEvents: 'none' }} />
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#0C0C0C', overflowY: 'scroll', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+      <div style={{ position: 'absolute', top: -120, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,59,48,0.08) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
       <div className="nrc-a nrc-a1" style={{ padding: '72px 32px 28px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#AAAAAA', marginBottom: 20, textTransform: 'uppercase' }}>Performance Nutrition</div>
-        <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 0.88, color: '#111111' }}>FUEL</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 4, color: '#444444', marginBottom: 20, textTransform: 'uppercase' }}>Performance Nutrition</div>
+        <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 0.88, color: '#FFFFFF' }}>FUEL</div>
         <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 0.88, color: RED, marginBottom: 6 }}>SYNC</div>
         <div style={{ width: 36, height: 3, background: RED, borderRadius: 2, marginTop: 20 }} />
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 3, color: '#CCCCCC', marginTop: 14, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 3, color: '#444444', marginTop: 14, textTransform: 'uppercase' }}>
           {stepLabel}
         </div>
       </div>
 
       <div className="nrc-a nrc-a2">
-        <div style={{ width: '100%', background: '#FFFFFF', borderRadius: '24px 24px 0 0', padding: '28px 24px 48px', borderTop: '1px solid #E5E5EA', boxShadow: '0 -4px 24px rgba(0,0,0,0.06)', minHeight: 'calc(100dvh - 260px)' }}>
+        <div style={{ width: '100%', background: CARD, borderRadius: '24px 24px 0 0', padding: '28px 24px 48px', borderTop: `1px solid ${BORD}`, minHeight: 'calc(100dvh - 260px)' }}>
 
           {/* ── Step 1: Profile ── */}
           {step === 'profile' && (
             <>
-              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 20 }}>Tell us about yourself</div>
+              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 20, color: '#FFFFFF' }}>Tell us about yourself</div>
 
               <input style={inp} type="text" placeholder="Your name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               <div style={{ display: 'flex', gap: 10 }}>
@@ -130,31 +133,31 @@ export default function AuthScreen() {
               </div>
               <input style={inp} type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} />
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 10, marginTop: 4 }}>Biological Sex</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 10, marginTop: 4 }}>Biological Sex</div>
               <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
                 {(['male', 'female'] as const).map((g) => (
                   <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
                     flex: 1, padding: 13, borderRadius: 12, cursor: 'pointer', border: '1px solid',
-                    borderColor: gender === g ? RED : '#E5E5EA',
-                    background: gender === g ? 'rgba(255,59,48,0.06)' : '#FAFAFA',
-                    color: gender === g ? RED : '#888', fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
+                    borderColor: gender === g ? RED : BORD,
+                    background: gender === g ? 'rgba(255,59,48,0.08)' : CARD2,
+                    color: gender === g ? RED : '#666666', fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
                   }}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
                 ))}
               </div>
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 10 }}>Activity Level</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 10 }}>Activity Level</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
                 {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
                   const active = activityLevel === value;
                   return (
                     <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
                       textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-                      background: active ? '#FFF5F4' : '#FAFAFA',
-                      border: '1px solid', borderColor: active ? RED : '#EEEEEE',
-                      borderLeft: active ? `3px solid ${RED}` : '1px solid #EEEEEE', transition: 'all 0.15s',
+                      background: active ? 'rgba(255,59,48,0.08)' : CARD2,
+                      border: '1px solid', borderColor: active ? RED : BORD,
+                      borderLeft: active ? `3px solid ${RED}` : `1px solid ${BORD}`, transition: 'all 0.15s',
                     }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: active ? RED : '#BBBBBB', marginBottom: 2 }}>{label}</div>
-                      <div style={{ fontSize: 11, color: active ? '#666' : '#CCC', fontWeight: 500 }}>{desc}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: active ? RED : '#444444', marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: 11, color: active ? '#888888' : '#333333', fontWeight: 500 }}>{desc}</div>
                     </button>
                   );
                 })}
@@ -170,17 +173,17 @@ export default function AuthScreen() {
           {/* ── Step 2: PIN ── */}
           {step === 'pin' && (
             <>
-              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8 }}>Secure your data</div>
-              <div style={{ color: '#888', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8, color: '#FFFFFF' }}>Secure your data</div>
+              <div style={{ color: '#666666', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
                 Choose a 4-digit PIN. After 15 wrong attempts all data is wiped.
               </div>
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8 }}>PIN</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8 }}>PIN</div>
               <input style={{ ...inp, letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
                 type="password" inputMode="numeric" maxLength={4}
                 placeholder="• • • •" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} />
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
               <input style={{ ...inp, letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
                 type="password" inputMode="numeric" maxLength={4}
                 placeholder="• • • •" value={pinConf} onChange={(e) => setPinConf(e.target.value.replace(/\D/g, '').slice(0, 4))} />
@@ -196,37 +199,37 @@ export default function AuthScreen() {
           {/* ── Step 3: Security Question ── */}
           {step === 'security' && (
             <>
-              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8 }}>Recovery Question</div>
-              <div style={{ color: '#888', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8, color: '#FFFFFF' }}>Recovery Question</div>
+              <div style={{ color: '#666666', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
                 If you forget your PIN, this question lets you set a new one instead of wiping all data.
               </div>
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8 }}>Question</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8 }}>Question</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
                 {SECURITY_QUESTIONS.map((q) => {
                   const active = secQuestion === q;
                   return (
                     <button key={q} onClick={() => setSecQuestion(q)} className="nrc-press" style={{
                       textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
-                      background: active ? '#FFF5F4' : '#FAFAFA',
-                      border: '1px solid', borderColor: active ? RED : '#EEEEEE',
-                      borderLeft: active ? `3px solid ${RED}` : '1px solid #EEEEEE', transition: 'all 0.15s',
+                      background: active ? 'rgba(255,59,48,0.08)' : CARD2,
+                      border: '1px solid', borderColor: active ? RED : BORD,
+                      borderLeft: active ? `3px solid ${RED}` : `1px solid ${BORD}`, transition: 'all 0.15s',
                     }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? RED : '#BBBBBB' }}>{q}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? RED : '#444444' }}>{q}</div>
                     </button>
                   );
                 })}
               </div>
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8 }}>Your Answer</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8 }}>Your Answer</div>
               <input style={inp} type="text" placeholder="Answer" value={secAnswer}
                 onChange={(e) => setSecAnswer(e.target.value)} autoComplete="off" />
 
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#C0C0C0', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm Answer</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm Answer</div>
               <input style={inp} type="text" placeholder="Repeat answer" value={secConf}
                 onChange={(e) => setSecConf(e.target.value)} autoComplete="off" />
 
-              <div style={{ fontSize: 11, color: '#BBBBBB', marginBottom: 20, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 11, color: '#444444', marginBottom: 20, lineHeight: 1.5 }}>
                 Answer is case-insensitive. 5 wrong answers = data wipe.
               </div>
 
@@ -258,14 +261,14 @@ function primaryBtn(disabled: boolean): React.CSSProperties {
   return {
     width: '100%', padding: '16px 0', borderRadius: 14, border: 'none',
     marginTop: 4, marginBottom: 14,
-    background: disabled ? '#F2F2F7' : RED,
-    color: disabled ? '#AAAAAA' : '#fff',
+    background: disabled ? '#1C1C1E' : RED,
+    color: disabled ? '#555555' : '#fff',
     fontWeight: 800, fontSize: 15, letterSpacing: 1,
     cursor: disabled ? 'not-allowed' : 'pointer',
   };
 }
 
 const backBtn: React.CSSProperties = {
-  width: '100%', background: 'none', border: 'none', color: '#AAA',
+  width: '100%', background: 'none', border: 'none', color: '#555555',
   fontSize: 13, cursor: 'pointer', marginTop: 8, padding: '10px 0',
 };
