@@ -16,6 +16,7 @@ export interface FoodLog {
   image_url: string | null;
   logged_at: string;
   ingredients?: Ingredient[] | null;
+  removed?: boolean;
 }
 
 export interface IngredientItem {
@@ -53,6 +54,7 @@ function toFoodLog(row: LocalFoodLog): FoodLog {
     image_url: row.image_url,
     logged_at: row.logged_at,
     ingredients: row.ingredients ?? null,
+    removed: row.removed ?? false,
   };
 }
 
@@ -150,7 +152,7 @@ function withTimeout(promise: Promise<void>, ms: number): Promise<void> {
 export async function getLogs(date: string): Promise<FoodLog[]> {
   await withTimeout(pullWithKey(`d:${date}`, () => fetchLogsForDate(date)), 3000);
   const rows = await db.food_logs.where('date').equals(date).sortBy('logged_at');
-  return rows.map(toFoodLog);
+  return rows.filter((r) => !r.removed).map(toFoodLog);
 }
 
 export async function getAllLogs(): Promise<FoodLog[]> {
@@ -205,6 +207,25 @@ export async function deleteLog(id: string): Promise<void> {
     await db.food_logs.delete(Number(id));
   }
   syncDeleteLog(id).catch(() => {});
+}
+
+// Soft-delete: removes from active log but keeps in History Foods tab
+export async function softDeleteLog(id: string): Promise<void> {
+  const bySync = await db.food_logs.where('sync_id').equals(id).first();
+  if (bySync?.id != null) {
+    await db.food_logs.update(bySync.id, { removed: true });
+  } else {
+    await db.food_logs.update(Number(id), { removed: true });
+  }
+}
+
+export async function unremoveLog(id: string): Promise<void> {
+  const bySync = await db.food_logs.where('sync_id').equals(id).first();
+  if (bySync?.id != null) {
+    await db.food_logs.update(bySync.id, { removed: false });
+  } else {
+    await db.food_logs.update(Number(id), { removed: false });
+  }
 }
 
 export function estimateByWeight(food_name: string, weight_grams: number): Promise<AIEstimate> {

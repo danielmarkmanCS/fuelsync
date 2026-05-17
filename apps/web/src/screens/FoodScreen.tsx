@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getLogs, addLog, deleteLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal } from '../api/localFood';
+import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
@@ -228,7 +228,7 @@ export default function FoodScreen() {
   const closeSheet = () => { setOpen(false); resetSheet(); };
 
   const handleDelete = (entry: FoodLog) => {
-    deleteLog(entry.id).then(() => {
+    softDeleteLog(entry.id).then(() => {
       fetchLogs();
       setUndoEntry(entry);
       if (undoTimer.current) clearTimeout(undoTimer.current);
@@ -241,12 +241,7 @@ export default function FoodScreen() {
     if (undoTimer.current) clearTimeout(undoTimer.current);
     const entry = undoEntry;
     setUndoEntry(null);
-    await addLog({
-      food_name: entry.food_name, calories: entry.calories,
-      protein: entry.protein, carbs: entry.carbs, fat: entry.fat,
-      weight_grams: entry.weight_grams ?? undefined,
-      meal_type: entry.meal_type, image_url: entry.image_url ?? undefined,
-    });
+    await unremoveLog(entry.id);
     fetchLogs();
   };
 

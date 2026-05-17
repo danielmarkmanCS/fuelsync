@@ -39,6 +39,7 @@ export interface LocalFoodLog {
   logged_at: string;
   date: string;
   ingredients?: Ingredient[] | null;
+  removed?: boolean;    // soft-delete: excluded from active log, stays in history
 }
 
 export interface PinState {

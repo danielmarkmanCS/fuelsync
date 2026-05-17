@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllLogs, addLog, deleteLog, type FoodLog, type Ingredient } from '../api/localFood';
+import { getAllLogs, addLog, deleteLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG    = '#EEF4FF';
@@ -38,6 +38,7 @@ function dateLabel(date: string): string {
 function groupByDate(logs: FoodLog[]): DaySummary[] {
   const map = new Map<string, FoodLog[]>();
   for (const log of logs) {
+    if (log.removed) continue; // excluded from day summaries
     const d = log.logged_at.slice(0, 10);
     if (!map.has(d)) map.set(d, []);
     map.get(d)!.push(log);
@@ -310,16 +311,18 @@ export default function HistoryScreen() {
           <div style={{ background: SURF, borderRadius: 16, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.06)' }}>
             {allLogs.map((item, idx) => {
               const isDeleting = deleting === item.id;
+              const isRemoved  = !!item.removed;
               const logDate    = item.logged_at.slice(0, 10);
               const timeStr    = new Date(item.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
               const hasIngs    = item.ingredients && item.ingredients.length > 1;
               const isFoodOpen = expandedFood === item.id;
               return (
-                <div key={item.id} style={{ borderTop: idx === 0 ? 'none' : `1px solid ${EDGE}`, opacity: isDeleting ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                <div key={item.id} style={{ borderTop: idx === 0 ? 'none' : `1px solid ${EDGE}`, opacity: isDeleting ? 0.4 : isRemoved ? 0.55 : 1, transition: 'opacity 0.2s' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.food_name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: isRemoved ? MUTED : TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isRemoved ? 'line-through' : 'none' }}>{item.food_name}</div>
                       <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+                        {isRemoved ? <span style={{ color: RED, fontWeight: 700 }}>removed · </span> : null}
                         {dateLabel(logDate)} {timeStr}
                         {' · '}{MEAL_LABEL[item.meal_type] ?? item.meal_type}
                         {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
@@ -327,14 +330,14 @@ export default function HistoryScreen() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))} kcal</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: isRemoved ? MUTED : BLUE }}>{Math.round(Number(item.calories))} kcal</div>
                       <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
                         <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
                         <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
                         <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                       </div>
                     </div>
-                    {hasIngs && (
+                    {hasIngs && !isRemoved && (
                       <button onClick={() => setExpandedFood(isFoodOpen ? null : item.id)} style={{
                         width: 28, height: 28, borderRadius: 8, border: `1px solid ${isFoodOpen ? BLUE : EDGE}`,
                         background: isFoodOpen ? `${BLUE}10` : SURF2, color: isFoodOpen ? BLUE : MUTED,
@@ -342,20 +345,31 @@ export default function HistoryScreen() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>{isFoodOpen ? '▲' : '▼'}</button>
                     )}
-                    <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
-                      title="Add to today's fuel"
-                      style={{
-                      width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
-                      background: relogged === item.id ? `${GREEN}15` : SURF2,
-                      color: relogged === item.id ? GREEN : BLUE,
-                      fontWeight: 900, fontSize: 14, cursor: relogged === item.id ? 'default' : 'pointer', flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {relogged === item.id ? '✓' : '+'}
-                    </button>
+                    {isRemoved ? (
+                      <button onClick={async () => { await unremoveLog(item.id); load(); }}
+                        title="Restore to today's fuel"
+                        style={{
+                          padding: '4px 8px', borderRadius: 8, border: `1px solid ${GREEN}40`,
+                          background: `${GREEN}10`, color: GREEN,
+                          fontWeight: 700, fontSize: 10, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                        }}>Restore</button>
+                    ) : (
+                      <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
+                        title="Add to today's fuel"
+                        style={{
+                        width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
+                        background: relogged === item.id ? `${GREEN}15` : SURF2,
+                        color: relogged === item.id ? GREEN : BLUE,
+                        fontWeight: 900, fontSize: 14, cursor: relogged === item.id ? 'default' : 'pointer', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {relogged === item.id ? '✓' : '+'}
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDelete(item.id)}
                       disabled={isDeleting}
+                      title="Delete permanently"
                       style={{
                         background: 'none', border: `1px solid ${EDGE}`, borderRadius: 8,
                         color: RED, fontSize: 16, cursor: 'pointer', padding: '4px 8px',
