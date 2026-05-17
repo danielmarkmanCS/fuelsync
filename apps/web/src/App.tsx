@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
-import { getProfile } from './api/auth';
+import { getProfile, createProfile } from './api/auth';
 import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
-import AuthScreen from './screens/AuthScreen';
+import { getSyncToken, getMe } from './api/syncClient';
+import GoogleAuthScreen from './screens/GoogleAuthScreen';
 import PinScreen from './screens/PinScreen';
 import HomeScreen from './screens/HomeScreen';
 import FoodScreen from './screens/FoodScreen';
@@ -70,6 +71,30 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
+        // If a sync token exists, load user from D1 and merge into local profile
+        if (getSyncToken()) {
+          const syncUser = await getMe();
+          if (syncUser) {
+            let local = await getProfile();
+            if (!local) {
+              local = await createProfile({
+                displayName: syncUser.display_name || syncUser.name,
+                weightKg: syncUser.weight_kg ?? 0,
+                heightCm: syncUser.height_cm ?? 0,
+                age: syncUser.age ?? 0,
+                gender: (syncUser.gender as 'male' | 'female') ?? 'male',
+                activityLevel: (syncUser.activity_level as 'moderate') ?? 'moderate',
+                dailyGoal: syncUser.daily_goal ?? 2000,
+              });
+            }
+            setUser(local);
+            const pinSet = await hasPin();
+            if (pinSet) setNeedsPin(true);
+            else setPinVerified(true);
+            return;
+          }
+        }
+        // Fall back to local-only profile
         const profile = await getProfile();
         if (profile) {
           setUser(profile);
@@ -132,7 +157,24 @@ export default function App() {
     );
   }
 
-  if (!user) return <AuthScreen />;
+  if (!user) return (
+    <GoogleAuthScreen onSignedIn={async (u) => {
+      let local = await getProfile();
+      if (!local) {
+        local = await createProfile({
+          displayName: u.displayName,
+          weightKg: u.weightKg ?? 0,
+          heightCm: u.heightCm ?? 0,
+          age: u.age ?? 0,
+          gender: (u.gender as 'male' | 'female') ?? 'male',
+          activityLevel: (u.activityLevel as 'moderate') ?? 'moderate',
+          dailyGoal: u.dailyGoal ?? 2000,
+        });
+      }
+      setUser(local);
+      setPinVerified(true);
+    }} />
+  );
   if (needsPin && !pinVerified) return <PinScreen />;
 
   return (

@@ -1,5 +1,6 @@
 import { db, type LocalFoodLog, type Ingredient } from '../lib/db';
 import { workerPost } from './client';
+import { syncAddLog, syncDeleteLog } from './syncClient';
 
 export type { Ingredient };
 
@@ -88,11 +89,20 @@ export async function addLog(entry: {
     date,
   });
   const row = await db.food_logs.get(id);
-  return toFoodLog(row!);
+  const log = toFoodLog(row!);
+  syncAddLog({
+    id: log.id, food_name: log.food_name, calories: log.calories,
+    protein: log.protein, carbs: log.carbs, fat: log.fat,
+    weight_grams: log.weight_grams, meal_type: log.meal_type,
+    image_url: log.image_url, ingredients: log.ingredients,
+    logged_at: log.logged_at, date: log.logged_at.slice(0, 10),
+  }).catch(() => {});
+  return log;
 }
 
 export async function deleteLog(id: string): Promise<void> {
   await db.food_logs.delete(Number(id));
+  syncDeleteLog(id).catch(() => {});
 }
 
 export function estimateByWeight(food_name: string, weight_grams: number): Promise<AIEstimate> {
