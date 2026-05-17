@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllLogs, addLog, deleteLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
+import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG    = '#EEF4FF';
@@ -75,7 +75,6 @@ export default function HistoryScreen() {
   const [allLogs,      setAllLogs]      = useState<FoodLog[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [expanded,     setExpanded]     = useState<string | null>(null);
-  const [deleting,     setDeleting]     = useState<string | null>(null);
   const [relogged,     setRelogged]     = useState<string | null>(null);
   const [expandedFood, setExpandedFood] = useState<string | null>(null);
   const [reloggedIng,  setReloggedIng]  = useState<string | null>(null);
@@ -93,11 +92,6 @@ export default function HistoryScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  const handleDelete = async (id: string) => {
-    setDeleting(id);
-    try { await deleteLog(id); load(); } catch { setDeleting(null); }
-  };
 
   const handleRelog = async (item: FoodLog) => {
     if (relogged === item.id) return;
@@ -310,14 +304,13 @@ export default function HistoryScreen() {
           /* ── FOODS TAB ── */
           <div style={{ background: SURF, borderRadius: 16, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.06)' }}>
             {allLogs.map((item, idx) => {
-              const isDeleting = deleting === item.id;
               const isRemoved  = !!item.removed;
               const logDate    = item.logged_at.slice(0, 10);
               const timeStr    = new Date(item.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
               const hasIngs    = item.ingredients && item.ingredients.length > 1;
               const isFoodOpen = expandedFood === item.id;
               return (
-                <div key={item.id} style={{ borderTop: idx === 0 ? 'none' : `1px solid ${EDGE}`, opacity: isDeleting ? 0.4 : isRemoved ? 0.55 : 1, transition: 'opacity 0.2s' }}>
+                <div key={item.id} style={{ borderTop: idx === 0 ? 'none' : `1px solid ${EDGE}`, opacity: isRemoved ? 0.55 : 1, transition: 'opacity 0.2s' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: isRemoved ? MUTED : TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isRemoved ? 'line-through' : 'none' }}>{item.food_name}</div>
@@ -366,16 +359,6 @@ export default function HistoryScreen() {
                         {relogged === item.id ? '✓' : '+'}
                       </button>
                     )}
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      disabled={isDeleting}
-                      title="Delete permanently"
-                      style={{
-                        background: 'none', border: `1px solid ${EDGE}`, borderRadius: 8,
-                        color: RED, fontSize: 16, cursor: 'pointer', padding: '4px 8px',
-                        lineHeight: 1, flexShrink: 0, opacity: isDeleting ? 0.5 : 1,
-                      }}
-                    >×</button>
                   </div>
 
                   {/* Ingredient expansion */}

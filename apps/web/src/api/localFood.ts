@@ -212,19 +212,27 @@ export async function deleteLog(id: string): Promise<void> {
 // Soft-delete: removes from active log but keeps in History Foods tab
 export async function softDeleteLog(id: string): Promise<void> {
   const bySync = await db.food_logs.where('sync_id').equals(id).first();
-  if (bySync?.id != null) {
-    await db.food_logs.update(bySync.id, { removed: true });
-  } else {
-    await db.food_logs.update(Number(id), { removed: true });
+  if (bySync) {
+    await db.food_logs.put({ ...bySync, removed: true });
+    return;
+  }
+  const numId = Number(id);
+  if (!isNaN(numId)) {
+    const row = await db.food_logs.get(numId);
+    if (row) await db.food_logs.put({ ...row, removed: true });
   }
 }
 
 export async function unremoveLog(id: string): Promise<void> {
   const bySync = await db.food_logs.where('sync_id').equals(id).first();
-  if (bySync?.id != null) {
-    await db.food_logs.update(bySync.id, { removed: false });
-  } else {
-    await db.food_logs.update(Number(id), { removed: false });
+  if (bySync) {
+    await db.food_logs.put({ ...bySync, removed: false });
+    return;
+  }
+  const numId = Number(id);
+  if (!isNaN(numId)) {
+    const row = await db.food_logs.get(numId);
+    if (row) await db.food_logs.put({ ...row, removed: false });
   }
 }
 
