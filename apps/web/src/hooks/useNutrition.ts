@@ -33,6 +33,13 @@ export function useNutrition() {
     if (store.todayLog && store.todayLog.date !== today) {
       store.resetDay();
     }
+    // Auto-reset weekly load on a new Monday
+    const d = new Date();
+    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+    const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
+    if (store.weeklyLoad.weekStart !== monday) {
+      store.startNewWeek(monday);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

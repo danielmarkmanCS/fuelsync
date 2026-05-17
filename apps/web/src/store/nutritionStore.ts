@@ -18,6 +18,7 @@ interface NutritionState {
   removeRunKm: (km: number, name?: string) => void;
   renameRun: (idx: number, newName: string) => void;
   resetWeeklyRuns: () => void;
+  startNewWeek: (monday: string) => void;
   resetDay: () => void;
   resetAll: () => void;
 }
@@ -88,6 +89,15 @@ export const useNutritionStore = create<NutritionState>()(
         const { weeklyLoad } = get();
         set({ weeklyLoad: { ...weeklyLoad, totalRunKm: 0, loggedRuns: [] } });
       },
+
+      startNewWeek: (monday) => set({ weeklyLoad: {
+        weekStart: monday,
+        totalRunKm: 0,
+        totalStrengthSets: 0,
+        legFatigueScore: 0,
+        recoveryScore: 80,
+        loggedRuns: [],
+      }}),
 
       resetDay: () => set({ todayLog: null, targets: null }),
 
