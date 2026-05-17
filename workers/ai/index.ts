@@ -35,13 +35,12 @@ async function geminiWithModel(apiKey: string, model: string, prompt: string, ma
   parts.push({ text: prompt });
 
   const base = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const generationConfig: Record<string, unknown> = { temperature: 0.1, maxOutputTokens: maxTokens };
+  if (model.startsWith('gemini-2.5-')) generationConfig.thinkingConfig = { thinkingBudget: 0 };
   const res = await fetch(`${base}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: maxTokens },
-    }),
+    body: JSON.stringify({ contents: [{ parts }], generationConfig }),
   });
 
   if (res.status === 401 || res.status === 403) throw new Error('Invalid Gemini API key.');
