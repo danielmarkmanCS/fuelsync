@@ -313,36 +313,52 @@ export default function HomeScreen() {
       {todayLog && (
         <div style={{ padding: '12px 22px 0' }}>
           <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Daily Steps</div>
-              {stepEstimate !== null && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <input
-                    type="number"
-                    value={stepEstimate}
-                    onChange={(e) => {
-                      const v = parseInt(e.target.value, 10);
-                      if (!isNaN(v) && v >= 0) {
-                        setStepEstimate(v);
-                        setActivityModifier(v < 6000 ? 'low' : v > 10000 ? 'high' : 'normal');
-                      }
-                    }}
-                    style={{
-                      width: 76, padding: '2px 4px', borderRadius: 6,
-                      border: `1px solid ${stepLabelColor}50`, background: 'transparent',
-                      color: stepLabelColor, fontSize: 15, fontWeight: 900, letterSpacing: -0.5,
-                      outline: 'none', fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'right',
-                    }}
-                  />
-                  <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>steps</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, color: stepLabelColor }}>{stepLabel}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: stepEstimate !== null ? 10 : 8 }}>Daily Activity</div>
+
+            {/* Result banner */}
+            {stepEstimate !== null && (
+              <div style={{
+                background: `${stepLabelColor}0D`, border: `1px solid ${stepLabelColor}35`,
+                borderRadius: 10, padding: '10px 14px', marginBottom: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                    <input
+                      type="number"
+                      value={stepEstimate}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        if (!isNaN(v) && v >= 0) {
+                          setStepEstimate(v);
+                          setActivityModifier(v < 6000 ? 'low' : v > 10000 ? 'high' : 'normal');
+                        }
+                      }}
+                      style={{
+                        width: 90, background: 'transparent', border: 'none', outline: 'none',
+                        color: stepLabelColor, fontSize: 24, fontWeight: 900, letterSpacing: -1,
+                        fontFamily: 'Inter, system-ui, sans-serif', padding: 0,
+                      }}
+                    />
+                    <span style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>steps</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+                    {stepLabel === 'LOW' ? '−13% calorie target today' : stepLabel === 'HIGH' ? '+8% calorie target today' : 'Normal calorie target'}
+                  </div>
                 </div>
-              )}
-            </div>
+                <div style={{
+                  padding: '5px 12px', borderRadius: 20,
+                  background: `${stepLabelColor}20`, color: stepLabelColor,
+                  fontSize: 10, fontWeight: 800, letterSpacing: 1,
+                }}>{stepLabel}</div>
+              </div>
+            )}
+
+            {/* Describe day input */}
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="text"
-                placeholder="Desk job, 30min walk at lunch, gym session..."
+                placeholder="Desk job, 30min walk, gym session..."
                 value={stepDescription}
                 onChange={(e) => setStepDescription(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleEstimateSteps(); }}
@@ -359,7 +375,7 @@ export default function HomeScreen() {
                   opacity: (!stepDescription.trim() || stepLoading) ? 0.5 : 1,
                   fontFamily: 'Inter, system-ui, sans-serif',
                 }}
-              >{stepLoading ? '···' : 'Estimate'}</button>
+              >{stepLoading ? '···' : stepEstimate !== null ? 'Update' : 'Estimate'}</button>
             </div>
           </div>
         </div>

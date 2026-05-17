@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
+import { getAllLogs, addLog, unremoveLog, getLogs, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG    = '#EEF4FF';
@@ -78,8 +78,7 @@ export default function HistoryScreen() {
   const [relogged,     setRelogged]     = useState<string | null>(null);
   const [expandedFood, setExpandedFood] = useState<string | null>(null);
   const [reloggedIng,  setReloggedIng]  = useState<string | null>(null);
-  const [restoring,    setRestoring]    = useState<string | null>(null);
-  const restoringRef = useRef<Set<string>>(new Set());
+  const relogRef = useRef<Set<string>>(new Set());
 
   const load = useCallback(() => {
     setLoading(true);
@@ -96,18 +95,25 @@ export default function HistoryScreen() {
   useEffect(() => { load(); }, [load]);
 
   const handleRelog = async (item: FoodLog) => {
-    if (relogged === item.id) return;
+    if (relogRef.current.has(item.id)) return;
+    relogRef.current.add(item.id);
     setRelogged(item.id);
     try {
-      await addLog({
-        food_name: item.food_name, calories: item.calories,
-        protein: item.protein, carbs: item.carbs, fat: item.fat,
-        weight_grams: item.weight_grams ?? undefined,
-        meal_type: item.meal_type, image_url: item.image_url ?? undefined,
-        ingredients: item.ingredients ?? undefined,
-      });
+      const today = new Date().toISOString().slice(0, 10);
+      if (item.removed && item.logged_at.slice(0, 10) === today) {
+        // Today's removed entry — restore in-place, no new row
+        await unremoveLog(item.id);
+      } else {
+        await addLog({
+          food_name: item.food_name, calories: item.calories,
+          protein: item.protein, carbs: item.carbs, fat: item.fat,
+          weight_grams: item.weight_grams ?? undefined,
+          meal_type: item.meal_type, image_url: item.image_url ?? undefined,
+          ingredients: item.ingredients ?? undefined,
+        });
+      }
     } catch { /* silent */ }
-    setTimeout(() => setRelogged(null), 1500);
+    setTimeout(() => { relogRef.current.delete(item.id); setRelogged(null); }, 1500);
   };
 
   const handleRelogIngredient = async (ing: Ingredient, mealType: string, key: string) => {
@@ -340,44 +346,18 @@ export default function HistoryScreen() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>{isFoodOpen ? '▲' : '▼'}</button>
                     )}
-                    {isRemoved ? (
-                      <button
-                        disabled={restoring === item.id}
-                        onClick={async () => {
-                          if (restoringRef.current.has(item.id)) return;
-                          restoringRef.current.add(item.id);
-                          setRestoring(item.id);
-                          try {
-                            await unremoveLog(item.id);
-                            await new Promise<void>((res) => {
-                              setLoading(true);
-                              getAllLogs().then((logs) => { setAllLogs(logs); res(); }).catch(() => res()).finally(() => setLoading(false));
-                            });
-                          } finally {
-                            restoringRef.current.delete(item.id);
-                            setRestoring(null);
-                          }
-                        }}
-                        title="Restore to today's fuel"
-                        style={{
-                          padding: '4px 8px', borderRadius: 8, border: `1px solid ${GREEN}40`,
-                          background: `${GREEN}10`, color: GREEN,
-                          fontWeight: 700, fontSize: 10, cursor: restoring === item.id ? 'default' : 'pointer',
-                          flexShrink: 0, whiteSpace: 'nowrap', opacity: restoring === item.id ? 0.5 : 1,
-                        }}>Restore</button>
-                    ) : (
-                      <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
-                        title="Add to today's fuel"
-                        style={{
-                        width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
+                    <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
+                      title="Add to today's fuel"
+                      style={{
+                        width: 28, height: 28, borderRadius: 8,
+                        border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
                         background: relogged === item.id ? `${GREEN}15` : SURF2,
                         color: relogged === item.id ? GREEN : BLUE,
-                        fontWeight: 900, fontSize: 14, cursor: relogged === item.id ? 'default' : 'pointer', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 900, fontSize: 14, cursor: relogged === item.id ? 'default' : 'pointer',
+                        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        {relogged === item.id ? '✓' : '+'}
-                      </button>
-                    )}
+                      {relogged === item.id ? '✓' : '+'}
+                    </button>
                   </div>
 
                   {/* Ingredient expansion */}
