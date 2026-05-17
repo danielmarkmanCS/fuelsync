@@ -27,6 +27,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     sessionStorage.removeItem(SESSION_KEY);
     useNutritionStore.getState().resetAll();
-    set({ pinVerified: false });
+    set({ user: null, pinVerified: false });
   },
 }));

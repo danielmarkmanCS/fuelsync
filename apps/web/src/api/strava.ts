@@ -59,6 +59,13 @@ async function refreshIfNeeded(): Promise<string | null> {
       stravaAthleteName: profile.stravaAthleteName,
       stravaAthletePic: profile.stravaAthletePic,
     });
+    syncProfile({
+      strava_access_token: res.access_token,
+      strava_refresh_token: res.refresh_token,
+      strava_expires_at: res.expires_at,
+      strava_athlete_name: profile.stravaAthleteName,
+      strava_athlete_pic: profile.stravaAthletePic,
+    }).catch(() => {});
     return res.access_token;
   } catch {
     return null;

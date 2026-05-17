@@ -183,7 +183,7 @@ function dateLabel(date: string): string {
 }
 
 export default function FoodScreen() {
-  const { targets } = useNutrition();
+  const { targets, weather } = useNutrition();
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const isToday = selectedDate === todayStr;
@@ -297,7 +297,13 @@ export default function FoodScreen() {
   const handleSuggest = async () => {
     setAiLoading(true); setAiError(''); setSuggestResult(null);
     try {
-      const r = await suggestMeal(CTX_LABEL[suggestCtx], suggestSize);
+      let ctx = CTX_LABEL[suggestCtx];
+      if (weather) {
+        const t = Math.round(weather.tempC);
+        const feel = t >= 32 ? 'very hot' : t >= 26 ? 'hot' : t >= 18 ? 'warm' : t >= 10 ? 'cool' : 'cold';
+        ctx = `${ctx}, ${feel} weather (${t}°C, ${weather.description})`;
+      }
+      const r = await suggestMeal(ctx, suggestSize);
       setSuggestResult(r);
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'AI failed'); }
     finally { setAiLoading(false); }
@@ -662,6 +668,15 @@ export default function FoodScreen() {
                       }}>{label}</button>
                     ))}
                   </div>
+                  {weather && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, background: SURF2, borderRadius: 10, padding: '8px 12px', border: `1px solid ${EDGE}` }}>
+                      <span style={{ fontSize: 16 }}>
+                        {weather.tempC >= 32 ? '🌡' : weather.tempC >= 22 ? '☀️' : weather.tempC >= 12 ? '🌤' : '❄️'}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>{Math.round(weather.tempC)}°C · {weather.description}</span>
+                      <span style={{ fontSize: 10, color: BLUE, fontWeight: 700, marginLeft: 'auto' }}>Weather factored in</span>
+                    </div>
+                  )}
                   {aiError && <ErrBox msg={aiError} />}
                   <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, BLUE)}>
                     {aiLoading ? 'Generating meal…' : 'Suggest a meal →'}
@@ -675,7 +690,7 @@ export default function FoodScreen() {
                   {/* Meal header */}
                   <div style={{ background: SURF2, borderRadius: 14, padding: '14px 16px', marginBottom: 16, border: `1px solid ${EDGE}` }}>
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>
-                      {CTX_LABEL[suggestCtx]} · {suggestSize === 'big' ? 'Full Meal' : 'Light'}
+                      {CTX_LABEL[suggestCtx]} · {suggestSize === 'big' ? 'Full Meal' : 'Light'}{weather ? ` · ${Math.round(weather.tempC)}°C` : ''}
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.5, color: TEXT, marginBottom: 10 }}>{suggestResult.food_name}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
