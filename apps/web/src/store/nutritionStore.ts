@@ -15,7 +15,7 @@ interface NutritionState {
   setActivityModifier: (modifier: DailyLog['dailyActivityModifier']) => void;
   setWeather: (weather: WeatherConditions, alert: EnvironmentAlert) => void;
   logWorkoutComplete: (km?: number, sets?: number) => void;
-  addRunKm: (km: number, name?: string, source?: 'strava' | 'manual') => void;
+  addRunKm: (km: number, name?: string, source?: 'strava' | 'manual', durationMin?: number, paceMinPerKm?: number) => void;
   removeRunKm: (km: number, name?: string) => void;
   renameRun: (idx: number, newName: string) => void;
   resetWeeklyRuns: () => void;
@@ -54,12 +54,13 @@ export const useNutritionStore = create<NutritionState>()(
 
       setWeather: (weather, alert) => set({ weather, environmentAlert: alert }),
 
-      addRunKm: (km, name = 'Run', source = 'manual') => {
+      addRunKm: (km, name = 'Run', source = 'manual', durationMin, paceMinPerKm) => {
         const { weeklyLoad } = get();
+        const run = { km, name, source, ...(durationMin != null ? { durationMin } : {}), ...(paceMinPerKm != null ? { paceMinPerKm } : {}) };
         set({ weeklyLoad: {
           ...weeklyLoad,
           totalRunKm: parseFloat((weeklyLoad.totalRunKm + km).toFixed(2)),
-          loggedRuns: [...(weeklyLoad.loggedRuns ?? []), { km, name, source }],
+          loggedRuns: [...(weeklyLoad.loggedRuns ?? []), run],
         }});
       },
 
@@ -126,6 +127,8 @@ export const useNutritionStore = create<NutritionState>()(
       partialize: (s) => ({
         weeklyLoad: s.weeklyLoad,
         todayLog: s.todayLog,
+        weather: s.weather,
+        environmentAlert: s.environmentAlert,
       }),
     },
   ),

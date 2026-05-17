@@ -77,6 +77,8 @@ export interface LoggedRun {
   km: number;
   name: string;
   source: 'strava' | 'manual';
+  durationMin?: number;    // total run duration in minutes
+  paceMinPerKm?: number;   // pace as decimal minutes (e.g. 5.5 = 5:30/km)
 }
 
 export interface WeeklyLoad {

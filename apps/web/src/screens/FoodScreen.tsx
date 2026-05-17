@@ -314,17 +314,17 @@ export default function FoodScreen() {
     const meal = CTX_MEAL[suggestCtx];
     setLoggingAll(true);
     try {
-      const items = suggestResult.ingredients?.length
-        ? suggestResult.ingredients
-        : [{ name: suggestResult.food_name, amount: `${suggestResult.estimated_weight_grams}g`, calories: suggestResult.calories, protein: suggestResult.protein, carbs: suggestResult.carbs, fat: suggestResult.fat }];
-
-      for (const item of items) {
-        await addLog({
-          food_name: item.name, calories: item.calories,
-          protein: item.protein, carbs: item.carbs, fat: item.fat,
-          meal_type: meal,
-        });
-      }
+      // Log the whole meal as one entry (ingredients stored as breakdown, not separate logs)
+      await addLog({
+        food_name: suggestResult.food_name,
+        calories: suggestResult.calories,
+        protein: suggestResult.protein,
+        carbs: suggestResult.carbs,
+        fat: suggestResult.fat,
+        weight_grams: suggestResult.estimated_weight_grams || undefined,
+        meal_type: meal,
+        ingredients: suggestResult.ingredients ?? undefined,
+      });
       playFoodLogSound();
       fetchLogs(); closeSheet();
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'Failed to log'); }

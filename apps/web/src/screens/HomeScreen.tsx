@@ -7,7 +7,7 @@ import WeatherBanner from '../components/WeatherBanner';
 import { getLogs } from '../api/localFood';
 import StravaCard from '../components/StravaCard';
 import type { FoodLog } from '../api/localFood';
-import type { MacroTargets, TrainingType } from '@shared/types';
+import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 
 const BG     = '#EEF4FF';
 const SURF   = '#FFFFFF';
@@ -52,14 +52,34 @@ function sumLogs(logs: FoodLog[]): MacroTargets {
   }), emptyMacros());
 }
 
-function buildRecovery(km: number, runs: number, strengthSessions: number, activityLevel = 'moderate') {
-  const mult    = ACTIVITY_MULT[activityLevel] ?? 1.0;
-  const runLoad = runs === 0 ? 0 : km < 15 ? 22 : km < 30 ? 48 : km < 50 ? 72 : 90;
-  const strLoad = Math.min(strengthSessions * 10, 40);
+// Pace factor: fast runs cost more recovery, slow runs cost less
+function paceMultiplier(paceMinPerKm?: number): number {
+  if (paceMinPerKm == null) return 1.0;
+  if (paceMinPerKm < 4.5)  return 1.5;  // sprint / interval
+  if (paceMinPerKm < 5.5)  return 1.25; // fast
+  if (paceMinPerKm < 7.0)  return 1.0;  // moderate
+  return 0.75;                           // easy / recovery jog
+}
+
+function fmtPace(p: number): string {
+  const m = Math.floor(p);
+  const s = String(Math.round((p % 1) * 60)).padStart(2, '0');
+  return `${m}:${s}/km`;
+}
+
+function buildRecovery(loggedRuns: LoggedRun[], strengthSessions: number, activityLevel = 'moderate') {
+  const mult = ACTIVITY_MULT[activityLevel] ?? 1.0;
+
+  // Each km costs 1.5 load × pace multiplier — linear, no arbitrary thresholds
+  const runLoad = loggedRuns.reduce((total, r) => total + r.km * 1.5 * paceMultiplier(r.paceMinPerKm), 0);
+  // Each strength session costs 15 load — no artificial cap
+  const strLoad = strengthSessions * 15;
   const score   = Math.max(5, Math.round(100 - Math.min(100, (runLoad + strLoad) / mult)));
 
+  const totalKm = loggedRuns.reduce((s, r) => s + r.km, 0);
+  const runs    = loggedRuns.length;
   const parts: string[] = [];
-  if (runs > 0)             parts.push(`${runs} run${runs > 1 ? 's' : ''} · ${km.toFixed(1)} km`);
+  if (runs > 0)             parts.push(`${runs} run${runs > 1 ? 's' : ''} · ${totalKm.toFixed(1)} km`);
   if (strengthSessions > 0) parts.push(`${strengthSessions} strength`);
   const sub = parts.length ? parts.join(' · ') : 'No training this week';
 
@@ -147,6 +167,7 @@ export default function HomeScreen() {
   const [consumed,        setConsumed]        = useState<MacroTargets>(emptyMacros());
   const [stepInput,       setStepInput]       = useState('');
   const [workoutKm,       setWorkoutKm]       = useState('');
+  const [workoutDuration, setWorkoutDuration] = useState('');
   const [workoutName,     setWorkoutName]     = useState('');
   const [showWorkoutForm, setShowWorkoutForm] = useState(false);
   const [editingRunIdx,   setEditingRunIdx]   = useState<number | null>(null);
@@ -176,7 +197,7 @@ export default function HomeScreen() {
   const calPct   = targets && targets.calories > 0 ? (consumed.calories / targets.calories) * 100 : 0;
   const calLeft  = targets ? Math.round(targets.calories - consumed.calories) : 0;
   const strength = weeklyLoad.totalStrengthSets ?? 0;
-  const recovery = buildRecovery(weeklyLoad.totalRunKm, loggedRuns.length, strength, activityLevel);
+  const recovery = buildRecovery(loggedRuns, strength, activityLevel);
 
   const manualKm = loggedRuns.filter((r) => r.source === 'manual').reduce((s, r) => s + r.km, 0);
   const stravaKm = loggedRuns.filter((r) => r.source === 'strava').reduce((s, r) => s + r.km, 0);
@@ -455,7 +476,7 @@ export default function HomeScreen() {
 
         {showWorkoutForm && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
-            <input type="text" value={workoutName} placeholder="Run name"
+            <input type="text" value={workoutName} placeholder="Run name (optional)"
               onChange={(e) => setWorkoutName(e.target.value)}
               style={{ background: SURF, border: `1px solid ${EDGE}`, borderRadius: 10, color: TEXT, fontSize: 14, padding: '10px 14px', outline: 'none' }}
             />
@@ -464,16 +485,28 @@ export default function HomeScreen() {
                 onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setWorkoutKm(v); }}
                 style={{ flex: 1, background: SURF, border: `1px solid ${EDGE}`, borderRadius: 10, color: TEXT, fontSize: 14, padding: '10px 14px', outline: 'none' }}
               />
-              <button onClick={() => {
-                const km = parseFloat(workoutKm);
-                if (!km || km <= 0) return;
-                addRunKm(km, workoutName.trim() || 'Run', 'manual');
-                setWorkoutKm(''); setWorkoutName(''); setShowWorkoutForm(false);
-              }} className="nrc-press" style={{
-                background: GREEN, border: 'none', borderRadius: 10, color: '#fff',
-                fontWeight: 900, fontSize: 13, cursor: 'pointer', padding: '0 18px',
-              }}>DONE</button>
+              <input type="number" value={workoutDuration} placeholder="Duration (min)" min={0}
+                onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setWorkoutDuration(v); }}
+                style={{ flex: 1, background: SURF, border: `1px solid ${EDGE}`, borderRadius: 10, color: TEXT, fontSize: 14, padding: '10px 14px', outline: 'none' }}
+              />
             </div>
+            {workoutKm && workoutDuration && parseFloat(workoutKm) > 0 && parseFloat(workoutDuration) > 0 && (
+              <div style={{ fontSize: 11, color: BLUE, fontWeight: 700, padding: '0 2px' }}>
+                Pace: {fmtPace(parseFloat(workoutDuration) / parseFloat(workoutKm))}
+              </div>
+            )}
+            <button onClick={() => {
+              const km  = parseFloat(workoutKm);
+              const dur = parseFloat(workoutDuration);
+              if (!km || km <= 0) return;
+              const durationMin   = dur > 0 ? dur : undefined;
+              const paceMinPerKm  = durationMin ? durationMin / km : undefined;
+              addRunKm(km, workoutName.trim() || 'Run', 'manual', durationMin, paceMinPerKm);
+              setWorkoutKm(''); setWorkoutDuration(''); setWorkoutName(''); setShowWorkoutForm(false);
+            }} className="nrc-press" style={{
+              background: GREEN, border: 'none', borderRadius: 10, color: '#fff',
+              fontWeight: 900, fontSize: 13, cursor: 'pointer', padding: '12px 0',
+            }}>DONE</button>
           </div>
         )}
 
@@ -500,8 +533,13 @@ export default function HomeScreen() {
                   style={{ flex: 1, fontSize: 12, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }}
                   title="Tap to rename">{r.name}</div>
               )}
-              <div style={{ fontSize: 13, fontWeight: 900, color: r.source === 'strava' ? '#FC4C02' : GREEN, letterSpacing: -0.5, flexShrink: 0 }}>
-                {r.km}<span style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginLeft: 2 }}>KM</span>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: r.source === 'strava' ? '#FC4C02' : GREEN, letterSpacing: -0.5 }}>
+                  {r.km}<span style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginLeft: 2 }}>KM</span>
+                </div>
+                {r.paceMinPerKm && (
+                  <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginTop: 1 }}>{fmtPace(r.paceMinPerKm)}</div>
+                )}
               </div>
               <button onClick={() => removeRunKm(r.km, r.name)} style={{
                 background: 'none', border: 'none', color: MUTED, fontSize: 16, cursor: 'pointer', padding: '0 2px', lineHeight: 1, flexShrink: 0,

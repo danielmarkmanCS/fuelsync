@@ -18,6 +18,21 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
+function parsePaceStr(pace: string): number | undefined {
+  // "5:30 /km" → 5.5
+  const m = pace.match(/^(\d+):(\d+)/);
+  if (!m) return undefined;
+  return parseInt(m[1]) + parseInt(m[2]) / 60;
+}
+
+function parseDurationStr(dur: string): number | undefined {
+  // "45:30" → 45.5, "1:23:45" → 83.75
+  const parts = dur.split(':').map(Number);
+  if (parts.length === 2) return parts[0] + parts[1] / 60;
+  if (parts.length === 3) return parts[0] * 60 + parts[1] + parts[2] / 60;
+  return undefined;
+}
+
 function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => void }) {
   const addRunKm    = useNutritionStore((s) => s.addRunKm);
   const removeRunKm = useNutritionStore((s) => s.removeRunKm);
@@ -27,7 +42,12 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
   const [shareOpt, setShareOpt] = useState(false);
   const fileRef    = useRef<HTMLInputElement>(null);
 
-  const handleLog   = () => { addRunKm(run.distanceKm, run.name, 'strava'); onLogged(run.id); };
+  const handleLog = () => {
+    const paceMinPerKm  = parsePaceStr(run.pace);
+    const durationMin   = parseDurationStr(run.duration);
+    addRunKm(run.distanceKm, run.name, 'strava', durationMin, paceMinPerKm);
+    onLogged(run.id);
+  };
   const handleUnlog = () => { removeRunKm(run.distanceKm, run.name); };
 
   const doShare = async (file?: File | null) => {
