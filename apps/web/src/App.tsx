@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
-import { getProfile, createProfile } from './api/auth';
+import { getProfile, createProfile, updateProfile } from './api/auth';
+import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
-import { getSyncToken, getMe } from './api/syncClient';
+import { getSyncToken, getMe, syncProfile } from './api/syncClient';
 import GoogleAuthScreen from './screens/GoogleAuthScreen';
 import PinScreen from './screens/PinScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -83,9 +84,42 @@ export default function App() {
                 heightCm: syncUser.height_cm ?? 0,
                 age: syncUser.age ?? 0,
                 gender: (syncUser.gender as 'male' | 'female') ?? 'male',
-                activityLevel: (syncUser.activity_level as 'moderate') ?? 'moderate',
+                activityLevel: (syncUser.activity_level as LocalProfile['activityLevel']) ?? 'moderate',
                 dailyGoal: syncUser.daily_goal ?? 2000,
               });
+            } else {
+              // Fill in missing local values from D1
+              const d1HasStats = syncUser.weight_kg || syncUser.height_cm || syncUser.age;
+              if (d1HasStats && (!local.weightKg || !local.heightCm || !local.age)) {
+                local = await updateProfile({
+                  displayName: local.displayName || syncUser.display_name || undefined,
+                  weightKg: local.weightKg || (syncUser.weight_kg ?? 0),
+                  heightCm: local.heightCm || (syncUser.height_cm ?? 0),
+                  age: local.age || (syncUser.age ?? 0),
+                  gender: (local.gender || syncUser.gender as 'male' | 'female') ?? 'male',
+                  activityLevel: ((local.activityLevel || syncUser.activity_level) as LocalProfile['activityLevel']) ?? 'moderate',
+                  dailyGoal: local.dailyGoal || (syncUser.daily_goal ?? 2000),
+                });
+              }
+            }
+            // Push local stats to D1 so other devices stay current
+            if (local.weightKg || local.heightCm) {
+              syncProfile({
+                display_name: local.displayName, weight_kg: local.weightKg ?? undefined,
+                height_cm: local.heightCm ?? undefined, age: local.age ?? undefined,
+                gender: local.gender ?? undefined, activity_level: local.activityLevel,
+                daily_goal: local.dailyGoal,
+              }).catch(() => {});
+            }
+            // Restore Strava connection from D1 if tokens present
+            if (syncUser.strava_access_token) {
+              connectStrava({
+                access_token: syncUser.strava_access_token,
+                refresh_token: syncUser.strava_refresh_token ?? '',
+                expires_at: syncUser.strava_expires_at ?? 0,
+                athlete_name: syncUser.strava_athlete_name ?? '',
+                athlete_pic: syncUser.strava_athlete_pic ?? '',
+              }).catch(() => {});
             }
             setUser(local);
             const pinSet = await hasPin();

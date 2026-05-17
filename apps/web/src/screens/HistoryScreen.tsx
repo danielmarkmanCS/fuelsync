@@ -53,10 +53,11 @@ function groupByDate(logs: FoodLog[]): DaySummary[] {
     }));
 }
 
-function MacroChip({ label, value, color }: { label: string; value: number; color: string }) {
+function MacroChip({ label, value, color, pct }: { label: string; value: number; color: string; pct: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: SURF2, borderRadius: 8, padding: '5px 10px', minWidth: 52 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color }}>{value}g</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color, marginTop: 1 }}>{pct}%</div>
       <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase', marginTop: 1 }}>{label}</div>
     </div>
   );
@@ -138,11 +139,19 @@ export default function HistoryScreen() {
                     <div style={{ fontSize: 11, fontWeight: 800, color: barColor, minWidth: 34, textAlign: 'right' }}>{pct}%</div>
                   </div>
 
-                  {/* Macro chips */}
+                  {/* Macro chips with % split */}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <MacroChip label="Protein" value={day.totalProtein} color="#e05050" />
-                    <MacroChip label="Carbs"   value={day.totalCarbs}   color="#f5a623" />
-                    <MacroChip label="Fat"     value={day.totalFat}     color="#34c759" />
+                    {(() => {
+                      const tot = day.totalProtein * 4 + day.totalCarbs * 4 + day.totalFat * 9 || 1;
+                      const pP = Math.round(day.totalProtein * 4 / tot * 100);
+                      const cP = Math.round(day.totalCarbs   * 4 / tot * 100);
+                      const fP = 100 - pP - cP;
+                      return (<>
+                        <MacroChip label="Protein" value={day.totalProtein} color="#e05050" pct={pP} />
+                        <MacroChip label="Carbs"   value={day.totalCarbs}   color="#f5a623" pct={cP} />
+                        <MacroChip label="Fat"     value={day.totalFat}     color="#34c759" pct={fP} />
+                      </>);
+                    })()}
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
                       <div style={{ fontSize: 18, color: MUTED, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>›</div>
                     </div>

@@ -135,16 +135,24 @@ export default {
 
         const body = await request.json() as Record<string, unknown>;
         await env.DB.prepare(`
-          INSERT INTO profiles (user_id, display_name, weight_kg, height_cm, age, gender, activity_level, daily_goal, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          INSERT INTO profiles (user_id, display_name, weight_kg, height_cm, age, gender, activity_level, daily_goal,
+            strava_access_token, strava_refresh_token, strava_expires_at, strava_athlete_name, strava_athlete_pic, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
           ON CONFLICT(user_id) DO UPDATE SET
             display_name=excluded.display_name, weight_kg=excluded.weight_kg,
             height_cm=excluded.height_cm, age=excluded.age, gender=excluded.gender,
             activity_level=excluded.activity_level, daily_goal=excluded.daily_goal,
+            strava_access_token=COALESCE(excluded.strava_access_token, strava_access_token),
+            strava_refresh_token=COALESCE(excluded.strava_refresh_token, strava_refresh_token),
+            strava_expires_at=COALESCE(excluded.strava_expires_at, strava_expires_at),
+            strava_athlete_name=COALESCE(excluded.strava_athlete_name, strava_athlete_name),
+            strava_athlete_pic=COALESCE(excluded.strava_athlete_pic, strava_athlete_pic),
             updated_at=excluded.updated_at
         `).bind(
           userId, body.display_name ?? null, body.weight_kg ?? null, body.height_cm ?? null,
           body.age ?? null, body.gender ?? null, body.activity_level ?? 'moderate', body.daily_goal ?? 2000,
+          body.strava_access_token ?? null, body.strava_refresh_token ?? null,
+          body.strava_expires_at ?? null, body.strava_athlete_name ?? null, body.strava_athlete_pic ?? null,
         ).run();
 
         const profile = await env.DB.prepare('SELECT * FROM profiles WHERE user_id = ?').bind(userId).first();

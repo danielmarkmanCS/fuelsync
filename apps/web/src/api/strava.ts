@@ -1,5 +1,6 @@
 import { db } from '../lib/db';
 import { workerGet, workerPost } from './client';
+import { syncProfile } from './syncClient';
 
 export interface StravaRun {
   id: number;
@@ -83,6 +84,13 @@ export async function connectStrava(tokens: {
     stravaAthleteName: tokens.athlete_name,
     stravaAthletePic: tokens.athlete_pic,
   });
+  syncProfile({
+    strava_access_token: tokens.access_token,
+    strava_refresh_token: tokens.refresh_token,
+    strava_expires_at: tokens.expires_at,
+    strava_athlete_name: tokens.athlete_name,
+    strava_athlete_pic: tokens.athlete_pic,
+  }).catch(() => {});
   return { connected: true, athlete: { name: tokens.athlete_name, pic: tokens.athlete_pic } };
 }
 

@@ -30,6 +30,11 @@ export interface SyncUser {
   gender?: string | null;
   activity_level?: string;
   daily_goal?: number;
+  strava_access_token?: string | null;
+  strava_refresh_token?: string | null;
+  strava_expires_at?: number | null;
+  strava_athlete_name?: string | null;
+  strava_athlete_pic?: string | null;
 }
 
 export async function googleSignIn(idToken: string): Promise<{ token: string; user: SyncUser }> {

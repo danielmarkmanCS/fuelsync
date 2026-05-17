@@ -897,6 +897,28 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
               </div>
             ))}
           </div>
+          {/* Macro calorie split */}
+          {(() => {
+            const p = Number(entry.protein), c = Number(entry.carbs), f = Number(entry.fat);
+            const tot = p * 4 + c * 4 + f * 9 || 1;
+            const pP = Math.round(p * 4 / tot * 100);
+            const cP = Math.round(c * 4 / tot * 100);
+            const fP = 100 - pP - cP;
+            return (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', marginBottom: 5 }}>
+                  <div style={{ width: `${pP}%`, background: GREEN }} />
+                  <div style={{ width: `${cP}%`, background: ORANGE }} />
+                  <div style={{ width: `${fP}%`, background: PURPLE }} />
+                </div>
+                <div style={{ display: 'flex', gap: 14, justifyContent: 'center' }}>
+                  <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>P {pP}%</span>
+                  <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {cP}%</span>
+                  <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {fP}%</span>
+                </div>
+              </div>
+            );
+          })()}
           {entry.weight_grams && (
             <div style={{ marginTop: 8, fontSize: 11, color: MUTED, textAlign: 'center' }}>
               Portion: {entry.weight_grams}g · {Math.round(Number(entry.calories) / entry.weight_grams * 100)} kcal/100g
