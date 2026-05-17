@@ -22,6 +22,7 @@ export interface AIEstimate {
   carbs: number;
   fat: number;
   confidence: 'high' | 'medium' | 'low';
+  breakdown?: string | null;
   imageUrl?: string | null;
 }
 

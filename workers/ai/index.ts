@@ -58,8 +58,8 @@ function parseJSON(text: string): unknown {
   throw new Error('Could not parse AI response as JSON');
 }
 
-const MACRO_SCHEMA = `Respond ONLY with valid JSON:
-{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high"|"medium"|"low"}`;
+const MACRO_SCHEMA = `Respond ONLY with valid JSON (omit breakdown if not a multi-item meal):
+{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high"|"medium"|"low","breakdown":"optional: each item with exact amount, e.g. 150g chicken breast, 200g white rice, 1 banana"}`;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

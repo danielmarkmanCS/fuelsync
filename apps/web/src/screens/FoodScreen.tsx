@@ -127,7 +127,7 @@ export default function FoodScreen() {
 
   const handleSuggest = async () => {
     const ctxLabel: Record<typeof suggestCtx, string> = { pre_workout: 'pre-workout', post_workout: 'post-workout', rest: 'rest day', morning: 'morning', evening: 'evening' };
-    const prompt = `Suggest a specific ${suggestSize === 'big' ? 'full' : 'light'} ${ctxLabel[suggestCtx]} meal with exact macros. Include realistic portion size in grams.`;
+    const prompt = `Suggest a specific ${suggestSize === 'big' ? 'full' : 'light'} ${ctxLabel[suggestCtx]} meal. List every food item with its exact weight or quantity in the breakdown field. Include total macros.`;
     setAiLoading(true); setAiError('');
     try {
       const r = await estimateByDescription(prompt);
@@ -169,15 +169,25 @@ export default function FoodScreen() {
   };
 
   const handleWeightAI = async () => {
-    const name = form.name.trim(), w = parseFloat(form.amount);
+    const name = form.name.trim();
     if (!name) { setAiError('Enter a food name first.'); return; }
-    if (isNaN(w) || w <= 0) { setAiError('Enter weight in grams.'); return; }
     setAiLoading(true); setAiError('');
     try {
-      const r = await estimateByWeight(name, w);
-      setEstimate(r);
-      setBasePerGram({ protein: r.protein/w, carbs: r.carbs/w, fat: r.fat/w });
-      setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
+      if (form.amountIsText) {
+        const desc = form.amount.trim() ? `${form.amount.trim()} ${name}` : name;
+        const r = await estimateByDescription(desc);
+        const g = r.estimated_weight_grams || 100;
+        setEstimate(r);
+        setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
+        setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
+      } else {
+        const w = parseFloat(form.amount);
+        if (isNaN(w) || w <= 0) { setAiError('Enter weight in grams.'); setAiLoading(false); return; }
+        const r = await estimateByWeight(name, w);
+        setEstimate(r);
+        setBasePerGram({ protein: r.protein/w, carbs: r.carbs/w, fat: r.fat/w });
+        setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
+      }
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'AI failed'); }
     finally { setAiLoading(false); }
   };
@@ -431,15 +441,23 @@ export default function FoodScreen() {
               {mode === 'manual' && (
                 <>
                   {estimate && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, background: SURF2, borderRadius: 12, padding: '10px 14px', border: `1px solid ${EDGE}` }}>
-                      {estimate.imageUrl && <img src={estimate.imageUrl} alt={estimate.food_name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700 }}>{estimate.food_name}</div>
-                        <div style={{ color: '#444444', fontSize: 11, marginTop: 1 }}>AI estimate · {estimate.estimated_weight_grams}g</div>
+                    <div style={{ marginBottom: 16, background: SURF2, borderRadius: 12, padding: '12px 14px', border: `1px solid ${EDGE}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {estimate.imageUrl && <img src={estimate.imageUrl} alt={estimate.food_name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700 }}>{estimate.food_name}</div>
+                          <div style={{ color: '#444444', fontSize: 11, marginTop: 1 }}>AI estimate · {estimate.estimated_weight_grams}g</div>
+                        </div>
+                        <div style={{ background: `${CONF_COLOR[estimate.confidence]}12`, border: `1px solid ${CONF_COLOR[estimate.confidence]}30`, borderRadius: 8, padding: '3px 9px', flexShrink: 0 }}>
+                          <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
+                        </div>
                       </div>
-                      <div style={{ background: `${CONF_COLOR[estimate.confidence]}12`, border: `1px solid ${CONF_COLOR[estimate.confidence]}30`, borderRadius: 8, padding: '3px 9px' }}>
-                        <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
-                      </div>
+                      {estimate.breakdown && (
+                        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${EDGE}` }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#444444', textTransform: 'uppercase', marginBottom: 6 }}>What to eat</div>
+                          <div style={{ fontSize: 13, color: '#AAAAAA', lineHeight: 1.7, fontWeight: 500 }}>{estimate.breakdown}</div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -464,13 +482,11 @@ export default function FoodScreen() {
                     <input style={{ ...inp, flex: 1 }} type={form.amountIsText ? 'text' : 'number'}
                       value={form.amount} onChange={(e) => patch({ amount: e.target.value })}
                       placeholder={form.amountIsText ? 'e.g. 2 eggs' : 'Weight in grams'} />
-                    {!form.amountIsText && (
-                      <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
-                        background: `${RED}10`, border: `1px solid ${RED}25`, borderRadius: 10,
-                        color: aiLoading ? '#444444' : RED, fontWeight: 800, fontSize: 11, cursor: aiLoading ? 'not-allowed' : 'pointer',
-                        padding: '0 14px', whiteSpace: 'nowrap', fontFamily: 'inherit', letterSpacing: 0.5,
-                      }}>{aiLoading ? '···' : 'AI'}</button>
-                    )}
+                    <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
+                      background: `${RED}10`, border: `1px solid ${RED}25`, borderRadius: 10,
+                      color: aiLoading ? '#444444' : RED, fontWeight: 800, fontSize: 11, cursor: aiLoading ? 'not-allowed' : 'pointer',
+                      padding: '0 14px', whiteSpace: 'nowrap', fontFamily: 'inherit', letterSpacing: 0.5,
+                    }}>{aiLoading ? '···' : 'AI'}</button>
                   </div>
 
                   {aiError && <ErrBox msg={aiError} />}
