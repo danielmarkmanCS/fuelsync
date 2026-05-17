@@ -1,5 +1,5 @@
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
-const GEMINI_BASE  = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// Model cascade: primary has 1000 RPD free, fallback has 1500 RPD free
+const GEMINI_MODELS = ['gemini-1.5-flash-8b', 'gemini-1.5-flash', 'gemini-2.5-flash-lite'];
 
 interface Env {
   GEMINI_API_KEY: string;
@@ -25,14 +25,15 @@ function err(msg: string, status = 400, origin = '*'): Response {
   return json({ error: msg }, status, origin);
 }
 
-async function gemini(apiKey: string, prompt: string, maxTokens = 512, imageBase64?: string, imageMime?: string): Promise<string> {
+async function geminiWithModel(apiKey: string, model: string, prompt: string, maxTokens = 512, imageBase64?: string, imageMime?: string): Promise<{ text: string; status: number }> {
   const parts: unknown[] = [];
   if (imageBase64 && imageMime) {
     parts.push({ inlineData: { mimeType: imageMime, data: imageBase64 } });
   }
   parts.push({ text: prompt });
 
-  const res = await fetch(`${GEMINI_BASE}?key=${apiKey}`, {
+  const base = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const res = await fetch(`${base}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -41,12 +42,20 @@ async function gemini(apiKey: string, prompt: string, maxTokens = 512, imageBase
     }),
   });
 
-  if (res.status === 429) throw new Error('AI quota reached — Gemini free tier limit hit. Try again later.');
   if (res.status === 401 || res.status === 403) throw new Error('Invalid Gemini API key.');
+  if (res.status === 429) return { text: '', status: 429 };
   if (!res.ok) throw new Error(`Gemini error ${res.status}`);
 
   const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }> };
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  return { text: data.candidates?.[0]?.content?.parts?.[0]?.text ?? '', status: 200 };
+}
+
+async function gemini(apiKey: string, prompt: string, maxTokens = 512, imageBase64?: string, imageMime?: string): Promise<string> {
+  for (const model of GEMINI_MODELS) {
+    const result = await geminiWithModel(apiKey, model, prompt, maxTokens, imageBase64, imageMime);
+    if (result.status !== 429) return result.text;
+  }
+  throw new Error('AI daily limit reached across all models. Resets at midnight Pacific time.');
 }
 
 function parseJSON(text: string): unknown {
