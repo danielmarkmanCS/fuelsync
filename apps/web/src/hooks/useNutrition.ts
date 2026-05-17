@@ -50,16 +50,17 @@ export function useNutrition() {
     const breakdown = computeMacros(profile, store.todayLog, store.weeklyLoad);
     store.setTargets(breakdown.targets);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.weightKg, user?.heightCm, user?.age, user?.gender, user?.activityLevel, store.todayLog?.trainingType]);
+  }, [user?.weightKg, user?.heightCm, user?.age, user?.gender, user?.activityLevel, store.todayLog?.trainingType, store.todayLog?.dailyActivityModifier]);
 
   const logDay = useCallback(
-    (trainingType: TrainingType, plannedWorkoutTime?: string) => {
+    (trainingType: TrainingType, plannedWorkoutTime?: string, dailyActivityModifier?: DailyLog['dailyActivityModifier']) => {
       const today = new Date().toISOString().split('T')[0];
       const log: DailyLog = {
         id: `${today}-${trainingType}`,
         date: today,
         trainingType,
         plannedWorkoutTime,
+        dailyActivityModifier,
         intensity: trainingType === 'rest' ? 'low' : trainingType === 'cardio' ? 'high' : 'moderate',
       };
       const gate = checkLegFatigueGate(store.weeklyLoad, log);
@@ -99,6 +100,15 @@ export function useNutrition() {
     return computeMacros(profile, store.todayLog, store.weeklyLoad);
   }, [profile, store.todayLog, store.weeklyLoad]);
 
+  const setActivityModifier = useCallback((modifier: DailyLog['dailyActivityModifier']) => {
+    store.setActivityModifier(modifier);
+    if (profile && store.todayLog) {
+      const updated = { ...store.todayLog, dailyActivityModifier: modifier };
+      const breakdown = computeMacros(profile, updated, store.weeklyLoad);
+      store.setTargets(breakdown.targets);
+    }
+  }, [store, profile]);
+
   return {
     profile,
     todayLog: store.todayLog,
@@ -109,6 +119,7 @@ export function useNutrition() {
     logDay,
     refreshWeather,
     getMacroBreakdown,
+    setActivityModifier,
     logWorkoutComplete: store.logWorkoutComplete,
     resetDay: store.resetDay,
   };

@@ -112,7 +112,7 @@ export default function HomeScreen() {
   const profileComplete = !!(user?.weightKg && user?.heightCm && user?.age);
 
   const weatherKeySet = !!(import.meta.env.VITE_OPENWEATHER_KEY);
-  const { todayLog, targets, weeklyLoad, weather, environmentAlert, logDay, refreshWeather, resetDay, getMacroBreakdown } = useNutrition();
+  const { todayLog, targets, weeklyLoad, weather, environmentAlert, logDay, refreshWeather, resetDay, getMacroBreakdown, setActivityModifier } = useNutrition();
   const loggedRuns      = useNutritionStore((s) => s.weeklyLoad.loggedRuns ?? []);
   const removeRunKm     = useNutritionStore((s) => s.removeRunKm);
   const renameRun       = useNutritionStore((s) => s.renameRun);
@@ -279,6 +279,28 @@ export default function HomeScreen() {
         </div>
         <TrainingPicker selected={todayLog?.trainingType ?? null} onSelect={handleSelectType} />
       </div>
+
+      {/* Daily activity modifier */}
+      {todayLog && (
+        <div style={{ padding: '10px 22px 0' }}>
+          <div style={{ background: SURF, borderRadius: 14, padding: '12px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Today's Steps</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['low', 'normal', 'high'] as const).map((m) => {
+                const active = (todayLog.dailyActivityModifier ?? 'normal') === m;
+                const labels = { low: 'Low  <6k', normal: 'Normal  6–10k', high: 'High  10k+' };
+                return (
+                  <button key={m} onClick={() => setActivityModifier(m)} className="nrc-press" style={{
+                    flex: 1, padding: '8px 4px', borderRadius: 10, border: `1px solid ${active ? BLUE : EDGE}`,
+                    background: active ? `${BLUE}0E` : SURF2, cursor: 'pointer',
+                    color: active ? BLUE : MUTED, fontSize: 10, fontWeight: 700, lineHeight: 1.3,
+                  }}>{labels[m]}</button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Workout time */}
       {todayLog?.trainingType && todayLog.trainingType !== 'rest' && (

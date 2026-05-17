@@ -133,9 +133,12 @@ export function computeMacros(
   const tdee = calcTDEE(profile);
   const ratio = MACRO_RATIOS[log.trainingType];
 
+  // Step/activity modifier: low day pulls TDEE down, high day bumps it up
+  const activityModifier = log.dailyActivityModifier === 'low' ? 0.87 : log.dailyActivityModifier === 'high' ? 1.08 : 1.0;
+
   // Adjust for weekly load: if recovery score is low, pull calories down slightly
   const recoveryMultiplier = weeklyLoad.recoveryScore < 40 ? 0.95 : 1.0;
-  const targetCalories = Math.round(tdee * ratio.caloricAdjustment * recoveryMultiplier);
+  const targetCalories = Math.round(tdee * ratio.caloricAdjustment * activityModifier * recoveryMultiplier);
 
   const proteinG = Math.round((targetCalories * ratio.protein) / KCAL_PER_G.protein);
   const carbsG = Math.round((targetCalories * ratio.carbs) / KCAL_PER_G.carbs);

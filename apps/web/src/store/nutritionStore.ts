@@ -12,6 +12,7 @@ interface NutritionState {
 
   setTargets: (targets: MacroTargets) => void;
   setTodayLog: (log: DailyLog) => void;
+  setActivityModifier: (modifier: DailyLog['dailyActivityModifier']) => void;
   setWeather: (weather: WeatherConditions, alert: EnvironmentAlert) => void;
   logWorkoutComplete: (km?: number, sets?: number) => void;
   addRunKm: (km: number, name?: string, source?: 'strava' | 'manual') => void;
@@ -44,6 +45,10 @@ export const useNutritionStore = create<NutritionState>()(
       setTargets: (targets) => set({ targets }),
 
       setTodayLog: (log) => set({ todayLog: log }),
+
+      setActivityModifier: (modifier) => set((s) => ({
+        todayLog: s.todayLog ? { ...s.todayLog, dailyActivityModifier: modifier } : s.todayLog,
+      })),
 
       setWeather: (weather, alert) => set({ weather, environmentAlert: alert }),
 

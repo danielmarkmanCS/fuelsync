@@ -32,6 +32,8 @@ export interface DailyLog {
   intensity: IntensityLevel;
   notes?: string;
   actualWorkoutLogged?: boolean;
+  /** Steps / non-workout activity for today — adjusts base TDEE down or up */
+  dailyActivityModifier?: 'low' | 'normal' | 'high';
 }
 
 export interface MacroTargets {
