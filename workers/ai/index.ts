@@ -1,8 +1,10 @@
-// Model cascade: primary has 1000 RPD free, fallback has 1500 RPD free
-const GEMINI_MODELS = ['gemini-1.5-flash-8b', 'gemini-1.5-flash', 'gemini-2.5-flash-lite'];
+// Model cascade — tries each in order, skips on 429/404, errors only if all exhausted
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-lite'];
+
 
 interface Env {
   GEMINI_API_KEY: string;
+  GEMINI_API_KEY_2?: string;
   ALLOWED_ORIGIN: string;
 }
 
@@ -43,19 +45,21 @@ async function geminiWithModel(apiKey: string, model: string, prompt: string, ma
   });
 
   if (res.status === 401 || res.status === 403) throw new Error('Invalid Gemini API key.');
-  if (res.status === 429) return { text: '', status: 429 };
+  if (res.status === 429 || res.status === 404) return { text: '', status: res.status };
   if (!res.ok) throw new Error(`Gemini error ${res.status}`);
 
   const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }> };
   return { text: data.candidates?.[0]?.content?.parts?.[0]?.text ?? '', status: 200 };
 }
 
-async function gemini(apiKey: string, prompt: string, maxTokens = 512, imageBase64?: string, imageMime?: string): Promise<string> {
-  for (const model of GEMINI_MODELS) {
-    const result = await geminiWithModel(apiKey, model, prompt, maxTokens, imageBase64, imageMime);
-    if (result.status !== 429) return result.text;
+async function gemini(keys: string[], prompt: string, maxTokens = 512, imageBase64?: string, imageMime?: string): Promise<string> {
+  for (const apiKey of keys) {
+    for (const model of GEMINI_MODELS) {
+      const result = await geminiWithModel(apiKey, model, prompt, maxTokens, imageBase64, imageMime);
+      if (result.status !== 429 && result.status !== 404) return result.text;
+    }
   }
-  throw new Error('AI daily limit reached across all models. Resets at midnight Pacific time.');
+  throw new Error('AI daily limit reached. Resets at midnight Pacific time — or add a second API key (GEMINI_API_KEY_2) for extra quota.');
 }
 
 function parseJSON(text: string): unknown {
@@ -86,6 +90,8 @@ export default {
     }
     if (request.method !== 'POST') return err('Method not allowed', 405, allowedOrigin);
 
+    const apiKeys = [env.GEMINI_API_KEY, env.GEMINI_API_KEY_2].filter(Boolean) as string[];
+
     const url = new URL(request.url);
     let body: Record<string, unknown>;
     try { body = await request.json() as Record<string, unknown>; }
@@ -96,7 +102,7 @@ export default {
         const { food_name, weight_grams } = body;
         if (!food_name || !weight_grams) return err('food_name and weight_grams required', 400, allowedOrigin);
         const prompt = `For ${weight_grams}g of "${food_name}", give exact nutritional values.\n${MACRO_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt, 768);
+        const text = await gemini(apiKeys, prompt, 768);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
@@ -104,7 +110,7 @@ export default {
         const { description } = body;
         if (!description) return err('description required', 400, allowedOrigin);
         const prompt = `Analyse this meal and provide nutritional breakdown: "${description}"\n${MACRO_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt, 1024);
+        const text = await gemini(apiKeys, prompt, 1024);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
@@ -113,7 +119,7 @@ export default {
         if (!context) return err('context required', 400, allowedOrigin);
         const sizeLabel = size === 'small' ? 'light snack or small' : 'complete';
         const prompt = `Suggest a specific, practical ${sizeLabel} meal for an athlete for: ${context}. Include exact food items with realistic portions.\n${SUGGEST_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt, 1024);
+        const text = await gemini(apiKeys, prompt, 1024);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
@@ -121,7 +127,7 @@ export default {
         const { base64, mimeType } = body;
         if (!base64 || !mimeType) return err('base64 and mimeType required', 400, allowedOrigin);
         const prompt = `Identify the food(s) in this image and estimate total nutritional values.\n${MACRO_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt, 1024, base64 as string, mimeType as string);
+        const text = await gemini(apiKeys, prompt, 1024, base64 as string, mimeType as string);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
