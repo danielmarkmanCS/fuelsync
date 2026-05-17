@@ -3,11 +3,14 @@ import { verifyPin, verifySecurityAnswer, resetPin, getSecurityQuestion } from '
 import { db } from '../lib/db';
 import { useAuthStore } from '../store/authStore';
 
-const BG   = '#060606';
-const SURF  = '#0F0F0F';
-const SURF2 = '#161616';
-const EDGE  = 'rgba(255,255,255,0.08)';
-const RED   = '#FF453A';
+const BG    = '#EEF4FF';
+const SURF  = '#FFFFFF';
+const SURF2 = '#E4EEFF';
+const EDGE  = 'rgba(0,56,168,0.10)';
+const TEXT  = '#0A1628';
+const MUTED = '#6878A0';
+const BLUE  = '#0038A8';
+const RED   = '#C62828';
 
 function fmt(ms: number) {
   const s = Math.ceil(ms / 1000);
@@ -127,11 +130,11 @@ export default function PinScreen() {
       <div style={fullPage}>
         <div style={{ textAlign: 'center', padding: '0 32px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF', marginBottom: 10 }}>Data Wiped</div>
-          <div style={{ color: '#444444', fontSize: 14, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: TEXT, marginBottom: 10 }}>Data Wiped</div>
+          <div style={{ color: MUTED, fontSize: 14, lineHeight: 1.6 }}>
             Too many failed attempts. All data has been erased.
           </div>
-          <button onClick={() => window.location.reload()} style={redBtn}>Restart</button>
+          <button onClick={() => window.location.reload()} style={blueBtn}>Restart</button>
         </div>
       </div>
     );
@@ -142,10 +145,10 @@ export default function PinScreen() {
       <div style={fullPage}>
         <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -3, color: '#FFFFFF', lineHeight: 1 }}>
-              FUEL<span style={{ color: RED }}>SYNC</span>
+            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>
+              <span style={{ color: TEXT }}>FUEL</span><span style={{ color: BLUE }}>SYNC</span>
             </div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#333333', marginTop: 10, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginTop: 10, textTransform: 'uppercase' }}>
               Recovery Question
             </div>
           </div>
@@ -154,26 +157,26 @@ export default function PinScreen() {
             <>
               <div style={{
                 background: SURF, border: `1px solid ${EDGE}`, borderRadius: 14,
-                padding: '14px 16px', marginBottom: 16,
+                padding: '14px 16px', marginBottom: 16, boxShadow: '0 2px 8px rgba(0,56,168,0.06)',
               }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 8 }}>Question</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#CCCCCC', lineHeight: 1.5 }}>{secQuestion}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Question</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, lineHeight: 1.5 }}>{secQuestion}</div>
               </div>
               <input style={inp} type="text" placeholder="Your answer"
                 value={secAnswer}
                 onChange={(e) => { setSecAnswer(e.target.value); setSecError(''); }}
                 autoComplete="off"
               />
-              {secError && <div style={{ fontSize: 12, color: RED, fontWeight: 600, marginBottom: 12, padding: '10px 12px', background: `${RED}08`, borderRadius: 10, border: `1px solid ${RED}20` }}>{secError}</div>}
-              <button onClick={submitSecurityAnswer} disabled={secLoading} style={redBtn}>
+              {secError && <div style={{ fontSize: 12, color: RED, fontWeight: 600, marginBottom: 12, padding: '10px 12px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, border: '1px solid rgba(198,40,40,0.18)' }}>{secError}</div>}
+              <button onClick={submitSecurityAnswer} disabled={secLoading} style={blueBtn}>
                 {secLoading ? 'Checking…' : 'Verify Answer'}
               </button>
             </>
           ) : (
-            <div style={{ textAlign: 'center', color: '#444444', fontSize: 13, lineHeight: 1.6 }}>
+            <div style={{ textAlign: 'center', color: MUTED, fontSize: 13, lineHeight: 1.6 }}>
               No recovery question was set up.<br />You must wipe data to start fresh.
               <button onClick={async () => { await db.delete(); indexedDB.deleteDatabase('FuelSyncDB'); window.location.reload(); }}
-                style={{ ...redBtn, marginTop: 20 }}>
+                style={{ ...blueBtn, marginTop: 20, background: RED, boxShadow: `0 4px 20px ${RED}40` }}>
                 Wipe & Restart
               </button>
             </div>
@@ -190,28 +193,28 @@ export default function PinScreen() {
       <div style={fullPage}>
         <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -3, color: '#FFFFFF', lineHeight: 1 }}>
-              FUEL<span style={{ color: RED }}>SYNC</span>
+            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>
+              <span style={{ color: TEXT }}>FUEL</span><span style={{ color: BLUE }}>SYNC</span>
             </div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#333333', marginTop: 10, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginTop: 10, textTransform: 'uppercase' }}>
               Set New PIN
             </div>
           </div>
 
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 8 }}>New PIN</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>New PIN</div>
           <input style={{ ...inp, letterSpacing: 10, fontSize: 22, textAlign: 'center' }}
             type="password" inputMode="numeric" maxLength={4}
             placeholder="• • • •" value={newPin}
             onChange={(e) => { setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4)); setPinError(''); }} />
 
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
           <input style={{ ...inp, letterSpacing: 10, fontSize: 22, textAlign: 'center' }}
             type="password" inputMode="numeric" maxLength={4}
             placeholder="• • • •" value={newPinConf}
             onChange={(e) => { setNewPinConf(e.target.value.replace(/\D/g, '').slice(0, 4)); setPinError(''); }} />
 
-          {pinError && <div style={{ fontSize: 12, color: RED, fontWeight: 600, marginBottom: 12, padding: '10px 12px', background: `${RED}08`, borderRadius: 10, border: `1px solid ${RED}20` }}>{pinError}</div>}
-          <button onClick={submitNewPin} disabled={pinLoading} style={redBtn}>
+          {pinError && <div style={{ fontSize: 12, color: RED, fontWeight: 600, marginBottom: 12, padding: '10px 12px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, border: '1px solid rgba(198,40,40,0.18)' }}>{pinError}</div>}
+          <button onClick={submitNewPin} disabled={pinLoading} style={blueBtn}>
             {pinLoading ? 'Saving…' : 'Save New PIN'}
           </button>
         </div>
@@ -224,10 +227,10 @@ export default function PinScreen() {
       <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
 
         <div style={{ textAlign: 'center', marginBottom: 52 }}>
-          <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -3, color: '#FFFFFF', lineHeight: 1 }}>
-            FUEL<span style={{ color: RED }}>SYNC</span>
+          <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>
+            <span style={{ color: TEXT }}>FUEL</span><span style={{ color: BLUE }}>SYNC</span>
           </div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#333333', marginTop: 12, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginTop: 12, textTransform: 'uppercase' }}>
             Enter PIN
           </div>
         </div>
@@ -239,10 +242,10 @@ export default function PinScreen() {
         }}>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} style={{
-              width: 16, height: 16, borderRadius: '50%',
-              background: i < digits.length ? RED : SURF,
-              border: `2px solid ${i < digits.length ? RED : EDGE}`,
-              boxShadow: i < digits.length ? `0 0 12px ${RED}60` : 'none',
+              width: 18, height: 18, borderRadius: '50%',
+              background: i < digits.length ? BLUE : SURF,
+              border: `2px solid ${i < digits.length ? BLUE : EDGE}`,
+              boxShadow: i < digits.length ? `0 0 12px ${BLUE}50` : '0 1px 4px rgba(0,56,168,0.08)',
               transition: 'all 0.15s',
             }} />
           ))}
@@ -254,7 +257,7 @@ export default function PinScreen() {
           </div>
         )}
         {locked && (
-          <div style={{ textAlign: 'center', fontSize: 13, color: '#444444', marginBottom: 20, fontWeight: 600 }}>
+          <div style={{ textAlign: 'center', fontSize: 13, color: MUTED, marginBottom: 20, fontWeight: 600 }}>
             Try again in {fmt(lockMs)}
           </div>
         )}
@@ -271,10 +274,11 @@ export default function PinScreen() {
                   background: k === '⌫' ? 'transparent' : SURF,
                   fontSize: k === '⌫' ? 22 : 24,
                   fontWeight: 700,
-                  color: locked ? '#2A2A2A' : k === '⌫' ? '#444444' : '#FFFFFF',
+                  color: locked ? MUTED : k === '⌫' ? MUTED : TEXT,
                   cursor: locked ? 'not-allowed' : 'pointer',
                   transition: 'background 0.1s, transform 0.1s',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: k !== '⌫' ? '0 1px 4px rgba(0,56,168,0.06)' : 'none',
                 }}>
                 {k}
               </button>
@@ -286,9 +290,11 @@ export default function PinScreen() {
           <div style={{
             textAlign: 'center', marginTop: 20,
             fontSize: 11, fontWeight: 700,
-            color: totalAttempts >= 13 ? RED : '#333333',
-            padding: '8px 12px', background: totalAttempts >= 13 ? `${RED}08` : SURF,
-            borderRadius: 10, border: `1px solid ${totalAttempts >= 13 ? RED + '20' : EDGE}`,
+            color: totalAttempts >= 13 ? RED : MUTED,
+            padding: '8px 12px',
+            background: totalAttempts >= 13 ? 'rgba(198,40,40,0.06)' : SURF,
+            borderRadius: 10,
+            border: `1px solid ${totalAttempts >= 13 ? 'rgba(198,40,40,0.18)' : EDGE}`,
           }}>
             {totalAttempts} of 15 attempts · data wipes at 15
           </div>
@@ -296,7 +302,7 @@ export default function PinScreen() {
 
         <button onClick={openForgot} style={{
           marginTop: 32, background: 'none', border: 'none',
-          color: '#333333', fontSize: 12, fontWeight: 600,
+          color: MUTED, fontSize: 12, fontWeight: 600,
           cursor: 'pointer', padding: '10px 0',
           display: 'block', margin: '32px auto 0',
         }}>
@@ -321,25 +327,25 @@ const fullPage: React.CSSProperties = {
   position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
   display: 'flex', flexDirection: 'column',
   alignItems: 'center', justifyContent: 'center',
-  background: BG,
+  background: 'linear-gradient(160deg, #EEF4FF 0%, #DDEAFF 100%)',
   overflowY: 'scroll', WebkitOverflowScrolling: 'touch' as never,
 };
 
 const inp: React.CSSProperties = {
   width: '100%', background: SURF2, border: `1px solid ${EDGE}`,
-  borderRadius: 12, color: '#FFFFFF', fontSize: 15, padding: '14px 15px',
+  borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
   outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
   boxSizing: 'border-box',
 };
 
-const redBtn: React.CSSProperties = {
+const blueBtn: React.CSSProperties = {
   width: '100%', padding: '16px 0', borderRadius: 14, border: 'none',
-  background: RED, color: '#fff', fontWeight: 800, fontSize: 15,
+  background: BLUE, color: '#fff', fontWeight: 800, fontSize: 15,
   cursor: 'pointer', marginTop: 8, display: 'block',
-  boxShadow: `0 4px 20px ${RED}40`,
+  boxShadow: `0 4px 20px ${BLUE}40`,
 };
 
 const backBtn: React.CSSProperties = {
-  width: '100%', background: 'none', border: 'none', color: '#333333',
+  width: '100%', background: 'none', border: 'none', color: MUTED,
   fontSize: 13, cursor: 'pointer', marginTop: 12, padding: '10px 0',
 };

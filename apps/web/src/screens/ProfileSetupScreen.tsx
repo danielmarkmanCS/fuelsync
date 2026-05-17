@@ -2,12 +2,16 @@ import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile } from '../api/auth';
 
-const BG     = '#060606';
-const SURF   = '#0F0F0F';
-const SURF2  = '#161616';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const RED    = '#FF453A';
-const GREEN  = '#30D158';
+const BG     = '#EEF4FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#E4EEFF';
+const EDGE   = 'rgba(0,56,168,0.10)';
+const TEXT   = '#0A1628';
+const MUTED  = '#6878A0';
+const BLUE   = '#0038A8';
+const GREEN  = '#00A651';
+const CYAN   = '#0288D1';
+const RED    = '#C62828';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',   desc: 'Desk job, little or no exercise' },
@@ -20,7 +24,7 @@ type ActivityLevel = typeof ACTIVITY_LEVELS[number]['value'];
 
 const inp: React.CSSProperties = {
   width: '100%', background: SURF2, border: `1px solid ${EDGE}`,
-  borderRadius: 12, color: '#FFFFFF', fontSize: 15, padding: '14px 15px',
+  borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
   outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
@@ -56,103 +60,115 @@ export default function ProfileSetupScreen() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
-      {/* Header */}
-      <div className="nrc-a nrc-a1" style={{ padding: '36px 22px 0', marginBottom: 28 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#2A2A2A', marginBottom: 4, textTransform: 'uppercase' }}>Athlete Profile</div>
-        <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -2.5, lineHeight: 1, color: '#FFFFFF' }}>{name.toUpperCase()}</div>
-        {!profileComplete && (
-          <div style={{ color: '#333333', fontSize: 13, marginTop: 12, fontWeight: 500, lineHeight: 1.5 }}>
-            Complete your profile to unlock personalised targets.
-          </div>
-        )}
+      {/* Header gradient */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0038A8 0%, #1565E0 100%)',
+        padding: '44px 22px 28px',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: -50, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+        <div className="nrc-a nrc-a1">
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 4, textTransform: 'uppercase' }}>Athlete Profile</div>
+          <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -2.5, lineHeight: 1, color: '#FFFFFF' }}>{name.toUpperCase()}</div>
+          {!profileComplete && (
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 12, fontWeight: 500, lineHeight: 1.5 }}>
+              Complete your profile to unlock personalised targets.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats grid */}
       {profileComplete && (
-        <div className="nrc-a nrc-a2" style={{ padding: '0 22px', marginBottom: 28 }}>
+        <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { label: 'Weight', value: `${user!.weightKg}`, unit: 'KG', color: RED },
-              { label: 'Height', value: `${user!.heightCm}`, unit: 'CM', color: '#5AC8FA' },
+              { label: 'Weight', value: `${user!.weightKg}`, unit: 'KG', color: BLUE },
+              { label: 'Height', value: `${user!.heightCm}`, unit: 'CM', color: CYAN },
               { label: 'Age',    value: `${user!.age}`,      unit: 'YR', color: GREEN },
             ].map(({ label, value, unit, color }) => (
-              <div key={label} className="nrc-press" style={{ background: SURF, borderRadius: 16, padding: '16px 12px', border: `1px solid ${EDGE}`, borderTop: `2px solid ${color}` }}>
+              <div key={label} className="nrc-press" style={{
+                background: SURF, borderRadius: 16, padding: '16px 12px',
+                border: `1px solid ${EDGE}`, borderTop: `3px solid ${color}`,
+                boxShadow: '0 2px 12px rgba(0,56,168,0.06)',
+              }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: color, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
-                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF', lineHeight: 1 }}>{value}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#333333', letterSpacing: 1, marginTop: 4 }}>{unit}</div>
+                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: TEXT, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 1, marginTop: 4 }}>{unit}</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div style={{ padding: '0 22px 48px' }}>
+      <div style={{ padding: '20px 22px 48px' }}>
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Display Name</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Display Name</div>
         <input style={{ ...inp, marginBottom: 24 }} type="text" value={displayName}
           onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Body Stats</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Body Stats</div>
         <div style={{ display: 'flex', gap: 10 }}>
           <input style={{ ...inp, flex: 1 }} type="number" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Weight (kg)" />
           <input style={{ ...inp, flex: 1 }} type="number" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} placeholder="Height (cm)" />
         </div>
         <input style={inp} type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" />
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10, marginTop: 6 }}>Biological Sex</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10, marginTop: 6 }}>Biological Sex</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
           {(['male', 'female'] as const).map((g) => (
             <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
-              flex: 1, padding: 15, borderRadius: 12, cursor: 'pointer', border: '1px solid',
-              borderColor: gender === g ? RED : EDGE,
-              borderTop: gender === g ? `2px solid ${RED}` : `1px solid ${EDGE}`,
-              background: gender === g ? `${RED}0A` : SURF2,
-              color: gender === g ? RED : '#444444',
+              flex: 1, padding: 15, borderRadius: 12, cursor: 'pointer',
+              borderColor: gender === g ? BLUE : EDGE,
+              border: `1px solid ${gender === g ? BLUE : EDGE}`,
+              borderTop: gender === g ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
+              background: gender === g ? `${BLUE}08` : SURF2,
+              color: gender === g ? BLUE : MUTED,
               fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
             }}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
           ))}
         </div>
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Activity Level</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Activity Level</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
           {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
             const active = activityLevel === value;
             return (
               <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
                 textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
-                background: active ? `${RED}0A` : SURF2,
-                border: `1px solid ${active ? RED : EDGE}`,
-                borderLeft: active ? `3px solid ${RED}` : `1px solid ${EDGE}`,
+                background: active ? `${BLUE}06` : SURF2,
+                border: `1px solid ${active ? BLUE : EDGE}`,
+                borderLeft: active ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: active ? RED : '#333333', marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 12, color: active ? '#555555' : '#2A2A2A', fontWeight: 500 }}>{desc}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: active ? BLUE : TEXT, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>{desc}</div>
               </button>
             );
           })}
         </div>
 
         {error && (
-          <div style={{ color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px', background: `${RED}08`, borderRadius: 12, fontWeight: 600, border: `1px solid ${RED}20` }}>
+          <div style={{ color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px', background: 'rgba(198,40,40,0.06)', borderRadius: 12, fontWeight: 600, border: '1px solid rgba(198,40,40,0.18)' }}>
             {error}
           </div>
         )}
 
         <button onClick={handleSave} disabled={saving} className="nrc-press" style={{
           width: '100%', padding: '16px 0', borderRadius: 14, marginBottom: 16,
-          background: saved ? `${GREEN}12` : saving ? SURF2 : RED,
-          color: saved ? GREEN : saving ? '#333333' : '#fff',
+          background: saved ? `${GREEN}12` : saving ? SURF2 : BLUE,
+          color: saved ? GREEN : saving ? MUTED : '#fff',
           fontWeight: 800, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer',
-          border: saved ? `1px solid ${GREEN}30` : '1px solid transparent',
-          boxShadow: (!saved && !saving) ? `0 4px 20px ${RED}40` : 'none',
+          border: saved ? `1px solid ${GREEN}35` : '1px solid transparent',
+          boxShadow: (!saved && !saving) ? `0 4px 20px ${BLUE}40` : 'none',
         }}>
           {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save Profile →'}
         </button>
 
-        <div style={{ background: SURF, borderRadius: 16, padding: '16px 18px', border: `1px solid ${EDGE}` }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 14 }}>Session</div>
+        <div style={{ background: SURF, borderRadius: 16, padding: '16px 18px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Session</div>
           <button onClick={() => { if (window.confirm('Lock the app?')) logout(); }} className="nrc-press" style={{
             width: '100%', padding: 13, borderRadius: 10,
-            border: `1px solid ${RED}25`, background: 'none', color: RED,
+            border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: BLUE,
             fontWeight: 700, fontSize: 13, cursor: 'pointer',
           }}>Lock App</button>
         </div>

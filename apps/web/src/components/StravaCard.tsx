@@ -5,12 +5,14 @@ import { shareRunCard } from '../utils/runShareCard';
 import type { StravaStats, StravaRun, StravaData } from '../api/strava';
 
 const STRAVA = '#FC4C02';
-const SURF   = '#0F0F0F';
-const SURF2  = '#161616';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const GREEN  = '#30D158';
-const CYAN   = '#5AC8FA';
-const RED    = '#FF453A';
+const SURF   = '#FFFFFF';
+const SURF2  = '#E4EEFF';
+const EDGE   = 'rgba(0,56,168,0.10)';
+const TEXT   = '#0A1628';
+const MUTED  = '#6878A0';
+const GREEN  = '#00A651';
+const BLUE   = '#0038A8';
+const RED    = '#C62828';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -52,20 +54,20 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
           <div style={{ color: logged ? GREEN : STRAVA, fontSize: 18, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>
             {run.distanceKm}
           </div>
-          <div style={{ color: '#333333', fontSize: 9, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>KM</div>
+          <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>KM</div>
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: '#DDDDDD', fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: -0.2 }}>
+          <div style={{ color: TEXT, fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: -0.2 }}>
             {run.name}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-            <span style={{ color: '#444444', fontSize: 10 }}>{formatDate(run.date)}</span>
-            <span style={{ color: '#2A2A2A', fontSize: 10 }}>·</span>
-            <span style={{ color: CYAN, fontSize: 10, fontWeight: 700 }}>{run.pace}</span>
+            <span style={{ color: MUTED, fontSize: 10 }}>{formatDate(run.date)}</span>
+            <span style={{ color: MUTED, fontSize: 10 }}>·</span>
+            <span style={{ color: BLUE, fontSize: 10, fontWeight: 700 }}>{run.pace}</span>
             {run.hrAvg && (
               <>
-                <span style={{ color: '#2A2A2A', fontSize: 10 }}>·</span>
+                <span style={{ color: MUTED, fontSize: 10 }}>·</span>
                 <span style={{ color: RED, fontSize: 10, fontWeight: 700 }}>{run.hrAvg}bpm</span>
               </>
             )}
@@ -78,7 +80,7 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
             title={logged ? 'Remove log' : 'Log run'}
             style={{
               width: 30, height: 30, borderRadius: 8, border: 'none',
-              background: logged ? `${GREEN}12` : `${STRAVA}10`,
+              background: logged ? `${GREEN}14` : `${STRAVA}12`,
               color: logged ? GREEN : STRAVA,
               fontWeight: 800, fontSize: 14, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -93,7 +95,7 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
             title="Share"
             style={{
               width: 30, height: 30, borderRadius: 8, border: 'none',
-              background: shareOpt ? STRAVA : `${STRAVA}10`,
+              background: shareOpt ? STRAVA : `${STRAVA}12`,
               color: shareOpt ? '#fff' : STRAVA,
               cursor: sharing ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -134,7 +136,7 @@ function RunRow({ run, onLogged }: { run: StravaRun; onLogged: (id: number) => v
             style={{
               flex: 1, padding: '8px 0', borderRadius: 8,
               background: SURF2, border: `1px solid ${EDGE}`,
-              color: '#555555', fontWeight: 700, fontSize: 11, letterSpacing: 0.5,
+              color: MUTED, fontWeight: 700, fontSize: 11, letterSpacing: 0.5,
               cursor: 'pointer',
             }}
           >
@@ -182,9 +184,9 @@ export default function StravaCard() {
   };
 
   if (loading) return (
-    <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}` }}>
-      <div style={{ color: '#333333', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Strava</div>
-      <div style={{ color: '#444444', fontSize: 12 }}>Loading…</div>
+    <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+      <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Strava</div>
+      <div style={{ color: MUTED, fontSize: 12 }}>Loading…</div>
     </div>
   );
 
@@ -194,26 +196,27 @@ export default function StravaCard() {
       border: `1px solid ${EDGE}`,
       borderLeft: `3px solid ${STRAVA}`,
       overflow: 'hidden',
+      boxShadow: '0 2px 12px rgba(0,56,168,0.07)',
     }}>
       <div style={{ padding: '18px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill={STRAVA}>
             <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
           </svg>
-          <div style={{ color: '#444444', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>Strava</div>
+          <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>Strava</div>
         </div>
-        <div style={{ color: '#444444', fontSize: 13, marginBottom: 16, lineHeight: 1.5, fontWeight: 500 }}>
+        <div style={{ color: MUTED, fontSize: 13, marginBottom: 16, lineHeight: 1.5, fontWeight: 500 }}>
           Connect Strava to log runs and share them.
         </div>
         {connectErr && (
-          <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '8px 12px', background: `${RED}08`, borderRadius: 8, border: `1px solid ${RED}20` }}>
+          <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '8px 12px', background: 'rgba(198,40,40,0.06)', borderRadius: 8, border: '1px solid rgba(198,40,40,0.18)' }}>
             {connectErr}
           </div>
         )}
         <button onClick={handleConnect} disabled={connecting} style={{
           width: '100%', padding: '12px 0', borderRadius: 10, border: 'none',
           background: connecting ? SURF2 : STRAVA,
-          color: connecting ? '#333333' : '#fff',
+          color: connecting ? MUTED : '#fff',
           fontWeight: 800, fontSize: 12, letterSpacing: 1.5,
           cursor: connecting ? 'not-allowed' : 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -233,8 +236,9 @@ export default function StravaCard() {
     <div style={{
       background: SURF, borderRadius: 14,
       border: `1px solid ${EDGE}`,
-      borderTop: `2px solid ${STRAVA}`,
+      borderTop: `3px solid ${STRAVA}`,
       overflow: 'hidden',
+      boxShadow: '0 2px 12px rgba(0,56,168,0.07)',
     }}>
       {/* Header */}
       <div style={{
@@ -253,18 +257,18 @@ export default function StravaCard() {
             </svg>
           </div>
           <div>
-            <div style={{ color: '#333333', fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>Strava</div>
-            <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700, letterSpacing: -0.3 }}>{data.athlete.name}</div>
+            <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>Strava</div>
+            <div style={{ color: TEXT, fontSize: 13, fontWeight: 700, letterSpacing: -0.3 }}>{data.athlete.name}</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ color: STRAVA, fontSize: 20, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>{data.weekly.km}</div>
-            <div style={{ color: '#333333', fontSize: 9, fontWeight: 700, letterSpacing: 1, marginTop: 2, textTransform: 'uppercase' }}>KM Week</div>
+            <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 1, marginTop: 2, textTransform: 'uppercase' }}>KM Week</div>
           </div>
           <button onClick={load} style={{
             background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 8,
-            color: '#444444', fontSize: 14, fontWeight: 700,
+            color: MUTED, fontSize: 14, fontWeight: 700,
             width: 30, height: 30, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>↻</button>
@@ -286,11 +290,11 @@ export default function StravaCard() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         borderTop: data.recentRuns.length > 0 ? `1px solid ${EDGE}` : 'none',
       }}>
-        <div style={{ color: '#333333', fontSize: 10, fontWeight: 600 }}>
+        <div style={{ color: MUTED, fontSize: 10, fontWeight: 600 }}>
           {data.weekly.runs} runs · {data.ytd.km} km YTD
         </div>
         <button onClick={handleDisconnect} style={{
-          background: 'none', border: 'none', color: '#333333',
+          background: 'none', border: 'none', color: MUTED,
           fontSize: 10, cursor: 'pointer', fontWeight: 600,
         }}>Disconnect</button>
       </div>

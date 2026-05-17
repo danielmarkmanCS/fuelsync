@@ -9,16 +9,19 @@ import StravaCard from '../components/StravaCard';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 
-const BG     = '#060606';
-const SURF   = '#0F0F0F';
-const SURF2  = '#161616';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const RED    = '#FF453A';
-const GREEN  = '#30D158';
-const ORANGE = '#FF9F0A';
-const PURPLE = '#BF5AF2';
-const CYAN   = '#5AC8FA';
-const YELLOW = '#FFD60A';
+const BG     = '#EEF4FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#E4EEFF';
+const EDGE   = 'rgba(0,56,168,0.10)';
+const TEXT   = '#0A1628';
+const MUTED  = '#6878A0';
+const BLUE   = '#0038A8';
+const GREEN  = '#00A651';
+const ORANGE = '#E65100';
+const PURPLE = '#7B1FA2';
+const CYAN   = '#0288D1';
+const YELLOW = '#F9A825';
+const RED    = '#C62828';
 
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
 
@@ -39,39 +42,39 @@ function recoveryFromKm(km: number, runs: number) {
   return            { label: 'OVERLOADED', color: RED,    sub: `${runs} runs · ${km.toFixed(1)} km`,                 score: 10  };
 }
 
-/* SVG calorie ring */
 function CalRing({ pct, cal, target }: { pct: number; cal: number; target: number }) {
-  const S = 188, W = 9, r = (S - W * 2) / 2;
+  const S = 188, W = 10, r = (S - W * 2) / 2;
   const circ = 2 * Math.PI * r;
   const arc  = Math.min(pct / 100, 1) * circ;
-  const color = pct >= 100 ? RED : RED;
+  const over = pct >= 100;
+  const color = over ? RED : BLUE;
   return (
     <div style={{ position: 'relative', width: S, height: S }}>
       <svg width={S} height={S} style={{ position: 'absolute', top: 0, left: 0 }}>
         <circle cx={S/2} cy={S/2} r={r} fill="none"
-          stroke="rgba(255,255,255,0.06)" strokeWidth={W} />
+          stroke="rgba(0,56,168,0.08)" strokeWidth={W} />
         <circle cx={S/2} cy={S/2} r={r} fill="none"
           stroke={color} strokeWidth={W}
           strokeDasharray={`${arc} ${circ - arc}`}
           strokeLinecap="round"
           transform={`rotate(-90 ${S/2} ${S/2})`}
-          style={{ transition: 'stroke-dasharray 0.8s ease', filter: `drop-shadow(0 0 6px ${color}88)` }} />
+          style={{ transition: 'stroke-dasharray 0.8s ease', filter: `drop-shadow(0 0 8px ${color}55)` }} />
       </svg>
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: '#333333', marginBottom: 6, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: MUTED, marginBottom: 6, textTransform: 'uppercase' }}>
           Calories
         </div>
-        <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: -3, color: pct >= 100 ? RED : '#FFFFFF', lineHeight: 1 }}>
+        <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: -3, color: over ? RED : TEXT, lineHeight: 1 }}>
           {Math.round(cal).toLocaleString()}
         </div>
-        <div style={{ fontSize: 10, fontWeight: 600, color: '#333333', marginTop: 4, letterSpacing: 1 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, marginTop: 4, letterSpacing: 1 }}>
           of {Math.round(target).toLocaleString()} kcal
         </div>
         {pct > 0 && (
-          <div style={{ fontSize: 11, fontWeight: 800, color: pct >= 100 ? RED : '#444444', marginTop: 6, letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: over ? RED : BLUE, marginTop: 6, letterSpacing: 0.5 }}>
             {Math.round(pct)}%
           </div>
         )}
@@ -80,7 +83,6 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
   );
 }
 
-/* Macro pill */
 function MacroPill({ label, current, target, color }: { label: string; current: number; target: number; color: string }) {
   const pct  = target > 0 ? Math.min((current / target) * 100, 100) : 0;
   const over = current > target && target > 0;
@@ -89,17 +91,17 @@ function MacroPill({ label, current, target, color }: { label: string; current: 
     <div style={{
       flex: 1, background: SURF, borderRadius: 16, padding: '14px 12px 12px',
       border: `1px solid ${EDGE}`,
-      borderTop: `2px solid ${c}`,
-      boxShadow: `0 0 20px ${c}12`,
+      borderTop: `3px solid ${c}`,
+      boxShadow: `0 2px 12px rgba(0,56,168,0.06), 0 0 0 0 transparent`,
     }}>
       <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: c, marginBottom: 8, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF', lineHeight: 1 }}>
-        {Math.round(current)}<span style={{ fontSize: 12, color: '#333333', fontWeight: 600 }}>g</span>
+      <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: TEXT, lineHeight: 1 }}>
+        {Math.round(current)}<span style={{ fontSize: 12, color: MUTED, fontWeight: 600 }}>g</span>
       </div>
-      <div style={{ margin: '10px 0 6px', height: 2, background: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: c, borderRadius: 1, transition: 'width 0.7s ease' }} />
+      <div style={{ margin: '10px 0 6px', height: 3, background: 'rgba(0,56,168,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: c, borderRadius: 2, transition: 'width 0.7s ease' }} />
       </div>
-      <div style={{ fontSize: 9, color: '#333333', fontWeight: 600 }}>{Math.round(target)}g</div>
+      <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{Math.round(target)}g</div>
     </div>
   );
 }
@@ -144,27 +146,37 @@ export default function HomeScreen() {
   const recovery  = recoveryFromKm(weeklyLoad.totalRunKm, loggedRuns.length);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: BG, backgroundImage: 'linear-gradient(180deg, rgba(255,69,58,0.04) 0%, transparent 300px)' }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
-      {/* ── HEADER ── */}
-      <div className="nrc-a nrc-a1" style={{ padding: '36px 22px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#2A2A2A', marginBottom: 4, textTransform: 'uppercase' }}>
-            Good {greeting}
+      {/* ── HEADER GRADIENT BAND ── */}
+      <div style={{
+        background: `linear-gradient(135deg, ${BLUE} 0%, #1565E0 100%)`,
+        padding: '44px 22px 28px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -40, left: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+        <div className="nrc-a nrc-a1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 4, textTransform: 'uppercase' }}>
+              Good {greeting}
+            </div>
+            <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF' }}>
+              {name.toUpperCase()}
+            </div>
           </div>
-          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF' }}>
-            {name.toUpperCase()}
-          </div>
-        </div>
-        <div style={{ background: SURF, border: `1px solid ${EDGE}`, borderRadius: 12, padding: '8px 14px', textAlign: 'center' }}>
-          <div style={{ fontSize: 9, fontWeight: 600, color: '#333333', letterSpacing: 1 }}>
-            {new Date().toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF', lineHeight: 1 }}>
-            {new Date().getDate()}
-          </div>
-          <div style={{ fontSize: 9, fontWeight: 600, color: '#333333', letterSpacing: 1 }}>
-            {new Date().toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase()}
+          <div style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)', borderRadius: 12, padding: '8px 14px', textAlign: 'center' }}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: 1 }}>
+              {new Date().toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF', lineHeight: 1 }}>
+              {new Date().getDate()}
+            </div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: 1 }}>
+              {new Date().toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase()}
+            </div>
           </div>
         </div>
       </div>
@@ -173,13 +185,13 @@ export default function HomeScreen() {
       {!profileComplete && (
         <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
           <div className="nrc-press" style={{
-            background: 'rgba(255,69,58,0.06)', borderRadius: 14,
+            background: '#FFF3E0', borderRadius: 14,
             padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
-            border: '1px solid rgba(255,69,58,0.15)', borderLeft: `3px solid ${RED}`,
+            border: '1px solid rgba(230,81,0,0.2)', borderLeft: `3px solid ${ORANGE}`,
           }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: '#FFFFFF', marginBottom: 3 }}>Complete Your Profile</div>
-              <div style={{ fontSize: 12, color: '#444444' }}>Unlock personalised macro targets →</div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: TEXT, marginBottom: 3 }}>Complete Your Profile</div>
+              <div style={{ fontSize: 12, color: MUTED }}>Unlock personalised macro targets →</div>
             </div>
           </div>
         </div>
@@ -187,23 +199,25 @@ export default function HomeScreen() {
 
       {/* ── CALORIE RING ── */}
       {targets ? (
-        <div className="nrc-a nrc-a2" style={{ padding: '28px 22px 0', display: 'flex', justifyContent: 'center' }}>
+        <div className="nrc-a nrc-a2" style={{ padding: '24px 22px 0', display: 'flex', justifyContent: 'center' }}>
           <div style={{ position: 'relative' }}>
-            <CalRing pct={calPct} cal={consumed.calories} target={targets.calories} />
+            <div style={{ background: SURF, borderRadius: 24, padding: '20px', boxShadow: '0 4px 24px rgba(0,56,168,0.10)', border: `1px solid ${EDGE}` }}>
+              <CalRing pct={calPct} cal={consumed.calories} target={targets.calories} />
+            </div>
             {calLeft !== 0 && (
-              <div style={{ textAlign: 'center', marginTop: 10, fontSize: 11, fontWeight: 600, color: calLeft > 0 ? '#333333' : RED }}>
+              <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, fontWeight: 700, color: calLeft > 0 ? MUTED : RED }}>
                 {calLeft > 0 ? `${calLeft.toLocaleString()} kcal remaining` : `${Math.abs(calLeft)} kcal over target`}
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="nrc-a nrc-a2" style={{ padding: '28px 22px 0' }}>
-          <div style={{ background: SURF, borderRadius: 20, padding: '28px 22px', border: `1px solid ${EDGE}`, textAlign: 'center' }}>
-            <div style={{ fontSize: 80, fontWeight: 900, letterSpacing: -4, color: '#FFFFFF', lineHeight: 1 }}>
+        <div className="nrc-a nrc-a2" style={{ padding: '24px 22px 0' }}>
+          <div style={{ background: SURF, borderRadius: 20, padding: '28px 22px', border: `1px solid ${EDGE}`, textAlign: 'center', boxShadow: '0 2px 12px rgba(0,56,168,0.06)' }}>
+            <div style={{ fontSize: 80, fontWeight: 900, letterSpacing: -4, color: TEXT, lineHeight: 1 }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#2A2A2A', letterSpacing: 3, marginTop: 8 }}>CALORIES TODAY</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 3, marginTop: 8 }}>CALORIES TODAY</div>
           </div>
         </div>
       )}
@@ -221,19 +235,20 @@ export default function HomeScreen() {
       {targets && (
         <div className="nrc-a nrc-a3" style={{ padding: '10px 22px 0' }}>
           <div style={{
-            background: `${recovery.color}09`,
-            borderRadius: 14, padding: '16px 18px',
-            border: `1px solid ${recovery.color}20`,
-            borderLeft: `3px solid ${recovery.color}`,
+            background: SURF,
+            borderRadius: 16, padding: '16px 18px',
+            border: `1px solid ${EDGE}`,
+            borderLeft: `4px solid ${recovery.color}`,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            boxShadow: '0 2px 12px rgba(0,56,168,0.06)',
           }}>
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', marginBottom: 4, textTransform: 'uppercase' }}>Recovery</div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, marginBottom: 4, textTransform: 'uppercase' }}>Recovery</div>
               <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: recovery.color }}>{recovery.label}</div>
-              <div style={{ fontSize: 11, color: '#444444', marginTop: 2, fontWeight: 500 }}>{recovery.sub}</div>
+              <div style={{ fontSize: 11, color: MUTED, marginTop: 2, fontWeight: 500 }}>{recovery.sub}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', border: `3px solid ${recovery.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${recovery.color}30` }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', border: `3px solid ${recovery.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${recovery.color}10` }}>
                 <span style={{ fontSize: 14, fontWeight: 900, color: recovery.color }}>{recovery.score}%</span>
               </div>
             </div>
@@ -242,14 +257,14 @@ export default function HomeScreen() {
       )}
 
       {/* ── TRAINING MODE ── */}
-      <div className="nrc-a nrc-a4" style={{ padding: '28px 22px 0' }}>
+      <div className="nrc-a nrc-a4" style={{ padding: '24px 22px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
             {todayLog ? 'Training Mode' : 'Select Mode'}
           </div>
           {todayLog && (
             <button onClick={() => { if (window.confirm('Reset today?')) resetDay(); }} style={{
-              background: 'none', border: 'none', color: '#333333', fontSize: 10, fontWeight: 700, letterSpacing: 1, cursor: 'pointer',
+              background: 'none', border: 'none', color: MUTED, fontSize: 10, fontWeight: 700, letterSpacing: 1, cursor: 'pointer',
             }}>RESET</button>
           )}
         </div>
@@ -262,12 +277,12 @@ export default function HomeScreen() {
           <div style={{
             background: SURF, borderRadius: 14, padding: '14px 18px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            border: `1px solid ${EDGE}`,
+            border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)',
           }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase' }}>Workout Time</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>Workout Time</div>
             <input type="time" value={workoutTime}
               onChange={(e) => { setWorkoutTime(e.target.value); logDay(todayLog.trainingType, e.target.value); }}
-              style={{ background: 'none', border: 'none', color: RED, fontSize: 18, fontWeight: 900, outline: 'none', textAlign: 'right', letterSpacing: -0.5 }}
+              style={{ background: 'none', border: 'none', color: BLUE, fontSize: 18, fontWeight: 900, outline: 'none', textAlign: 'right', letterSpacing: -0.5 }}
             />
           </div>
         </div>
@@ -277,18 +292,18 @@ export default function HomeScreen() {
       {carbWindow && (
         <div style={{ padding: '10px 22px 0' }}>
           <div style={{
-            background: `${YELLOW}06`,
+            background: '#FFFBEB',
             borderRadius: 14, padding: '14px 16px',
-            border: `1px solid ${YELLOW}18`,
+            border: '1px solid rgba(249,168,37,0.25)',
             borderLeft: `3px solid ${YELLOW}`,
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             <span style={{ fontSize: 20 }}>⏱</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#FFFFFF' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: TEXT }}>
                 Carb Window <span style={{ color: YELLOW }}>{carbWindow.preWorkoutStart}–{carbWindow.postWorkoutEnd}</span>
               </div>
-              <div style={{ fontSize: 11, color: '#444444', marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
                 Aim for <span style={{ color: ORANGE, fontWeight: 700 }}>{carbWindow.windowCarbsG}g carbs</span> in this window
               </div>
             </div>
@@ -297,25 +312,25 @@ export default function HomeScreen() {
       )}
 
       {/* ── LOGGED RUNS ── */}
-      <div className="nrc-a nrc-a5" style={{ padding: '28px 22px 0' }}>
+      <div className="nrc-a nrc-a5" style={{ padding: '24px 22px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase' }}>Logged Runs</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>Logged Runs</div>
             {weeklyLoad.totalRunKm > 0 && (
               <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: GREEN, lineHeight: 1 }}>
-                {weeklyLoad.totalRunKm.toFixed(1)}<span style={{ fontSize: 9, color: '#333333', fontWeight: 700, letterSpacing: 1, marginLeft: 3 }}>KM</span>
+                {weeklyLoad.totalRunKm.toFixed(1)}<span style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginLeft: 3 }}>KM</span>
               </div>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {loggedRuns.length > 0 && (
               <button onClick={() => { if (window.confirm('Reset all logged runs?')) resetWeeklyRuns(); }}
-                style={{ background: 'none', border: `1px solid ${EDGE}`, color: '#333333', borderRadius: 20, fontWeight: 700, fontSize: 10, letterSpacing: 1, cursor: 'pointer', padding: '4px 10px' }}>
+                style={{ background: 'none', border: `1px solid ${EDGE}`, color: MUTED, borderRadius: 20, fontWeight: 700, fontSize: 10, letterSpacing: 1, cursor: 'pointer', padding: '4px 10px' }}>
                 RESET
               </button>
             )}
             <button onClick={() => setShowWorkoutForm(!showWorkoutForm)} className="nrc-press" style={{
-              background: `${GREEN}10`, border: `1px solid ${GREEN}30`, color: GREEN,
+              background: `${GREEN}14`, border: `1px solid ${GREEN}35`, color: GREEN,
               borderRadius: 20, fontWeight: 700, fontSize: 10, letterSpacing: 1, cursor: 'pointer', padding: '4px 12px',
             }}>+ LOG</button>
           </div>
@@ -325,12 +340,12 @@ export default function HomeScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
             <input type="text" value={workoutName} placeholder="Run name"
               onChange={(e) => setWorkoutName(e.target.value)}
-              style={{ background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 12, color: '#FFFFFF', fontSize: 15, padding: '12px 16px', outline: 'none' }}
+              style={{ background: SURF, border: `1px solid ${EDGE}`, borderRadius: 12, color: TEXT, fontSize: 15, padding: '12px 16px', outline: 'none', boxShadow: '0 1px 4px rgba(0,56,168,0.06)' }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
               <input type="number" value={workoutKm} placeholder="Distance (km)" min={0}
                 onChange={(e) => { const v = e.target.value; if (v === '' || parseFloat(v) >= 0) setWorkoutKm(v); }}
-                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 12, color: '#FFFFFF', fontSize: 15, padding: '12px 16px', outline: 'none' }}
+                style={{ flex: 1, background: SURF, border: `1px solid ${EDGE}`, borderRadius: 12, color: TEXT, fontSize: 15, padding: '12px 16px', outline: 'none' }}
               />
               <button onClick={() => {
                 const km = parseFloat(workoutKm);
@@ -338,39 +353,38 @@ export default function HomeScreen() {
                 addRunKm(km, workoutName.trim() || 'Run', 'manual');
                 setWorkoutKm(''); setWorkoutName(''); setShowWorkoutForm(false);
               }} className="nrc-press" style={{
-                background: GREEN, border: 'none', borderRadius: 12, color: '#000',
+                background: GREEN, border: 'none', borderRadius: 12, color: '#fff',
                 fontWeight: 900, fontSize: 13, cursor: 'pointer', padding: '0 20px', letterSpacing: 1,
               }}>DONE</button>
             </div>
           </div>
         )}
 
-        <div style={{ background: SURF, borderRadius: 16, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+        <div style={{ background: SURF, borderRadius: 16, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,56,168,0.06)' }}>
           {loggedRuns.length === 0 ? (
-            <div style={{ padding: '24px 14px', textAlign: 'center', color: '#222222', fontSize: 12, fontWeight: 600 }}>
+            <div style={{ padding: '24px 14px', textAlign: 'center', color: MUTED, fontSize: 12, fontWeight: 600 }}>
               No runs logged this week
             </div>
           ) : loggedRuns.map((r, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '13px 16px', borderTop: i === 0 ? 'none' : `1px solid ${EDGE}`, gap: 12 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                background: r.source === 'strava' ? '#FC4C02' : GREEN,
-                boxShadow: `0 0 8px ${r.source === 'strava' ? '#FC4C02' : GREEN}80` }} />
+                background: r.source === 'strava' ? '#FC4C02' : GREEN }} />
               {editingRunIdx === i ? (
                 <input autoFocus value={editingRunName}
                   onChange={(e) => setEditingRunName(e.target.value)}
                   onBlur={() => { if (editingRunName.trim()) renameRun(i, editingRunName.trim()); setEditingRunIdx(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { if (editingRunName.trim()) renameRun(i, editingRunName.trim()); setEditingRunIdx(null); } if (e.key === 'Escape') setEditingRunIdx(null); }}
-                  style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#FFFFFF', border: 'none', borderBottom: `1px solid ${GREEN}`, outline: 'none', background: 'transparent', padding: '1px 0' }} />
+                  style={{ flex: 1, fontSize: 13, fontWeight: 600, color: TEXT, border: 'none', borderBottom: `1px solid ${GREEN}`, outline: 'none', background: 'transparent', padding: '1px 0' }} />
               ) : (
                 <div onClick={() => { setEditingRunIdx(i); setEditingRunName(r.name); }}
-                  style={{ flex: 1, fontSize: 13, color: '#BBBBBB', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }}
+                  style={{ flex: 1, fontSize: 13, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }}
                   title="Tap to rename">{r.name}</div>
               )}
               <div style={{ fontSize: 15, fontWeight: 900, color: r.source === 'strava' ? '#FC4C02' : GREEN, letterSpacing: -0.5, flexShrink: 0 }}>
-                {r.km}<span style={{ fontSize: 9, color: '#333333', fontWeight: 700, marginLeft: 2 }}>KM</span>
+                {r.km}<span style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginLeft: 2 }}>KM</span>
               </div>
               <button onClick={() => removeRunKm(r.km, r.name)} style={{
-                background: 'none', border: 'none', color: '#2A2A2A', fontSize: 18, cursor: 'pointer', padding: '0 2px', lineHeight: 1, flexShrink: 0,
+                background: 'none', border: 'none', color: MUTED, fontSize: 18, cursor: 'pointer', padding: '0 2px', lineHeight: 1, flexShrink: 0,
               }}>×</button>
             </div>
           ))}
@@ -378,15 +392,15 @@ export default function HomeScreen() {
       </div>
 
       {/* ── RUNNING ── */}
-      <div className="nrc-a nrc-a6" style={{ padding: '28px 22px 0' }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 14 }}>Running</div>
+      <div className="nrc-a nrc-a6" style={{ padding: '24px 22px 0' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Running</div>
         <StravaCard />
       </div>
 
       {/* ── CONDITIONS ── */}
       {weather && environmentAlert && (
-        <div style={{ padding: '28px 22px 0' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 14 }}>Conditions</div>
+        <div style={{ padding: '24px 22px 0' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Conditions</div>
           <WeatherBanner weather={weather} alert={environmentAlert} />
         </div>
       )}

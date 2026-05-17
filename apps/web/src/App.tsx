@@ -12,6 +12,10 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 type Tab = 'home' | 'food' | 'profile';
 const NAV_H = 68;
 
+const BLUE  = '#0038A8';
+const TEXT  = '#0A1628';
+const MUTED2 = '#C0CCDF';
+
 function HomeIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
@@ -25,7 +29,7 @@ function FuelIcon({ active }: { active: boolean }) {
   return (
     <svg width="20" height="22" viewBox="0 0 24 24" fill="currentColor">
       <path d="M13 2L4.09 12.76A1 1 0 005 14.5h6L10 22l9.91-10.76A1 1 0 0019 9.5H13.5L13 2z"
-        opacity={active ? 1 : 0.7} />
+        opacity={active ? 1 : 0.5} />
     </svg>
   );
 }
@@ -33,9 +37,9 @@ function FuelIcon({ active }: { active: boolean }) {
 function StatsIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-      <rect x="3"  y="14" width="4" height="7" rx="1.5" opacity={active ? 1 : 0.7} />
+      <rect x="3"  y="14" width="4" height="7" rx="1.5" opacity={active ? 1 : 0.5} />
       <rect x="10" y="9"  width="4" height="12" rx="1.5" />
-      <rect x="17" y="4"  width="4" height="17" rx="1.5" opacity={active ? 1 : 0.7} />
+      <rect x="17" y="4"  width="4" height="17" rx="1.5" opacity={active ? 1 : 0.5} />
     </svg>
   );
 }
@@ -92,24 +96,26 @@ export default function App() {
     return (
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', background: '#060606', gap: 0,
+        alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(160deg, #EEF4FF 0%, #DDEAFF 100%)',
+        gap: 0,
       }}>
-        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: '#FFFFFF' }}>
+        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: TEXT }}>
           FUEL
         </div>
-        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: '#FF453A' }}>
+        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: BLUE }}>
           SYNC
         </div>
         <div style={{ marginTop: 32, display: 'flex', gap: 6 }}>
           {[0,1,2].map((i) => (
             <div key={i} style={{
               width: 5, height: 5, borderRadius: '50%',
-              background: i === 0 ? '#FF453A' : 'rgba(255,255,255,0.15)',
+              background: i === 0 ? BLUE : 'rgba(0,56,168,0.2)',
               animation: `pulse 1.2s ${i * 0.2}s infinite ease-in-out`,
             }} />
           ))}
         </div>
-        <div style={{ color: '#333333', fontSize: 10, letterSpacing: 4, marginTop: 20, fontWeight: 600, textTransform: 'uppercase' }}>
+        <div style={{ color: '#9EB3D0', fontSize: 10, letterSpacing: 4, marginTop: 20, fontWeight: 600, textTransform: 'uppercase' }}>
           {stravaConnecting ? 'Syncing' : 'Loading'}
         </div>
       </div>
@@ -123,7 +129,7 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#060606', overflow: 'hidden',
+      background: '#EEF4FF', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {activeTab === 'home'    && <HomeScreen />}
@@ -133,9 +139,10 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(6,6,6,0.96)',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(255,255,255,0.97)',
+        borderTop: '1px solid rgba(0,56,168,0.08)',
         backdropFilter: 'blur(20px)',
+        boxShadow: '0 -4px 20px rgba(0,56,168,0.06)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
@@ -151,16 +158,20 @@ export default function App() {
               {active && (
                 <div style={{
                   position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: 32, height: 2, background: '#FF453A', borderRadius: 1,
-                  boxShadow: '0 0 8px #FF453A',
+                  width: 32, height: 3, background: BLUE, borderRadius: 2,
+                  boxShadow: `0 0 8px ${BLUE}55`,
                 }} />
               )}
-              <div style={{ color: active ? '#FFFFFF' : '#2A2A2A', transition: 'color 0.2s', filter: active ? 'drop-shadow(0 0 6px rgba(255,69,58,0.4))' : 'none' }}>
+              <div style={{
+                color: active ? BLUE : MUTED2,
+                transition: 'color 0.2s',
+                filter: active ? `drop-shadow(0 0 4px ${BLUE}40)` : 'none',
+              }}>
                 <Icon active={active} />
               </div>
               <span style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
-                color: active ? '#FFFFFF' : '#2A2A2A', transition: 'color 0.2s',
+                color: active ? BLUE : MUTED2, transition: 'color 0.2s',
               }}>{label.toUpperCase()}</span>
             </button>
           );

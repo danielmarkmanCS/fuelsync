@@ -4,14 +4,17 @@ import type { FoodLog, AIEstimate } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
 
-const BG     = '#060606';
-const SURF   = '#0F0F0F';
-const SURF2  = '#161616';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const RED    = '#FF453A';
-const GREEN  = '#30D158';
-const ORANGE = '#FF9F0A';
-const PURPLE = '#BF5AF2';
+const BG     = '#EEF4FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#E4EEFF';
+const EDGE   = 'rgba(0,56,168,0.10)';
+const TEXT   = '#0A1628';
+const MUTED  = '#6878A0';
+const BLUE   = '#0038A8';
+const GREEN  = '#00A651';
+const ORANGE = '#E65100';
+const PURPLE = '#7B1FA2';
+const RED    = '#C62828';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -58,7 +61,7 @@ const CONF_COLOR: Record<string, string> = { high: GREEN, medium: ORANGE, low: R
 
 const inp: React.CSSProperties = {
   background: SURF2, border: `1px solid ${EDGE}`,
-  borderRadius: 12, color: '#FFFFFF', fontSize: 15,
+  borderRadius: 12, color: TEXT, fontSize: 15,
   padding: '13px 15px', outline: 'none',
   fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
@@ -106,7 +109,6 @@ export default function FoodScreen() {
   };
 
   const patch = (p: Partial<Form>) => {
-    // If user manually edits a macro, clear AI-based scaling to prevent stale overrides
     if ('protein' in p || 'carbs' in p || 'fat' in p) setBasePerGram(null);
     setForm((f) => {
       const next = { ...f, ...p };
@@ -219,24 +221,27 @@ export default function FoodScreen() {
     <div style={{ height: '100%', overflowY: 'auto', background: BG, position: 'relative' }}>
 
       {/* ── HEADER ── */}
-      <div className="nrc-a nrc-a1" style={{ padding: '36px 22px 0' }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#2A2A2A', marginBottom: 4, textTransform: 'uppercase' }}>Fuel Log</div>
-        <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF' }}>{dayLabel}</div>
+      <div className="nrc-a nrc-a1" style={{
+        background: `linear-gradient(135deg, #0038A8 0%, #1565E0 100%)`,
+        padding: '44px 22px 24px',
+      }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 4, textTransform: 'uppercase' }}>Fuel Log</div>
+        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF' }}>{dayLabel}</div>
       </div>
 
       {/* ── CALORIE + MACROS ── */}
-      <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
-        <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, padding: '20px 20px 16px', overflow: 'hidden', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,69,58,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Calories Consumed</div>
+      <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
+        <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, padding: '20px 20px 16px', overflow: 'hidden', position: 'relative', boxShadow: '0 4px 20px rgba(0,56,168,0.08)' }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,56,168,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Calories Consumed</div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 14 }}>
-            <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: calPct >= 100 ? RED : '#FFFFFF' }}>
+            <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: calPct >= 100 ? RED : TEXT }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
-            {targets && <div style={{ fontSize: 14, fontWeight: 700, color: '#2A2A2A', paddingBottom: 8 }}>/ {Math.round(targets.calories).toLocaleString()}</div>}
+            {targets && <div style={{ fontSize: 14, fontWeight: 700, color: MUTED, paddingBottom: 8 }}>/ {Math.round(targets.calories).toLocaleString()}</div>}
           </div>
-          <div style={{ height: 2, background: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden', marginBottom: 16 }}>
-            <div style={{ height: '100%', width: `${calPct}%`, background: RED, borderRadius: 1, transition: 'width 0.6s ease' }} />
+          <div style={{ height: 4, background: 'rgba(0,56,168,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{ height: '100%', width: `${calPct}%`, background: calPct >= 100 ? RED : BLUE, borderRadius: 2, transition: 'width 0.6s ease' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             {[
@@ -248,11 +253,11 @@ export default function FoodScreen() {
               return (
                 <div key={name}>
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: color, textTransform: 'uppercase', marginBottom: 4 }}>{name}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF', lineHeight: 1 }}>
-                    {Math.round(val)}<span style={{ fontSize: 10, color: '#333333', fontWeight: 600 }}>g</span>
+                  <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: TEXT, lineHeight: 1 }}>
+                    {Math.round(val)}<span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>g</span>
                   </div>
-                  <div style={{ marginTop: 6, height: 2, background: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct2}%`, background: color, borderRadius: 1, transition: 'width 0.6s ease' }} />
+                  <div style={{ marginTop: 6, height: 3, background: 'rgba(0,56,168,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct2}%`, background: color, borderRadius: 2, transition: 'width 0.6s ease' }} />
                   </div>
                 </div>
               );
@@ -262,42 +267,42 @@ export default function FoodScreen() {
       </div>
 
       {/* ── FOOD LOG ── */}
-      <div className="nrc-a nrc-a3" style={{ padding: '28px 22px 100px' }}>
+      <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
         {byMeal.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '56px 0' }}>
-            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3, color: 'rgba(255,255,255,0.04)', marginBottom: 14 }}>EMPTY</div>
-            <div style={{ color: '#2A2A2A', fontSize: 13, fontWeight: 600 }}>Tap + to log your first meal</div>
+            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3, color: 'rgba(0,56,168,0.07)', marginBottom: 14 }}>EMPTY</div>
+            <div style={{ color: MUTED, fontSize: 13, fontWeight: 600 }}>Tap + to log your first meal</div>
           </div>
         ) : byMeal.map(({ meal, entries }) => (
           <div key={meal} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#2A2A2A', textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal]}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal]}</div>
             {entries.map((entry) => (
-              <div key={entry.id} style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+              <div key={entry.id} style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
                   {entry.image_url && <img src={entry.image_url} alt={entry.food_name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#FFFFFF', fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{entry.food_name}</div>
+                    <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{entry.food_name}</div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
                       <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>P {Math.round(Number(entry.protein))}g</span>
                       <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
                       <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {Math.round(Number(entry.fat))}g</span>
-                      {entry.weight_grams && <span style={{ fontSize: 10, color: '#333333', fontWeight: 600 }}>{entry.weight_grams}g</span>}
+                      {entry.weight_grams && <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{entry.weight_grams}g</span>}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: RED, letterSpacing: -0.5 }}>{Math.round(Number(entry.calories))}</div>
-                    <div style={{ fontSize: 9, color: '#333333', fontWeight: 700, letterSpacing: 1 }}>KCAL</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: BLUE, letterSpacing: -0.5 }}>{Math.round(Number(entry.calories))}</div>
+                    <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1 }}>KCAL</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
                   <button onClick={() => openEdit(entry)} style={{
                     flex: 1, padding: '9px 0', background: 'none', border: 'none',
-                    color: '#3A3A3A', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                    color: MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer',
                     borderRight: `1px solid ${EDGE}`, letterSpacing: 0.5,
                   }}>Edit</button>
                   <button onClick={() => deleteLog(entry.id).then(fetchLogs).catch(() => {})} style={{
                     flex: 1, padding: '9px 0', background: 'none', border: 'none',
-                    color: '#CC3333', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+                    color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
                   }}>Remove</button>
                 </div>
               </div>
@@ -309,40 +314,40 @@ export default function FoodScreen() {
       {/* ── FAB ── */}
       <button onClick={() => { setOpen(true); setMode('ai'); }} className="nrc-press" style={{
         position: 'fixed', bottom: 84, right: 'max(20px, calc(50vw - 220px))',
-        width: 56, height: 56, borderRadius: 28, background: RED,
+        width: 56, height: 56, borderRadius: 28, background: BLUE,
         border: 'none', cursor: 'pointer', fontSize: 28, fontWeight: 900,
         color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 4px 24px ${RED}55`,
+        boxShadow: `0 4px 24px ${BLUE}55`,
       }}>+</button>
 
       {/* ── SHEET ── */}
       {open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: '#0A0A0A', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto' }}>
+          <div style={{ background: '#F8FBFF', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,56,168,0.12)' }}>
 
             {/* drag handle */}
             <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.12)' }} />
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,56,168,0.15)' }} />
             </div>
 
             <div style={{ padding: '16px 22px 44px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#444444', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, textTransform: 'uppercase' }}>
                   {editingId ? 'Edit Fuel' : 'Log Fuel'}
                 </div>
-                <button onClick={closeSheet} style={{ background: SURF2, border: `1px solid ${EDGE}`, color: '#555555', fontSize: 18, cursor: 'pointer', borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                <button onClick={closeSheet} style={{ background: SURF2, border: `1px solid ${EDGE}`, color: MUTED, fontSize: 18, cursor: 'pointer', borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
 
               {/* Mode tabs */}
-              <div style={{ display: 'flex', borderBottom: `1px solid ${EDGE}`, marginBottom: 24 }}>
+              <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24 }}>
                 {([['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
                   <button key={m} onClick={() => { setMode(m); setAiError(''); setFormError(''); }} style={{
                     flex: 1, padding: '10px 0', background: 'none', border: 'none',
-                    borderBottom: `2px solid ${mode === m ? RED : 'transparent'}`,
-                    marginBottom: -1,
-                    color: mode === m ? '#FFFFFF' : '#3A3A3A',
-                    fontWeight: mode === m ? 700 : 600,
+                    borderBottom: `2px solid ${mode === m ? BLUE : 'transparent'}`,
+                    marginBottom: -2,
+                    color: mode === m ? BLUE : MUTED,
+                    fontWeight: mode === m ? 800 : 600,
                     fontSize: 12, cursor: 'pointer',
                     transition: 'color 0.15s',
                     fontFamily: 'inherit',
@@ -354,7 +359,7 @@ export default function FoodScreen() {
               {/* AI MODE */}
               {mode === 'ai' && (
                 <>
-                  <div style={{ fontSize: 12, color: '#3A3A3A', marginBottom: 12, lineHeight: 1.6 }}>
+                  <div style={{ fontSize: 12, color: MUTED, marginBottom: 12, lineHeight: 1.6 }}>
                     Describe anything: "100g chicken breast", "2 scrambled eggs", "bowl of oats"
                   </div>
                   <textarea autoFocus value={aiQuery}
@@ -363,7 +368,7 @@ export default function FoodScreen() {
                     style={{ ...inp, width: '100%', resize: 'none', marginBottom: 12, lineHeight: 1.6 }} />
                   <MealChips form={form} setForm={setForm} />
                   {aiError && <ErrBox msg={aiError} />}
-                  <button onClick={handleAISmart} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, RED)}>
+                  <button onClick={handleAISmart} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, BLUE)}>
                     {aiLoading ? 'Analysing…' : 'Analyse with AI →'}
                   </button>
                 </>
@@ -372,25 +377,25 @@ export default function FoodScreen() {
               {/* PHOTO MODE */}
               {mode === 'photo' && (
                 <>
-                  <div style={{ fontSize: 12, color: '#3A3A3A', marginBottom: 16, lineHeight: 1.6 }}>
+                  <div style={{ fontSize: 12, color: MUTED, marginBottom: 16, lineHeight: 1.6 }}>
                     Take a photo — AI estimates the calories and macros.
                   </div>
                   <label style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     gap: 12, padding: '32px 20px', borderRadius: 16,
-                    border: `2px dashed ${aiLoading ? '#222222' : RED}`,
-                    background: aiLoading ? SURF2 : `${RED}06`,
+                    border: `2px dashed ${aiLoading ? EDGE : BLUE}`,
+                    background: aiLoading ? SURF2 : 'rgba(0,56,168,0.03)',
                     cursor: aiLoading ? 'not-allowed' : 'pointer',
                   }}>
                     <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} disabled={aiLoading}
                       onChange={(e) => { const file = e.target.files?.[0]; if (file) handlePhotoAnalyze(file); e.target.value = ''; }} />
-                    <div style={{ fontSize: 32, lineHeight: 1, color: aiLoading ? '#333333' : RED, fontWeight: 900 }}>
+                    <div style={{ fontSize: 32, lineHeight: 1, color: aiLoading ? MUTED : BLUE, fontWeight: 900 }}>
                       {aiLoading ? '···' : '↑'}
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: aiLoading ? '#333333' : RED }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: aiLoading ? MUTED : BLUE }}>
                       {aiLoading ? 'Analysing photo…' : 'Tap to take or upload photo'}
                     </div>
-                    <div style={{ fontSize: 11, color: '#333333' }}>Camera · Gallery · Screenshot</div>
+                    <div style={{ fontSize: 11, color: MUTED }}>Camera · Gallery · Screenshot</div>
                   </label>
                   <MealChips form={form} setForm={setForm} />
                   {aiError && <ErrBox msg={aiError} />}
@@ -400,7 +405,7 @@ export default function FoodScreen() {
               {/* SUGGEST MODE */}
               {mode === 'suggest' && (
                 <>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Timing</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Timing</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
                     {(['morning','pre_workout','post_workout','rest','evening'] as const).map((v) => {
                       const labels: Record<typeof v, string> = { morning: 'Morning', pre_workout: 'Pre-Workout', post_workout: 'Post-Workout', rest: 'Rest Day', evening: 'Evening' };
@@ -408,30 +413,30 @@ export default function FoodScreen() {
                       return (
                         <button key={v} onClick={() => setSuggestCtx(v)} style={{
                           padding: '11px 14px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
-                          background: active ? `${RED}0A` : SURF2,
-                          border: `1px solid ${active ? RED : EDGE}`,
-                          borderLeft: active ? `3px solid ${RED}` : `1px solid ${EDGE}`,
-                          color: active ? '#FFFFFF' : '#3A3A3A', fontWeight: 700, fontSize: 12,
+                          background: active ? `${BLUE}08` : SURF2,
+                          border: `1px solid ${active ? BLUE : EDGE}`,
+                          borderLeft: active ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
+                          color: active ? BLUE : MUTED, fontWeight: 700, fontSize: 12,
                           fontFamily: 'inherit',
                         }}>{labels[v]}</button>
                       );
                     })}
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Size</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Size</div>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
                     {([['big','Full Meal'],['small','Light']] as const).map(([v, label]) => (
                       <button key={v} onClick={() => setSuggestSize(v)} style={{
                         flex: 1, padding: 12, borderRadius: 12, cursor: 'pointer',
-                        background: suggestSize === v ? `${RED}0A` : SURF2,
-                        border: `1px solid ${suggestSize === v ? RED : EDGE}`,
-                        color: suggestSize === v ? '#FFFFFF' : '#3A3A3A', fontWeight: 700, fontSize: 12,
+                        background: suggestSize === v ? `${BLUE}08` : SURF2,
+                        border: `1px solid ${suggestSize === v ? BLUE : EDGE}`,
+                        color: suggestSize === v ? BLUE : MUTED, fontWeight: 700, fontSize: 12,
                         fontFamily: 'inherit',
                       }}>{label}</button>
                     ))}
                   </div>
                   <MealChips form={form} setForm={setForm} />
                   {aiError && <ErrBox msg={aiError} />}
-                  <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, RED)}>
+                  <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, BLUE)}>
                     {aiLoading ? 'Thinking…' : 'Suggest a meal →'}
                   </button>
                 </>
@@ -445,8 +450,8 @@ export default function FoodScreen() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         {estimate.imageUrl && <img src={estimate.imageUrl} alt={estimate.food_name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700 }}>{estimate.food_name}</div>
-                          <div style={{ color: '#444444', fontSize: 11, marginTop: 1 }}>AI estimate · {estimate.estimated_weight_grams}g</div>
+                          <div style={{ color: TEXT, fontSize: 13, fontWeight: 700 }}>{estimate.food_name}</div>
+                          <div style={{ color: MUTED, fontSize: 11, marginTop: 1 }}>AI estimate · {estimate.estimated_weight_grams}g</div>
                         </div>
                         <div style={{ background: `${CONF_COLOR[estimate.confidence]}12`, border: `1px solid ${CONF_COLOR[estimate.confidence]}30`, borderRadius: 8, padding: '3px 9px', flexShrink: 0 }}>
                           <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
@@ -454,8 +459,8 @@ export default function FoodScreen() {
                       </div>
                       {estimate.breakdown && (
                         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${EDGE}` }}>
-                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#444444', textTransform: 'uppercase', marginBottom: 6 }}>What to eat</div>
-                          <div style={{ fontSize: 13, color: '#AAAAAA', lineHeight: 1.7, fontWeight: 500 }}>{estimate.breakdown}</div>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>What to eat</div>
+                          <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7, fontWeight: 500 }}>{estimate.breakdown}</div>
                         </div>
                       )}
                     </div>
@@ -471,9 +476,9 @@ export default function FoodScreen() {
                       {([false, true] as const).map((isText) => (
                         <button key={String(isText)} onClick={() => patch({ amountIsText: isText, amount: '' })} style={{
                           padding: '0 14px', height: '100%',
-                          background: form.amountIsText === isText ? '#222222' : 'transparent',
+                          background: form.amountIsText === isText ? BLUE : 'transparent',
                           border: 'none',
-                          color: form.amountIsText === isText ? '#FFFFFF' : '#3A3A3A',
+                          color: form.amountIsText === isText ? '#FFFFFF' : MUTED,
                           fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
                           fontFamily: 'inherit',
                         }}>{isText ? 'qty' : 'g'}</button>
@@ -483,8 +488,8 @@ export default function FoodScreen() {
                       value={form.amount} onChange={(e) => patch({ amount: e.target.value })}
                       placeholder={form.amountIsText ? 'e.g. 2 eggs' : 'Weight in grams'} />
                     <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
-                      background: `${RED}10`, border: `1px solid ${RED}25`, borderRadius: 10,
-                      color: aiLoading ? '#444444' : RED, fontWeight: 800, fontSize: 11, cursor: aiLoading ? 'not-allowed' : 'pointer',
+                      background: `${BLUE}0C`, border: `1px solid ${BLUE}25`, borderRadius: 10,
+                      color: aiLoading ? MUTED : BLUE, fontWeight: 800, fontSize: 11, cursor: aiLoading ? 'not-allowed' : 'pointer',
                       padding: '0 14px', whiteSpace: 'nowrap', fontFamily: 'inherit', letterSpacing: 0.5,
                     }}>{aiLoading ? '···' : 'AI'}</button>
                   </div>
@@ -493,19 +498,19 @@ export default function FoodScreen() {
 
                   {/* Macros */}
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Macros</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Macros</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
                       <MacroInp label="Protein" color={GREEN}  value={form.protein} onChange={(v) => patch({ protein: v })} />
                       <MacroInp label="Carbs"   color={ORANGE} value={form.carbs}   onChange={(v) => patch({ carbs: v })} />
                       <MacroInp label="Fat"     color={PURPLE} value={form.fat}     onChange={(v) => patch({ fat: v })} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: `1px solid ${EDGE}`, paddingTop: 12 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#333333', textTransform: 'uppercase', flexShrink: 0 }}>Kcal</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', flexShrink: 0 }}>Kcal</div>
                       <input type="number" value={form.calories}
                         onChange={(e) => { setForm((f) => ({ ...f, calories: e.target.value })); setFormError(''); }}
-                        style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: 22, fontWeight: 900, color: RED, letterSpacing: -0.5, background: 'transparent', border: 'none' }}
+                        style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: 22, fontWeight: 900, color: BLUE, letterSpacing: -0.5, background: 'transparent', border: 'none' }}
                         placeholder="—" />
-                      <div style={{ fontSize: 9, color: '#2A2A2A', flexShrink: 0 }}>auto</div>
+                      <div style={{ fontSize: 9, color: MUTED, flexShrink: 0 }}>auto</div>
                     </div>
                     {(() => {
                       const p = parseFloat(form.protein), c = parseFloat(form.carbs), fa = parseFloat(form.fat);
@@ -522,8 +527,8 @@ export default function FoodScreen() {
                   {formError && <ErrBox msg={formError} />}
 
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                    <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`, background: 'none', color: '#444444', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-                    <button onClick={handleAdd} disabled={submitting} className="nrc-press" style={bigBtn(submitting, RED, 2)}>
+                    <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`, background: 'none', color: MUTED, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                    <button onClick={handleAdd} disabled={submitting} className="nrc-press" style={bigBtn(submitting, BLUE, 2)}>
                       {submitting ? 'Saving…' : editingId ? 'Save Changes →' : 'Log Fuel →'}
                     </button>
                   </div>
@@ -542,8 +547,8 @@ function MacroInp({ label, color, value, onChange }: { label: string; color: str
     <div>
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: color, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
       <input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder="0"
-        style={{ width: '100%', background: SURF2, border: `1px solid ${color}30`, borderRadius: 10, color: '#FFFFFF', fontSize: 18, fontWeight: 700, padding: '10px 10px', outline: 'none', fontFamily: 'inherit' }} />
-      <div style={{ fontSize: 9, color: '#333333', marginTop: 3, textAlign: 'right' }}>g</div>
+        style={{ width: '100%', background: SURF2, border: `1px solid ${color}30`, borderRadius: 10, color: TEXT, fontSize: 18, fontWeight: 700, padding: '10px 10px', outline: 'none', fontFamily: 'inherit' }} />
+      <div style={{ fontSize: 9, color: MUTED, marginTop: 3, textAlign: 'right' }}>g</div>
     </div>
   );
 }
@@ -554,9 +559,9 @@ function MealChips({ form, setForm }: { form: Form; setForm: React.Dispatch<Reac
       {MEAL_TYPES.map((m) => (
         <button key={m} onClick={() => setForm((f) => ({ ...f, meal: m }))} className="nrc-press" style={{
           flexShrink: 0, padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
-          background: form.meal === m ? RED : '#161616',
-          border: `1px solid ${form.meal === m ? RED : 'rgba(255,255,255,0.08)'}`,
-          color: form.meal === m ? '#fff' : '#3A3A3A', fontWeight: 700, fontSize: 11,
+          background: form.meal === m ? BLUE : SURF2,
+          border: `1px solid ${form.meal === m ? BLUE : EDGE}`,
+          color: form.meal === m ? '#fff' : MUTED, fontWeight: 700, fontSize: 11,
           fontFamily: 'inherit',
         }}>{MEAL_LABEL[m]}</button>
       ))}
@@ -566,7 +571,7 @@ function MealChips({ form, setForm }: { form: Form; setForm: React.Dispatch<Reac
 
 function ErrBox({ msg }: { msg: string }) {
   return (
-    <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '10px 13px', background: `${RED}08`, borderRadius: 10, fontWeight: 600, border: `1px solid ${RED}20`, lineHeight: 1.5 }}>
+    <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '10px 13px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, fontWeight: 600, border: '1px solid rgba(198,40,40,0.18)', lineHeight: 1.5 }}>
       {msg}
     </div>
   );
@@ -576,10 +581,10 @@ function bigBtn(disabled: boolean, color: string, flex?: number): React.CSSPrope
   return {
     ...(flex ? { flex } : { width: '100%' }),
     padding: '15px 0', borderRadius: 14, border: 'none',
-    background: disabled ? '#161616' : color,
-    color: disabled ? '#333333' : '#fff',
+    background: disabled ? SURF2 : color,
+    color: disabled ? MUTED : '#fff',
     fontWeight: 800, fontSize: 15, cursor: disabled ? 'not-allowed' : 'pointer',
     fontFamily: 'inherit',
+    boxShadow: disabled ? 'none' : `0 4px 20px ${color}40`,
   };
 }
-

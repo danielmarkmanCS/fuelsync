@@ -1,21 +1,24 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:      #060606;
-  --surf:    #0F0F0F;
-  --surf2:   #161616;
-  --edge:    rgba(255,255,255,0.08);
-  --edge2:   rgba(255,255,255,0.14);
-  --text:    #FFFFFF;
-  --muted:   #555555;
-  --muted2:  #333333;
+  --bg:      #EEF4FF;
+  --surf:    #FFFFFF;
+  --surf2:   #E4EEFF;
+  --edge:    rgba(0,56,168,0.10);
+  --edge2:   rgba(0,56,168,0.18);
+  --text:    #0A1628;
+  --muted:   #6878A0;
+  --muted2:  #B5C4DC;
 
-  --red:     #FF453A;
-  --green:   #30D158;
-  --orange:  #FF9F0A;
-  --purple:  #BF5AF2;
-  --cyan:    #5AC8FA;
-  --yellow:  #FFD60A;
+  --blue:    #0038A8;
+  --blue2:   #1565E0;
+  --sky:     #2EA3F2;
+  --green:   #00A651;
+  --orange:  #E65100;
+  --purple:  #7B1FA2;
+  --red:     #C62828;
+  --yellow:  #F9A825;
+  --cyan:    #0288D1;
 
   --spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease:    cubic-bezier(0.4, 0, 0.2, 1);
@@ -75,7 +78,6 @@ button, input, select, textarea { font-family: inherit; }
 .a5 { animation-delay: 320ms; }
 .a6 { animation-delay: 400ms; }
 
-/* old NRC classes still work */
 .nrc-a  { animation: slideUp 0.5s var(--spring) both; }
 .nrc-a1 { animation-delay:   0ms; }
 .nrc-a2 { animation-delay:  80ms; }
@@ -96,8 +98,8 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ── BARS ───────────────────────────────────────────────── */
 .bar-track {
-  height: 2px;
-  background: rgba(255,255,255,0.06);
+  height: 3px;
+  background: rgba(0,56,168,0.08);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -107,12 +109,11 @@ button, input, select, textarea { font-family: inherit; }
   transition: width 0.7s var(--ease);
 }
 
-/* old alias */
-.volt-bar-track { height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
-.volt-bar-fill  { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.7s var(--ease); }
+.volt-bar-track { height: 3px; background: rgba(0,56,168,0.08); border-radius: 2px; overflow: hidden; }
+.volt-bar-fill  { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.7s var(--ease); }
 
 /* ── INPUTS ─────────────────────────────────────────────── */
-input::placeholder, textarea::placeholder { color: #2A2A2A; }
+input::placeholder, textarea::placeholder { color: #9EB3D0; }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
