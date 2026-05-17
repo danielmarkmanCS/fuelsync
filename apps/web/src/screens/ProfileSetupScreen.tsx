@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile, clearProfile } from '../api/auth';
-import { clearSyncToken, getSyncToken, syncProfile } from '../api/syncClient';
+import { clearSyncToken, getSyncToken, syncProfile, syncAddLog } from '../api/syncClient';
 import { db } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
@@ -45,6 +45,8 @@ export default function ProfileSetupScreen() {
   const [saving,        setSaving]        = useState(false);
   const [saved,         setSaved]         = useState(false);
   const [error,         setError]         = useState('');
+  const [syncing,       setSyncing]       = useState(false);
+  const [syncDone,      setSyncDone]      = useState<string | null>(null);
 
   const handleSave = async () => {
     const w = parseFloat(weightKg), h = parseFloat(heightCm), a = parseInt(age, 10);
@@ -59,6 +61,30 @@ export default function ProfileSetupScreen() {
       setSaved(true); setTimeout(() => setSaved(false), 2500);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to save'); }
     finally { setSaving(false); }
+  };
+
+  const handlePushAllToCloud = async () => {
+    setSyncing(true); setSyncDone(null);
+    try {
+      const rows = await db.food_logs.toArray();
+      let pushed = 0;
+      for (const row of rows) {
+        const id = row.sync_id ?? String(row.id!);
+        await syncAddLog({
+          id,
+          food_name: row.food_name, calories: row.calories,
+          protein: row.protein, carbs: row.carbs, fat: row.fat,
+          weight_grams: row.weight_grams, meal_type: row.meal_type,
+          image_url: row.image_url, ingredients: row.ingredients,
+          logged_at: row.logged_at, date: row.date,
+        });
+        if (!row.sync_id) await db.food_logs.update(row.id!, { sync_id: id });
+        pushed++;
+      }
+      setSyncDone(`${pushed} log${pushed === 1 ? '' : 's'} pushed to cloud`);
+      setTimeout(() => setSyncDone(null), 4000);
+    } catch { setSyncDone('Sync failed — check connection'); }
+    finally { setSyncing(false); }
   };
 
   const profileComplete = user?.weightKg && user?.heightCm && user?.age;
@@ -173,6 +199,15 @@ export default function ProfileSetupScreen() {
         <div style={{ background: SURF, borderRadius: 16, padding: '16px 18px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Account</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {getSyncToken() && (
+              <button onClick={handlePushAllToCloud} disabled={syncing} className="nrc-press" style={{
+                width: '100%', padding: 13, borderRadius: 10,
+                border: `1px solid ${GREEN}35`, background: syncDone ? `${GREEN}08` : SURF2,
+                color: syncDone ? GREEN : BLUE, fontWeight: 700, fontSize: 13, cursor: syncing ? 'not-allowed' : 'pointer',
+              }}>
+                {syncing ? 'Pushing to cloud…' : syncDone ?? 'Push all logs to cloud ↑'}
+              </button>
+            )}
             <button onClick={() => { if (window.confirm('Lock the app?')) logout(); }} className="nrc-press" style={{
               width: '100%', padding: 13, borderRadius: 10,
               border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: BLUE,
