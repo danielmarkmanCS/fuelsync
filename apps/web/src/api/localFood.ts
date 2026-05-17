@@ -116,6 +116,10 @@ const pullCache = new Map<string, number>();
 const inFlight  = new Map<string, Promise<void>>();
 const PULL_TTL  = 30_000;
 
+export function clearPullCache() {
+  pullCache.clear();
+}
+
 function pullWithKey(key: string, fetcher: () => Promise<unknown[]>): Promise<void> {
   if (!getSyncToken()) return Promise.resolve();
   const now = Date.now();

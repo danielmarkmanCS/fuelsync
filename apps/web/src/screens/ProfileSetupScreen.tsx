@@ -37,9 +37,9 @@ export default function ProfileSetupScreen() {
   const name = user?.displayName || 'ATHLETE';
 
   const [displayName,   setDisplayName]   = useState(user?.displayName ?? '');
-  const [weightKg,      setWeightKg]      = useState(user?.weightKg?.toString()  ?? '');
-  const [heightCm,      setHeightCm]      = useState(user?.heightCm?.toString()  ?? '');
-  const [age,           setAge]           = useState(user?.age?.toString()       ?? '');
+  const [weightKg,      setWeightKg]      = useState(user?.weightKg  ? user.weightKg.toString()  : '');
+  const [heightCm,      setHeightCm]      = useState(user?.heightCm  ? user.heightCm.toString()  : '');
+  const [age,           setAge]           = useState(user?.age        ? user.age.toString()        : '');
   const [gender,        setGender]        = useState<'male' | 'female'>(user?.gender ?? 'male');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>((user?.activityLevel as ActivityLevel) ?? 'moderate');
   const [saving,        setSaving]        = useState(false);

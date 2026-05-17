@@ -5,6 +5,7 @@ import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
 import { getSyncToken, getMe, syncProfile } from './api/syncClient';
+import { clearPullCache } from './api/localFood';
 import GoogleAuthScreen from './screens/GoogleAuthScreen';
 import PinScreen from './screens/PinScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -140,6 +141,14 @@ export default function App() {
         setBooting(false);
       }
     })();
+  }, []);
+
+  // Clear D1 pull cache whenever the user brings the app to foreground
+  // so switching back from another app/tab always gets fresh data
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) clearPullCache(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   useEffect(() => {
