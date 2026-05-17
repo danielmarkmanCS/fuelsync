@@ -250,6 +250,18 @@ export default function FoodScreen() {
     fetchLogs();
   };
 
+  const handleReLog = async (entry: FoodLog) => {
+    await addLog({
+      food_name: entry.food_name, calories: entry.calories,
+      protein: entry.protein, carbs: entry.carbs, fat: entry.fat,
+      weight_grams: entry.weight_grams ?? undefined,
+      meal_type: mealFromTime(), image_url: entry.image_url ?? undefined,
+      ingredients: entry.ingredients ?? undefined,
+    });
+    playFoodLogSound();
+    fetchLogs();
+  };
+
   const openEdit = (entry: FoodLog) => {
     const g = entry.weight_grams || 100;
     setForm({
@@ -401,6 +413,7 @@ export default function FoodScreen() {
         protein: parseFloat(form.protein), carbs: parseFloat(form.carbs), fat: parseFloat(form.fat),
         weight_grams: w && !isNaN(w) ? w : undefined, meal_type: form.meal,
         image_url: estimate?.imageUrl ?? undefined,
+        ingredients: editableIngredients?.length ? editableIngredients : null,
       });
       if (!editingId) playFoodLogSound();
       fetchLogs(); closeSheet();
@@ -500,7 +513,10 @@ export default function FoodScreen() {
           <div key={meal} style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal]}</div>
             {entries.map((entry) => (
-              <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete} />
+              <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete}
+                onReLog={!isToday ? handleReLog : undefined}
+                reLogLabel={!isToday ? 'Log today' : undefined}
+              />
             ))}
           </div>
         ))}
@@ -816,8 +832,15 @@ export default function FoodScreen() {
   );
 }
 
-function FoodCard({ entry, onEdit, onDelete }: { entry: FoodLog; onEdit: (e: FoodLog) => void; onDelete: (e: FoodLog) => void }) {
+function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
+  entry: FoodLog;
+  onEdit: (e: FoodLog) => void;
+  onDelete: (e: FoodLog) => void;
+  onReLog?: (e: FoodLog) => void;
+  reLogLabel?: string;
+}) {
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const hasIngredients = entry.ingredients && entry.ingredients.length > 1;
   return (
     <div style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
@@ -829,6 +852,7 @@ function FoodCard({ entry, onEdit, onDelete }: { entry: FoodLog; onEdit: (e: Foo
             <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
             <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {Math.round(Number(entry.fat))}g</span>
             {entry.weight_grams && <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{entry.weight_grams}g</span>}
+            {hasIngredients && <span style={{ fontSize: 10, color: BLUE, fontWeight: 600 }}>{entry.ingredients!.length} items</span>}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -847,8 +871,15 @@ function FoodCard({ entry, onEdit, onDelete }: { entry: FoodLog; onEdit: (e: Foo
           color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
           borderRight: `1px solid ${EDGE}`,
         }}>Remove</button>
+        {onReLog ? (
+          <button onClick={() => onReLog(entry)} className="nrc-press" style={{
+            flex: 1, padding: '9px 0', background: 'none', border: 'none',
+            color: BLUE, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+            borderRight: `1px solid ${EDGE}`,
+          }}>{reLogLabel ?? 'Again'}</button>
+        ) : null}
         <button onClick={() => setShowBreakdown((v) => !v)} style={{
-          flex: 1, padding: '9px 0', background: 'none', border: 'none',
+          flex: onReLog ? undefined : 1, padding: '9px 12px', background: 'none', border: 'none',
           color: showBreakdown ? BLUE : MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
         }}>Info {showBreakdown ? '▲' : '▼'}</button>
       </div>
@@ -869,6 +900,31 @@ function FoodCard({ entry, onEdit, onDelete }: { entry: FoodLog; onEdit: (e: Foo
           {entry.weight_grams && (
             <div style={{ marginTop: 8, fontSize: 11, color: MUTED, textAlign: 'center' }}>
               Portion: {entry.weight_grams}g · {Math.round(Number(entry.calories) / entry.weight_grams * 100)} kcal/100g
+            </div>
+          )}
+          {hasIngredients && (
+            <div style={{ marginTop: 12, borderTop: `1px solid ${EDGE}`, paddingTop: 10 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Ingredients</div>
+              {entry.ingredients!.map((ing, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  paddingBottom: 7, marginBottom: i < entry.ingredients!.length - 1 ? 7 : 0,
+                  borderBottom: i < entry.ingredients!.length - 1 ? `1px solid ${EDGE}` : 'none',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
+                    <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(ing.calories)}</div>
+                    <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 1 }}>
+                      <span style={{ fontSize: 9, color: GREEN,  fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                      <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                      <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

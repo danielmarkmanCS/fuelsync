@@ -1,5 +1,7 @@
-import { db, type LocalFoodLog } from '../lib/db';
+import { db, type LocalFoodLog, type Ingredient } from '../lib/db';
 import { workerPost } from './client';
+
+export type { Ingredient };
 
 export interface FoodLog {
   id: string;
@@ -12,6 +14,7 @@ export interface FoodLog {
   meal_type: string;
   image_url: string | null;
   logged_at: string;
+  ingredients?: Ingredient[] | null;
 }
 
 export interface IngredientItem {
@@ -48,6 +51,7 @@ function toFoodLog(row: LocalFoodLog): FoodLog {
     meal_type: row.meal_type,
     image_url: row.image_url,
     logged_at: row.logged_at,
+    ingredients: row.ingredients ?? null,
   };
 }
 
@@ -65,8 +69,10 @@ export async function addLog(entry: {
   food_name: string; calories: number; protein: number;
   carbs: number; fat: number; weight_grams?: number;
   meal_type?: string; image_url?: string;
+  ingredients?: Ingredient[] | null;
+  logged_at?: string;
 }): Promise<FoodLog> {
-  const now = new Date().toISOString();
+  const now = entry.logged_at ?? new Date().toISOString();
   const date = now.slice(0, 10);
   const id = await db.food_logs.add({
     food_name: entry.food_name,
@@ -77,6 +83,7 @@ export async function addLog(entry: {
     weight_grams: entry.weight_grams ?? null,
     meal_type: entry.meal_type ?? 'other',
     image_url: entry.image_url ?? null,
+    ingredients: entry.ingredients ?? null,
     logged_at: now,
     date,
   });

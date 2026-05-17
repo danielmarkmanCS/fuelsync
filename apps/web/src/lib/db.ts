@@ -16,6 +16,15 @@ export interface LocalProfile {
   stravaAthletePic?: string;
 }
 
+export interface Ingredient {
+  name: string;
+  amount: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface LocalFoodLog {
   id?: number;
   food_name: string;
@@ -27,7 +36,8 @@ export interface LocalFoodLog {
   meal_type: string;
   image_url: string | null;
   logged_at: string;
-  date: string; // YYYY-MM-DD — used for date queries
+  date: string;
+  ingredients?: Ingredient[] | null;
 }
 
 export interface PinState {
