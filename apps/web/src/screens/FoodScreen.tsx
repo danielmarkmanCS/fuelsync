@@ -36,7 +36,19 @@ interface Form {
   name: string; amount: string; amountIsText: boolean;
   calories: string; protein: string; carbs: string; fat: string; meal: MealType;
 }
-const EMPTY: Form = { name: '', amount: '', amountIsText: false, calories: '', protein: '', carbs: '', fat: '', meal: 'lunch' };
+function mealFromTime(): MealType {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 11) return 'breakfast';
+  if (h >= 11 && h < 14) return 'lunch';
+  if (h >= 14 && h < 18) return 'snack';
+  if (h >= 18 && h < 22) return 'dinner';
+  return 'snack';
+}
+
+function emptyForm(): Form {
+  return { name: '', amount: '', amountIsText: false, calories: '', protein: '', carbs: '', fat: '', meal: mealFromTime() };
+}
+const EMPTY: Form = emptyForm();
 
 function calcCal(p: number, c: number, f: number) { return p * 4 + c * 4 + f * 9; }
 
@@ -179,7 +191,7 @@ export default function FoodScreen() {
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
   const [mode,       setMode]       = useState<'ai' | 'photo' | 'manual' | 'suggest'>('ai');
-  const [form,       setForm]       = useState<Form>(EMPTY);
+  const [form,       setForm]       = useState<Form>(emptyForm);
   const [estimate,   setEstimate]   = useState<AIEstimate | null>(null);
   const [aiLoading,  setAiLoading]  = useState(false);
   const [aiError,    setAiError]    = useState('');
@@ -198,11 +210,18 @@ export default function FoodScreen() {
   const [undoEntry, setUndoEntry] = useState<FoodLog | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [nowTime, setNowTime] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+  useEffect(() => {
+    const tick = () => setNowTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, []);
+
   const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
   const resetSheet = () => {
-    setForm(EMPTY); setEstimate(null);
+    setForm(emptyForm()); setEstimate(null);
     setAiError(''); setFormError(''); setAiQuery(''); setEditingId(null); setBasePerGram(null);
     setSuggestResult(null); setEditableIngredients(null);
   };
@@ -412,7 +431,9 @@ export default function FoodScreen() {
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF', lineHeight: 1.1 }}>
               {dateLabel(selectedDate).toUpperCase()}
             </div>
-            {!isToday && (
+            {isToday ? (
+              <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>{nowTime}</div>
+            ) : (
               <button onClick={() => setSelectedDate(todayStr)} style={{
                 marginTop: 6, background: 'rgba(255,255,255,0.2)', border: 'none',
                 borderRadius: 20, color: '#fff', fontSize: 10, fontWeight: 700,
