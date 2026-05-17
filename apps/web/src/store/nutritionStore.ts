@@ -19,6 +19,8 @@ interface NutritionState {
   removeRunKm: (km: number, name?: string) => void;
   renameRun: (idx: number, newName: string) => void;
   resetWeeklyRuns: () => void;
+  addStrengthSession: () => void;
+  removeStrengthSession: () => void;
   startNewWeek: (monday: string) => void;
   resetDay: () => void;
   resetAll: () => void;
@@ -95,6 +97,16 @@ export const useNutritionStore = create<NutritionState>()(
         set({ weeklyLoad: { ...weeklyLoad, totalRunKm: 0, loggedRuns: [] } });
       },
 
+      addStrengthSession: () => {
+        const { weeklyLoad } = get();
+        set({ weeklyLoad: { ...weeklyLoad, totalStrengthSets: weeklyLoad.totalStrengthSets + 1 } });
+      },
+
+      removeStrengthSession: () => {
+        const { weeklyLoad } = get();
+        set({ weeklyLoad: { ...weeklyLoad, totalStrengthSets: Math.max(0, weeklyLoad.totalStrengthSets - 1) } });
+      },
+
       startNewWeek: (monday) => set({ weeklyLoad: {
         weekStart: monday,
         totalRunKm: 0,
@@ -104,7 +116,17 @@ export const useNutritionStore = create<NutritionState>()(
         loggedRuns: [],
       }}),
 
-      resetDay: () => set({ todayLog: null, targets: null }),
+      resetDay: () => {
+        const { todayLog, weeklyLoad } = get();
+        const wasStrength = todayLog?.trainingType === 'strength' || todayLog?.trainingType === 'hybrid';
+        set({
+          todayLog: null,
+          targets: null,
+          weeklyLoad: wasStrength
+            ? { ...weeklyLoad, totalStrengthSets: Math.max(0, weeklyLoad.totalStrengthSets - 1) }
+            : weeklyLoad,
+        });
+      },
 
       resetAll: () => set({ todayLog: null, targets: null, weeklyLoad: defaultWeeklyLoad(), weather: null, environmentAlert: null }),
     }),
