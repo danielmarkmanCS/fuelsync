@@ -131,6 +131,16 @@ export default {
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
+      if (url.pathname.endsWith('/steps')) {
+        const { description } = body;
+        if (!description) return err('description required', 400, allowedOrigin);
+        const prompt = `Estimate total daily steps for: "${description}".
+Base steps by job: desk/office ≈ 3000-5000, standing/retail ≈ 7000-10000, field/delivery ≈ 15000+. Add for activities: 30min walk ≈ +3500, 5km run ≈ +6500, 1hr gym ≈ +2000, cycling doesn't count as steps.
+Respond ONLY with valid JSON (no other text): {"steps":number,"label":"low"|"normal"|"high"} — low<6000, normal 6000-10000, high>10000.`;
+        const text = await gemini(apiKeys, prompt, 64);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
       return err('Not found', 404, allowedOrigin);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'AI request failed';

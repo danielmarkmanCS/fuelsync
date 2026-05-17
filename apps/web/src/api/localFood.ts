@@ -219,6 +219,10 @@ export function suggestMeal(context: string, size: 'big' | 'small'): Promise<AIE
   return workerPost<AIEstimate>('ai', '/suggest', { context, size });
 }
 
+export function estimateSteps(description: string): Promise<{ steps: number; label: 'low' | 'normal' | 'high' }> {
+  return workerPost('ai', '/steps', { description });
+}
+
 export async function analyzeByImage(file: File): Promise<AIEstimate> {
   const base64 = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();

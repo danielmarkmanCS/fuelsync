@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllLogs, addLog, deleteLog, type FoodLog } from '../api/localFood';
+import { getAllLogs, addLog, deleteLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG    = '#EEF4FF';
@@ -9,6 +9,7 @@ const EDGE  = 'rgba(0,56,168,0.10)';
 const TEXT  = '#0A1628';
 const MUTED = '#6878A0';
 const BLUE  = '#0038A8';
+const GREEN = '#34c759';
 const RED   = '#C62828';
 
 const MEAL_LABEL: Record<string, string> = {
@@ -68,13 +69,15 @@ type Tab = 'days' | 'foods';
 
 export default function HistoryScreen() {
   const { targets } = useNutrition();
-  const [tab,      setTab]      = useState<Tab>('days');
-  const [days,     setDays]     = useState<DaySummary[]>([]);
-  const [allLogs,  setAllLogs]  = useState<FoodLog[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [deleting,  setDeleting]  = useState<string | null>(null);
-  const [relogged,  setRelogged]  = useState<string | null>(null);
+  const [tab,          setTab]          = useState<Tab>('days');
+  const [days,         setDays]         = useState<DaySummary[]>([]);
+  const [allLogs,      setAllLogs]      = useState<FoodLog[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [expanded,     setExpanded]     = useState<string | null>(null);
+  const [deleting,     setDeleting]     = useState<string | null>(null);
+  const [relogged,     setRelogged]     = useState<string | null>(null);
+  const [expandedFood, setExpandedFood] = useState<string | null>(null);
+  const [reloggedIng,  setReloggedIng]  = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -107,6 +110,20 @@ export default function HistoryScreen() {
       });
     } catch { /* silent */ }
     setTimeout(() => setRelogged(null), 1500);
+  };
+
+  const handleRelogIngredient = async (ing: Ingredient, key: string) => {
+    setReloggedIng(key);
+    try {
+      await addLog({
+        food_name: ing.name,
+        calories: ing.calories,
+        protein: ing.protein,
+        carbs: ing.carbs,
+        fat: ing.fat,
+      });
+    } catch { /* silent */ }
+    setTimeout(() => setReloggedIng(null), 1500);
   };
 
   const goalCal = targets?.calories ?? 2000;
@@ -200,38 +217,79 @@ export default function HistoryScreen() {
 
                 {isOpen && (
                   <div style={{ borderTop: `1px solid ${EDGE}`, padding: '8px 0 4px' }}>
-                    {day.items.map((item, idx) => (
-                      <div key={item.id} style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 16px',
-                        borderBottom: idx < day.items.length - 1 ? `1px solid ${EDGE}` : 'none',
-                      }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.food_name}</div>
-                          <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
-                            {MEAL_LABEL[item.meal_type] ?? item.meal_type}
-                            {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
+                    {day.items.map((item, idx) => {
+                      const hasIngs    = item.ingredients && item.ingredients.length > 1;
+                      const isFoodOpen = expandedFood === item.id;
+                      return (
+                        <div key={item.id} style={{ borderBottom: idx < day.items.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.food_name}</div>
+                              <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+                                {MEAL_LABEL[item.meal_type] ?? item.meal_type}
+                                {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
+                                {hasIngs ? ` · ${item.ingredients!.length} items` : ''}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))}</div>
+                              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 2 }}>
+                                <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
+                                <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
+                                <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                              </div>
+                            </div>
+                            {hasIngs && (
+                              <button onClick={() => setExpandedFood(isFoodOpen ? null : item.id)} style={{
+                                width: 26, height: 26, borderRadius: 8, border: `1px solid ${isFoodOpen ? BLUE : EDGE}`,
+                                background: isFoodOpen ? `${BLUE}10` : SURF2, color: isFoodOpen ? BLUE : MUTED,
+                                fontWeight: 700, fontSize: 10, cursor: 'pointer', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>{isFoodOpen ? '▲' : '▼'}</button>
+                            )}
+                            <button onClick={() => handleRelog(item)} style={{
+                              width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
+                              background: relogged === item.id ? `${GREEN}15` : SURF2,
+                              color: relogged === item.id ? GREEN : BLUE,
+                              fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              {relogged === item.id ? '✓' : '+'}
+                            </button>
                           </div>
+                          {isFoodOpen && hasIngs && (
+                            <div style={{ background: '#F8FBFF', borderTop: `1px solid ${EDGE}`, padding: '4px 0 6px' }}>
+                              {item.ingredients!.map((ing, i) => {
+                                const ingKey = `${item.id}-${i}`;
+                                return (
+                                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 16px 7px 28px', borderBottom: i < item.ingredients!.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
+                                      <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
+                                    </div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: BLUE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
+                                    <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
+                                      <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                                      <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                                      <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                                    </div>
+                                    <button onClick={() => handleRelogIngredient(ing, ingKey)} style={{
+                                      width: 26, height: 26, borderRadius: 8, border: `1px solid ${reloggedIng === ingKey ? GREEN : EDGE}`,
+                                      background: reloggedIng === ingKey ? `${GREEN}15` : SURF2,
+                                      color: reloggedIng === ingKey ? GREEN : BLUE,
+                                      fontWeight: 900, fontSize: 13, cursor: 'pointer', flexShrink: 0,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                      {reloggedIng === ingKey ? '✓' : '+'}
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))}</div>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 2 }}>
-                            <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
-                            <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
-                            <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
-                          </div>
-                        </div>
-                        <button onClick={() => handleRelog(item)} style={{
-                          width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? '#34c759' : EDGE}`,
-                          background: relogged === item.id ? '#34c75915' : SURF2,
-                          color: relogged === item.id ? '#34c759' : BLUE,
-                          fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          {relogged === item.id ? '✓' : '+'}
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -246,47 +304,87 @@ export default function HistoryScreen() {
               const isDeleting = deleting === item.id;
               const logDate    = item.logged_at.slice(0, 10);
               const timeStr    = new Date(item.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+              const hasIngs    = item.ingredients && item.ingredients.length > 1;
+              const isFoodOpen = expandedFood === item.id;
               return (
-                <div key={item.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '12px 16px',
-                  borderTop: idx === 0 ? 'none' : `1px solid ${EDGE}`,
-                  opacity: isDeleting ? 0.4 : 1, transition: 'opacity 0.2s',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.food_name}</div>
-                    <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
-                      {dateLabel(logDate)} {timeStr}
-                      {' · '}{MEAL_LABEL[item.meal_type] ?? item.meal_type}
-                      {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
+                <div key={item.id} style={{ borderTop: idx === 0 ? 'none' : `1px solid ${EDGE}`, opacity: isDeleting ? 0.4 : 1, transition: 'opacity 0.2s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.food_name}</div>
+                      <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+                        {dateLabel(logDate)} {timeStr}
+                        {' · '}{MEAL_LABEL[item.meal_type] ?? item.meal_type}
+                        {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
+                        {hasIngs ? ` · ${item.ingredients!.length} foods` : ''}
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))} kcal</div>
-                    <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
-                      <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
-                      <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
-                      <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))} kcal</div>
+                      <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
+                        <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
+                        <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
+                        <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                      </div>
                     </div>
+                    {hasIngs && (
+                      <button onClick={() => setExpandedFood(isFoodOpen ? null : item.id)} style={{
+                        width: 28, height: 28, borderRadius: 8, border: `1px solid ${isFoodOpen ? BLUE : EDGE}`,
+                        background: isFoodOpen ? `${BLUE}10` : SURF2, color: isFoodOpen ? BLUE : MUTED,
+                        fontWeight: 700, fontSize: 11, cursor: 'pointer', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>{isFoodOpen ? '▲' : '▼'}</button>
+                    )}
+                    <button onClick={() => handleRelog(item)} style={{
+                      width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
+                      background: relogged === item.id ? `${GREEN}15` : SURF2,
+                      color: relogged === item.id ? GREEN : BLUE,
+                      fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {relogged === item.id ? '✓' : '+'}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={isDeleting}
+                      style={{
+                        background: 'none', border: `1px solid ${EDGE}`, borderRadius: 8,
+                        color: RED, fontSize: 16, cursor: 'pointer', padding: '4px 8px',
+                        lineHeight: 1, flexShrink: 0, opacity: isDeleting ? 0.5 : 1,
+                      }}
+                    >×</button>
                   </div>
-                  <button onClick={() => handleRelog(item)} style={{
-                    width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? '#34c759' : EDGE}`,
-                    background: relogged === item.id ? '#34c75915' : SURF2,
-                    color: relogged === item.id ? '#34c759' : BLUE,
-                    fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {relogged === item.id ? '✓' : '+'}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    disabled={isDeleting}
-                    style={{
-                      background: 'none', border: `1px solid ${EDGE}`, borderRadius: 8,
-                      color: RED, fontSize: 16, cursor: 'pointer', padding: '4px 8px',
-                      lineHeight: 1, flexShrink: 0, opacity: isDeleting ? 0.5 : 1,
-                    }}
-                  >×</button>
+
+                  {/* Ingredient expansion */}
+                  {isFoodOpen && hasIngs && (
+                    <div style={{ borderTop: `1px solid ${EDGE}`, background: '#F8FBFF', padding: '4px 0 6px' }}>
+                      {item.ingredients!.map((ing, i) => {
+                        const ingKey = `${item.id}-${i}`;
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 16px 7px 24px', borderBottom: i < item.ingredients!.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
+                              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: BLUE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
+                            <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
+                              <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                              <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                              <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                            </div>
+                            <button onClick={() => handleRelogIngredient(ing, ingKey)} style={{
+                              width: 26, height: 26, borderRadius: 8, border: `1px solid ${reloggedIng === ingKey ? GREEN : EDGE}`,
+                              background: reloggedIng === ingKey ? `${GREEN}15` : SURF2,
+                              color: reloggedIng === ingKey ? GREEN : BLUE,
+                              fontWeight: 900, fontSize: 13, cursor: 'pointer', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              {reloggedIng === ingKey ? '✓' : '+'}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}

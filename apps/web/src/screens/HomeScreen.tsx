@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useNutritionStore } from '../store/nutritionStore';
 import TrainingPicker from '../components/TrainingPicker';
 import WeatherBanner from '../components/WeatherBanner';
-import { getLogs } from '../api/localFood';
+import { getLogs, estimateSteps } from '../api/localFood';
 import StravaCard from '../components/StravaCard';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
@@ -165,7 +165,9 @@ export default function HomeScreen() {
   const startNewWeek          = useNutritionStore((s) => s.startNewWeek);
 
   const [consumed,        setConsumed]        = useState<MacroTargets>(emptyMacros());
-  const [stepInput,       setStepInput]       = useState('');
+  const [stepDescription, setStepDescription] = useState('');
+  const [stepEstimate,    setStepEstimate]    = useState<number | null>(null);
+  const [stepLoading,     setStepLoading]     = useState(false);
   const [workoutKm,       setWorkoutKm]       = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [workoutName,     setWorkoutName]     = useState('');
@@ -202,13 +204,24 @@ export default function HomeScreen() {
   const manualKm = loggedRuns.filter((r) => r.source === 'manual').reduce((s, r) => s + r.km, 0);
   const stravaKm = loggedRuns.filter((r) => r.source === 'strava').reduce((s, r) => s + r.km, 0);
 
-  const stepNum   = parseInt(stepInput, 10);
-  const stepLabel = !isNaN(stepNum)
-    ? stepNum < 6000 ? 'LOW' : stepNum < 10000 ? 'NORMAL' : 'HIGH'
+  const stepLabel = stepEstimate !== null
+    ? stepEstimate < 6000 ? 'LOW' : stepEstimate < 10000 ? 'NORMAL' : 'HIGH'
     : todayLog?.dailyActivityModifier === 'low' ? 'LOW'
     : todayLog?.dailyActivityModifier === 'high' ? 'HIGH'
-    : todayLog ? 'NORMAL' : null;
+    : null;
   const stepLabelColor = stepLabel === 'LOW' ? ORANGE : stepLabel === 'HIGH' ? GREEN : BLUE;
+
+  const handleEstimateSteps = async () => {
+    const q = stepDescription.trim();
+    if (!q || stepLoading) return;
+    setStepLoading(true);
+    try {
+      const r = await estimateSteps(q);
+      setStepEstimate(r.steps);
+      setActivityModifier(r.label === 'high' ? 'high' : r.label === 'low' ? 'low' : 'normal');
+    } catch { /* silent */ }
+    setStepLoading(false);
+  };
 
   const weatherRec = (() => {
     if (!weather || !todayLog?.trainingType || todayLog.trainingType === 'rest') return null;
@@ -265,56 +278,49 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* ── CONDITIONS ── */}
-      {weather ? (
+      {/* Extreme weather banner */}
+      {environmentAlert && environmentAlert.level !== 'none' && weather && (
         <div style={{ padding: '12px 22px 0' }}>
-          {environmentAlert && environmentAlert.level !== 'none' && <WeatherBanner weather={weather} alert={environmentAlert} />}
-          {weatherRec ? (
-            <div style={{ marginTop: (environmentAlert && environmentAlert.level !== 'none') ? 8 : 0, background: SURF, borderRadius: 12, padding: '12px 16px', border: `1px solid ${EDGE}`, borderLeft: `3px solid ${weatherRec.color}` }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: weatherRec.color }}>{weatherRec.text}</div>
-            </div>
-          ) : !environmentAlert || environmentAlert.level === 'none' ? (
-            <div style={{ fontSize: 11, color: MUTED, background: SURF, borderRadius: 12, padding: '8px 14px', border: `1px solid ${EDGE}` }}>
-              {weather.description} · {Math.round(weather.tempC)}°C
-            </div>
-          ) : null}
+          <WeatherBanner weather={weather} alert={environmentAlert} />
         </div>
-      ) : weatherKeySet ? (
-        <div style={{ padding: '12px 22px 0' }}>
-          <div style={{ fontSize: 11, color: MUTED, background: SURF, borderRadius: 12, padding: '8px 14px', border: `1px solid ${EDGE}` }}>
-            Location access required for weather.
-          </div>
-        </div>
-      ) : null}
+      )}
 
-      {/* ── STEPS STRIP ── */}
+      {/* ── STEPS ── */}
       {todayLog && (
         <div style={{ padding: '12px 22px 0' }}>
-          <div style={{
-            background: SURF, borderRadius: 12, padding: '10px 16px',
-            border: `1px solid ${EDGE}`, display: 'flex', alignItems: 'center', gap: 10,
-            boxShadow: '0 1px 6px rgba(0,56,168,0.05)',
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', flexShrink: 0 }}>Steps</div>
-            <input
-              type="number" inputMode="numeric" placeholder="e.g. 8500"
-              value={stepInput}
-              onChange={(e) => {
-                const raw = e.target.value;
-                setStepInput(raw);
-                const n = parseInt(raw, 10);
-                if (!isNaN(n)) setActivityModifier(n < 6000 ? 'low' : n < 10000 ? 'normal' : 'high');
-              }}
-              style={{
-                flex: 1, padding: '6px 10px', borderRadius: 8, border: `1px solid ${EDGE}`,
-                background: SURF2, color: TEXT, fontSize: 14, fontWeight: 700, outline: 'none', minWidth: 0,
-              }}
-            />
-            {stepLabel && (
-              <div style={{ fontSize: 10, fontWeight: 800, color: stepLabelColor, flexShrink: 0, letterSpacing: 1 }}>
-                {stepLabel}
-              </div>
-            )}
+          <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Daily Steps</div>
+              {stepEstimate !== null && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: -0.5, color: stepLabelColor }}>~{stepEstimate.toLocaleString()}</div>
+                  <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>steps</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, color: stepLabelColor, marginLeft: 2 }}>{stepLabel}</div>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                placeholder="Desk job, 30min walk at lunch, gym session..."
+                value={stepDescription}
+                onChange={(e) => setStepDescription(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleEstimateSteps(); }}
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: `1px solid ${EDGE}`, background: SURF2, color: TEXT, fontSize: 12, outline: 'none', fontFamily: 'Inter, system-ui, sans-serif' }}
+              />
+              <button
+                onClick={handleEstimateSteps}
+                disabled={stepLoading || !stepDescription.trim()}
+                style={{
+                  background: BLUE, border: 'none', borderRadius: 10, color: '#fff',
+                  fontWeight: 800, fontSize: 11, letterSpacing: 0.5,
+                  cursor: (!stepDescription.trim() || stepLoading) ? 'not-allowed' : 'pointer',
+                  padding: '0 14px', whiteSpace: 'nowrap',
+                  opacity: (!stepDescription.trim() || stepLoading) ? 0.5 : 1,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                }}
+              >{stepLoading ? '···' : 'Estimate'}</button>
+            </div>
           </div>
         </div>
       )}
@@ -323,8 +329,21 @@ export default function HomeScreen() {
       {targets ? (
         <div className="nrc-a nrc-a2" style={{ padding: '24px 22px 0', display: 'flex', justifyContent: 'center' }}>
           <div>
-            <div style={{ background: SURF, borderRadius: 24, padding: '20px', boxShadow: '0 4px 24px rgba(0,56,168,0.10)', border: `1px solid ${EDGE}` }}>
+            {weatherRec && (
+              <div style={{
+                background: `${weatherRec.color}0E`, border: `1px solid ${weatherRec.color}30`,
+                borderRadius: '14px 14px 0 0', padding: '8px 16px', borderBottom: 'none',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: weatherRec.color, lineHeight: 1.4 }}>{weatherRec.text}</div>
+              </div>
+            )}
+            <div style={{ background: SURF, borderRadius: weatherRec ? '0 0 24px 24px' : 24, padding: '20px', boxShadow: '0 4px 24px rgba(0,56,168,0.10)', border: `1px solid ${EDGE}`, borderTop: weatherRec ? 'none' : undefined }}>
               <CalRing pct={calPct} cal={consumed.calories} target={targets.calories} />
+              {weather && (
+                <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: MUTED, fontWeight: 600, letterSpacing: 0.2 }}>
+                  {Math.round(weather.tempC)}°C · {weather.description}
+                </div>
+              )}
             </div>
             {calLeft !== 0 && (
               <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, fontWeight: 700, color: calLeft > 0 ? MUTED : RED }}>
