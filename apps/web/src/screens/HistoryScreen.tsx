@@ -125,14 +125,17 @@ export default function HistoryScreen() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: BLUE, letterSpacing: -1 }}>{day.totalCal}</div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, letterSpacing: 1, textTransform: 'uppercase' }}>kcal</div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: barColor, letterSpacing: -1 }}>{day.totalCal}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, letterSpacing: 0.5 }}>of {goalCal} kcal</div>
                     </div>
                   </div>
 
-                  {/* Calorie bar */}
-                  <div style={{ height: 4, background: SURF2, borderRadius: 2, marginBottom: 10 }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 2, transition: 'width 0.4s' }} />
+                  {/* Calorie bar + percentage */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <div style={{ flex: 1, height: 6, background: SURF2, borderRadius: 3 }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3, transition: 'width 0.4s' }} />
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: barColor, minWidth: 34, textAlign: 'right' }}>{pct}%</div>
                   </div>
 
                   {/* Macro chips */}
