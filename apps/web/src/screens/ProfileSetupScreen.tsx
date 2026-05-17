@@ -208,12 +208,6 @@ export default function ProfileSetupScreen() {
                 {syncing ? 'Pushing to cloud…' : syncDone ?? 'Push all logs to cloud ↑'}
               </button>
             )}
-            <button onClick={() => { if (window.confirm('Lock the app?')) logout(); }} className="nrc-press" style={{
-              width: '100%', padding: 13, borderRadius: 10,
-              border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: BLUE,
-              fontWeight: 700, fontSize: 13, cursor: 'pointer',
-            }}>Lock App</button>
-
             <button onClick={async () => {
               if (!window.confirm('Sign out? Your local data stays on this device.')) return;
               clearSyncToken();
@@ -222,21 +216,7 @@ export default function ProfileSetupScreen() {
               width: '100%', padding: 13, borderRadius: 10,
               border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: MUTED,
               fontWeight: 700, fontSize: 13, cursor: 'pointer',
-            }}>Sign Out of Google</button>
-
-            <button onClick={async () => {
-              if (!window.confirm('This will delete ALL your local data — logs, profile, PIN — and sign you out. This cannot be undone.\n\nContinue?')) return;
-              clearSyncToken();
-              await clearPin();
-              await clearProfile();
-              await db.food_logs.clear();
-              useNutritionStore.getState().resetAll();
-              logout();
-            }} className="nrc-press" style={{
-              width: '100%', padding: 13, borderRadius: 10,
-              border: `1px solid ${RED}30`, background: `${RED}08`, color: RED,
-              fontWeight: 700, fontSize: 13, cursor: 'pointer',
-            }}>Reset & Clear All Data</button>
+            }}>Sign Out</button>
           </div>
         </div>
       </div>
