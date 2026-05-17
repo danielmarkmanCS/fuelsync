@@ -75,25 +75,81 @@ const inp: React.CSSProperties = {
   fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
-function IngredientBreakdown({ ingredients }: { ingredients: IngredientItem[] }) {
+function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientItem[]; onEdit?: (idx: number, updated: IngredientItem) => void }) {
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editVals,   setEditVals]   = useState({ calories: '', protein: '', carbs: '', fat: '' });
+
+  const startEdit = (i: number) => {
+    const item = ingredients[i];
+    setEditingIdx(i);
+    setEditVals({ calories: String(Math.round(item.calories)), protein: String(Math.round(item.protein)), carbs: String(Math.round(item.carbs)), fat: String(Math.round(item.fat)) });
+  };
+
+  const confirmEdit = () => {
+    if (editingIdx === null || !onEdit) return;
+    onEdit(editingIdx, {
+      ...ingredients[editingIdx],
+      calories: parseFloat(editVals.calories) || 0,
+      protein:  parseFloat(editVals.protein)  || 0,
+      carbs:    parseFloat(editVals.carbs)    || 0,
+      fat:      parseFloat(editVals.fat)      || 0,
+    });
+    setEditingIdx(null);
+  };
+
   return (
     <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${EDGE}` }}>
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Breakdown</div>
       {ingredients.map((item, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 7, marginBottom: 7, borderBottom: i < ingredients.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-            <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{item.amount}</div>
+        <div key={i}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: editingIdx === i ? 6 : 7, marginBottom: editingIdx === i ? 0 : 7, borderBottom: i < ingredients.length - 1 && editingIdx !== i ? `1px solid ${EDGE}` : 'none' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{item.amount}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(item.calories)}</div>
+              <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
+              <span style={{ fontSize: 9, color: GREEN, fontWeight: 700 }}>P{Math.round(item.protein)}</span>
+              <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
+              <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(item.fat)}</span>
+            </div>
+            {onEdit && (
+              <button onClick={() => editingIdx === i ? setEditingIdx(null) : startEdit(i)} style={{
+                marginLeft: 8, background: editingIdx === i ? SURF2 : 'none',
+                border: `1px solid ${editingIdx === i ? EDGE : 'transparent'}`,
+                borderRadius: 6, color: editingIdx === i ? MUTED : BLUE,
+                fontSize: 10, fontWeight: 700, cursor: 'pointer', padding: '3px 8px', fontFamily: 'inherit',
+              }}>{editingIdx === i ? '✕' : 'edit'}</button>
+            )}
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(item.calories)}</div>
-            <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
-            <span style={{ fontSize: 9, color: GREEN, fontWeight: 700 }}>P{Math.round(item.protein)}</span>
-            <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
-            <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(item.fat)}</span>
-          </div>
+          {editingIdx === i && onEdit && (
+            <div style={{ padding: '6px 0 10px', borderBottom: i < ingredients.length - 1 ? `1px solid ${EDGE}` : 'none', marginBottom: i < ingredients.length - 1 ? 7 : 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
+                {([
+                  { label: 'kcal', key: 'calories' as const, color: BLUE },
+                  { label: 'P(g)',  key: 'protein'  as const, color: GREEN },
+                  { label: 'C(g)',  key: 'carbs'    as const, color: ORANGE },
+                  { label: 'F(g)',  key: 'fat'      as const, color: PURPLE },
+                ]).map(({ label, key, color }) => (
+                  <div key={key}>
+                    <div style={{ fontSize: 8, fontWeight: 700, color, letterSpacing: 1, marginBottom: 3, textTransform: 'uppercase' }}>{label}</div>
+                    <input type="number" value={editVals[key]}
+                      onChange={(e) => setEditVals((v) => ({ ...v, [key]: e.target.value }))}
+                      style={{ width: '100%', background: SURF2, border: `1px solid ${color}40`, borderRadius: 8, color: TEXT, fontSize: 14, fontWeight: 700, padding: '6px 6px', outline: 'none', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button onClick={confirmEdit} style={{
+                width: '100%', padding: '8px 0', borderRadius: 10, border: 'none',
+                background: BLUE, color: '#fff', fontWeight: 800, fontSize: 12,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>Done ✓</button>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -121,6 +177,7 @@ export default function FoodScreen() {
   const [suggestSize, setSuggestSize] = useState<'big' | 'small'>('big');
   const [suggestResult, setSuggestResult] = useState<AIEstimate | null>(null);
   const [loggingAll, setLoggingAll] = useState(false);
+  const [editableIngredients, setEditableIngredients] = useState<IngredientItem[] | null>(null);
 
   // Undo deleted meal
   const [undoEntry, setUndoEntry] = useState<FoodLog | null>(null);
@@ -132,7 +189,7 @@ export default function FoodScreen() {
   const resetSheet = () => {
     setForm(EMPTY); setEstimate(null);
     setAiError(''); setFormError(''); setAiQuery(''); setEditingId(null); setBasePerGram(null);
-    setSuggestResult(null);
+    setSuggestResult(null); setEditableIngredients(null);
   };
   const closeSheet = () => { setOpen(false); resetSheet(); };
 
@@ -222,11 +279,32 @@ export default function FoodScreen() {
     finally { setLoggingAll(false); }
   };
 
+  const handleIngredientEdit = (idx: number, updated: IngredientItem) => {
+    const next = editableIngredients ? editableIngredients.map((item, i) => i === idx ? updated : item) : null;
+    setEditableIngredients(next);
+    if (!next) return;
+    const totals = next.reduce((acc, item) => ({
+      calories: acc.calories + item.calories,
+      protein:  acc.protein  + item.protein,
+      carbs:    acc.carbs    + item.carbs,
+      fat:      acc.fat      + item.fat,
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    setForm((f) => ({
+      ...f,
+      calories: String(Math.round(totals.calories)),
+      protein:  String(Math.round(totals.protein)),
+      carbs:    String(Math.round(totals.carbs)),
+      fat:      String(Math.round(totals.fat)),
+    }));
+    setBasePerGram(null);
+  };
+
   const handlePhotoAnalyze = async (file: File) => {
     setAiLoading(true); setAiError('');
     try {
       const r = await analyzeByImage(file);
       setEstimate(r);
+      setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
       const g = r.estimated_weight_grams || 100;
       setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
       setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)), meal: form.meal });
@@ -242,6 +320,7 @@ export default function FoodScreen() {
     try {
       const r = await estimateByDescription(q);
       setEstimate(r);
+      setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
       const g = r.estimated_weight_grams || 100;
       setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
       setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)), meal: form.meal });
@@ -260,6 +339,7 @@ export default function FoodScreen() {
         const r = await estimateByDescription(desc);
         const g = r.estimated_weight_grams || 100;
         setEstimate(r);
+        setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
         setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
         setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
       } else {
@@ -267,6 +347,7 @@ export default function FoodScreen() {
         if (isNaN(w) || w <= 0) { setAiError('Enter weight in grams.'); setAiLoading(false); return; }
         const r = await estimateByWeight(name, w);
         setEstimate(r);
+        setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
         setBasePerGram({ protein: r.protein/w, carbs: r.carbs/w, fat: r.fat/w });
         setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
       }
@@ -592,8 +673,8 @@ export default function FoodScreen() {
                           <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
                         </div>
                       </div>
-                      {estimate.ingredients && estimate.ingredients.length > 1 && (
-                        <IngredientBreakdown ingredients={estimate.ingredients} />
+                      {editableIngredients && editableIngredients.length > 1 && (
+                        <IngredientBreakdown ingredients={editableIngredients} onEdit={handleIngredientEdit} />
                       )}
                     </div>
                   )}
