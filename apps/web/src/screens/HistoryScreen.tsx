@@ -78,6 +78,7 @@ export default function HistoryScreen() {
   const [relogged,     setRelogged]     = useState<string | null>(null);
   const [expandedFood, setExpandedFood] = useState<string | null>(null);
   const [reloggedIng,  setReloggedIng]  = useState<string | null>(null);
+  const [restoring,    setRestoring]    = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -339,12 +340,19 @@ export default function HistoryScreen() {
                       }}>{isFoodOpen ? '▲' : '▼'}</button>
                     )}
                     {isRemoved ? (
-                      <button onClick={async () => { await unremoveLog(item.id); load(); }}
+                      <button
+                        disabled={restoring === item.id}
+                        onClick={async () => {
+                          if (restoring === item.id) return;
+                          setRestoring(item.id);
+                          try { await unremoveLog(item.id); load(); } finally { setRestoring(null); }
+                        }}
                         title="Restore to today's fuel"
                         style={{
                           padding: '4px 8px', borderRadius: 8, border: `1px solid ${GREEN}40`,
                           background: `${GREEN}10`, color: GREEN,
-                          fontWeight: 700, fontSize: 10, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                          fontWeight: 700, fontSize: 10, cursor: restoring === item.id ? 'default' : 'pointer',
+                          flexShrink: 0, whiteSpace: 'nowrap', opacity: restoring === item.id ? 0.5 : 1,
                         }}>Restore</button>
                     ) : (
                       <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
@@ -362,7 +370,7 @@ export default function HistoryScreen() {
                   </div>
 
                   {/* Ingredient expansion */}
-                  {isFoodOpen && hasIngs && (
+                  {isFoodOpen && hasIngs && !isRemoved && (
                     <div style={{ borderTop: `1px solid ${EDGE}`, background: '#F8FBFF', padding: '4px 0 6px' }}>
                       {item.ingredients!.map((ing, i) => {
                         const ingKey = `${item.id}-${i}`;
