@@ -27,6 +27,15 @@ export function useNutrition() {
 
   const profile = user ? toUserProfile(user) : null;
 
+  // Auto-reset training type if it's from a previous day
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (store.todayLog && store.todayLog.date !== today) {
+      store.resetDay();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Recompute targets on mount (todayLog survives reload but targets don't)
   // Also recomputes whenever profile changes (e.g. after saving profile)
   useEffect(() => {
