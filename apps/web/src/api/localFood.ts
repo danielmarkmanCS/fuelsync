@@ -1,6 +1,6 @@
 import { db, type LocalFoodLog, type Ingredient } from '../lib/db';
 import { workerPost } from './client';
-import { syncAddLog, syncDeleteLog } from './syncClient';
+import { syncAddLog, syncDeleteLog, getSyncToken, fetchLogsForDate, fetchAllLogs } from './syncClient';
 
 export type { Ingredient };
 
@@ -42,7 +42,7 @@ export interface AIEstimate {
 
 function toFoodLog(row: LocalFoodLog): FoodLog {
   return {
-    id: String(row.id!),
+    id: row.sync_id ?? String(row.id!),
     food_name: row.food_name,
     calories: row.calories,
     protein: row.protein,
@@ -56,12 +56,87 @@ function toFoodLog(row: LocalFoodLog): FoodLog {
   };
 }
 
+// ── D1 pull helpers ───────────────────────────────────────────────────────────
+
+interface D1FoodLog {
+  id: string;
+  food_name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  weight_grams: number | null;
+  meal_type: string;
+  image_url: string | null;
+  ingredients: Ingredient[] | null;
+  logged_at: string;
+  date: string;
+}
+
+async function upsertD1Logs(d1logs: unknown[]) {
+  for (const raw of d1logs) {
+    const log = raw as D1FoodLog;
+    if (!log.id) continue;
+    const existing = await db.food_logs.where('sync_id').equals(log.id).first();
+    if (!existing) {
+      await db.food_logs.add({
+        sync_id: log.id,
+        food_name: log.food_name,
+        calories: log.calories,
+        protein: log.protein,
+        carbs: log.carbs,
+        fat: log.fat,
+        weight_grams: log.weight_grams ?? null,
+        meal_type: log.meal_type ?? 'other',
+        image_url: log.image_url ?? null,
+        ingredients: log.ingredients ?? null,
+        logged_at: log.logged_at,
+        date: log.date,
+      });
+    }
+  }
+}
+
+// Per-key pull cache and in-flight dedup
+const pullCache = new Map<string, number>();
+const inFlight  = new Map<string, Promise<void>>();
+const PULL_TTL  = 30_000;
+
+function pullWithKey(key: string, fetcher: () => Promise<unknown[]>): Promise<void> {
+  if (!getSyncToken()) return Promise.resolve();
+  const now = Date.now();
+  if ((pullCache.get(key) ?? 0) + PULL_TTL > now) return Promise.resolve();
+  if (inFlight.has(key)) return inFlight.get(key)!;
+
+  const p = (async () => {
+    pullCache.set(key, now);
+    try {
+      const logs = await fetcher();
+      await upsertD1Logs(logs);
+    } catch {
+      pullCache.delete(key);
+    } finally {
+      inFlight.delete(key);
+    }
+  })();
+  inFlight.set(key, p);
+  return p;
+}
+
+function withTimeout(promise: Promise<void>, ms: number): Promise<void> {
+  return Promise.race([promise, new Promise<void>((r) => setTimeout(r, ms))]);
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
 export async function getLogs(date: string): Promise<FoodLog[]> {
+  await withTimeout(pullWithKey(`d:${date}`, () => fetchLogsForDate(date)), 3000);
   const rows = await db.food_logs.where('date').equals(date).sortBy('logged_at');
   return rows.map(toFoodLog);
 }
 
 export async function getAllLogs(): Promise<FoodLog[]> {
+  await withTimeout(pullWithKey('all', fetchAllLogs), 5000);
   const rows = await db.food_logs.orderBy('logged_at').reverse().toArray();
   return rows.map(toFoodLog);
 }
@@ -73,9 +148,11 @@ export async function addLog(entry: {
   ingredients?: Ingredient[] | null;
   logged_at?: string;
 }): Promise<FoodLog> {
+  const sync_id = crypto.randomUUID();
   const now = entry.logged_at ?? new Date().toISOString();
   const date = now.slice(0, 10);
   const id = await db.food_logs.add({
+    sync_id,
     food_name: entry.food_name,
     calories: entry.calories,
     protein: entry.protein,
@@ -91,7 +168,8 @@ export async function addLog(entry: {
   const row = await db.food_logs.get(id);
   const log = toFoodLog(row!);
   syncAddLog({
-    id: log.id, food_name: log.food_name, calories: log.calories,
+    id: sync_id,
+    food_name: log.food_name, calories: log.calories,
     protein: log.protein, carbs: log.carbs, fat: log.fat,
     weight_grams: log.weight_grams, meal_type: log.meal_type,
     image_url: log.image_url, ingredients: log.ingredients,
@@ -101,7 +179,13 @@ export async function addLog(entry: {
 }
 
 export async function deleteLog(id: string): Promise<void> {
-  await db.food_logs.delete(Number(id));
+  // id may be a UUID (sync_id) for new logs or a numeric string for legacy logs
+  const bySync = await db.food_logs.where('sync_id').equals(id).first();
+  if (bySync?.id != null) {
+    await db.food_logs.delete(bySync.id);
+  } else {
+    await db.food_logs.delete(Number(id));
+  }
   syncDeleteLog(id).catch(() => {});
 }
 

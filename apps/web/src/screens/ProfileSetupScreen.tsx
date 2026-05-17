@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile, clearProfile } from '../api/auth';
-import { clearSyncToken, getSyncToken } from '../api/syncClient';
+import { clearSyncToken, getSyncToken, syncProfile } from '../api/syncClient';
 import { db } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
@@ -54,7 +54,9 @@ export default function ProfileSetupScreen() {
     setSaving(true); setError('');
     try {
       const updated = await updateProfile({ weightKg: w, heightCm: h, age: a, gender, activityLevel, displayName: displayName.trim() || undefined });
-      setUser(updated); setSaved(true); setTimeout(() => setSaved(false), 2500);
+      setUser(updated);
+      syncProfile({ weight_kg: w, height_cm: h, age: a, gender, activity_level: activityLevel, display_name: displayName.trim() || undefined }).catch(() => {});
+      setSaved(true); setTimeout(() => setSaved(false), 2500);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to save'); }
     finally { setSaving(false); }
   };

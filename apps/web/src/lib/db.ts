@@ -27,6 +27,7 @@ export interface Ingredient {
 
 export interface LocalFoodLog {
   id?: number;
+  sync_id?: string;     // UUID used as D1 id — device-agnostic dedup key
   food_name: string;
   calories: number;
   protein: number;
@@ -64,6 +65,9 @@ class FuelSyncDB extends Dexie {
       profile:    '++id',
       food_logs:  '++id, date, logged_at',
       pin_state:  '++id',
+    });
+    this.version(2).stores({
+      food_logs:  '++id, date, logged_at, sync_id',
     });
   }
 }
