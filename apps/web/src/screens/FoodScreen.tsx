@@ -106,6 +106,8 @@ export default function FoodScreen() {
   };
 
   const patch = (p: Partial<Form>) => {
+    // If user manually edits a macro, clear AI-based scaling to prevent stale overrides
+    if ('protein' in p || 'carbs' in p || 'fat' in p) setBasePerGram(null);
     setForm((f) => {
       const next = { ...f, ...p };
       if ('amount' in p && !next.amountIsText && basePerGram) {
@@ -228,9 +230,9 @@ export default function FoodScreen() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             {[
-              { label: 'P', name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: GREEN },
-              { label: 'C', name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: ORANGE },
-              { label: 'F', name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: PURPLE },
+              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: GREEN },
+              { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: ORANGE },
+              { name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: PURPLE },
             ].map(({ name, val, tgt, color }) => {
               const pct2 = tgt && tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
               return (
@@ -280,12 +282,13 @@ export default function FoodScreen() {
                 <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
                   <button onClick={() => openEdit(entry)} style={{
                     flex: 1, padding: '9px 0', background: 'none', border: 'none',
-                    color: '#444444', fontSize: 11, fontWeight: 700, cursor: 'pointer', borderRight: `1px solid ${EDGE}`,
-                  }}>✏️ Edit</button>
+                    color: '#3A3A3A', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                    borderRight: `1px solid ${EDGE}`, letterSpacing: 0.5,
+                  }}>Edit</button>
                   <button onClick={() => deleteLog(entry.id).then(fetchLogs).catch(() => {})} style={{
                     flex: 1, padding: '9px 0', background: 'none', border: 'none',
-                    color: '#CC3333', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                  }}>× Remove</button>
+                    color: '#CC3333', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+                  }}>Remove</button>
                 </div>
               </div>
             ))}
@@ -306,189 +309,211 @@ export default function FoodScreen() {
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: '#0A0A0A', borderRadius: '24px 24px 0 0', padding: '24px 22px 44px', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto' }}>
+          <div style={{ background: '#0A0A0A', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto' }}>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF' }}>{editingId ? 'Edit Fuel' : 'Add Fuel'}</div>
-              <button onClick={closeSheet} style={{ background: SURF2, border: `1px solid ${EDGE}`, color: '#444444', fontSize: 18, cursor: 'pointer', borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            {/* drag handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.12)' }} />
             </div>
 
-            {/* Mode toggle */}
-            <div style={{ display: 'flex', background: SURF2, borderRadius: 14, padding: 4, marginBottom: 20 }}>
-              {([['ai', '🤖 AI'], ['photo', '📷 Photo'], ['manual', '✏️ Manual'], ['suggest', '✨ Suggest']] as const).map(([m, label]) => (
-                <button key={m} onClick={() => { setMode(m); setAiError(''); setFormError(''); }} className="nrc-press" style={{
-                  flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: mode === m ? RED : 'transparent',
-                  color: mode === m ? '#fff' : '#444444',
-                  fontWeight: 700, fontSize: 10, transition: 'all 0.18s',
-                }}>{label}</button>
-              ))}
-            </div>
-
-            {/* AI MODE */}
-            {mode === 'ai' && (
-              <>
-                <div style={{ fontSize: 12, color: '#444444', marginBottom: 12, lineHeight: 1.6 }}>
-                  Describe anything: "100g chicken breast", "2 scrambled eggs", "bowl of oats"
+            <div style={{ padding: '16px 22px 44px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: '#444444', textTransform: 'uppercase' }}>
+                  {editingId ? 'Edit Fuel' : 'Log Fuel'}
                 </div>
-                <textarea autoFocus value={aiQuery}
-                  onChange={(e) => { setAiQuery(e.target.value); setAiError(''); }}
-                  placeholder="What did you eat?" rows={3}
-                  style={{ ...inp, width: '100%', resize: 'none', marginBottom: 12, lineHeight: 1.6 }} />
-                <MealChips form={form} setForm={setForm} />
-                {aiError && <ErrBox msg={aiError} />}
-                <button onClick={handleAISmart} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, RED)}>
-                  {aiLoading ? 'Analysing…' : 'Analyse with AI →'}
-                </button>
-              </>
-            )}
+                <button onClick={closeSheet} style={{ background: SURF2, border: `1px solid ${EDGE}`, color: '#555555', fontSize: 18, cursor: 'pointer', borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+              </div>
 
-            {/* PHOTO MODE */}
-            {mode === 'photo' && (
-              <>
-                <div style={{ fontSize: 12, color: '#444444', marginBottom: 16, lineHeight: 1.6 }}>
-                  Take a photo — AI estimates the calories and macros.
-                </div>
-                <label style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: 12, padding: '32px 20px', borderRadius: 16,
-                  border: `2px dashed ${aiLoading ? '#222222' : RED}`,
-                  background: aiLoading ? SURF2 : `${RED}06`,
-                  cursor: aiLoading ? 'not-allowed' : 'pointer',
-                }}>
-                  <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} disabled={aiLoading}
-                    onChange={(e) => { const file = e.target.files?.[0]; if (file) handlePhotoAnalyze(file); e.target.value = ''; }} />
-                  <div style={{ fontSize: 40 }}>{aiLoading ? '⏳' : '📷'}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: aiLoading ? '#333333' : RED }}>
-                    {aiLoading ? 'Analysing photo…' : 'Tap to take or upload photo'}
+              {/* Mode tabs */}
+              <div style={{ display: 'flex', borderBottom: `1px solid ${EDGE}`, marginBottom: 24 }}>
+                {([['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
+                  <button key={m} onClick={() => { setMode(m); setAiError(''); setFormError(''); }} style={{
+                    flex: 1, padding: '10px 0', background: 'none', border: 'none',
+                    borderBottom: `2px solid ${mode === m ? RED : 'transparent'}`,
+                    marginBottom: -1,
+                    color: mode === m ? '#FFFFFF' : '#3A3A3A',
+                    fontWeight: mode === m ? 700 : 600,
+                    fontSize: 12, cursor: 'pointer',
+                    transition: 'color 0.15s',
+                    fontFamily: 'inherit',
+                    letterSpacing: 0.3,
+                  }}>{label}</button>
+                ))}
+              </div>
+
+              {/* AI MODE */}
+              {mode === 'ai' && (
+                <>
+                  <div style={{ fontSize: 12, color: '#3A3A3A', marginBottom: 12, lineHeight: 1.6 }}>
+                    Describe anything: "100g chicken breast", "2 scrambled eggs", "bowl of oats"
                   </div>
-                  <div style={{ fontSize: 11, color: '#333333' }}>Camera · Gallery · Screenshot</div>
-                </label>
-                <MealChips form={form} setForm={setForm} />
-                {aiError && <ErrBox msg={aiError} />}
-              </>
-            )}
+                  <textarea autoFocus value={aiQuery}
+                    onChange={(e) => { setAiQuery(e.target.value); setAiError(''); }}
+                    placeholder="What did you eat?" rows={3}
+                    style={{ ...inp, width: '100%', resize: 'none', marginBottom: 12, lineHeight: 1.6 }} />
+                  <MealChips form={form} setForm={setForm} />
+                  {aiError && <ErrBox msg={aiError} />}
+                  <button onClick={handleAISmart} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, RED)}>
+                    {aiLoading ? 'Analysing…' : 'Analyse with AI →'}
+                  </button>
+                </>
+              )}
 
-            {/* SUGGEST MODE */}
-            {mode === 'suggest' && (
-              <>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>When is this?</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
-                  {(['morning','pre_workout','post_workout','rest','evening'] as const).map((v) => {
-                    const labels: Record<typeof v, string> = { morning: '🌅 Morning', pre_workout: '⚡ Pre-Workout', post_workout: '💪 Post-Workout', rest: '😴 Rest Day', evening: '🌙 Evening' };
-                    const active = suggestCtx === v;
-                    return (
-                      <button key={v} onClick={() => setSuggestCtx(v)} style={{
-                        padding: '11px 14px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
-                        background: active ? `${RED}0A` : SURF2,
-                        border: `1px solid ${active ? RED : EDGE}`,
-                        borderLeft: active ? `3px solid ${RED}` : `1px solid ${EDGE}`,
-                        color: active ? RED : '#444444', fontWeight: 700, fontSize: 12,
-                      }}>{labels[v]}</button>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Meal size</div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                  {([['big','🍽 Full meal'],['small','🥗 Light meal']] as const).map(([v, label]) => (
-                    <button key={v} onClick={() => setSuggestSize(v)} style={{
-                      flex: 1, padding: 12, borderRadius: 12, cursor: 'pointer',
-                      background: suggestSize === v ? `${RED}0A` : SURF2,
-                      border: `1px solid ${suggestSize === v ? RED : EDGE}`,
-                      color: suggestSize === v ? RED : '#444444', fontWeight: 700, fontSize: 12,
-                    }}>{label}</button>
-                  ))}
-                </div>
-                <MealChips form={form} setForm={setForm} />
-                {aiError && <ErrBox msg={aiError} />}
-                <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, RED)}>
-                  {aiLoading ? 'Thinking…' : '✨ Suggest a meal →'}
-                </button>
-              </>
-            )}
-
-            {/* MANUAL MODE */}
-            {mode === 'manual' && (
-              <>
-                {estimate && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, background: SURF2, borderRadius: 12, padding: '10px 14px', border: `1px solid ${EDGE}` }}>
-                    {estimate.imageUrl && <img src={estimate.imageUrl} alt={estimate.food_name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700 }}>{estimate.food_name}</div>
-                      <div style={{ color: '#444444', fontSize: 11, marginTop: 1 }}>AI estimate · {estimate.estimated_weight_grams}g</div>
-                    </div>
-                    <div style={{ background: `${CONF_COLOR[estimate.confidence]}12`, border: `1px solid ${CONF_COLOR[estimate.confidence]}30`, borderRadius: 8, padding: '3px 9px' }}>
-                      <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
-                    </div>
+              {/* PHOTO MODE */}
+              {mode === 'photo' && (
+                <>
+                  <div style={{ fontSize: 12, color: '#3A3A3A', marginBottom: 16, lineHeight: 1.6 }}>
+                    Take a photo — AI estimates the calories and macros.
                   </div>
-                )}
+                  <label style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 12, padding: '32px 20px', borderRadius: 16,
+                    border: `2px dashed ${aiLoading ? '#222222' : RED}`,
+                    background: aiLoading ? SURF2 : `${RED}06`,
+                    cursor: aiLoading ? 'not-allowed' : 'pointer',
+                  }}>
+                    <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} disabled={aiLoading}
+                      onChange={(e) => { const file = e.target.files?.[0]; if (file) handlePhotoAnalyze(file); e.target.value = ''; }} />
+                    <div style={{ fontSize: 32, lineHeight: 1, color: aiLoading ? '#333333' : RED, fontWeight: 900 }}>
+                      {aiLoading ? '···' : '↑'}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: aiLoading ? '#333333' : RED }}>
+                      {aiLoading ? 'Analysing photo…' : 'Tap to take or upload photo'}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#333333' }}>Camera · Gallery · Screenshot</div>
+                  </label>
+                  <MealChips form={form} setForm={setForm} />
+                  {aiError && <ErrBox msg={aiError} />}
+                </>
+              )}
 
-                <input style={{ ...inp, width: '100%', marginBottom: 10 }}
-                  value={form.name} onChange={(e) => patch({ name: e.target.value })}
-                  placeholder="Food name (e.g. Chicken Breast)" autoFocus={!estimate} />
-
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'stretch' }}>
-                  <div style={{ display: 'flex', background: SURF2, borderRadius: 10, border: `1px solid ${EDGE}`, flexShrink: 0 }}>
-                    {([false, true] as const).map((isText) => (
-                      <button key={String(isText)} onClick={() => patch({ amountIsText: isText, amount: '' })} style={{
-                        padding: '0 12px', background: form.amountIsText === isText ? '#222222' : 'transparent',
-                        border: 'none', borderRadius: 8,
-                        color: form.amountIsText === isText ? '#FFFFFF' : '#444444',
-                        fontWeight: 700, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap',
-                      }}>{isText ? 'qty' : 'g'}</button>
+              {/* SUGGEST MODE */}
+              {mode === 'suggest' && (
+                <>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Timing</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
+                    {(['morning','pre_workout','post_workout','rest','evening'] as const).map((v) => {
+                      const labels: Record<typeof v, string> = { morning: 'Morning', pre_workout: 'Pre-Workout', post_workout: 'Post-Workout', rest: 'Rest Day', evening: 'Evening' };
+                      const active = suggestCtx === v;
+                      return (
+                        <button key={v} onClick={() => setSuggestCtx(v)} style={{
+                          padding: '11px 14px', borderRadius: 12, cursor: 'pointer', textAlign: 'left',
+                          background: active ? `${RED}0A` : SURF2,
+                          border: `1px solid ${active ? RED : EDGE}`,
+                          borderLeft: active ? `3px solid ${RED}` : `1px solid ${EDGE}`,
+                          color: active ? '#FFFFFF' : '#3A3A3A', fontWeight: 700, fontSize: 12,
+                          fontFamily: 'inherit',
+                        }}>{labels[v]}</button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Size</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                    {([['big','Full Meal'],['small','Light']] as const).map(([v, label]) => (
+                      <button key={v} onClick={() => setSuggestSize(v)} style={{
+                        flex: 1, padding: 12, borderRadius: 12, cursor: 'pointer',
+                        background: suggestSize === v ? `${RED}0A` : SURF2,
+                        border: `1px solid ${suggestSize === v ? RED : EDGE}`,
+                        color: suggestSize === v ? '#FFFFFF' : '#3A3A3A', fontWeight: 700, fontSize: 12,
+                        fontFamily: 'inherit',
+                      }}>{label}</button>
                     ))}
                   </div>
-                  <input style={{ ...inp, flex: 1 }} type={form.amountIsText ? 'text' : 'number'}
-                    value={form.amount} onChange={(e) => patch({ amount: e.target.value })}
-                    placeholder={form.amountIsText ? 'e.g. 2 eggs' : 'Grams'} />
-                  {!form.amountIsText && (
-                    <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
-                      background: `${RED}10`, border: `1px solid ${RED}25`, borderRadius: 10,
-                      color: RED, fontWeight: 800, fontSize: 12, cursor: aiLoading ? 'not-allowed' : 'pointer',
-                      padding: '0 14px', whiteSpace: 'nowrap',
-                    }}>{aiLoading ? '…' : '✦ AI'}</button>
-                  )}
-                </div>
-
-                {aiError && <ErrBox msg={aiError} />}
-
-                <div style={{ background: SURF2, borderRadius: 14, padding: '14px 16px', marginBottom: 12, border: `1px solid ${EDGE}` }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 12 }}>Macros</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
-                    <MacroInp label="Protein" color={GREEN}  value={form.protein} onChange={(v) => patch({ protein: v })} />
-                    <MacroInp label="Carbs"   color={ORANGE} value={form.carbs}   onChange={(v) => patch({ carbs: v })} />
-                    <MacroInp label="Fat"     color={PURPLE} value={form.fat}     onChange={(v) => patch({ fat: v })} />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#333333', textTransform: 'uppercase', flexShrink: 0 }}>Kcal</div>
-                    <input type="number" value={form.calories}
-                      onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))}
-                      style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: 22, fontWeight: 900, color: RED, letterSpacing: -0.5, background: 'transparent', border: 'none' }}
-                      placeholder="—" />
-                    <div style={{ fontSize: 9, color: '#333333', flexShrink: 0 }}>auto</div>
-                  </div>
-                  {(() => {
-                    const p = parseFloat(form.protein), c = parseFloat(form.carbs), fa = parseFloat(form.fat);
-                    const entered = parseFloat(form.calories);
-                    if (isNaN(p) || isNaN(c) || isNaN(fa)) return null;
-                    const comp = calcCal(p, c, fa);
-                    if (!isNaN(entered) && entered > 0 && Math.abs(comp - entered) / entered > 0.12)
-                      return <div style={{ fontSize: 11, color: ORANGE, marginTop: 8, fontWeight: 600 }}>⚠ Macros compute to ~{Math.round(comp)} kcal</div>;
-                    return null;
-                  })()}
-                </div>
-
-                <MealChips form={form} setForm={setForm} />
-                {formError && <ErrBox msg={formError} />}
-
-                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                  <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`, background: 'none', color: '#444444', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Cancel</button>
-                  <button onClick={handleAdd} disabled={submitting} className="nrc-press" style={bigBtn(submitting, RED, 2)}>
-                    {submitting ? 'Saving…' : editingId ? 'Save Changes →' : 'Log Fuel →'}
+                  <MealChips form={form} setForm={setForm} />
+                  {aiError && <ErrBox msg={aiError} />}
+                  <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, RED)}>
+                    {aiLoading ? 'Thinking…' : 'Suggest a meal →'}
                   </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+
+              {/* MANUAL MODE */}
+              {mode === 'manual' && (
+                <>
+                  {estimate && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, background: SURF2, borderRadius: 12, padding: '10px 14px', border: `1px solid ${EDGE}` }}>
+                      {estimate.imageUrl && <img src={estimate.imageUrl} alt={estimate.food_name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 700 }}>{estimate.food_name}</div>
+                        <div style={{ color: '#444444', fontSize: 11, marginTop: 1 }}>AI estimate · {estimate.estimated_weight_grams}g</div>
+                      </div>
+                      <div style={{ background: `${CONF_COLOR[estimate.confidence]}12`, border: `1px solid ${CONF_COLOR[estimate.confidence]}30`, borderRadius: 8, padding: '3px 9px' }}>
+                        <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <input style={{ ...inp, width: '100%', marginBottom: 10 }}
+                    value={form.name} onChange={(e) => patch({ name: e.target.value })}
+                    placeholder="Food name" autoFocus={!estimate} />
+
+                  {/* Amount row */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'stretch' }}>
+                    <div style={{ display: 'flex', background: SURF2, borderRadius: 10, border: `1px solid ${EDGE}`, overflow: 'hidden', flexShrink: 0 }}>
+                      {([false, true] as const).map((isText) => (
+                        <button key={String(isText)} onClick={() => patch({ amountIsText: isText, amount: '' })} style={{
+                          padding: '0 14px', height: '100%',
+                          background: form.amountIsText === isText ? '#222222' : 'transparent',
+                          border: 'none',
+                          color: form.amountIsText === isText ? '#FFFFFF' : '#3A3A3A',
+                          fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
+                          fontFamily: 'inherit',
+                        }}>{isText ? 'qty' : 'g'}</button>
+                      ))}
+                    </div>
+                    <input style={{ ...inp, flex: 1 }} type={form.amountIsText ? 'text' : 'number'}
+                      value={form.amount} onChange={(e) => patch({ amount: e.target.value })}
+                      placeholder={form.amountIsText ? 'e.g. 2 eggs' : 'Weight in grams'} />
+                    {!form.amountIsText && (
+                      <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
+                        background: `${RED}10`, border: `1px solid ${RED}25`, borderRadius: 10,
+                        color: aiLoading ? '#444444' : RED, fontWeight: 800, fontSize: 11, cursor: aiLoading ? 'not-allowed' : 'pointer',
+                        padding: '0 14px', whiteSpace: 'nowrap', fontFamily: 'inherit', letterSpacing: 0.5,
+                      }}>{aiLoading ? '···' : 'AI'}</button>
+                    )}
+                  </div>
+
+                  {aiError && <ErrBox msg={aiError} />}
+
+                  {/* Macros */}
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: '#333333', textTransform: 'uppercase', marginBottom: 10 }}>Macros</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+                      <MacroInp label="Protein" color={GREEN}  value={form.protein} onChange={(v) => patch({ protein: v })} />
+                      <MacroInp label="Carbs"   color={ORANGE} value={form.carbs}   onChange={(v) => patch({ carbs: v })} />
+                      <MacroInp label="Fat"     color={PURPLE} value={form.fat}     onChange={(v) => patch({ fat: v })} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: `1px solid ${EDGE}`, paddingTop: 12 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: '#333333', textTransform: 'uppercase', flexShrink: 0 }}>Kcal</div>
+                      <input type="number" value={form.calories}
+                        onChange={(e) => { setForm((f) => ({ ...f, calories: e.target.value })); setFormError(''); }}
+                        style={{ ...inp, flex: 1, padding: '8px 10px', fontSize: 22, fontWeight: 900, color: RED, letterSpacing: -0.5, background: 'transparent', border: 'none' }}
+                        placeholder="—" />
+                      <div style={{ fontSize: 9, color: '#2A2A2A', flexShrink: 0 }}>auto</div>
+                    </div>
+                    {(() => {
+                      const p = parseFloat(form.protein), c = parseFloat(form.carbs), fa = parseFloat(form.fat);
+                      const entered = parseFloat(form.calories);
+                      if (isNaN(p) || isNaN(c) || isNaN(fa)) return null;
+                      const comp = calcCal(p, c, fa);
+                      if (!isNaN(entered) && entered > 0 && Math.abs(comp - entered) / entered > 0.12)
+                        return <div style={{ fontSize: 11, color: ORANGE, marginTop: 8, fontWeight: 600 }}>Macros compute to ~{Math.round(comp)} kcal</div>;
+                      return null;
+                    })()}
+                  </div>
+
+                  <MealChips form={form} setForm={setForm} />
+                  {formError && <ErrBox msg={formError} />}
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                    <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`, background: 'none', color: '#444444', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                    <button onClick={handleAdd} disabled={submitting} className="nrc-press" style={bigBtn(submitting, RED, 2)}>
+                      {submitting ? 'Saving…' : editingId ? 'Save Changes →' : 'Log Fuel →'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -501,7 +526,7 @@ function MacroInp({ label, color, value, onChange }: { label: string; color: str
     <div>
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: color, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
       <input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder="0"
-        style={{ width: '100%', background: '#0F0F0F', border: `1px solid ${color}40`, borderRadius: 8, color: '#FFFFFF', fontSize: 16, fontWeight: 700, padding: '9px 10px', outline: 'none', fontFamily: 'inherit' }} />
+        style={{ width: '100%', background: SURF2, border: `1px solid ${color}30`, borderRadius: 10, color: '#FFFFFF', fontSize: 18, fontWeight: 700, padding: '10px 10px', outline: 'none', fontFamily: 'inherit' }} />
       <div style={{ fontSize: 9, color: '#333333', marginTop: 3, textAlign: 'right' }}>g</div>
     </div>
   );
@@ -515,7 +540,8 @@ function MealChips({ form, setForm }: { form: Form; setForm: React.Dispatch<Reac
           flexShrink: 0, padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
           background: form.meal === m ? RED : '#161616',
           border: `1px solid ${form.meal === m ? RED : 'rgba(255,255,255,0.08)'}`,
-          color: form.meal === m ? '#fff' : '#444444', fontWeight: 700, fontSize: 11,
+          color: form.meal === m ? '#fff' : '#3A3A3A', fontWeight: 700, fontSize: 11,
+          fontFamily: 'inherit',
         }}>{MEAL_LABEL[m]}</button>
       ))}
     </div>
@@ -537,5 +563,7 @@ function bigBtn(disabled: boolean, color: string, flex?: number): React.CSSPrope
     background: disabled ? '#161616' : color,
     color: disabled ? '#333333' : '#fff',
     fontWeight: 800, fontSize: 15, cursor: disabled ? 'not-allowed' : 'pointer',
+    fontFamily: 'inherit',
   };
 }
+
