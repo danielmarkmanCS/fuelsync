@@ -7,9 +7,10 @@ import AuthScreen from './screens/AuthScreen';
 import PinScreen from './screens/PinScreen';
 import HomeScreen from './screens/HomeScreen';
 import FoodScreen from './screens/FoodScreen';
+import HistoryScreen from './screens/HistoryScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 
-type Tab = 'home' | 'food' | 'profile';
+type Tab = 'home' | 'food' | 'history' | 'profile';
 const NAV_H = 68;
 
 const BLUE  = '#0038A8';
@@ -34,6 +35,15 @@ function FuelIcon({ active }: { active: boolean }) {
   );
 }
 
+function HistoryIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 7 12 12 15.5 14" />
+    </svg>
+  );
+}
+
 function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
@@ -46,6 +56,7 @@ function ProfileIcon({ active }: { active: boolean }) {
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
   { id: 'home',    label: 'Home',    Icon: HomeIcon },
   { id: 'food',    label: 'Fuel',    Icon: FuelIcon },
+  { id: 'history', label: 'History', Icon: HistoryIcon },
   { id: 'profile', label: 'Profile', Icon: ProfileIcon },
 ];
 
@@ -133,6 +144,7 @@ export default function App() {
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {activeTab === 'home'    && <HomeScreen />}
         {activeTab === 'food'    && <FoodScreen />}
+        {activeTab === 'history' && <HistoryScreen />}
         {activeTab === 'profile' && <ProfileSetupScreen />}
       </div>
 

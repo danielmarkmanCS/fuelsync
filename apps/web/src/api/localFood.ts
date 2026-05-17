@@ -56,6 +56,11 @@ export async function getLogs(date: string): Promise<FoodLog[]> {
   return rows.map(toFoodLog);
 }
 
+export async function getAllLogs(): Promise<FoodLog[]> {
+  const rows = await db.food_logs.orderBy('logged_at').reverse().toArray();
+  return rows.map(toFoodLog);
+}
+
 export async function addLog(entry: {
   food_name: string; calories: number; protein: number;
   carbs: number; fat: number; weight_grams?: number;
