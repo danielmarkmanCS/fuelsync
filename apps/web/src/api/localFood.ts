@@ -77,23 +77,37 @@ async function upsertD1Logs(d1logs: unknown[]) {
   for (const raw of d1logs) {
     const log = raw as D1FoodLog;
     if (!log.id) continue;
-    const existing = await db.food_logs.where('sync_id').equals(log.id).first();
-    if (!existing) {
-      await db.food_logs.add({
-        sync_id: log.id,
-        food_name: log.food_name,
-        calories: log.calories,
-        protein: log.protein,
-        carbs: log.carbs,
-        fat: log.fat,
-        weight_grams: log.weight_grams ?? null,
-        meal_type: log.meal_type ?? 'other',
-        image_url: log.image_url ?? null,
-        ingredients: log.ingredients ?? null,
-        logged_at: log.logged_at,
-        date: log.date,
-      });
+
+    // Already synced by sync_id?
+    const bySyncId = await db.food_logs.where('sync_id').equals(log.id).first();
+    if (bySyncId) continue;
+
+    // Legacy log: D1 id is the string of the local numeric id (e.g. "1", "2")
+    // Backfill sync_id on the existing row to avoid duplicate insertion.
+    const numericId = Number(log.id);
+    if (!isNaN(numericId) && Number.isInteger(numericId)) {
+      const byNumId = await db.food_logs.get(numericId);
+      if (byNumId && !byNumId.sync_id) {
+        await db.food_logs.update(numericId, { sync_id: log.id });
+        continue;
+      }
     }
+
+    // Unknown on this device — insert it
+    await db.food_logs.add({
+      sync_id: log.id,
+      food_name: log.food_name,
+      calories: log.calories,
+      protein: log.protein,
+      carbs: log.carbs,
+      fat: log.fat,
+      weight_grams: log.weight_grams ?? null,
+      meal_type: log.meal_type ?? 'other',
+      image_url: log.image_url ?? null,
+      ingredients: log.ingredients ?? null,
+      logged_at: log.logged_at,
+      date: log.date,
+    });
   }
 }
 
