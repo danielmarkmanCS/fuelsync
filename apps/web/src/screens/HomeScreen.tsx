@@ -244,6 +244,29 @@ export default function HomeScreen() {
         </div>
       )}
 
+      {/* ── CONDITIONS ── */}
+      {weather ? (
+        <div style={{ padding: '12px 22px 0' }}>
+          {environmentAlert && <WeatherBanner weather={weather} alert={environmentAlert} />}
+          {weatherRec && (
+            <div style={{ marginTop: environmentAlert ? 8 : 0, background: SURF, borderRadius: 12, padding: '12px 16px', border: `1px solid ${EDGE}`, borderLeft: `3px solid ${weatherRec.color}` }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: weatherRec.color }}>{weatherRec.text}</div>
+            </div>
+          )}
+          {!environmentAlert && !weatherRec && (
+            <div style={{ fontSize: 11, color: MUTED, background: SURF, borderRadius: 12, padding: '8px 14px', border: `1px solid ${EDGE}` }}>
+              {weather.description} · {Math.round(weather.tempC)}°C
+            </div>
+          )}
+        </div>
+      ) : weatherKeySet ? (
+        <div style={{ padding: '12px 22px 0' }}>
+          <div style={{ fontSize: 11, color: MUTED, background: SURF, borderRadius: 12, padding: '8px 14px', border: `1px solid ${EDGE}` }}>
+            Location access required for weather.
+          </div>
+        </div>
+      ) : null}
+
       {/* ── STEPS STRIP ── */}
       {todayLog && (
         <div style={{ padding: '12px 22px 0' }}>
@@ -494,30 +517,6 @@ export default function HomeScreen() {
         <StravaCard />
       </div>
 
-      {/* ── CONDITIONS ── */}
-      {weather ? (
-        <div style={{ padding: '20px 22px 0' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Conditions</div>
-          {environmentAlert && <WeatherBanner weather={weather} alert={environmentAlert} />}
-          {weatherRec && (
-            <div style={{ marginTop: environmentAlert ? 8 : 0, background: SURF, borderRadius: 12, padding: '12px 16px', border: `1px solid ${EDGE}`, borderLeft: `3px solid ${weatherRec.color}` }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: weatherRec.color }}>{weatherRec.text}</div>
-            </div>
-          )}
-          {!environmentAlert && !weatherRec && (
-            <div style={{ fontSize: 12, color: MUTED, background: SURF, borderRadius: 12, padding: '10px 14px', border: `1px solid ${EDGE}` }}>
-              Conditions are normal for today.
-            </div>
-          )}
-        </div>
-      ) : weatherKeySet ? (
-        <div style={{ padding: '20px 22px 0' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Conditions</div>
-          <div style={{ fontSize: 12, color: MUTED, background: SURF, borderRadius: 12, padding: '10px 14px', border: `1px solid ${EDGE}` }}>
-            Location access required to show weather conditions.
-          </div>
-        </div>
-      ) : null}
 
       <div style={{ height: 36 }} />
     </div>
