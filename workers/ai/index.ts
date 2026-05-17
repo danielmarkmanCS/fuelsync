@@ -5,6 +5,7 @@ const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash
 interface Env {
   GEMINI_API_KEY: string;
   GEMINI_API_KEY_2?: string;
+  GEMINI_API_KEY_3?: string;
   ALLOWED_ORIGIN: string;
 }
 
@@ -58,7 +59,7 @@ async function gemini(keys: string[], prompt: string, maxTokens = 512, imageBase
       if (result.status !== 429 && result.status !== 404) return result.text;
     }
   }
-  throw new Error('AI daily limit reached. Resets at midnight Pacific time — or add a second API key (GEMINI_API_KEY_2) for extra quota.');
+  throw new Error('AI daily limit reached across all keys. Resets at midnight Pacific time.');
 }
 
 function parseJSON(text: string): unknown {
@@ -89,7 +90,7 @@ export default {
     }
     if (request.method !== 'POST') return err('Method not allowed', 405, allowedOrigin);
 
-    const apiKeys = [env.GEMINI_API_KEY, env.GEMINI_API_KEY_2].filter(Boolean) as string[];
+    const apiKeys = [env.GEMINI_API_KEY, env.GEMINI_API_KEY_2, env.GEMINI_API_KEY_3].filter(Boolean) as string[];
 
     const url = new URL(request.url);
     let body: Record<string, unknown>;
