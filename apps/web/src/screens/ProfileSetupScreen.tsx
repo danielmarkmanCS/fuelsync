@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { updateProfile } from '../api/auth';
+import { updateProfile, clearProfile } from '../api/auth';
+import { clearSyncToken, getSyncToken } from '../api/syncClient';
+import { db } from '../lib/db';
+import { clearPin } from '../lib/pin';
+import { useNutritionStore } from '../store/nutritionStore';
 
 const BG     = '#EEF4FF';
 const SURF   = '#FFFFFF';
@@ -165,12 +169,38 @@ export default function ProfileSetupScreen() {
         </button>
 
         <div style={{ background: SURF, borderRadius: 16, padding: '16px 18px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Session</div>
-          <button onClick={() => { if (window.confirm('Lock the app?')) logout(); }} className="nrc-press" style={{
-            width: '100%', padding: 13, borderRadius: 10,
-            border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: BLUE,
-            fontWeight: 700, fontSize: 13, cursor: 'pointer',
-          }}>Lock App</button>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Account</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button onClick={() => { if (window.confirm('Lock the app?')) logout(); }} className="nrc-press" style={{
+              width: '100%', padding: 13, borderRadius: 10,
+              border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: BLUE,
+              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}>Lock App</button>
+
+            <button onClick={async () => {
+              if (!window.confirm('Sign out? Your local data stays on this device.')) return;
+              clearSyncToken();
+              logout();
+            }} className="nrc-press" style={{
+              width: '100%', padding: 13, borderRadius: 10,
+              border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: MUTED,
+              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}>Sign Out of Google</button>
+
+            <button onClick={async () => {
+              if (!window.confirm('This will delete ALL your local data — logs, profile, PIN — and sign you out. This cannot be undone.\n\nContinue?')) return;
+              clearSyncToken();
+              await clearPin();
+              await clearProfile();
+              await db.food_logs.clear();
+              useNutritionStore.getState().resetAll();
+              logout();
+            }} className="nrc-press" style={{
+              width: '100%', padding: 13, borderRadius: 10,
+              border: `1px solid ${RED}30`, background: `${RED}08`, color: RED,
+              fontWeight: 700, fontSize: 13, cursor: 'pointer',
+            }}>Reset & Clear All Data</button>
+          </div>
         </div>
       </div>
     </div>
