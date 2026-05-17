@@ -428,7 +428,11 @@ export default function FoodScreen() {
   };
 
   const consumed = sumMacros(logs);
-  const byMeal   = MEAL_TYPES.map((m) => ({ meal: m, entries: logs.filter((l) => l.meal_type === m) })).filter((g) => g.entries.length > 0);
+  const knownMealSet = new Set<string>(MEAL_TYPES);
+  const byMeal = [
+    ...MEAL_TYPES.map((m) => ({ meal: m as string, entries: logs.filter((l) => l.meal_type === m) })),
+    { meal: 'other', entries: logs.filter((l) => !knownMealSet.has(l.meal_type)) },
+  ].filter((g) => g.entries.length > 0);
   const calPct   = targets && targets.calories > 0 ? Math.min((consumed.calories / targets.calories) * 100, 100) : 0;
 
   return (
@@ -517,7 +521,7 @@ export default function FoodScreen() {
           </div>
         ) : byMeal.map(({ meal, entries }) => (
           <div key={meal} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal]}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal as MealType] ?? 'Other'}</div>
             {entries.map((entry) => (
               <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete}
                 onReLog={!isToday ? handleReLog : undefined}

@@ -99,6 +99,7 @@ export default function HistoryScreen() {
   };
 
   const handleRelog = async (item: FoodLog) => {
+    if (relogged === item.id) return;
     setRelogged(item.id);
     try {
       await addLog({
@@ -112,7 +113,8 @@ export default function HistoryScreen() {
     setTimeout(() => setRelogged(null), 1500);
   };
 
-  const handleRelogIngredient = async (ing: Ingredient, key: string) => {
+  const handleRelogIngredient = async (ing: Ingredient, mealType: string, key: string) => {
+    if (reloggedIng === key) return;
     setReloggedIng(key);
     try {
       await addLog({
@@ -121,6 +123,7 @@ export default function HistoryScreen() {
         protein: ing.protein,
         carbs: ing.carbs,
         fat: ing.fat,
+        meal_type: mealType || 'snack',
       });
     } catch { /* silent */ }
     setTimeout(() => setReloggedIng(null), 1500);
@@ -247,11 +250,13 @@ export default function HistoryScreen() {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                               }}>{isFoodOpen ? '▲' : '▼'}</button>
                             )}
-                            <button onClick={() => handleRelog(item)} style={{
+                            <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
+                              title="Add to today's fuel"
+                              style={{
                               width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
                               background: relogged === item.id ? `${GREEN}15` : SURF2,
                               color: relogged === item.id ? GREEN : BLUE,
-                              fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                              fontWeight: 900, fontSize: 14, cursor: relogged === item.id ? 'default' : 'pointer', flexShrink: 0,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
                               {relogged === item.id ? '✓' : '+'}
@@ -273,11 +278,14 @@ export default function HistoryScreen() {
                                       <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
                                       <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                                     </div>
-                                    <button onClick={() => handleRelogIngredient(ing, ingKey)} style={{
+                                    <button onClick={() => handleRelogIngredient(ing, item.meal_type, ingKey)}
+                                      disabled={reloggedIng === ingKey}
+                                      title="Add to today's fuel"
+                                      style={{
                                       width: 26, height: 26, borderRadius: 8, border: `1px solid ${reloggedIng === ingKey ? GREEN : EDGE}`,
                                       background: reloggedIng === ingKey ? `${GREEN}15` : SURF2,
                                       color: reloggedIng === ingKey ? GREEN : BLUE,
-                                      fontWeight: 900, fontSize: 13, cursor: 'pointer', flexShrink: 0,
+                                      fontWeight: 900, fontSize: 13, cursor: reloggedIng === ingKey ? 'default' : 'pointer', flexShrink: 0,
                                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     }}>
                                       {reloggedIng === ingKey ? '✓' : '+'}
@@ -334,11 +342,13 @@ export default function HistoryScreen() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>{isFoodOpen ? '▲' : '▼'}</button>
                     )}
-                    <button onClick={() => handleRelog(item)} style={{
+                    <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
+                      title="Add to today's fuel"
+                      style={{
                       width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
                       background: relogged === item.id ? `${GREEN}15` : SURF2,
                       color: relogged === item.id ? GREEN : BLUE,
-                      fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                      fontWeight: 900, fontSize: 14, cursor: relogged === item.id ? 'default' : 'pointer', flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {relogged === item.id ? '✓' : '+'}
@@ -371,11 +381,14 @@ export default function HistoryScreen() {
                               <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
                               <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                             </div>
-                            <button onClick={() => handleRelogIngredient(ing, ingKey)} style={{
+                            <button onClick={() => handleRelogIngredient(ing, item.meal_type, ingKey)}
+                              disabled={reloggedIng === ingKey}
+                              title="Add to today's fuel"
+                              style={{
                               width: 26, height: 26, borderRadius: 8, border: `1px solid ${reloggedIng === ingKey ? GREEN : EDGE}`,
                               background: reloggedIng === ingKey ? `${GREEN}15` : SURF2,
                               color: reloggedIng === ingKey ? GREEN : BLUE,
-                              fontWeight: 900, fontSize: 13, cursor: 'pointer', flexShrink: 0,
+                              fontWeight: 900, fontSize: 13, cursor: reloggedIng === ingKey ? 'default' : 'pointer', flexShrink: 0,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
                               {reloggedIng === ingKey ? '✓' : '+'}
