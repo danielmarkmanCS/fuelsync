@@ -116,17 +116,7 @@ export const useNutritionStore = create<NutritionState>()(
         loggedRuns: [],
       }}),
 
-      resetDay: () => {
-        const { todayLog, weeklyLoad } = get();
-        const wasStrength = todayLog?.trainingType === 'strength' || todayLog?.trainingType === 'hybrid';
-        set({
-          todayLog: null,
-          targets: null,
-          weeklyLoad: wasStrength
-            ? { ...weeklyLoad, totalStrengthSets: Math.max(0, weeklyLoad.totalStrengthSets - 1) }
-            : weeklyLoad,
-        });
-      },
+      resetDay: () => set({ todayLog: null, targets: null }),
 
       resetAll: () => set({ todayLog: null, targets: null, weeklyLoad: defaultWeeklyLoad(), weather: null, environmentAlert: null }),
     }),

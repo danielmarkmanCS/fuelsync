@@ -23,6 +23,24 @@ const CYAN   = '#0288D1';
 const YELLOW = '#F9A825';
 const RED    = '#C62828';
 
+// Load multiplier by activity level — higher = more load capacity before fatigue
+const ACTIVITY_MULT: Record<string, number> = {
+  sedentary:    0.4,
+  light:        0.65,
+  moderate:     1.0,
+  very_active:  1.7,
+  extra_active: 2.4,
+};
+
+function getThisMonday(): string {
+  const d   = new Date();
+  const day = d.getDay(); // 0=Sun
+  const diff = day === 0 ? -6 : 1 - day;
+  const m = new Date(d);
+  m.setDate(d.getDate() + diff);
+  return m.toISOString().split('T')[0];
+}
+
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
 
 function sumLogs(logs: FoodLog[]): MacroTargets {
@@ -34,10 +52,11 @@ function sumLogs(logs: FoodLog[]): MacroTargets {
   }), emptyMacros());
 }
 
-function buildRecovery(km: number, runs: number, strengthSessions: number) {
+function buildRecovery(km: number, runs: number, strengthSessions: number, activityLevel = 'moderate') {
+  const mult    = ACTIVITY_MULT[activityLevel] ?? 1.0;
   const runLoad = runs === 0 ? 0 : km < 15 ? 22 : km < 30 ? 48 : km < 50 ? 72 : 90;
-  const strLoad = Math.min(strengthSessions * 12, 40);
-  const score   = Math.max(5, 100 - Math.min(100, runLoad + strLoad));
+  const strLoad = Math.min(strengthSessions * 10, 40);
+  const score   = Math.max(5, Math.round(100 - Math.min(100, (runLoad + strLoad) / mult)));
 
   const parts: string[] = [];
   if (runs > 0)             parts.push(`${runs} run${runs > 1 ? 's' : ''} · ${km.toFixed(1)} km`);
@@ -112,6 +131,7 @@ export default function HomeScreen() {
   const { user } = useAuthStore();
   const name = user?.displayName || 'Athlete';
   const profileComplete = !!(user?.weightKg && user?.heightCm && user?.age);
+  const activityLevel = user?.activityLevel ?? 'moderate';
 
   const weatherKeySet = !!(import.meta.env.VITE_OPENWEATHER_KEY);
   const { todayLog, targets, weeklyLoad, weather, environmentAlert, logDay, refreshWeather, resetDay, setActivityModifier } = useNutrition();
@@ -122,6 +142,7 @@ export default function HomeScreen() {
   const addRunKm              = useNutritionStore((s) => s.addRunKm);
   const addStrengthSession    = useNutritionStore((s) => s.addStrengthSession);
   const removeStrengthSession = useNutritionStore((s) => s.removeStrengthSession);
+  const startNewWeek          = useNutritionStore((s) => s.startNewWeek);
 
   const [consumed,        setConsumed]        = useState<MacroTargets>(emptyMacros());
   const [stepInput,       setStepInput]       = useState('');
@@ -135,28 +156,27 @@ export default function HomeScreen() {
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'MORNING' : hour < 18 ? 'AFTERNOON' : 'EVENING';
 
+  // Auto-reset weekly load every Monday
+  useEffect(() => {
+    const monday = getThisMonday();
+    if (weeklyLoad.weekStart !== monday) startNewWeek(monday);
+  }, []);
+
   useEffect(() => { getLogs(today).then((l) => setConsumed(sumLogs(l))).catch(() => {}); }, [today]);
   useEffect(() => { refreshWeather().catch(() => {}); }, []);
 
   const handleSelectType = (type: TrainingType) => {
-    const prevType = todayLog?.trainingType;
     const r = logDay(type);
-    if (r.blocked) {
-      if (!window.confirm(
-        `Your legs are heavily loaded from this week's runs.\n\nRunning today risks injury — consider switching to upper-body strength instead.\n\nLog cardio anyway?`
-      )) return;
-      logDay(type);
-    }
-    const isNowStrength = type === 'strength' || type === 'hybrid';
-    const wasStrength   = prevType === 'strength' || prevType === 'hybrid';
-    if (isNowStrength && !wasStrength) addStrengthSession();
-    else if (!isNowStrength && wasStrength && prevType !== undefined) removeStrengthSession();
+    if (r.blocked && !window.confirm(
+      `Your legs are heavily loaded from this week's runs.\n\nRunning today risks injury — consider switching to upper-body strength instead.\n\nLog cardio anyway?`
+    )) return;
+    if (r.blocked) logDay(type);
   };
 
   const calPct   = targets && targets.calories > 0 ? (consumed.calories / targets.calories) * 100 : 0;
   const calLeft  = targets ? Math.round(targets.calories - consumed.calories) : 0;
   const strength = weeklyLoad.totalStrengthSets ?? 0;
-  const recovery = buildRecovery(weeklyLoad.totalRunKm, loggedRuns.length, strength);
+  const recovery = buildRecovery(weeklyLoad.totalRunKm, loggedRuns.length, strength, activityLevel);
 
   const manualKm = loggedRuns.filter((r) => r.source === 'manual').reduce((s, r) => s + r.km, 0);
   const stravaKm = loggedRuns.filter((r) => r.source === 'strava').reduce((s, r) => s + r.km, 0);
@@ -336,6 +356,8 @@ export default function HomeScreen() {
       <div className="nrc-a nrc-a5" style={{ padding: '16px 22px 0' }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Weekly Load</div>
         <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+
+          {/* Runs row */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${EDGE}` }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: GREEN, marginRight: 12, flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
@@ -351,6 +373,8 @@ export default function HomeScreen() {
               {weeklyLoad.totalRunKm.toFixed(1)}<span style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginLeft: 2 }}>KM</span>
             </div>
           </div>
+
+          {/* Strength row */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px' }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: PURPLE, marginRight: 12, flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
@@ -359,10 +383,25 @@ export default function HomeScreen() {
                 {strength > 0 ? `${strength} session${strength > 1 ? 's' : ''} this week` : 'No sessions this week'}
               </div>
             </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: strength > 0 ? PURPLE : MUTED }}>
-              {strength}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {strength > 0 && (
+                <button onClick={() => removeStrengthSession()} className="nrc-press" style={{
+                  width: 26, height: 26, borderRadius: 8, border: `1px solid ${EDGE}`,
+                  background: SURF2, color: MUTED, fontWeight: 900, fontSize: 16, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+                }}>−</button>
+              )}
+              <div style={{ fontSize: 16, fontWeight: 900, color: strength > 0 ? PURPLE : MUTED, minWidth: 18, textAlign: 'center' }}>
+                {strength}
+              </div>
+              <button onClick={() => addStrengthSession()} className="nrc-press" style={{
+                background: `${PURPLE}14`, border: `1px solid ${PURPLE}35`, color: PURPLE,
+                borderRadius: 8, fontWeight: 700, fontSize: 10, letterSpacing: 1, cursor: 'pointer',
+                padding: '4px 8px', whiteSpace: 'nowrap',
+              }}>+ LOG</button>
             </div>
           </div>
+
         </div>
       </div>
 
