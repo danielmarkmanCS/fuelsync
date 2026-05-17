@@ -6,6 +6,7 @@ import TrainingPicker from '../components/TrainingPicker';
 import WeatherBanner from '../components/WeatherBanner';
 import { getLogs, estimateSteps } from '../api/localFood';
 import StravaCard from '../components/StravaCard';
+import { computeMacros } from '@mobile/services/nutritionEngine';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 
@@ -154,7 +155,9 @@ export default function HomeScreen() {
   const activityLevel = user?.activityLevel ?? 'moderate';
 
   const weatherKeySet = !!(import.meta.env.VITE_OPENWEATHER_KEY);
-  const { todayLog, targets, weeklyLoad, weather, environmentAlert, logDay, refreshWeather, resetDay, setActivityModifier } = useNutrition();
+  const { todayLog, targets, weeklyLoad, weather, environmentAlert, logDay, refreshWeather, resetDay, setActivityModifier, profile } = useNutrition();
+  const storeSetTargets       = useNutritionStore((s) => s.setTargets);
+  const storeSetModifier      = useNutritionStore((s) => s.setActivityModifier);
   const loggedRuns            = useNutritionStore((s) => s.weeklyLoad.loggedRuns ?? []);
   const removeRunKm           = useNutritionStore((s) => s.removeRunKm);
   const renameRun             = useNutritionStore((s) => s.renameRun);
@@ -199,7 +202,7 @@ export default function HomeScreen() {
         if (saved.description) setStepDescription(saved.description);
         if (saved.estimate != null) {
           setStepEstimate(saved.estimate);
-          setActivityModifier(saved.estimate < 6000 ? 'low' : saved.estimate > 10000 ? 'high' : 'normal');
+          applyStepModifier(saved.estimate < 6000 ? 'low' : saved.estimate > 10000 ? 'high' : 'normal');
         }
       }
     } catch { /* ignore */ }
@@ -235,6 +238,15 @@ export default function HomeScreen() {
     : null;
   const stepLabelColor = stepLabel === 'LOW' ? ORANGE : stepLabel === 'HIGH' ? GREEN : BLUE;
 
+  const applyStepModifier = (modifier: 'low' | 'normal' | 'high') => {
+    storeSetModifier(modifier);
+    if (profile && todayLog) {
+      const updated = { ...todayLog, dailyActivityModifier: modifier };
+      const breakdown = computeMacros(profile, updated, weeklyLoad);
+      storeSetTargets(breakdown.targets);
+    }
+  };
+
   const handleEstimateSteps = async () => {
     const q = stepDescription.trim();
     if (!q || stepLoading) return;
@@ -242,7 +254,7 @@ export default function HomeScreen() {
     try {
       const r = await estimateSteps(q);
       setStepEstimate(r.steps);
-      setActivityModifier(r.label === 'high' ? 'high' : r.label === 'low' ? 'low' : 'normal');
+      applyStepModifier(r.label === 'high' ? 'high' : r.label === 'low' ? 'low' : 'normal');
     } catch { /* silent */ }
     setStepLoading(false);
   };
@@ -331,7 +343,7 @@ export default function HomeScreen() {
                         const v = parseInt(e.target.value, 10);
                         if (!isNaN(v) && v >= 0) {
                           setStepEstimate(v);
-                          setActivityModifier(v < 6000 ? 'low' : v > 10000 ? 'high' : 'normal');
+                          applyStepModifier(v < 6000 ? 'low' : v > 10000 ? 'high' : 'normal');
                         }
                       }}
                       style={{
