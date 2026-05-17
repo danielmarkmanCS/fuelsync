@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
@@ -79,6 +79,7 @@ export default function HistoryScreen() {
   const [expandedFood, setExpandedFood] = useState<string | null>(null);
   const [reloggedIng,  setReloggedIng]  = useState<string | null>(null);
   const [restoring,    setRestoring]    = useState<string | null>(null);
+  const restoringRef = useRef<Set<string>>(new Set());
 
   const load = useCallback(() => {
     setLoading(true);
@@ -343,9 +344,19 @@ export default function HistoryScreen() {
                       <button
                         disabled={restoring === item.id}
                         onClick={async () => {
-                          if (restoring === item.id) return;
+                          if (restoringRef.current.has(item.id)) return;
+                          restoringRef.current.add(item.id);
                           setRestoring(item.id);
-                          try { await unremoveLog(item.id); load(); } finally { setRestoring(null); }
+                          try {
+                            await unremoveLog(item.id);
+                            await new Promise<void>((res) => {
+                              setLoading(true);
+                              getAllLogs().then((logs) => { setAllLogs(logs); res(); }).catch(() => res()).finally(() => setLoading(false));
+                            });
+                          } finally {
+                            restoringRef.current.delete(item.id);
+                            setRestoring(null);
+                          }
                         }}
                         title="Restore to today's fuel"
                         style={{
