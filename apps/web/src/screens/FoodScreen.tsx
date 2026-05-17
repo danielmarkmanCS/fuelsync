@@ -902,31 +902,42 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
               Portion: {entry.weight_grams}g · {Math.round(Number(entry.calories) / entry.weight_grams * 100)} kcal/100g
             </div>
           )}
-          {hasIngredients && (
-            <div style={{ marginTop: 12, borderTop: `1px solid ${EDGE}`, paddingTop: 10 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Ingredients</div>
-              {entry.ingredients!.map((ing, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  paddingBottom: 7, marginBottom: i < entry.ingredients!.length - 1 ? 7 : 0,
-                  borderBottom: i < entry.ingredients!.length - 1 ? `1px solid ${EDGE}` : 'none',
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
-                    <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(ing.calories)}</div>
-                    <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 1 }}>
-                      <span style={{ fontSize: 9, color: GREEN,  fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
-                      <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
-                      <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+          {hasIngredients && (() => {
+            const totalCal = entry.ingredients!.reduce((s, i) => s + i.calories, 0) || 1;
+            return (
+              <div style={{ marginTop: 12, borderTop: `1px solid ${EDGE}`, paddingTop: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Breakdown</div>
+                {entry.ingredients!.map((ing, i) => {
+                  const pct = Math.round((ing.calories / totalCal) * 100);
+                  return (
+                    <div key={i} style={{ marginBottom: i < entry.ingredients!.length - 1 ? 12 : 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
+                          <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: BLUE, letterSpacing: -0.5 }}>{Math.round(ing.calories)} <span style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>kcal</span></div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: MUTED }}>{pct}% of meal</div>
+                        </div>
+                      </div>
+                      {/* Calorie bar */}
+                      <div style={{ height: 4, background: SURF2, borderRadius: 2, marginBottom: 4 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: BLUE, borderRadius: 2, opacity: 0.7 }} />
+                      </div>
+                      {/* Macro row */}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <span style={{ fontSize: 9, color: GREEN,  fontWeight: 700 }}>P {Math.round(ing.protein)}g</span>
+                        <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C {Math.round(ing.carbs)}g</span>
+                        <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F {Math.round(ing.fat)}g</span>
+                      </div>
+                      {i < entry.ingredients!.length - 1 && <div style={{ marginTop: 10, borderBottom: `1px solid ${EDGE}` }} />}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
