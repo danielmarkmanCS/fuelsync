@@ -111,6 +111,7 @@ export default function HomeScreen() {
   const name = user?.displayName || 'Athlete';
   const profileComplete = !!(user?.weightKg && user?.heightCm && user?.age);
 
+  const weatherKeySet = !!(import.meta.env.VITE_OPENWEATHER_KEY);
   const { todayLog, targets, weeklyLoad, weather, environmentAlert, logDay, refreshWeather, resetDay, getMacroBreakdown } = useNutrition();
   const loggedRuns      = useNutritionStore((s) => s.weeklyLoad.loggedRuns ?? []);
   const removeRunKm     = useNutritionStore((s) => s.removeRunKm);
@@ -138,7 +139,9 @@ export default function HomeScreen() {
 
   const handleSelectType = (type: TrainingType) => {
     const r = logDay(type, workoutTime || undefined);
-    if (r.blocked && r.message && window.confirm(`${r.message}\n\nOverride?`)) logDay(type, workoutTime || undefined);
+    if (r.blocked && window.confirm(
+      `Your legs are heavily loaded from this week's runs.\n\nRunning today risks injury — consider switching to upper-body strength instead.\n\nLog cardio anyway?`
+    )) logDay(type, workoutTime || undefined);
   };
 
   const calPct    = targets && targets.calories > 0 ? (consumed.calories / targets.calories) * 100 : 0;
@@ -218,6 +221,12 @@ export default function HomeScreen() {
               {Math.round(consumed.calories).toLocaleString()}
             </div>
             <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 3, marginTop: 8 }}>CALORIES TODAY</div>
+            {profileComplete && (
+              <div style={{ marginTop: 14, padding: '10px 14px', background: `${BLUE}08`, borderRadius: 12, border: `1px solid ${BLUE}18` }}>
+                <div style={{ fontSize: 12, color: BLUE, fontWeight: 700 }}>Pick a training mode below</div>
+                <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>to unlock your personalised macro targets</div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -398,10 +407,17 @@ export default function HomeScreen() {
       </div>
 
       {/* ── CONDITIONS ── */}
-      {weather && environmentAlert && (
+      {weather && environmentAlert ? (
         <div style={{ padding: '24px 22px 0' }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Conditions</div>
           <WeatherBanner weather={weather} alert={environmentAlert} />
+        </div>
+      ) : !weatherKeySet ? null : (
+        <div style={{ padding: '24px 22px 0' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Conditions</div>
+          <div style={{ fontSize: 12, color: MUTED, background: SURF, borderRadius: 12, padding: '10px 14px', border: `1px solid ${EDGE}` }}>
+            Location access required to show weather conditions.
+          </div>
         </div>
       )}
 

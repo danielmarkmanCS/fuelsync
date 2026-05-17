@@ -156,10 +156,25 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
   );
 }
 
+function offsetDate(base: string, days: number): string {
+  const d = new Date(base);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+function dateLabel(date: string): string {
+  const today     = new Date().toISOString().split('T')[0];
+  const yesterday = offsetDate(today, -1);
+  if (date === today)     return 'Today';
+  if (date === yesterday) return 'Yesterday';
+  return new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
 export default function FoodScreen() {
   const { targets } = useNutrition();
-  const today    = new Date().toISOString().split('T')[0];
-  const dayLabel = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const isToday = selectedDate === todayStr;
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
@@ -183,7 +198,7 @@ export default function FoodScreen() {
   const [undoEntry, setUndoEntry] = useState<FoodLog | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchLogs = useCallback(() => getLogs(today).then(setLogs).catch(() => {}), [today]);
+  const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
   const resetSheet = () => {
@@ -384,10 +399,36 @@ export default function FoodScreen() {
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
         background: 'linear-gradient(135deg, #0038A8 0%, #1565E0 100%)',
-        padding: '44px 22px 24px',
+        padding: '44px 22px 20px',
       }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 4, textTransform: 'uppercase' }}>Fuel Log</div>
-        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF' }}>{dayLabel}</div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 8, textTransform: 'uppercase' }}>Fuel Log</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button onClick={() => setSelectedDate((d) => offsetDate(d, -1))} style={{
+            background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
+            borderRadius: 10, color: '#fff', fontSize: 18, width: 38, height: 38,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>‹</button>
+          <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF', lineHeight: 1.1 }}>
+              {dateLabel(selectedDate).toUpperCase()}
+            </div>
+            {!isToday && (
+              <button onClick={() => setSelectedDate(todayStr)} style={{
+                marginTop: 6, background: 'rgba(255,255,255,0.2)', border: 'none',
+                borderRadius: 20, color: '#fff', fontSize: 10, fontWeight: 700,
+                padding: '4px 12px', cursor: 'pointer', letterSpacing: 1,
+              }}>Back to Today</button>
+            )}
+          </div>
+          <button onClick={() => { if (!isToday) setSelectedDate((d) => offsetDate(d, 1)); }} style={{
+            background: isToday ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            borderRadius: 10, color: isToday ? 'rgba(255,255,255,0.3)' : '#fff',
+            fontSize: 18, width: 38, height: 38,
+            cursor: isToday ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>›</button>
+        </div>
       </div>
 
       {/* ── CALORIE + MACROS ── */}
@@ -445,13 +486,13 @@ export default function FoodScreen() {
       </div>
 
       {/* ── FAB ── */}
-      <button onClick={() => { setOpen(true); setMode('ai'); }} className="nrc-press" style={{
+      {isToday && <button onClick={() => { setOpen(true); setMode('ai'); }} className="nrc-press" style={{
         position: 'fixed', bottom: 84, right: 'max(20px, calc(50vw - 220px))',
         width: 56, height: 56, borderRadius: 28, background: BLUE,
         border: 'none', cursor: 'pointer', fontSize: 28, fontWeight: 900,
         color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: `0 4px 24px ${BLUE}55`,
-      }}>+</button>
+      }}>+</button>}
 
       {/* ── UNDO TOAST ── */}
       {undoEntry && (
@@ -556,7 +597,7 @@ export default function FoodScreen() {
               {/* SUGGEST MODE */}
               {mode === 'suggest' && !suggestResult && (
                 <>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>When</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>What's the timing?</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
                     {SUGGEST_CTX.map((v) => {
                       const active = suggestCtx === v;

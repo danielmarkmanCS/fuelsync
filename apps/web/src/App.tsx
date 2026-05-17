@@ -34,20 +34,19 @@ function FuelIcon({ active }: { active: boolean }) {
   );
 }
 
-function StatsIcon({ active }: { active: boolean }) {
+function ProfileIcon({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-      <rect x="3"  y="14" width="4" height="7" rx="1.5" opacity={active ? 1 : 0.5} />
-      <rect x="10" y="9"  width="4" height="12" rx="1.5" />
-      <rect x="17" y="4"  width="4" height="17" rx="1.5" opacity={active ? 1 : 0.5} />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
   );
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',    label: 'Home',  Icon: HomeIcon },
-  { id: 'food',    label: 'Fuel',  Icon: FuelIcon },
-  { id: 'profile', label: 'Stats', Icon: StatsIcon },
+  { id: 'home',    label: 'Home',    Icon: HomeIcon },
+  { id: 'food',    label: 'Fuel',    Icon: FuelIcon },
+  { id: 'profile', label: 'Profile', Icon: ProfileIcon },
 ];
 
 export default function App() {

@@ -166,7 +166,10 @@ export default function AuthScreen() {
           <>
             <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, marginBottom: 8, color: TEXT }}>Secure your data</div>
             <div style={{ color: MUTED, fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
-              Choose a 4-digit PIN. After 15 wrong attempts all data is wiped.
+              Set a 4-digit PIN to protect your data. You can skip this and set it later in Profile settings.
+            </div>
+            <div style={{ fontSize: 11, color: '#B04040', background: 'rgba(200,60,60,0.06)', border: '1px solid rgba(200,60,60,0.15)', borderRadius: 8, padding: '8px 12px', marginBottom: 16, lineHeight: 1.5 }}>
+              After 15 wrong attempts, all local data is permanently wiped.
             </div>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>PIN</div>
             <input style={{ ...inp, letterSpacing: 10, fontSize: 24, textAlign: 'center' }}
