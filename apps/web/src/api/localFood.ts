@@ -224,13 +224,25 @@ export async function softDeleteLog(id: string): Promise<void> {
 
 export async function unremoveLog(id: string): Promise<void> {
   const bySync = await db.food_logs.where('sync_id').equals(id).first();
-  if (bySync?.id != null) {
-    await db.food_logs.update(bySync.id, { removed: false });
+  if (bySync?.id == null) {
+    const numId = Number(id);
+    if (!isNaN(numId) && Number.isInteger(numId)) {
+      await db.food_logs.update(numId, { removed: false });
+    }
     return;
   }
-  const numId = Number(id);
-  if (!isNaN(numId) && Number.isInteger(numId)) {
-    await db.food_logs.update(numId, { removed: false });
+  // If an identical active entry already exists for the same day (pre-existing duplicate
+  // from old re-log bugs), just delete this removed copy — food is already in the log.
+  const sameDay = await db.food_logs.where('date').equals(bySync.date).toArray();
+  const hasDuplicate = sameDay.some(
+    (r) => !r.removed && r.id !== bySync.id &&
+      r.food_name === bySync.food_name &&
+      Math.abs((r.calories ?? 0) - (bySync.calories ?? 0)) <= 5
+  );
+  if (hasDuplicate) {
+    await db.food_logs.delete(bySync.id);
+  } else {
+    await db.food_logs.update(bySync.id, { removed: false });
   }
 }
 

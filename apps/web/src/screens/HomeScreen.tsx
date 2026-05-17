@@ -168,6 +168,8 @@ export default function HomeScreen() {
   const [stepDescription, setStepDescription] = useState('');
   const [stepEstimate,    setStepEstimate]    = useState<number | null>(null);
   const [stepLoading,     setStepLoading]     = useState(false);
+
+  const STEPS_KEY = `fs_steps_${new Date().toISOString().slice(0, 10)}`;
   const [workoutKm,       setWorkoutKm]       = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [workoutName,     setWorkoutName]     = useState('');
@@ -187,6 +189,28 @@ export default function HomeScreen() {
 
   useEffect(() => { getLogs(today).then((l) => setConsumed(sumLogs(l))).catch(() => {}); }, [today]);
   useEffect(() => { refreshWeather().catch(() => {}); }, []);
+
+  // Persist steps across tab switches
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STEPS_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.description) setStepDescription(saved.description);
+        if (saved.estimate != null) {
+          setStepEstimate(saved.estimate);
+          setActivityModifier(saved.estimate < 6000 ? 'low' : saved.estimate > 10000 ? 'high' : 'normal');
+        }
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STEPS_KEY, JSON.stringify({ description: stepDescription, estimate: stepEstimate }));
+    } catch { /* ignore */ }
+  }, [stepDescription, stepEstimate, STEPS_KEY]);
 
   const handleSelectType = (type: TrainingType) => {
     const r = logDay(type);
@@ -293,9 +317,25 @@ export default function HomeScreen() {
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Daily Steps</div>
               {stepEstimate !== null && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: -0.5, color: stepLabelColor }}>~{stepEstimate.toLocaleString()}</div>
+                  <input
+                    type="number"
+                    value={stepEstimate}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      if (!isNaN(v) && v >= 0) {
+                        setStepEstimate(v);
+                        setActivityModifier(v < 6000 ? 'low' : v > 10000 ? 'high' : 'normal');
+                      }
+                    }}
+                    style={{
+                      width: 76, padding: '2px 4px', borderRadius: 6,
+                      border: `1px solid ${stepLabelColor}50`, background: 'transparent',
+                      color: stepLabelColor, fontSize: 15, fontWeight: 900, letterSpacing: -0.5,
+                      outline: 'none', fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'right',
+                    }}
+                  />
                   <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>steps</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, color: stepLabelColor, marginLeft: 2 }}>{stepLabel}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, color: stepLabelColor }}>{stepLabel}</div>
                 </div>
               )}
             </div>
