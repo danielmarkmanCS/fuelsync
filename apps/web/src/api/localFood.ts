@@ -14,6 +14,15 @@ export interface FoodLog {
   logged_at: string;
 }
 
+export interface IngredientItem {
+  name: string;
+  amount: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface AIEstimate {
   food_name: string;
   estimated_weight_grams: number;
@@ -24,6 +33,7 @@ export interface AIEstimate {
   confidence: 'high' | 'medium' | 'low';
   breakdown?: string | null;
   imageUrl?: string | null;
+  ingredients?: IngredientItem[] | null;
 }
 
 function toFoodLog(row: LocalFoodLog): FoodLog {
@@ -79,6 +89,10 @@ export function estimateByWeight(food_name: string, weight_grams: number): Promi
 
 export function estimateByDescription(description: string): Promise<AIEstimate> {
   return workerPost<AIEstimate>('ai', '/describe', { description });
+}
+
+export function suggestMeal(context: string, size: 'big' | 'small'): Promise<AIEstimate> {
+  return workerPost<AIEstimate>('ai', '/suggest', { context, size });
 }
 
 export async function analyzeByImage(file: File): Promise<AIEstimate> {

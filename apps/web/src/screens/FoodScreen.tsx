@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getLogs, addLog, deleteLog, estimateByWeight, estimateByDescription, analyzeByImage } from '../api/localFood';
-import type { FoodLog, AIEstimate } from '../api/localFood';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getLogs, addLog, deleteLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal } from '../api/localFood';
+import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
 
@@ -21,6 +21,15 @@ type MealType = typeof MEAL_TYPES[number];
 const MEAL_LABEL: Record<MealType, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
   lunch: 'Lunch', post_workout: 'Post-Workout', dinner: 'Dinner', snack: 'Snack',
+};
+
+const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
+type SuggestCtx = typeof SUGGEST_CTX[number];
+const CTX_LABEL: Record<SuggestCtx, string> = {
+  morning: 'Morning', pre_workout: 'Pre-Workout', post_workout: 'Post-Workout', rest: 'Rest Day', evening: 'Evening',
+};
+const CTX_MEAL: Record<SuggestCtx, MealType> = {
+  morning: 'breakfast', pre_workout: 'pre_workout', post_workout: 'post_workout', rest: 'lunch', evening: 'dinner',
 };
 
 interface Form {
@@ -66,6 +75,31 @@ const inp: React.CSSProperties = {
   fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
+function IngredientBreakdown({ ingredients }: { ingredients: IngredientItem[] }) {
+  return (
+    <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${EDGE}` }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Breakdown</div>
+      {ingredients.map((item, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 7, marginBottom: 7, borderBottom: i < ingredients.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{item.amount}</div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(item.calories)}</div>
+            <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
+            <span style={{ fontSize: 9, color: GREEN, fontWeight: 700 }}>P{Math.round(item.protein)}</span>
+            <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
+            <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(item.fat)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function FoodScreen() {
   const { targets } = useNutrition();
   const today    = new Date().toISOString().split('T')[0];
@@ -83,8 +117,14 @@ export default function FoodScreen() {
   const [aiQuery,    setAiQuery]    = useState('');
   const [editingId,  setEditingId]  = useState<string | null>(null);
   const [basePerGram, setBasePerGram] = useState<{ protein: number; carbs: number; fat: number } | null>(null);
-  const [suggestCtx,  setSuggestCtx]  = useState<'pre_workout'|'post_workout'|'rest'|'morning'|'evening'>('morning');
-  const [suggestSize, setSuggestSize] = useState<'big'|'small'>('big');
+  const [suggestCtx,  setSuggestCtx]  = useState<SuggestCtx>('morning');
+  const [suggestSize, setSuggestSize] = useState<'big' | 'small'>('big');
+  const [suggestResult, setSuggestResult] = useState<AIEstimate | null>(null);
+  const [loggingAll, setLoggingAll] = useState(false);
+
+  // Undo deleted meal
+  const [undoEntry, setUndoEntry] = useState<FoodLog | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchLogs = useCallback(() => getLogs(today).then(setLogs).catch(() => {}), [today]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
@@ -92,8 +132,32 @@ export default function FoodScreen() {
   const resetSheet = () => {
     setForm(EMPTY); setEstimate(null);
     setAiError(''); setFormError(''); setAiQuery(''); setEditingId(null); setBasePerGram(null);
+    setSuggestResult(null);
   };
   const closeSheet = () => { setOpen(false); resetSheet(); };
+
+  const handleDelete = (entry: FoodLog) => {
+    deleteLog(entry.id).then(() => {
+      fetchLogs();
+      setUndoEntry(entry);
+      if (undoTimer.current) clearTimeout(undoTimer.current);
+      undoTimer.current = setTimeout(() => setUndoEntry(null), 5000);
+    }).catch(() => {});
+  };
+
+  const handleUndo = async () => {
+    if (!undoEntry) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    const entry = undoEntry;
+    setUndoEntry(null);
+    await addLog({
+      food_name: entry.food_name, calories: entry.calories,
+      protein: entry.protein, carbs: entry.carbs, fat: entry.fat,
+      weight_grams: entry.weight_grams ?? undefined,
+      meal_type: entry.meal_type, image_url: entry.image_url ?? undefined,
+    });
+    fetchLogs();
+  };
 
   const openEdit = (entry: FoodLog) => {
     const g = entry.weight_grams || 100;
@@ -128,18 +192,34 @@ export default function FoodScreen() {
   };
 
   const handleSuggest = async () => {
-    const ctxLabel: Record<typeof suggestCtx, string> = { pre_workout: 'pre-workout', post_workout: 'post-workout', rest: 'rest day', morning: 'morning', evening: 'evening' };
-    const prompt = `Suggest a specific ${suggestSize === 'big' ? 'full' : 'light'} ${ctxLabel[suggestCtx]} meal. List every food item with its exact weight or quantity in the breakdown field. Include total macros.`;
-    setAiLoading(true); setAiError('');
+    setAiLoading(true); setAiError(''); setSuggestResult(null);
     try {
-      const r = await estimateByDescription(prompt);
-      const g = r.estimated_weight_grams || 100;
-      setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
-      setEstimate(r);
-      setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)), meal: form.meal });
-      setMode('manual');
+      const r = await suggestMeal(CTX_LABEL[suggestCtx], suggestSize);
+      setSuggestResult(r);
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'AI failed'); }
     finally { setAiLoading(false); }
+  };
+
+  const handleLogSuggestedMeal = async () => {
+    if (!suggestResult) return;
+    const meal = CTX_MEAL[suggestCtx];
+    setLoggingAll(true);
+    try {
+      const items = suggestResult.ingredients?.length
+        ? suggestResult.ingredients
+        : [{ name: suggestResult.food_name, amount: `${suggestResult.estimated_weight_grams}g`, calories: suggestResult.calories, protein: suggestResult.protein, carbs: suggestResult.carbs, fat: suggestResult.fat }];
+
+      for (const item of items) {
+        await addLog({
+          food_name: item.name, calories: item.calories,
+          protein: item.protein, carbs: item.carbs, fat: item.fat,
+          meal_type: meal,
+        });
+      }
+      playFoodLogSound();
+      fetchLogs(); closeSheet();
+    } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'Failed to log'); }
+    finally { setLoggingAll(false); }
   };
 
   const handlePhotoAnalyze = async (file: File) => {
@@ -222,7 +302,7 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: `linear-gradient(135deg, #0038A8 0%, #1565E0 100%)`,
+        background: 'linear-gradient(135deg, #0038A8 0%, #1565E0 100%)',
         padding: '44px 22px 24px',
       }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 4, textTransform: 'uppercase' }}>Fuel Log</div>
@@ -277,35 +357,7 @@ export default function FoodScreen() {
           <div key={meal} style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal]}</div>
             {entries.map((entry) => (
-              <div key={entry.id} style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
-                  {entry.image_url && <img src={entry.image_url} alt={entry.food_name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{entry.food_name}</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
-                      <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>P {Math.round(Number(entry.protein))}g</span>
-                      <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
-                      <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {Math.round(Number(entry.fat))}g</span>
-                      {entry.weight_grams && <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{entry.weight_grams}g</span>}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: BLUE, letterSpacing: -0.5 }}>{Math.round(Number(entry.calories))}</div>
-                    <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1 }}>KCAL</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
-                  <button onClick={() => openEdit(entry)} style={{
-                    flex: 1, padding: '9px 0', background: 'none', border: 'none',
-                    color: MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                    borderRight: `1px solid ${EDGE}`, letterSpacing: 0.5,
-                  }}>Edit</button>
-                  <button onClick={() => deleteLog(entry.id).then(fetchLogs).catch(() => {})} style={{
-                    flex: 1, padding: '9px 0', background: 'none', border: 'none',
-                    color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
-                  }}>Remove</button>
-                </div>
-              </div>
+              <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete} />
             ))}
           </div>
         ))}
@@ -320,13 +372,33 @@ export default function FoodScreen() {
         boxShadow: `0 4px 24px ${BLUE}55`,
       }}>+</button>
 
+      {/* ── UNDO TOAST ── */}
+      {undoEntry && (
+        <div style={{
+          position: 'fixed', bottom: 96, left: '50%', transform: 'translateX(-50%)',
+          background: TEXT, borderRadius: 12, padding: '12px 16px',
+          display: 'flex', alignItems: 'center', gap: 14,
+          boxShadow: '0 4px 20px rgba(10,22,40,0.25)',
+          zIndex: 200, maxWidth: 340, width: 'calc(100vw - 40px)',
+          animation: 'slideUp 0.3s ease both',
+        }}>
+          <div style={{ flex: 1, fontSize: 13, color: '#FFFFFF', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            Removed "{undoEntry.food_name}"
+          </div>
+          <button onClick={handleUndo} style={{
+            background: BLUE, border: 'none', borderRadius: 8, color: '#fff',
+            fontWeight: 800, fontSize: 12, cursor: 'pointer', padding: '6px 14px',
+            flexShrink: 0,
+          }}>Undo</button>
+        </div>
+      )}
+
       {/* ── SHEET ── */}
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
           <div style={{ background: '#F8FBFF', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,56,168,0.12)' }}>
 
-            {/* drag handle */}
             <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
               <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,56,168,0.15)' }} />
             </div>
@@ -342,16 +414,14 @@ export default function FoodScreen() {
               {/* Mode tabs */}
               <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24 }}>
                 {([['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
-                  <button key={m} onClick={() => { setMode(m); setAiError(''); setFormError(''); }} style={{
+                  <button key={m} onClick={() => { setMode(m); setAiError(''); setFormError(''); setSuggestResult(null); }} style={{
                     flex: 1, padding: '10px 0', background: 'none', border: 'none',
                     borderBottom: `2px solid ${mode === m ? BLUE : 'transparent'}`,
                     marginBottom: -2,
                     color: mode === m ? BLUE : MUTED,
                     fontWeight: mode === m ? 800 : 600,
-                    fontSize: 12, cursor: 'pointer',
-                    transition: 'color 0.15s',
-                    fontFamily: 'inherit',
-                    letterSpacing: 0.3,
+                    fontSize: 12, cursor: 'pointer', transition: 'color 0.15s',
+                    fontFamily: 'inherit', letterSpacing: 0.3,
                   }}>{label}</button>
                 ))}
               </div>
@@ -360,7 +430,7 @@ export default function FoodScreen() {
               {mode === 'ai' && (
                 <>
                   <div style={{ fontSize: 12, color: MUTED, marginBottom: 12, lineHeight: 1.6 }}>
-                    Describe anything: "100g chicken breast", "2 scrambled eggs", "bowl of oats"
+                    Describe anything — single or multi-ingredient: "2 eggs, yogurt, grapes"
                   </div>
                   <textarea autoFocus value={aiQuery}
                     onChange={(e) => { setAiQuery(e.target.value); setAiError(''); }}
@@ -403,12 +473,11 @@ export default function FoodScreen() {
               )}
 
               {/* SUGGEST MODE */}
-              {mode === 'suggest' && (
+              {mode === 'suggest' && !suggestResult && (
                 <>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Timing</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>When</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
-                    {(['morning','pre_workout','post_workout','rest','evening'] as const).map((v) => {
-                      const labels: Record<typeof v, string> = { morning: 'Morning', pre_workout: 'Pre-Workout', post_workout: 'Post-Workout', rest: 'Rest Day', evening: 'Evening' };
+                    {SUGGEST_CTX.map((v) => {
                       const active = suggestCtx === v;
                       return (
                         <button key={v} onClick={() => setSuggestCtx(v)} style={{
@@ -418,12 +487,12 @@ export default function FoodScreen() {
                           borderLeft: active ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
                           color: active ? BLUE : MUTED, fontWeight: 700, fontSize: 12,
                           fontFamily: 'inherit',
-                        }}>{labels[v]}</button>
+                        }}>{CTX_LABEL[v]}</button>
                       );
                     })}
                   </div>
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Size</div>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
                     {([['big','Full Meal'],['small','Light']] as const).map(([v, label]) => (
                       <button key={v} onClick={() => setSuggestSize(v)} style={{
                         flex: 1, padding: 12, borderRadius: 12, cursor: 'pointer',
@@ -434,11 +503,77 @@ export default function FoodScreen() {
                       }}>{label}</button>
                     ))}
                   </div>
-                  <MealChips form={form} setForm={setForm} />
                   {aiError && <ErrBox msg={aiError} />}
                   <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, BLUE)}>
-                    {aiLoading ? 'Thinking…' : 'Suggest a meal →'}
+                    {aiLoading ? 'Generating meal…' : 'Suggest a meal →'}
                   </button>
+                </>
+              )}
+
+              {/* SUGGEST RESULT */}
+              {mode === 'suggest' && suggestResult && (
+                <>
+                  {/* Meal header */}
+                  <div style={{ background: SURF2, borderRadius: 14, padding: '14px 16px', marginBottom: 16, border: `1px solid ${EDGE}` }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>
+                      {CTX_LABEL[suggestCtx]} · {suggestSize === 'big' ? 'Full Meal' : 'Light'}
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.5, color: TEXT, marginBottom: 10 }}>{suggestResult.food_name}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+                      {[
+                        { label: 'Calories', val: Math.round(suggestResult.calories), unit: 'kcal', color: BLUE },
+                        { label: 'Protein',  val: Math.round(suggestResult.protein),  unit: 'g',    color: GREEN },
+                        { label: 'Carbs',    val: Math.round(suggestResult.carbs),    unit: 'g',    color: ORANGE },
+                        { label: 'Fat',      val: Math.round(suggestResult.fat),      unit: 'g',    color: PURPLE },
+                      ].map(({ label, val, unit, color }) => (
+                        <div key={label} style={{ textAlign: 'center', background: SURF, borderRadius: 10, padding: '8px 4px', border: `1px solid ${EDGE}` }}>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: color, letterSpacing: -0.5 }}>{val}</div>
+                          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{unit}</div>
+                          <div style={{ fontSize: 8, color: MUTED, letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ingredient list */}
+                  {suggestResult.ingredients && suggestResult.ingredients.length > 0 && (
+                    <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', marginBottom: 16 }}>
+                      <div style={{ padding: '12px 16px 0', fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Ingredients</div>
+                      {suggestResult.ingredients.map((item, i) => (
+                        <div key={i} style={{
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                          borderTop: i === 0 ? 'none' : `1px solid ${EDGE}`,
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{item.name}</div>
+                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{item.amount}</div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 16, fontWeight: 900, color: BLUE }}>{Math.round(item.calories)}</div>
+                            <div style={{ fontSize: 9, color: MUTED }}>kcal</div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
+                            <span style={{ fontSize: 9, color: GREEN, fontWeight: 700 }}>P {Math.round(item.protein)}g</span>
+                            <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C {Math.round(item.carbs)}g</span>
+                            <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F {Math.round(item.fat)}g</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {aiError && <ErrBox msg={aiError} />}
+
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setSuggestResult(null)} className="nrc-press" style={{
+                      flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`,
+                      background: 'none', color: MUTED, fontWeight: 700, fontSize: 14,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}>← Back</button>
+                    <button onClick={handleLogSuggestedMeal} disabled={loggingAll} className="nrc-press" style={bigBtn(loggingAll, BLUE, 2)}>
+                      {loggingAll ? 'Logging…' : `Log ${suggestResult.ingredients?.length ?? 1} items →`}
+                    </button>
+                  </div>
                 </>
               )}
 
@@ -457,11 +592,8 @@ export default function FoodScreen() {
                           <span style={{ color: CONF_COLOR[estimate.confidence], fontSize: 10, fontWeight: 800 }}>{estimate.confidence.toUpperCase()}</span>
                         </div>
                       </div>
-                      {estimate.breakdown && (
-                        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${EDGE}` }}>
-                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>What to eat</div>
-                          <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7, fontWeight: 500 }}>{estimate.breakdown}</div>
-                        </div>
+                      {estimate.ingredients && estimate.ingredients.length > 1 && (
+                        <IngredientBreakdown ingredients={estimate.ingredients} />
                       )}
                     </div>
                   )}
@@ -470,7 +602,6 @@ export default function FoodScreen() {
                     value={form.name} onChange={(e) => patch({ name: e.target.value })}
                     placeholder="Food name" autoFocus={!estimate} />
 
-                  {/* Amount row */}
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'stretch' }}>
                     <div style={{ display: 'flex', background: SURF2, borderRadius: 10, border: `1px solid ${EDGE}`, overflow: 'hidden', flexShrink: 0 }}>
                       {([false, true] as const).map((isText) => (
@@ -489,14 +620,14 @@ export default function FoodScreen() {
                       placeholder={form.amountIsText ? 'e.g. 2 eggs' : 'Weight in grams'} />
                     <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
                       background: `${BLUE}0C`, border: `1px solid ${BLUE}25`, borderRadius: 10,
-                      color: aiLoading ? MUTED : BLUE, fontWeight: 800, fontSize: 11, cursor: aiLoading ? 'not-allowed' : 'pointer',
+                      color: aiLoading ? MUTED : BLUE, fontWeight: 800, fontSize: 11,
+                      cursor: aiLoading ? 'not-allowed' : 'pointer',
                       padding: '0 14px', whiteSpace: 'nowrap', fontFamily: 'inherit', letterSpacing: 0.5,
                     }}>{aiLoading ? '···' : 'AI'}</button>
                   </div>
 
                   {aiError && <ErrBox msg={aiError} />}
 
-                  {/* Macros */}
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Macros</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
@@ -536,6 +667,67 @@ export default function FoodScreen() {
               )}
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FoodCard({ entry, onEdit, onDelete }: { entry: FoodLog; onEdit: (e: FoodLog) => void; onDelete: (e: FoodLog) => void }) {
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  return (
+    <div style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
+        {entry.image_url && <img src={entry.image_url} alt={entry.food_name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{entry.food_name}</div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
+            <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>P {Math.round(Number(entry.protein))}g</span>
+            <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
+            <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {Math.round(Number(entry.fat))}g</span>
+            {entry.weight_grams && <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{entry.weight_grams}g</span>}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: BLUE, letterSpacing: -0.5 }}>{Math.round(Number(entry.calories))}</div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1 }}>KCAL</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
+        <button onClick={() => onEdit(entry)} style={{
+          flex: 1, padding: '9px 0', background: 'none', border: 'none',
+          color: MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+          borderRight: `1px solid ${EDGE}`, letterSpacing: 0.5,
+        }}>Edit</button>
+        <button onClick={() => onDelete(entry)} style={{
+          flex: 1, padding: '9px 0', background: 'none', border: 'none',
+          color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+          borderRight: `1px solid ${EDGE}`,
+        }}>Remove</button>
+        <button onClick={() => setShowBreakdown((v) => !v)} style={{
+          flex: 1, padding: '9px 0', background: 'none', border: 'none',
+          color: showBreakdown ? BLUE : MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+        }}>Info {showBreakdown ? '▲' : '▼'}</button>
+      </div>
+      {showBreakdown && (
+        <div style={{ padding: '12px 16px', borderTop: `1px solid ${EDGE}`, background: '#F8FBFF' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: GREEN },
+              { label: 'Carbs',   val: Math.round(Number(entry.carbs)),   unit: 'g', color: ORANGE },
+              { label: 'Fat',     val: Math.round(Number(entry.fat)),     unit: 'g', color: PURPLE },
+            ].map(({ label, val, unit, color }) => (
+              <div key={label} style={{ textAlign: 'center', background: SURF, borderRadius: 10, padding: '8px 4px', border: `1px solid ${EDGE}` }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color, letterSpacing: -0.5 }}>{val}{unit}</div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          {entry.weight_grams && (
+            <div style={{ marginTop: 8, fontSize: 11, color: MUTED, textAlign: 'center' }}>
+              Portion: {entry.weight_grams}g · {Math.round(Number(entry.calories) / entry.weight_grams * 100)} kcal/100g
+            </div>
+          )}
         </div>
       )}
     </div>

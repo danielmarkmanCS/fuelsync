@@ -25,7 +25,7 @@ function err(msg: string, status = 400, origin = '*'): Response {
   return json({ error: msg }, status, origin);
 }
 
-async function gemini(apiKey: string, prompt: string, imageBase64?: string, imageMime?: string): Promise<string> {
+async function gemini(apiKey: string, prompt: string, maxTokens = 512, imageBase64?: string, imageMime?: string): Promise<string> {
   const parts: unknown[] = [];
   if (imageBase64 && imageMime) {
     parts.push({ inlineData: { mimeType: imageMime, data: imageBase64 } });
@@ -37,7 +37,7 @@ async function gemini(apiKey: string, prompt: string, imageBase64?: string, imag
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 512, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.1, maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } },
     }),
   });
 
@@ -58,8 +58,13 @@ function parseJSON(text: string): unknown {
   throw new Error('Could not parse AI response as JSON');
 }
 
-const MACRO_SCHEMA = `Respond ONLY with valid JSON (omit breakdown if not a multi-item meal):
-{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high"|"medium"|"low","breakdown":"optional: each item with exact amount, e.g. 150g chicken breast, 200g white rice, 1 banana"}`;
+const MACRO_SCHEMA = `Respond ONLY with valid JSON:
+{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high"|"medium"|"low","ingredients":[{"name":"string","amount":"string","calories":number,"protein":number,"carbs":number,"fat":number}]}
+ingredients: every separate food item/component with its own realistic macros and a human-readable amount (e.g. "2 large eggs", "150g", "1 tbsp olive oil"). If it's a single-ingredient food, still wrap it in the ingredients array.`;
+
+const SUGGEST_SCHEMA = `Respond ONLY with valid JSON:
+{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high","ingredients":[{"name":"string","amount":"string","calories":number,"protein":number,"carbs":number,"fat":number}]}
+ingredients: every item with its exact amount and individual macros. Be specific and practical.`;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -82,15 +87,24 @@ export default {
         const { food_name, weight_grams } = body;
         if (!food_name || !weight_grams) return err('food_name and weight_grams required', 400, allowedOrigin);
         const prompt = `For ${weight_grams}g of "${food_name}", give exact nutritional values.\n${MACRO_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt);
+        const text = await gemini(env.GEMINI_API_KEY, prompt, 768);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
       if (url.pathname.endsWith('/describe')) {
         const { description } = body;
         if (!description) return err('description required', 400, allowedOrigin);
-        const prompt = `Analyse this meal and sum all items: "${description}"\n${MACRO_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt);
+        const prompt = `Analyse this meal and provide nutritional breakdown: "${description}"\n${MACRO_SCHEMA}`;
+        const text = await gemini(env.GEMINI_API_KEY, prompt, 1024);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
+      if (url.pathname.endsWith('/suggest')) {
+        const { context, size } = body;
+        if (!context) return err('context required', 400, allowedOrigin);
+        const sizeLabel = size === 'small' ? 'light snack or small' : 'complete';
+        const prompt = `Suggest a specific, practical ${sizeLabel} meal for an athlete for: ${context}. Include exact food items with realistic portions.\n${SUGGEST_SCHEMA}`;
+        const text = await gemini(env.GEMINI_API_KEY, prompt, 1024);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
@@ -98,7 +112,7 @@ export default {
         const { base64, mimeType } = body;
         if (!base64 || !mimeType) return err('base64 and mimeType required', 400, allowedOrigin);
         const prompt = `Identify the food(s) in this image and estimate total nutritional values.\n${MACRO_SCHEMA}`;
-        const text = await gemini(env.GEMINI_API_KEY, prompt, base64 as string, mimeType as string);
+        const text = await gemini(env.GEMINI_API_KEY, prompt, 1024, base64 as string, mimeType as string);
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
