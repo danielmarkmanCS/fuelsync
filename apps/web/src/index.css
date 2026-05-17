@@ -1,19 +1,22 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --red:     #FF3B30;
-  --protein: #4ADE80;
-  --carbs:   #FB923C;
-  --fat:     #F472B6;
-  --cyan:    #22D3EE;
-  --amber:   #FACC15;
-  --chrome:  #555555;
-  --bg:      #0C0C0C;
-  --card:    #111111;
-  --card2:   #181818;
-  --border:  #222222;
+  --bg:      #060606;
+  --surf:    #0F0F0F;
+  --surf2:   #161616;
+  --edge:    rgba(255,255,255,0.08);
+  --edge2:   rgba(255,255,255,0.14);
   --text:    #FFFFFF;
-  --text2:   #666666;
+  --muted:   #555555;
+  --muted2:  #333333;
+
+  --red:     #FF453A;
+  --green:   #30D158;
+  --orange:  #FF9F0A;
+  --purple:  #BF5AF2;
+  --cyan:    #5AC8FA;
+  --yellow:  #FFD60A;
+
   --spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease:    cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -36,77 +39,79 @@ button, input, select, textarea { font-family: inherit; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── TYPOGRAPHY ──────────────────────────────────────────── */
-.nrc-hero {
-  font-family: Inter, 'SF Pro Display', -apple-system, system-ui, sans-serif;
+.hero {
   font-weight: 900;
-  font-style: normal;
-  letter-spacing: -2px;
-  line-height: 0.9;
+  letter-spacing: -3px;
+  line-height: 0.88;
   color: var(--text);
 }
-
-.nrc-label {
-  font-family: Inter, -apple-system, system-ui, sans-serif;
+.label {
   font-weight: 700;
-  font-style: normal;
+  font-size: 9px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--chrome);
-  font-size: 10px;
+  color: var(--muted);
 }
 
 /* ── ENTRANCE ANIMATIONS ────────────────────────────────── */
-@keyframes nrcUp {
-  from { opacity: 0; transform: translateY(28px); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes nrcFade {
+@keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.6; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.92); }
 }
 
-.nrc-a  { animation: nrcUp 0.5s var(--spring) both; }
+.a  { animation: slideUp 0.5s var(--spring) both; }
+.a1 { animation-delay:   0ms; }
+.a2 { animation-delay:  80ms; }
+.a3 { animation-delay: 160ms; }
+.a4 { animation-delay: 240ms; }
+.a5 { animation-delay: 320ms; }
+.a6 { animation-delay: 400ms; }
+
+/* old NRC classes still work */
+.nrc-a  { animation: slideUp 0.5s var(--spring) both; }
 .nrc-a1 { animation-delay:   0ms; }
-.nrc-a2 { animation-delay:  70ms; }
-.nrc-a3 { animation-delay: 140ms; }
-.nrc-a4 { animation-delay: 210ms; }
-.nrc-a5 { animation-delay: 280ms; }
-.nrc-a6 { animation-delay: 350ms; }
+.nrc-a2 { animation-delay:  80ms; }
+.nrc-a3 { animation-delay: 160ms; }
+.nrc-a4 { animation-delay: 240ms; }
+.nrc-a5 { animation-delay: 320ms; }
+.nrc-a6 { animation-delay: 400ms; }
+.nrc-hero  { font-weight: 900; letter-spacing: -2px; line-height: 0.9; color: var(--text); }
+.nrc-label { font-weight: 700; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
 
 /* ── PRESS SCALE ────────────────────────────────────────── */
-.nrc-press {
+.nrc-press, .press {
   transition: transform 0.12s var(--spring);
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
-.nrc-press:active { transform: scale(0.96) !important; }
+.nrc-press:active, .press:active { transform: scale(0.96) !important; }
 
-/* ── PROGRESS BAR ───────────────────────────────────────── */
-.volt-bar-track {
-  height: 3px;
+/* ── BARS ───────────────────────────────────────────────── */
+.bar-track {
+  height: 2px;
   background: rgba(255,255,255,0.06);
   border-radius: 2px;
   overflow: hidden;
 }
-.volt-bar-fill {
+.bar-fill {
   height: 100%;
-  background: var(--red);
   border-radius: 2px;
   transition: width 0.7s var(--ease);
 }
 
-/* ── GLOW DOTS ──────────────────────────────────────────── */
-.glow-dot {
-  box-shadow: 0 0 8px currentColor;
-}
+/* old alias */
+.volt-bar-track { height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.volt-bar-fill  { height: 100%; background: var(--red); border-radius: 2px; transition: width 0.7s var(--ease); }
 
-/* input placeholders */
-input::placeholder, textarea::placeholder {
-  color: #333333;
-}
+/* ── INPUTS ─────────────────────────────────────────────── */
+input::placeholder, textarea::placeholder { color: #2A2A2A; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
