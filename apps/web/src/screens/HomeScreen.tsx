@@ -268,17 +268,16 @@ export default function HomeScreen() {
       {/* ── CONDITIONS ── */}
       {weather ? (
         <div style={{ padding: '12px 22px 0' }}>
-          {environmentAlert && <WeatherBanner weather={weather} alert={environmentAlert} />}
-          {weatherRec && (
-            <div style={{ marginTop: environmentAlert ? 8 : 0, background: SURF, borderRadius: 12, padding: '12px 16px', border: `1px solid ${EDGE}`, borderLeft: `3px solid ${weatherRec.color}` }}>
+          {environmentAlert && environmentAlert.level !== 'none' && <WeatherBanner weather={weather} alert={environmentAlert} />}
+          {weatherRec ? (
+            <div style={{ marginTop: (environmentAlert && environmentAlert.level !== 'none') ? 8 : 0, background: SURF, borderRadius: 12, padding: '12px 16px', border: `1px solid ${EDGE}`, borderLeft: `3px solid ${weatherRec.color}` }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: weatherRec.color }}>{weatherRec.text}</div>
             </div>
-          )}
-          {!environmentAlert && !weatherRec && (
+          ) : !environmentAlert || environmentAlert.level === 'none' ? (
             <div style={{ fontSize: 11, color: MUTED, background: SURF, borderRadius: 12, padding: '8px 14px', border: `1px solid ${EDGE}` }}>
               {weather.description} · {Math.round(weather.tempC)}°C
             </div>
-          )}
+          ) : null}
         </div>
       ) : weatherKeySet ? (
         <div style={{ padding: '12px 22px 0' }}>

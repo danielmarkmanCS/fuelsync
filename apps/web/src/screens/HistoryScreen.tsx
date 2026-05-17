@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllLogs, deleteLog, type FoodLog } from '../api/localFood';
+import { getAllLogs, addLog, deleteLog, type FoodLog } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG    = '#EEF4FF';
@@ -73,7 +73,8 @@ export default function HistoryScreen() {
   const [allLogs,  setAllLogs]  = useState<FoodLog[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleting,  setDeleting]  = useState<string | null>(null);
+  const [relogged,  setRelogged]  = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -91,12 +92,21 @@ export default function HistoryScreen() {
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
+    try { await deleteLog(id); load(); } catch { setDeleting(null); }
+  };
+
+  const handleRelog = async (item: FoodLog) => {
+    setRelogged(item.id);
     try {
-      await deleteLog(id);
-      load();
-    } catch {
-      setDeleting(null);
-    }
+      await addLog({
+        food_name: item.food_name, calories: item.calories,
+        protein: item.protein, carbs: item.carbs, fat: item.fat,
+        weight_grams: item.weight_grams ?? undefined,
+        meal_type: item.meal_type, image_url: item.image_url ?? undefined,
+        ingredients: item.ingredients ?? undefined,
+      });
+    } catch { /* silent */ }
+    setTimeout(() => setRelogged(null), 1500);
   };
 
   const goalCal = targets?.calories ?? 2000;
@@ -192,7 +202,7 @@ export default function HistoryScreen() {
                   <div style={{ borderTop: `1px solid ${EDGE}`, padding: '8px 0 4px' }}>
                     {day.items.map((item, idx) => (
                       <div key={item.id} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        display: 'flex', alignItems: 'center', gap: 10,
                         padding: '8px 16px',
                         borderBottom: idx < day.items.length - 1 ? `1px solid ${EDGE}` : 'none',
                       }}>
@@ -203,7 +213,7 @@ export default function HistoryScreen() {
                             {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))}</div>
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 2 }}>
                             <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
@@ -211,6 +221,15 @@ export default function HistoryScreen() {
                             <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                           </div>
                         </div>
+                        <button onClick={() => handleRelog(item)} style={{
+                          width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? '#34c759' : EDGE}`,
+                          background: relogged === item.id ? '#34c75915' : SURF2,
+                          color: relogged === item.id ? '#34c759' : BLUE,
+                          fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {relogged === item.id ? '✓' : '+'}
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -250,6 +269,15 @@ export default function HistoryScreen() {
                       <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                     </div>
                   </div>
+                  <button onClick={() => handleRelog(item)} style={{
+                    width: 28, height: 28, borderRadius: 8, border: `1px solid ${relogged === item.id ? '#34c759' : EDGE}`,
+                    background: relogged === item.id ? '#34c75915' : SURF2,
+                    color: relogged === item.id ? '#34c759' : BLUE,
+                    fontWeight: 900, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {relogged === item.id ? '✓' : '+'}
+                  </button>
                   <button
                     onClick={() => handleDelete(item.id)}
                     disabled={isDeleting}
