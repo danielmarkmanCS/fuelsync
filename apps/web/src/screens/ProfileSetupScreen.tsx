@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile, clearProfile } from '../api/auth';
 import { clearSyncToken, getSyncToken, syncProfile, syncAddLog } from '../api/syncClient';
 import { db } from '../lib/db';
+import type { WeightLog } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
 
@@ -69,6 +70,34 @@ export default function ProfileSetupScreen() {
   const [error,         setError]         = useState('');
   const [syncing,       setSyncing]       = useState(false);
   const [syncDone,      setSyncDone]      = useState<string | null>(null);
+
+  // Weight log
+  const [weightLogs,      setWeightLogs]      = useState<WeightLog[]>([]);
+  const [todayWeightInput, setTodayWeightInput] = useState('');
+  const [savingWeight,    setSavingWeight]    = useState(false);
+
+  useEffect(() => {
+    db.weight_logs.orderBy('date').reverse().limit(14).toArray().then(setWeightLogs).catch(() => {});
+  }, []);
+
+  const handleLogWeight = async () => {
+    const kg = parseFloat(todayWeightInput);
+    if (isNaN(kg) || kg < 20 || kg > 400) return;
+    setSavingWeight(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const existing = await db.weight_logs.where('date').equals(today).first();
+      if (existing?.id != null) {
+        await db.weight_logs.update(existing.id, { weightKg: kg, logged_at: new Date().toISOString() });
+      } else {
+        await db.weight_logs.add({ date: today, weightKg: kg, logged_at: new Date().toISOString() });
+      }
+      const updated = await db.weight_logs.orderBy('date').reverse().limit(14).toArray();
+      setWeightLogs(updated);
+      setTodayWeightInput('');
+    } catch {}
+    finally { setSavingWeight(false); }
+  };
 
   const profileComplete = user?.weightKg && user?.heightCm && user?.age;
 
@@ -325,6 +354,132 @@ export default function ProfileSetupScreen() {
               </button>
             );
           })}
+        </div>
+
+        {/* ── WEIGHT LOG ── */}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10, marginTop: 10 }}>
+          Weight Log
+        </div>
+        <div style={{
+          background: SURF, borderRadius: 18, border: `1px solid ${EDGE}`,
+          padding: '16px 16px 14px', marginBottom: 28, boxShadow: CARD_SHADOW,
+        }}>
+          {/* Log today */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <input
+              type="number"
+              value={todayWeightInput}
+              onChange={(e) => setTodayWeightInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleLogWeight(); }}
+              placeholder={`Today's weight (kg)`}
+              style={{ ...inp, flex: 1, marginBottom: 0 }}
+            />
+            <button
+              onClick={handleLogWeight}
+              disabled={savingWeight || !todayWeightInput.trim()}
+              className="nrc-press"
+              style={{
+                background: savingWeight || !todayWeightInput.trim() ? SURF2 : `${BLUE}12`,
+                border: `1px solid ${savingWeight || !todayWeightInput.trim() ? EDGE : BLUE + '40'}`,
+                borderRadius: 12, color: savingWeight || !todayWeightInput.trim() ? MUTED : BLUE,
+                fontWeight: 800, fontSize: 13, cursor: 'pointer', padding: '0 18px',
+                flexShrink: 0, whiteSpace: 'nowrap',
+              }}
+            >
+              {savingWeight ? '···' : 'Log'}
+            </button>
+          </div>
+
+          {/* Chart + history */}
+          {weightLogs.length > 0 && (() => {
+            const reversed = [...weightLogs].reverse();
+            const min = Math.min(...reversed.map((l) => l.weightKg)) - 1;
+            const max = Math.max(...reversed.map((l) => l.weightKg)) + 1;
+            const range = max - min || 1;
+            const CHART_H = 64;
+            const today = new Date().toISOString().split('T')[0];
+
+            return (
+              <>
+                {/* Mini sparkline */}
+                <div style={{ position: 'relative', height: CHART_H, marginBottom: 12 }}>
+                  <svg width="100%" height={CHART_H} style={{ overflow: 'visible' }}>
+                    <defs>
+                      <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CYAN} stopOpacity="0.3" />
+                        <stop offset="100%" stopColor={CYAN} stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {reversed.length > 1 && (() => {
+                      const pts = reversed.map((l, i) => {
+                        const x = (i / (reversed.length - 1)) * 100;
+                        const y = CHART_H - ((l.weightKg - min) / range) * CHART_H;
+                        return `${x}%,${y}`;
+                      });
+                      const area = `M ${pts[0]} ` + pts.slice(1).map((p) => `L ${p}`).join(' ') + ` L 100%,${CHART_H} L 0%,${CHART_H} Z`;
+                      const line = `M ${pts[0]} ` + pts.slice(1).map((p) => `L ${p}`).join(' ');
+                      return (
+                        <>
+                          <path d={area} fill="url(#weightGrad)" />
+                          <path d={line} fill="none" stroke={CYAN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          {reversed.map((l, i) => {
+                            const x = `${(i / (reversed.length - 1)) * 100}%`;
+                            const y = CHART_H - ((l.weightKg - min) / range) * CHART_H;
+                            const isToday2 = l.date === today;
+                            return (
+                              <circle key={i} cx={x} cy={y} r={isToday2 ? 4 : 2.5}
+                                fill={isToday2 ? CYAN : SURF}
+                                stroke={CYAN} strokeWidth={isToday2 ? 2 : 1.5}
+                              />
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
+                  </svg>
+                </div>
+
+                {/* Last 7 entries */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {weightLogs.slice(0, 7).map((log, i) => {
+                    const prev = weightLogs[i + 1];
+                    const diff = prev ? log.weightKg - prev.weightKg : null;
+                    const diffColor = diff == null ? MUTED : diff < 0 ? GREEN : diff > 0 ? RED : MUTED;
+                    return (
+                      <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, minWidth: 72 }}>
+                          {log.date === today ? 'Today' : new Date(log.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        </div>
+                        <div style={{ flex: 1, height: 4, background: SURF2, borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${((log.weightKg - min) / range) * 100}%`,
+                            background: log.date === today ? CYAN : `${CYAN}70`,
+                            borderRadius: 2,
+                            transition: 'width 0.4s ease',
+                          }} />
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: log.date === today ? CYAN : TEXT, minWidth: 52, textAlign: 'right', letterSpacing: -0.5 }}>
+                          {log.weightKg}<span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>kg</span>
+                        </div>
+                        {diff !== null && (
+                          <div style={{ fontSize: 10, fontWeight: 700, color: diffColor, minWidth: 36, textAlign: 'right' }}>
+                            {diff > 0 ? '+' : ''}{diff.toFixed(1)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
+
+          {weightLogs.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '12px 0', color: MUTED, fontSize: 12, fontWeight: 600 }}>
+              Log your first weigh-in above to track progress
+            </div>
+          )}
         </div>
 
         {error && (

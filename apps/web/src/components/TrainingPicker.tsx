@@ -1,9 +1,9 @@
 import type { TrainingType } from '@shared/types';
 
-const SURF2 = '#E6EEFF';
-const EDGE  = 'rgba(30,64,220,0.09)';
-const TEXT  = '#080F30';
-const MUTED = '#5E71A8';
+const SURF2 = '#1D2333';
+const EDGE  = 'rgba(255,255,255,0.07)';
+const TEXT  = '#DCE6FF';
+const MUTED = '#5A6990';
 
 interface Props { selected: TrainingType | null; onSelect: (t: TrainingType) => void; }
 
@@ -77,7 +77,7 @@ export default function TrainingPicker({ selected, onSelect }: Props) {
               transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
               boxShadow: active
                 ? `0 6px 20px ${color}22, 0 2px 6px ${color}10`
-                : '0 1px 4px rgba(30,64,220,0.06)',
+                : '0 1px 4px rgba(0,0,0,0.3)',
             }}
           >
             <div style={{ marginBottom: 9, color: active ? color : MUTED, transition: 'color 0.15s' }}>

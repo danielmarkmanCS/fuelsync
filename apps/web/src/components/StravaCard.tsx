@@ -5,14 +5,14 @@ import { shareRunCard } from '../utils/runShareCard';
 import type { StravaStats, StravaRun, StravaData } from '../api/strava';
 
 const STRAVA = '#FC4C02';
-const SURF   = '#FFFFFF';
-const SURF2  = '#E4EEFF';
-const EDGE   = 'rgba(0,56,168,0.10)';
-const TEXT   = '#0A1628';
-const MUTED  = '#6878A0';
-const GREEN  = '#00A651';
-const BLUE   = '#0038A8';
-const RED    = '#C62828';
+const SURF   = '#161B27';
+const SURF2  = '#1D2333';
+const EDGE   = 'rgba(255,255,255,0.07)';
+const TEXT   = '#DCE6FF';
+const MUTED  = '#5A6990';
+const GREEN  = '#05C56B';
+const BLUE   = '#4B6FFF';
+const RED    = '#EF3340';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -204,7 +204,7 @@ export default function StravaCard() {
   };
 
   if (loading) return (
-    <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+    <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
       <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Strava</div>
       <div style={{ color: MUTED, fontSize: 12 }}>Loading…</div>
     </div>
@@ -216,7 +216,7 @@ export default function StravaCard() {
       border: `1px solid ${EDGE}`,
       borderLeft: `3px solid ${STRAVA}`,
       overflow: 'hidden',
-      boxShadow: '0 2px 12px rgba(0,56,168,0.07)',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
     }}>
       <div style={{ padding: '18px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -258,7 +258,7 @@ export default function StravaCard() {
       border: `1px solid ${EDGE}`,
       borderTop: `3px solid ${STRAVA}`,
       overflow: 'hidden',
-      boxShadow: '0 2px 12px rgba(0,56,168,0.07)',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.35)',
     }}>
       {/* Header */}
       <div style={{
