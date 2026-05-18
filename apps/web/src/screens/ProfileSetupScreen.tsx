@@ -6,6 +6,8 @@ import { db } from '../lib/db';
 import type { WeightLog } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
+import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
+import type { CustomTargets } from '../lib/customTargets';
 
 const BG     = '#0E1117';
 const SURF   = '#161B27';
@@ -75,6 +77,14 @@ export default function ProfileSetupScreen() {
   const [weightLogs,      setWeightLogs]      = useState<WeightLog[]>([]);
   const [todayWeightInput, setTodayWeightInput] = useState('');
   const [savingWeight,    setSavingWeight]    = useState(false);
+
+  // Custom targets
+  const [customTargets, setCustomTargetsState] = useState<CustomTargets>(getCustomTargets);
+  const handleCustomTargetChange = (field: keyof CustomTargets, value: string | boolean) => {
+    const updated = { ...customTargets, [field]: typeof value === 'boolean' ? value : (parseFloat(value as string) || 0) };
+    setCustomTargetsState(updated);
+    setCustomTargets(updated);
+  };
 
   useEffect(() => {
     db.weight_logs.orderBy('date').reverse().limit(14).toArray().then(setWeightLogs).catch(() => {});
@@ -478,6 +488,57 @@ export default function ProfileSetupScreen() {
           {weightLogs.length === 0 && (
             <div style={{ textAlign: 'center', padding: '12px 0', color: MUTED, fontSize: 12, fontWeight: 600 }}>
               Log your first weigh-in above to track progress
+            </div>
+          )}
+        </div>
+
+        {/* Custom Targets */}
+        <div style={{
+          background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
+          borderRadius: 18, padding: '18px 18px', marginBottom: 20,
+          border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
+              Custom Macro Goals
+            </div>
+            <button
+              onClick={() => handleCustomTargetChange('enabled', !customTargets.enabled)}
+              style={{
+                background: customTargets.enabled ? `${GREEN}18` : SURF2,
+                border: `1px solid ${customTargets.enabled ? GREEN + '40' : EDGE}`,
+                borderRadius: 20, padding: '5px 14px',
+                color: customTargets.enabled ? GREEN : MUTED,
+                fontWeight: 800, fontSize: 11, cursor: 'pointer', letterSpacing: 0.5,
+              }}
+            >
+              {customTargets.enabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
+          {customTargets.enabled && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {([
+                ['calories', 'Calories (kcal)', ORANGE],
+                ['proteinG', 'Protein (g)',     BLUE2],
+                ['carbsG',   'Carbs (g)',        GREEN],
+                ['fatG',     'Fat (g)',           PURPLE],
+              ] as const).map(([field, label, color]) => (
+                <div key={field}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: 1, marginBottom: 5, textTransform: 'uppercase' }}>{label}</div>
+                  <input
+                    type="number"
+                    value={customTargets[field] || ''}
+                    onChange={(e) => handleCustomTargetChange(field, e.target.value)}
+                    style={{ ...inp, padding: '10px 12px', fontSize: 15, borderColor: color + '30' }}
+                    min={0}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          {!customTargets.enabled && (
+            <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
+              Override the app's auto-calculated daily targets with your own values. Enable to set custom calories and macros.
             </div>
           )}
         </div>

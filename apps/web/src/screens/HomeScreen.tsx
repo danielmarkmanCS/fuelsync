@@ -9,6 +9,7 @@ import StravaCard from '../components/StravaCard';
 import { computeMacros } from '@mobile/services/nutritionEngine';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
+import { getCustomTargets } from '../lib/customTargets';
 
 const BG     = '#0E1117';
 const SURF   = '#161B27';
@@ -588,8 +589,22 @@ export default function HomeScreen() {
     if (r.blocked) logDay(type);
   };
 
-  const calPct   = targets && targets.calories > 0 ? (consumed.calories / targets.calories) * 100 : 0;
-  const calLeft  = targets ? Math.round(targets.calories - consumed.calories) : 0;
+  // Custom targets override
+  const customTargets = getCustomTargets();
+  const effectiveTargets = (customTargets.enabled && targets)
+    ? { ...targets, calories: customTargets.calories, proteinG: customTargets.proteinG, carbsG: customTargets.carbsG, fatG: customTargets.fatG }
+    : targets;
+
+  // Net calories: estimate burned from today's training type + logged runs this week
+  const userWeightKg = profile?.weightKg ?? 75;
+  const runCalBurned = Math.round(loggedRuns.reduce((s, r) => s + r.km * userWeightKg * 1.05, 0));
+  const strengthSets = weeklyLoad.totalStrengthSets ?? 0;
+  const strengthCalBurned = Math.round(strengthSets * 7);
+  const totalBurned = runCalBurned + strengthCalBurned;
+  const netCal = effectiveTargets ? Math.round(effectiveTargets.calories + totalBurned - consumed.calories) : 0;
+
+  const calPct   = effectiveTargets && effectiveTargets.calories > 0 ? (consumed.calories / effectiveTargets.calories) * 100 : 0;
+  const calLeft  = effectiveTargets ? Math.round(effectiveTargets.calories - consumed.calories) : 0;
   const strength = weeklyLoad.totalStrengthSets ?? 0;
   const recovery = buildRecovery(loggedRuns, strength, activityLevel);
 
@@ -704,7 +719,7 @@ export default function HomeScreen() {
         </div>
 
         {/* Calorie left chip */}
-        {targets && calLeft !== 0 && (
+        {effectiveTargets && calLeft !== 0 && (
           <div className="nrc-a nrc-a2" style={{ position: 'relative', zIndex: 1, marginTop: 16 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -839,7 +854,7 @@ export default function HomeScreen() {
       </div>
 
       {/* ── CALORIE RING ── */}
-      {targets ? (
+      {effectiveTargets ? (
         <div className="nrc-a nrc-a2" style={{ padding: '22px 22px 0' }}>
           {weatherRec && (
             <div style={{
@@ -868,7 +883,7 @@ export default function HomeScreen() {
               background: `radial-gradient(circle, ${calPct >= 100 ? RED : calPct >= 78 ? GREEN : BLUE}0A 0%, transparent 70%)`,
               pointerEvents: 'none',
             }} />
-            <CalRing pct={calPct} cal={consumed.calories} target={targets.calories} />
+            <CalRing pct={calPct} cal={consumed.calories} target={effectiveTargets.calories} />
           </div>
         </div>
       ) : (
@@ -901,14 +916,50 @@ export default function HomeScreen() {
       )}
 
       {/* ── MACRO SECTION ── */}
-      {targets && (
+      {effectiveTargets && (
         <div className="nrc-a nrc-a3" style={{ padding: '14px 22px 0' }}>
-          <MacroSection consumed={consumed} targets={targets} />
+          <MacroSection consumed={consumed} targets={effectiveTargets} />
+        </div>
+      )}
+
+      {/* ── NET CALORIES ── */}
+      {effectiveTargets && totalBurned > 0 && (
+        <div className="nrc-a nrc-a3" style={{ padding: '12px 22px 0' }}>
+          <div style={{
+            background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
+            borderRadius: 18, padding: '16px 18px',
+            border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase', marginBottom: 12 }}>
+              Net Calories
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: TEXT, letterSpacing: -1 }}>{effectiveTargets.calories.toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>GOAL</div>
+              </div>
+              <div style={{ color: GREEN, fontSize: 13, fontWeight: 800 }}>+</div>
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: GREEN, letterSpacing: -1 }}>{totalBurned.toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>BURNED</div>
+              </div>
+              <div style={{ color: MUTED, fontSize: 13, fontWeight: 800 }}>−</div>
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: ORANGE, letterSpacing: -1 }}>{Math.round(consumed.calories).toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>EATEN</div>
+              </div>
+              <div style={{ color: MUTED, fontSize: 13, fontWeight: 800 }}>=</div>
+              <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: netCal >= 0 ? GREEN : RED, letterSpacing: -1 }}>{netCal.toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>NET LEFT</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* ── RECOVERY ── */}
-      {targets && (
+      {effectiveTargets && (
         <div className="nrc-a nrc-a3" style={{ padding: '12px 22px 0' }}>
           <RecoveryCard recovery={recovery} />
         </div>

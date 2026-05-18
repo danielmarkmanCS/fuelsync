@@ -7,6 +7,8 @@ import { searchFood, lookupBarcode } from '../api/openFoodFacts';
 import type { OFFProduct } from '../api/openFoodFacts';
 import { getRecentFoods, getFavoriteFoods, addRecentFood, toggleFavorite, isFavorite } from '../lib/recentFoods';
 import type { SavedFood } from '../lib/recentFoods';
+import { getTemplates, saveTemplate, deleteTemplate } from '../lib/mealTemplates';
+import type { MealTemplate } from '../lib/mealTemplates';
 
 const BG     = '#0E1117';
 const SURF   = '#161B27';
@@ -201,7 +203,7 @@ export default function FoodScreen() {
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
-  const [mode,       setMode]       = useState<'search' | 'ai' | 'photo' | 'manual' | 'suggest'>('search');
+  const [mode,       setMode]       = useState<'quick' | 'search' | 'ai' | 'photo' | 'manual' | 'suggest'>('search');
   const [form,       setForm]       = useState<Form>(emptyForm);
   const [estimate,   setEstimate]   = useState<AIEstimate | null>(null);
   const [aiLoading,  setAiLoading]  = useState(false);
@@ -237,8 +239,20 @@ export default function FoodScreen() {
   // Recents + favorites
   const [recents,   setRecents]   = useState<SavedFood[]>([]);
   const [favorites, setFavorites] = useState<SavedFood[]>([]);
-  const [favTab,    setFavTab]    = useState<'recent' | 'fav'>('recent');
+  const [favTab,    setFavTab]    = useState<'recent' | 'fav' | 'templates'>('recent');
   const [favoriteStates, setFavoriteStates] = useState<Record<string, boolean>>({});
+  const [templates, setTemplates] = useState<MealTemplate[]>([]);
+  const [loggingTemplateId, setLoggingTemplateId] = useState<string | null>(null);
+  const [savingTemplateMeal, setSavingTemplateMeal] = useState<string | null>(null);
+  const [templateNameInput, setTemplateNameInput] = useState('');
+
+  // Quick add
+  const [quickCal,  setQuickCal]  = useState('');
+  const [quickPro,  setQuickPro]  = useState('');
+  const [quickCarb, setQuickCarb] = useState('');
+  const [quickFat,  setQuickFat]  = useState('');
+  const [quickName, setQuickName] = useState('');
+  const [quickMeal, setQuickMeal] = useState<MealType>(mealFromTime());
 
   // Copy yesterday
   const [copyingYesterday, setCopyingYesterday] = useState(false);
@@ -257,11 +271,12 @@ export default function FoodScreen() {
   const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  // Load recents + favorites when sheet opens
+  // Load recents + favorites + templates when sheet opens
   useEffect(() => {
     if (open) {
       setRecents(getRecentFoods());
       setFavorites(getFavoriteFoods());
+      setTemplates(getTemplates());
     }
   }, [open]);
 
@@ -393,6 +408,72 @@ export default function FoodScreen() {
     finally { setCopyingYesterday(false); }
   };
 
+  const handleLogTemplate = async (template: MealTemplate) => {
+    if (loggingTemplateId) return;
+    setLoggingTemplateId(template.id);
+    try {
+      for (const food of template.foods) {
+        await addLog({
+          food_name:    food.food_name,
+          calories:     food.calories,
+          protein:      food.protein,
+          carbs:        food.carbs,
+          fat:          food.fat,
+          weight_grams: food.weight_grams ?? undefined,
+          meal_type:    template.mealType,
+        });
+      }
+      playFoodLogSound();
+      fetchLogs();
+      closeSheet();
+    } catch {}
+    finally { setLoggingTemplateId(null); }
+  };
+
+  const handleSaveTemplate = (meal: string, entries: FoodLog[]) => {
+    setSavingTemplateMeal(meal);
+    setTemplateNameInput(MEAL_LABEL[meal as MealType] ?? meal);
+  };
+
+  const confirmSaveTemplate = (meal: string, entries: FoodLog[]) => {
+    const name = templateNameInput.trim() || (MEAL_LABEL[meal as MealType] ?? meal);
+    saveTemplate(name, meal, entries.map((e) => ({
+      food_name:    e.food_name,
+      calories:     Number(e.calories),
+      protein:      Number(e.protein),
+      carbs:        Number(e.carbs),
+      fat:          Number(e.fat),
+      weight_grams: e.weight_grams,
+    })));
+    setSavingTemplateMeal(null);
+    setTemplateNameInput('');
+    setTemplates(getTemplates());
+  };
+
+  const handleQuickAdd = async () => {
+    const cal = parseFloat(quickCal);
+    if (isNaN(cal) || cal <= 0) return;
+    const pro  = parseFloat(quickPro)  || 0;
+    const carb = parseFloat(quickCarb) || 0;
+    const fat  = parseFloat(quickFat)  || 0;
+    setSubmitting(true);
+    try {
+      await addLog({
+        food_name: quickName.trim() || 'Quick Add',
+        calories:  cal,
+        protein:   pro,
+        carbs:     carb,
+        fat:       fat,
+        meal_type: quickMeal,
+      });
+      addRecentFood({ food_name: quickName.trim() || 'Quick Add', calories: cal, protein: pro, carbs: carb, fat: fat, weight_grams: null, meal_type: quickMeal });
+      playFoodLogSound();
+      fetchLogs();
+      closeSheet();
+    } catch {}
+    finally { setSubmitting(false); }
+  };
+
   const handleToggleFavorite = (food: SavedFood) => {
     const nowFav = toggleFavorite(food);
     setFavoriteStates((prev) => ({ ...prev, [food.food_name]: nowFav }));
@@ -406,6 +487,8 @@ export default function FoodScreen() {
     setSuggestResult(null); setEditableIngredients(null);
     setSearchQuery(''); setSearchResults([]); setSearchError('');
     setScanError(''); setManualBarcode('');
+    setQuickCal(''); setQuickPro(''); setQuickCarb(''); setQuickFat(''); setQuickName(''); setQuickMeal(mealFromTime());
+    setSavingTemplateMeal(null); setTemplateNameInput('');
     stopScan();
   };
   const closeSheet = () => { setOpen(false); resetSheet(); };
@@ -839,6 +922,33 @@ export default function FoodScreen() {
                   reLogLabel={!isToday ? 'Log today' : undefined}
                 />
               ))}
+              {isToday && entries.length > 0 && (
+                savingTemplateMeal === meal ? (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <input
+                      value={templateNameInput}
+                      onChange={(e) => setTemplateNameInput(e.target.value)}
+                      placeholder="Template name"
+                      style={{ ...inp, flex: 1, padding: '8px 12px', fontSize: 13 }}
+                    />
+                    <button onClick={() => confirmSaveTemplate(meal, entries)} style={{
+                      background: GREEN, border: 'none', borderRadius: 8, color: '#000',
+                      fontWeight: 800, fontSize: 12, cursor: 'pointer', padding: '8px 14px', flexShrink: 0,
+                    }}>Save</button>
+                    <button onClick={() => setSavingTemplateMeal(null)} style={{
+                      background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 8, color: MUTED,
+                      fontWeight: 700, fontSize: 12, cursor: 'pointer', padding: '8px 12px', flexShrink: 0,
+                    }}>Cancel</button>
+                  </div>
+                ) : (
+                  <button onClick={() => handleSaveTemplate(meal, entries)} style={{
+                    marginTop: 8, background: 'none', border: `1px dashed ${EDGE}`,
+                    borderRadius: 8, color: MUTED, fontSize: 11, fontWeight: 700,
+                    cursor: 'pointer', padding: '7px 14px', width: '100%',
+                    letterSpacing: 0.5, fontFamily: 'inherit',
+                  }}>+ Save as Template</button>
+                )
+              )}
             </div>
           );
         })}
@@ -906,7 +1016,7 @@ export default function FoodScreen() {
 
               {/* Mode tabs */}
               <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24, overflowX: 'auto' }}>
-                {([['search', 'Search'], ['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
+                {([['quick', 'Quick'], ['search', 'Search'], ['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
                   <button key={m} onClick={() => {
                     setMode(m); setAiError(''); setFormError(''); setSuggestResult(null);
                     if (m !== 'search') { setScanActive(false); stopScan(); }
@@ -921,6 +1031,76 @@ export default function FoodScreen() {
                   }}>{label}</button>
                 ))}
               </div>
+
+              {/* QUICK ADD MODE */}
+              {mode === 'quick' && (
+                <>
+                  <div style={{ fontSize: 12, color: MUTED, marginBottom: 16, lineHeight: 1.6 }}>
+                    Log calories fast — food name is optional.
+                  </div>
+
+                  <input
+                    value={quickName}
+                    onChange={(e) => setQuickName(e.target.value)}
+                    placeholder='Food name (optional, e.g. "Snack")'
+                    style={{ ...inp, width: '100%', marginBottom: 10, boxSizing: 'border-box' }}
+                  />
+
+                  {/* Big calorie input */}
+                  <div style={{
+                    background: SURF2, borderRadius: 14, padding: '14px 16px',
+                    border: `1px solid ${BLUE}20`, marginBottom: 10, textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: BLUE, textTransform: 'uppercase', marginBottom: 8 }}>Calories</div>
+                    <input
+                      autoFocus
+                      type="number"
+                      value={quickCal}
+                      onChange={(e) => setQuickCal(e.target.value)}
+                      placeholder="0"
+                      style={{
+                        background: 'transparent', border: 'none', outline: 'none',
+                        fontSize: 56, fontWeight: 900, letterSpacing: -4, color: BLUE,
+                        textAlign: 'center', width: '100%',
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                      }}
+                    />
+                    <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>kcal</div>
+                  </div>
+
+                  {/* Optional macros */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+                    {([
+                      { label: 'Protein', val: quickPro,  set: setQuickPro,  color: RED    },
+                      { label: 'Carbs',   val: quickCarb, set: setQuickCarb, color: CYAN   },
+                      { label: 'Fat',     val: quickFat,  set: setQuickFat,  color: PURPLE },
+                    ] as const).map(({ label, val, set, color }) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color, textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
+                        <input
+                          type="number"
+                          value={val}
+                          onChange={(e) => set(e.target.value)}
+                          placeholder="0"
+                          style={{ ...inp, padding: '9px 10px', fontSize: 16, fontWeight: 700, color: TEXT }}
+                        />
+                        <div style={{ fontSize: 9, color: MUTED, marginTop: 2, textAlign: 'right' }}>g (opt.)</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <MealChips form={{ ...form, meal: quickMeal }} setForm={(f) => { const next = typeof f === 'function' ? f({ ...form, meal: quickMeal }) : f; setQuickMeal(next.meal); }} />
+
+                  <button
+                    onClick={handleQuickAdd}
+                    disabled={submitting || !quickCal.trim() || parseFloat(quickCal) <= 0}
+                    className="nrc-press"
+                    style={bigBtn(submitting || !quickCal.trim() || parseFloat(quickCal) <= 0, BLUE)}
+                  >
+                    {submitting ? 'Logging…' : 'Quick Log →'}
+                  </button>
+                </>
+              )}
 
               {/* SEARCH MODE */}
               {mode === 'search' && !scanActive && !barcodeLoading && (
@@ -1000,13 +1180,13 @@ export default function FoodScreen() {
                     </div>
                   )}
 
-                  {/* Recents + Favorites (when not searching) */}
+                  {/* Recents + Favorites + Templates (when not searching) */}
                   {!searchQuery && (
                     <>
-                      {(recents.length > 0 || favorites.length > 0) && (
+                      {(recents.length > 0 || favorites.length > 0 || templates.length > 0) && (
                         <>
                           <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                            {(['recent', 'fav'] as const).map((t) => (
+                            {(['recent', 'fav', 'templates'] as const).map((t) => (
                               <button key={t} onClick={() => setFavTab(t)} style={{
                                 flex: 1, padding: '8px 0', borderRadius: 10, cursor: 'pointer',
                                 background: favTab === t ? `${BLUE}08` : SURF2,
@@ -1014,12 +1194,53 @@ export default function FoodScreen() {
                                 color: favTab === t ? BLUE : MUTED,
                                 fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
                               }}>
-                                {t === 'recent' ? `Recent (${recents.length})` : `Favourites (${favorites.length})`}
+                                {t === 'recent' ? `Recent (${recents.length})` : t === 'fav' ? `Favourites (${favorites.length})` : `Templates (${templates.length})`}
                               </button>
                             ))}
                           </div>
 
                           {(() => {
+                            if (favTab === 'templates') {
+                              if (templates.length === 0) return (
+                                <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 600 }}>
+                                  No templates yet — tap "Save as Template" on a meal below
+                                </div>
+                              );
+                              return (
+                                <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+                                  {templates.map((t, i) => (
+                                    <div key={t.id} style={{
+                                      display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
+                                      borderTop: i === 0 ? 'none' : `1px solid ${EDGE}`,
+                                    }}>
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
+                                        <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>
+                                          {t.foods.length} item{t.foods.length !== 1 ? 's' : ''} · {t.totalCal} kcal · {MEAL_LABEL[t.mealType as MealType] ?? t.mealType}
+                                        </div>
+                                      </div>
+                                      <button onClick={() => { deleteTemplate(t.id); setTemplates(getTemplates()); }} style={{
+                                        background: 'none', border: 'none', color: MUTED, fontSize: 16, cursor: 'pointer', padding: '0 4px', flexShrink: 0,
+                                      }}>×</button>
+                                      <button
+                                        onClick={() => handleLogTemplate(t)}
+                                        disabled={loggingTemplateId === t.id}
+                                        style={{
+                                          background: loggingTemplateId === t.id ? SURF2 : `${GREEN}12`,
+                                          border: `1px solid ${loggingTemplateId === t.id ? EDGE : GREEN + '30'}`,
+                                          borderRadius: 8, color: loggingTemplateId === t.id ? MUTED : GREEN,
+                                          fontWeight: 800, fontSize: 12, cursor: 'pointer', padding: '5px 12px',
+                                          flexShrink: 0, fontFamily: 'inherit', whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        {loggingTemplateId === t.id ? '···' : 'Log All'}
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            }
+
                             const list = favTab === 'recent' ? recents : favorites;
                             if (list.length === 0) return (
                               <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 600 }}>
