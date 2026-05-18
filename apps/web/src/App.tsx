@@ -175,26 +175,37 @@ export default function App() {
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #EEF4FF 0%, #DDEAFF 100%)',
-        gap: 0,
+        background: 'linear-gradient(160deg, #080F30 0%, #1E40DC 50%, #4B6FFF 100%)',
+        gap: 0, position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: TEXT }}>
-          FUEL
-        </div>
-        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: BLUE }}>
-          SYNC
-        </div>
-        <div style={{ marginTop: 32, display: 'flex', gap: 6 }}>
-          {[0,1,2].map((i) => (
-            <div key={i} style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: i === 0 ? BLUE : 'rgba(0,56,168,0.2)',
-              animation: `pulse 1.2s ${i * 0.2}s infinite ease-in-out`,
-            }} />
-          ))}
-        </div>
-        <div style={{ color: '#9EB3D0', fontSize: 10, letterSpacing: 4, marginTop: 20, fontWeight: 600, textTransform: 'uppercase' }}>
-          {stravaConnecting ? 'Syncing' : 'Loading'}
+        {/* Background orbs */}
+        <div className="orb1" style={{ position: 'absolute', top: '10%', right: '5%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(75,111,255,0.15)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: '15%', left: '5%', width: 150, height: 150, borderRadius: '50%', background: 'rgba(0,189,208,0.10)' }} />
+        <div className="orb3" style={{ position: 'absolute', top: '40%', left: '35%', width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1, color: '#FFFFFF' }}>
+            FUEL
+          </div>
+          <div style={{
+            fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1,
+            background: 'linear-gradient(135deg, #00BDD0, #4B6FFF)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}>
+            SYNC
+          </div>
+          <div style={{ marginTop: 36, display: 'flex', gap: 7 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: i === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.25)',
+                animation: `pulse 1.3s ${i * 0.22}s infinite ease-in-out`,
+              }} />
+            ))}
+          </div>
+          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, letterSpacing: 5, marginTop: 22, fontWeight: 700, textTransform: 'uppercase' }}>
+            {stravaConnecting ? 'Syncing with Strava' : 'Loading'}
+          </div>
         </div>
       </div>
     );
@@ -235,10 +246,11 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(255,255,255,0.97)',
-        borderTop: '1px solid rgba(0,56,168,0.08)',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 -4px 20px rgba(0,56,168,0.06)',
+        background: 'rgba(255,255,255,0.96)',
+        borderTop: '1px solid rgba(30,64,220,0.07)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        boxShadow: '0 -6px 24px rgba(30,64,220,0.07)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
@@ -248,27 +260,40 @@ export default function App() {
           return (
             <button key={id} onClick={() => setActiveTab(id)} className="nrc-press" style={{
               flex: 1, position: 'relative', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 5,
+              alignItems: 'center', justifyContent: 'center', gap: 4,
               background: 'none', border: 'none', cursor: 'pointer',
             }}>
               {active && (
-                <div style={{
-                  position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: 32, height: 3, background: BLUE, borderRadius: 2,
-                  boxShadow: `0 0 8px ${BLUE}55`,
-                }} />
+                <>
+                  <div style={{
+                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                    width: 36, height: 3, background: `linear-gradient(90deg, #1E40DC, #4B6FFF)`,
+                    borderRadius: '0 0 3px 3px',
+                    boxShadow: `0 2px 10px rgba(30,64,220,0.50)`,
+                  }} />
+                  <div style={{
+                    position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: 'rgba(30,64,220,0.06)', pointerEvents: 'none',
+                  }} />
+                </>
               )}
               <div style={{
                 color: active ? BLUE : MUTED2,
-                transition: 'color 0.2s',
-                filter: active ? `drop-shadow(0 0 4px ${BLUE}40)` : 'none',
+                transition: 'color 0.22s, transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+                transform: active ? 'scale(1.1)' : 'scale(1)',
+                filter: active ? `drop-shadow(0 0 5px rgba(30,64,220,0.40))` : 'none',
+                position: 'relative', zIndex: 1,
               }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
-                color: active ? BLUE : MUTED2, transition: 'color 0.2s',
-              }}>{label.toUpperCase()}</span>
+                fontSize: 9, fontWeight: active ? 800 : 600, letterSpacing: 1.2,
+                color: active ? BLUE : MUTED2, transition: 'all 0.22s',
+                position: 'relative', zIndex: 1,
+              }}>
+                {label.toUpperCase()}
+              </span>
             </button>
           );
         })}

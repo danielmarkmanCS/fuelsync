@@ -6,35 +6,57 @@ import { db } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
 
-const BG     = '#EEF4FF';
+const BG     = '#F0F5FF';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E4EEFF';
-const EDGE   = 'rgba(0,56,168,0.10)';
-const TEXT   = '#0A1628';
-const MUTED  = '#6878A0';
-const BLUE   = '#0038A8';
-const GREEN  = '#00A651';
-const CYAN   = '#0288D1';
-const RED    = '#C62828';
+const SURF2  = '#E6EEFF';
+const EDGE   = 'rgba(30,64,220,0.09)';
+const TEXT   = '#080F30';
+const MUTED  = '#5E71A8';
+const BLUE   = '#1E40DC';
+const BLUE2  = '#4B6FFF';
+const GREEN  = '#05C56B';
+const CYAN   = '#00BDD0';
+const ORANGE = '#FF8B00';
+const RED    = '#EF3340';
+const PURPLE = '#8034E0';
+const CARD_SHADOW = '0 2px 20px rgba(30,64,220,0.08), 0 1px 4px rgba(0,0,0,0.05)';
 
 const ACTIVITY_LEVELS = [
-  { value: 'sedentary',    label: 'Sedentary',   desc: 'Desk job, little or no exercise' },
-  { value: 'light',        label: 'Light',        desc: '1–3 training days / week' },
-  { value: 'moderate',     label: 'Moderate',     desc: '3–5 training days / week' },
-  { value: 'very_active',  label: 'Very Active',  desc: '6–7 training days / week' },
-  { value: 'extra_active', label: 'Extra Active', desc: 'Twice-daily training' },
+  { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
+  { value: 'light',        label: 'Light',         desc: '1–3 training days / week',          mult: 1.375, icon: '🚶' },
+  { value: 'moderate',     label: 'Moderate',      desc: '3–5 training days / week',          mult: 1.55,  icon: '🏃' },
+  { value: 'very_active',  label: 'Very Active',   desc: '6–7 training days / week',          mult: 1.725, icon: '⚡' },
+  { value: 'extra_active', label: 'Extra Active',  desc: 'Twice-daily training or heavy work', mult: 1.9,   icon: '🔥' },
 ] as const;
 type ActivityLevel = typeof ACTIVITY_LEVELS[number]['value'];
+
+function calcBMR(w: number, h: number, a: number, gender: 'male' | 'female'): number {
+  if (gender === 'male') return Math.round(88.36 + 13.4 * w + 5.7 * h - 5.7 * a);
+  return Math.round(447.6 + 9.25 * w + 3.1 * h - 4.33 * a);
+}
+
+function calcBMI(w: number, h: number): number {
+  return Math.round((w / Math.pow(h / 100, 2)) * 10) / 10;
+}
+
+function getBMILabel(bmi: number): { label: string; color: string } {
+  if (bmi < 18.5) return { label: 'Underweight', color: CYAN };
+  if (bmi < 25)   return { label: 'Healthy',     color: GREEN };
+  if (bmi < 30)   return { label: 'Overweight',  color: ORANGE };
+  return               { label: 'Obese',         color: RED };
+}
 
 const inp: React.CSSProperties = {
   width: '100%', background: SURF2, border: `1px solid ${EDGE}`,
   borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
-  outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
+  outline: 'none', boxSizing: 'border-box',
+  fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
 export default function ProfileSetupScreen() {
   const { user, setUser, logout } = useAuthStore();
-  const name = user?.displayName || 'ATHLETE';
+  const name    = user?.displayName || 'ATHLETE';
+  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   const [displayName,   setDisplayName]   = useState(user?.displayName ?? '');
   const [weightKg,      setWeightKg]      = useState(user?.weightKg  ? user.weightKg.toString()  : '');
@@ -48,8 +70,18 @@ export default function ProfileSetupScreen() {
   const [syncing,       setSyncing]       = useState(false);
   const [syncDone,      setSyncDone]      = useState<string | null>(null);
 
+  const profileComplete = user?.weightKg && user?.heightCm && user?.age;
+
+  // Computed stats
+  const w = parseFloat(weightKg), h = parseFloat(heightCm), a = parseInt(age, 10);
+  const hasStats = !isNaN(w) && !isNaN(h) && !isNaN(a) && w > 0 && h > 0 && a > 0;
+  const bmr  = hasStats ? calcBMR(w, h, a, gender) : null;
+  const mult = ACTIVITY_LEVELS.find(l => l.value === activityLevel)?.mult ?? 1.55;
+  const tdee = bmr ? Math.round(bmr * mult) : null;
+  const bmi  = hasStats ? calcBMI(w, h) : null;
+  const bmiInfo = bmi ? getBMILabel(bmi) : null;
+
   const handleSave = async () => {
-    const w = parseFloat(weightKg), h = parseFloat(heightCm), a = parseInt(age, 10);
     if (isNaN(w) || w < 30 || w > 300)  { setError('Valid weight: 30–300 kg.'); return; }
     if (isNaN(h) || h < 100 || h > 250) { setError('Valid height: 100–250 cm.'); return; }
     if (isNaN(a) || a < 10 || a > 100)  { setError('Valid age: 10–100.'); return; }
@@ -71,8 +103,7 @@ export default function ProfileSetupScreen() {
       for (const row of rows) {
         const id = row.sync_id ?? String(row.id!);
         await syncAddLog({
-          id,
-          food_name: row.food_name, calories: row.calories,
+          id, food_name: row.food_name, calories: row.calories,
           protein: row.protein, carbs: row.carbs, fat: row.fat,
           weight_grams: row.weight_grams, meal_type: row.meal_type,
           image_url: row.image_url, ingredients: row.ingredients,
@@ -87,45 +118,107 @@ export default function ProfileSetupScreen() {
     finally { setSyncing(false); }
   };
 
-  const profileComplete = user?.weightKg && user?.heightCm && user?.age;
-
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
-      {/* Header gradient */}
+      {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #0038A8 0%, #1565E0 100%)',
-        padding: '44px 22px 28px',
-        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(145deg, #080F30 0%, #1428A0 40%, #1E40DC 100%)',
+        padding: '44px 22px 32px', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', top: -50, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-        <div className="nrc-a nrc-a1">
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 4, textTransform: 'uppercase' }}>Athlete Profile</div>
-          <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -2.5, lineHeight: 1, color: '#FFFFFF' }}>{name.toUpperCase()}</div>
-          {!profileComplete && (
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 12, fontWeight: 500, lineHeight: 1.5 }}>
-              Complete your profile to unlock personalised targets.
+        <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(30,64,220,0.08)' }} />
+
+        <div className="nrc-a nrc-a1" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Avatar */}
+          <div style={{
+            width: 60, height: 60, borderRadius: 20,
+            background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#FFFFFF', letterSpacing: -1 }}>
+              {initials || 'AT'}
             </div>
-          )}
+          </div>
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 4, textTransform: 'uppercase' }}>
+              Athlete Profile
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF' }}>
+              {name.toUpperCase()}
+            </div>
+            {!profileComplete && (
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 5, fontWeight: 500 }}>
+                Complete your profile to unlock smart targets
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Stats grid */}
-      {profileComplete && (
+      {/* ── COMPUTED STATS ── */}
+      {hasStats && (
+        <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+            {[
+              { label: 'BMR', value: bmr?.toLocaleString() ?? '—', unit: 'kcal/day', color: BLUE,   desc: 'Basal metabolic rate' },
+              { label: 'TDEE', value: tdee?.toLocaleString() ?? '—', unit: 'kcal/day', color: GREEN,  desc: 'Total daily expenditure' },
+              { label: 'BMI',  value: bmi?.toString() ?? '—',  unit: bmiInfo?.label ?? '',  color: bmiInfo?.color ?? BLUE, desc: 'Body mass index' },
+            ].map(({ label, value, unit, color, desc }) => (
+              <div key={label} style={{
+                background: SURF, borderRadius: 16, padding: '14px 12px',
+                border: `1px solid ${EDGE}`, borderTop: `3px solid ${color}`,
+                boxShadow: CARD_SHADOW, textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color, textTransform: 'uppercase', marginBottom: 6 }}>
+                  {label}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1.5, color, lineHeight: 1 }}>
+                  {value}
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: MUTED, marginTop: 4 }}>
+                  {unit}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* TDEE context bar */}
+          {tdee && (
+            <div style={{
+              background: `${BLUE}06`, borderRadius: 14, padding: '13px 16px',
+              border: `1px solid ${BLUE}15`, borderLeft: `3px solid ${BLUE}`,
+              marginBottom: 0,
+            }}>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: BLUE, textTransform: 'uppercase', marginBottom: 4 }}>
+                Your Energy Target
+              </div>
+              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6, fontWeight: 500 }}>
+                Based on your stats, you need ~<strong style={{ color: BLUE }}>{tdee.toLocaleString()} kcal/day</strong> to maintain weight.
+                {' '}FuelSync adjusts this daily based on training type.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── BODY STATS (current) ── */}
+      {profileComplete && !hasStats && (
         <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { label: 'Weight', value: `${user!.weightKg}`, unit: 'KG', color: BLUE },
-              { label: 'Height', value: `${user!.heightCm}`, unit: 'CM', color: CYAN },
-              { label: 'Age',    value: `${user!.age}`,      unit: 'YR', color: GREEN },
+              { label: 'Weight', value: `${user!.weightKg}`, unit: 'KG', color: BLUE   },
+              { label: 'Height', value: `${user!.heightCm}`, unit: 'CM', color: CYAN   },
+              { label: 'Age',    value: `${user!.age}`,      unit: 'YR', color: GREEN  },
             ].map(({ label, value, unit, color }) => (
-              <div key={label} className="nrc-press" style={{
+              <div key={label} style={{
                 background: SURF, borderRadius: 16, padding: '16px 12px',
                 border: `1px solid ${EDGE}`, borderTop: `3px solid ${color}`,
-                boxShadow: '0 2px 12px rgba(0,56,168,0.06)',
+                boxShadow: CARD_SHADOW, textAlign: 'center',
               }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: color, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
-                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: TEXT, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1.5, color: TEXT, lineHeight: 1 }}>{value}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 1, marginTop: 4 }}>{unit}</div>
               </div>
             ))}
@@ -135,77 +228,119 @@ export default function ProfileSetupScreen() {
 
       <div style={{ padding: '20px 22px 48px' }}>
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Display Name</div>
-        <input style={{ ...inp, marginBottom: 24 }} type="text" value={displayName}
+        {/* Display Name */}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+          Display Name
+        </div>
+        <input style={{ ...inp, marginBottom: 20 }} type="text" value={displayName}
           onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Body Stats</div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        {/* Body Stats */}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+          Body Stats
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
           <input style={{ ...inp, flex: 1 }} type="number" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="Weight (kg)" />
           <input style={{ ...inp, flex: 1 }} type="number" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} placeholder="Height (cm)" />
         </div>
-        <input style={inp} type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" />
+        <input style={{ ...inp, marginBottom: 20 }} type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" />
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10, marginTop: 6 }}>Biological Sex</div>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+        {/* Biological Sex */}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+          Biological Sex
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
           {(['male', 'female'] as const).map((g) => (
             <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
               flex: 1, padding: 15, borderRadius: 12, cursor: 'pointer',
-              borderColor: gender === g ? BLUE : EDGE,
               border: `1px solid ${gender === g ? BLUE : EDGE}`,
               borderTop: gender === g ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
               background: gender === g ? `${BLUE}08` : SURF2,
               color: gender === g ? BLUE : MUTED,
               fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
-            }}>{g.charAt(0).toUpperCase() + g.slice(1)}</button>
+              boxShadow: gender === g ? `0 4px 16px ${BLUE}14` : 'none',
+            }}>
+              {g.charAt(0).toUpperCase() + g.slice(1)}
+            </button>
           ))}
         </div>
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Activity Level</div>
+        {/* Activity Level */}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+          Activity Level
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
-          {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
+          {ACTIVITY_LEVELS.map(({ value, label, desc, icon }) => {
             const active = activityLevel === value;
             return (
               <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
-                textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
-                background: active ? `${BLUE}06` : SURF2,
+                textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+                background: active ? `${BLUE}07` : SURF2,
                 border: `1px solid ${active ? BLUE : EDGE}`,
                 borderLeft: active ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
+                transition: 'all 0.2s',
+                boxShadow: active ? `0 4px 16px ${BLUE}12` : 'none',
+                display: 'flex', alignItems: 'center', gap: 12,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: active ? BLUE : TEXT, marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>{desc}</div>
+                <div style={{ fontSize: 22, flexShrink: 0 }}>{icon}</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: active ? BLUE : TEXT, marginBottom: 3 }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>
+                    {desc}
+                  </div>
+                </div>
+                {active && (
+                  <div style={{ marginLeft: 'auto', color: BLUE, fontSize: 18, fontWeight: 900 }}>✓</div>
+                )}
               </button>
             );
           })}
         </div>
 
         {error && (
-          <div style={{ color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px', background: 'rgba(198,40,40,0.06)', borderRadius: 12, fontWeight: 600, border: '1px solid rgba(198,40,40,0.18)' }}>
+          <div style={{
+            color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px',
+            background: 'rgba(239,51,64,0.06)', borderRadius: 12, fontWeight: 600,
+            border: '1px solid rgba(239,51,64,0.18)',
+          }}>
             {error}
           </div>
         )}
 
         <button onClick={handleSave} disabled={saving} className="nrc-press" style={{
-          width: '100%', padding: '16px 0', borderRadius: 14, marginBottom: 16,
-          background: saved ? `${GREEN}12` : saving ? SURF2 : BLUE,
+          width: '100%', padding: '17px 0', borderRadius: 16, marginBottom: 14,
+          background: saved ? `${GREEN}12` : saving ? SURF2 : `linear-gradient(135deg, ${BLUE}, ${BLUE2})`,
           color: saved ? GREEN : saving ? MUTED : '#fff',
-          fontWeight: 800, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer',
+          fontWeight: 900, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer',
           border: saved ? `1px solid ${GREEN}35` : '1px solid transparent',
-          boxShadow: (!saved && !saving) ? `0 4px 20px ${BLUE}40` : 'none',
+          boxShadow: (!saved && !saving) ? `0 6px 24px ${BLUE}40` : 'none',
+          transition: 'all 0.25s',
+          letterSpacing: 0.5,
         }}>
-          {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save Profile →'}
+          {saved ? '✓ Profile Saved' : saving ? 'Saving…' : 'Save Profile →'}
         </button>
 
-        <div style={{ background: SURF, borderRadius: 16, padding: '16px 18px', border: `1px solid ${EDGE}`, boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>Account</div>
+        {/* Account Section */}
+        <div style={{
+          background: SURF, borderRadius: 18, padding: '18px 18px',
+          border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+            Account
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {getSyncToken() && (
               <button onClick={handlePushAllToCloud} disabled={syncing} className="nrc-press" style={{
-                width: '100%', padding: 13, borderRadius: 10,
-                border: `1px solid ${GREEN}35`, background: syncDone ? `${GREEN}08` : SURF2,
-                color: syncDone ? GREEN : BLUE, fontWeight: 700, fontSize: 13, cursor: syncing ? 'not-allowed' : 'pointer',
+                width: '100%', padding: 14, borderRadius: 12,
+                border: `1px solid ${syncDone && !syncDone.includes('failed') ? GREEN + '35' : EDGE}`,
+                background: syncDone && !syncDone.includes('failed') ? `${GREEN}08` : SURF2,
+                color: syncDone && !syncDone.includes('failed') ? GREEN : BLUE,
+                fontWeight: 700, fontSize: 13, cursor: syncing ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
               }}>
-                {syncing ? 'Pushing to cloud…' : syncDone ?? 'Push all logs to cloud ↑'}
+                {syncing ? 'Pushing to cloud…' : syncDone ?? '↑ Push all logs to cloud'}
               </button>
             )}
             <button onClick={async () => {
@@ -213,10 +348,12 @@ export default function ProfileSetupScreen() {
               clearSyncToken();
               logout();
             }} className="nrc-press" style={{
-              width: '100%', padding: 13, borderRadius: 10,
-              border: `1px solid rgba(0,56,168,0.18)`, background: SURF2, color: MUTED,
+              width: '100%', padding: 14, borderRadius: 12,
+              border: `1px solid ${EDGE}`, background: SURF2, color: MUTED,
               fontWeight: 700, fontSize: 13, cursor: 'pointer',
-            }}>Sign Out</button>
+            }}>
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

@@ -438,71 +438,116 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: `linear-gradient(140deg, #080F30 0%, ${BLUE} 45%, ${BLUE2} 100%)`,
-        padding: '44px 22px 20px',
+        background: 'linear-gradient(145deg, #080F30 0%, #006080 40%, #00BDD0 100%)',
+        padding: '44px 22px 22px', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 8, textTransform: 'uppercase' }}>Fuel Log</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={() => setSelectedDate((d) => offsetDate(d, -1))} style={{
-            background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-            borderRadius: 10, color: '#fff', fontSize: 18, width: 38, height: 38,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>‹</button>
-          <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
-            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: '#FFFFFF', lineHeight: 1.1 }}>
-              {dateLabel(selectedDate).toUpperCase()}
+        <div className="orb1" style={{ position: 'absolute', top: -20, right: 5, width: 150, height: 150, borderRadius: '50%', background: 'rgba(0,189,208,0.12)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: -20, left: -5, width: 100, height: 100, borderRadius: '50%', background: 'rgba(30,64,220,0.08)' }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 10, textTransform: 'uppercase' }}>Fuel Log</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <button onClick={() => setSelectedDate((d) => offsetDate(d, -1))} style={{
+              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: 12, color: '#fff', fontSize: 20, width: 40, height: 40,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>‹</button>
+            <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF', lineHeight: 1.1 }}>
+                {dateLabel(selectedDate).toUpperCase()}
+              </div>
+              {isToday ? (
+                <div style={{ marginTop: 5, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>{nowTime}</div>
+              ) : (
+                <button onClick={() => setSelectedDate(todayStr)} style={{
+                  marginTop: 7, background: 'rgba(255,255,255,0.18)', border: 'none',
+                  borderRadius: 20, color: '#fff', fontSize: 10, fontWeight: 700,
+                  padding: '5px 14px', cursor: 'pointer', letterSpacing: 1,
+                }}>← Back to Today</button>
+              )}
             </div>
-            {isToday ? (
-              <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>{nowTime}</div>
-            ) : (
-              <button onClick={() => setSelectedDate(todayStr)} style={{
-                marginTop: 6, background: 'rgba(255,255,255,0.2)', border: 'none',
-                borderRadius: 20, color: '#fff', fontSize: 10, fontWeight: 700,
-                padding: '4px 12px', cursor: 'pointer', letterSpacing: 1,
-              }}>Back to Today</button>
-            )}
+            <button onClick={() => { if (!isToday) setSelectedDate((d) => offsetDate(d, 1)); }} style={{
+              background: isToday ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: 12, color: isToday ? 'rgba(255,255,255,0.25)' : '#fff',
+              fontSize: 20, width: 40, height: 40,
+              cursor: isToday ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>›</button>
           </div>
-          <button onClick={() => { if (!isToday) setSelectedDate((d) => offsetDate(d, 1)); }} style={{
-            background: isToday ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.25)',
-            borderRadius: 10, color: isToday ? 'rgba(255,255,255,0.3)' : '#fff',
-            fontSize: 18, width: 38, height: 38,
-            cursor: isToday ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>›</button>
         </div>
       </div>
 
       {/* ── CALORIE + MACROS ── */}
       <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
-        <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, padding: '20px 20px 16px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(30,64,220,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Calories Consumed</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 14 }}>
-            <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: calPct >= 100 ? RED : TEXT }}>
+        <div style={{
+          background: SURF, borderRadius: 22, border: `1px solid ${EDGE}`,
+          padding: '20px 20px 18px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW,
+        }}>
+          <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,189,208,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+            Calories Consumed
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 12 }}>
+            <div style={{
+              fontSize: 72, fontWeight: 900, letterSpacing: -5, lineHeight: 1,
+              color: calPct >= 100 ? RED : calPct >= 85 ? GREEN : TEXT,
+              transition: 'color 0.4s',
+            }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
-            {targets && <div style={{ fontSize: 14, fontWeight: 700, color: MUTED, paddingBottom: 8 }}>/ {Math.round(targets.calories).toLocaleString()}</div>}
+            {targets && (
+              <div style={{ paddingBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: MUTED }}>
+                  / {Math.round(targets.calories).toLocaleString()}
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>kcal</div>
+              </div>
+            )}
+            {calPct >= 85 && calPct < 100 && (
+              <div style={{
+                marginLeft: 'auto', paddingBottom: 8,
+                background: `${GREEN}10`, border: `1px solid ${GREEN}25`,
+                borderRadius: 20, padding: '4px 12px',
+                fontSize: 10, fontWeight: 800, color: GREEN, letterSpacing: 0.5,
+              }}>
+                ON TRACK
+              </div>
+            )}
           </div>
-          <div style={{ height: 4, background: 'rgba(30,64,220,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
-            <div style={{ height: '100%', width: `${calPct}%`, background: calPct >= 100 ? RED : BLUE, borderRadius: 2, transition: 'width 0.6s ease' }} />
+          <div style={{ height: 7, background: 'rgba(30,64,220,0.07)', borderRadius: 4, overflow: 'hidden', marginBottom: 18 }}>
+            <div
+              className="bar-ani"
+              style={{
+                height: '100%', width: `${Math.min(calPct, 100)}%`,
+                background: calPct >= 100 ? `linear-gradient(90deg, ${RED}80, ${RED})` : calPct >= 85 ? `linear-gradient(90deg, ${GREEN}80, ${GREEN})` : `linear-gradient(90deg, ${CYAN}60, ${BLUE})`,
+                borderRadius: 4, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+              }}
+            />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
               { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: RED    },
               { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: CYAN   },
               { name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: PURPLE },
             ].map(({ name, val, tgt, color }) => {
               const pct2 = tgt && tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
+              const over = tgt && tgt > 0 && val > tgt;
               return (
-                <div key={name}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: color, textTransform: 'uppercase', marginBottom: 4 }}>{name}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: TEXT, lineHeight: 1 }}>
+                <div key={name} style={{ background: `${color}06`, borderRadius: 12, padding: '10px 10px 8px', border: `1px solid ${color}15` }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: over ? RED : color, textTransform: 'uppercase', marginBottom: 5 }}>
+                    {name}
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: over ? RED : TEXT, lineHeight: 1 }}>
                     {Math.round(val)}<span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>g</span>
                   </div>
-                  <div style={{ marginTop: 6, height: 3, background: 'rgba(30,64,220,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct2}%`, background: color, borderRadius: 2, transition: 'width 0.6s ease' }} />
+                  <div style={{ marginTop: 7, height: 4, background: `${color}18`, borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct2}%`, background: `linear-gradient(90deg, ${color}70, ${color})`, borderRadius: 3, transition: 'width 0.7s ease' }} />
                   </div>
+                  {tgt && tgt > 0 && (
+                    <div style={{ fontSize: 8, color: over ? RED : MUTED, fontWeight: 600, marginTop: 3 }}>
+                      {over ? `+${Math.round(val - tgt)}g` : `${Math.round(tgt - val)}g left`}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -513,31 +558,56 @@ export default function FoodScreen() {
       {/* ── FOOD LOG ── */}
       <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
         {byMeal.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '56px 0' }}>
-            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3, color: 'rgba(30,64,220,0.07)', marginBottom: 14 }}>EMPTY</div>
-            <div style={{ color: MUTED, fontSize: 13, fontWeight: 600 }}>Tap + to log your first meal</div>
+          <div style={{ textAlign: 'center', padding: '56px 20px' }}>
+            <div style={{ fontSize: 72, fontWeight: 900, letterSpacing: -6, color: 'rgba(30,64,220,0.06)', marginBottom: 16, lineHeight: 1 }}>
+              EMPTY
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 8 }}>
+              Nothing logged yet
+            </div>
+            <div style={{ color: MUTED, fontSize: 13, fontWeight: 500, lineHeight: 1.6, marginBottom: 20 }}>
+              Tap the + button to log your first meal — use AI Smart to make it effortless.
+            </div>
           </div>
-        ) : byMeal.map(({ meal, entries }) => (
-          <div key={meal} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>{MEAL_LABEL[meal as MealType] ?? 'Other'}</div>
-            {entries.map((entry) => (
-              <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete}
-                onReLog={!isToday ? handleReLog : undefined}
-                reLogLabel={!isToday ? 'Log today' : undefined}
-              />
-            ))}
-          </div>
-        ))}
+        ) : byMeal.map(({ meal, entries }) => {
+          const mealTotal = entries.reduce((s, e) => s + Number(e.calories), 0);
+          return (
+            <div key={meal} style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>
+                    {MEAL_LABEL[meal as MealType] ?? 'Other'}
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: BLUE }}>
+                  {Math.round(mealTotal)} kcal
+                </div>
+              </div>
+              {entries.map((entry) => (
+                <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete}
+                  onReLog={!isToday ? handleReLog : undefined}
+                  reLogLabel={!isToday ? 'Log today' : undefined}
+                />
+              ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* ── FAB ── */}
-      {isToday && <button onClick={() => { setOpen(true); setMode('ai'); }} className="nrc-press" style={{
-        position: 'fixed', bottom: 84, right: 'max(20px, calc(50vw - 220px))',
-        width: 56, height: 56, borderRadius: 28, background: BLUE,
-        border: 'none', cursor: 'pointer', fontSize: 28, fontWeight: 900,
-        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 4px 24px ${BLUE}55`,
-      }}>+</button>}
+      {isToday && (
+        <button
+          onClick={() => { setOpen(true); setMode('ai'); }}
+          className="nrc-press fab-pulse"
+          style={{
+            position: 'fixed', bottom: 84, right: 'max(20px, calc(50vw - 220px))',
+            width: 58, height: 58, borderRadius: 29,
+            background: `linear-gradient(135deg, ${CYAN}, ${BLUE})`,
+            border: 'none', cursor: 'pointer', fontSize: 30, fontWeight: 900,
+            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >+</button>
+      )}
 
       {/* ── UNDO TOAST ── */}
       {undoEntry && (
@@ -849,6 +919,13 @@ export default function FoodScreen() {
   );
 }
 
+function getDominantColor(protein: number, carbs: number, fat: number): string {
+  const pC = protein * 4, cC = carbs * 4, fC = fat * 9;
+  if (pC >= cC && pC >= fC) return RED;
+  if (cC >= pC && cC >= fC) return CYAN;
+  return PURPLE;
+}
+
 function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
   entry: FoodLog;
   onEdit: (e: FoodLog) => void;
@@ -858,46 +935,71 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
 }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const hasIngredients = entry.ingredients && entry.ingredients.length > 1;
+  const accentColor = getDominantColor(Number(entry.protein), Number(entry.carbs), Number(entry.fat));
   return (
-    <div style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
-        {entry.image_url && <img src={entry.image_url} alt={entry.food_name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />}
+    <div style={{
+      background: SURF, borderRadius: 18, marginBottom: 10,
+      border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW,
+      borderLeft: `4px solid ${accentColor}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px 12px' }}>
+        {entry.image_url && (
+          <img src={entry.image_url} alt={entry.food_name} style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0, border: `1px solid ${EDGE}` }} />
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{entry.food_name}</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
-            <span style={{ fontSize: 10, color: RED,    fontWeight: 700 }}>P {Math.round(Number(entry.protein))}g</span>
-            <span style={{ fontSize: 10, color: CYAN,   fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
-            <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {Math.round(Number(entry.fat))}g</span>
-            {entry.weight_grams && <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{entry.weight_grams}g</span>}
-            {hasIngredients && <span style={{ fontSize: 10, color: BLUE, fontWeight: 600 }}>{entry.ingredients!.length} items</span>}
+          <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 6 }}>
+            {entry.food_name}
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ background: `${RED}10`,    border: `1px solid ${RED}20`,    borderRadius: 6, padding: '2px 7px', fontSize: 10, color: RED,    fontWeight: 700 }}>
+              P {Math.round(Number(entry.protein))}g
+            </span>
+            <span style={{ background: `${CYAN}10`,   border: `1px solid ${CYAN}20`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: CYAN,   fontWeight: 700 }}>
+              C {Math.round(Number(entry.carbs))}g
+            </span>
+            <span style={{ background: `${PURPLE}10`, border: `1px solid ${PURPLE}20`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: PURPLE, fontWeight: 700 }}>
+              F {Math.round(Number(entry.fat))}g
+            </span>
+            {entry.weight_grams && (
+              <span style={{ background: SURF2, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: MUTED, fontWeight: 600 }}>
+                {entry.weight_grams}g
+              </span>
+            )}
+            {hasIngredients && (
+              <span style={{ background: `${BLUE}08`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: BLUE, fontWeight: 600 }}>
+                {entry.ingredients!.length} items
+              </span>
+            )}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: BLUE, letterSpacing: -0.5 }}>{Math.round(Number(entry.calories))}</div>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1 }}>KCAL</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: BLUE, letterSpacing: -2, lineHeight: 1 }}>
+            {Math.round(Number(entry.calories))}
+          </div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>KCAL</div>
         </div>
       </div>
       <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
         <button onClick={() => onEdit(entry)} style={{
           flex: 1, padding: '9px 0', background: 'none', border: 'none',
-          color: MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-          borderRight: `1px solid ${EDGE}`, letterSpacing: 0.5,
+          color: BLUE, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+          borderRight: `1px solid ${EDGE}`, letterSpacing: 0.3,
         }}>Edit</button>
         <button onClick={() => onDelete(entry)} style={{
           flex: 1, padding: '9px 0', background: 'none', border: 'none',
-          color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+          color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.3,
           borderRight: `1px solid ${EDGE}`,
         }}>Remove</button>
         {onReLog ? (
           <button onClick={() => onReLog(entry)} className="nrc-press" style={{
             flex: 1, padding: '9px 0', background: 'none', border: 'none',
-            color: BLUE, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+            color: GREEN, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.3,
             borderRight: `1px solid ${EDGE}`,
           }}>{reLogLabel ?? 'Again'}</button>
         ) : null}
         <button onClick={() => setShowBreakdown((v) => !v)} style={{
           flex: onReLog ? undefined : 1, padding: '9px 12px', background: 'none', border: 'none',
-          color: showBreakdown ? BLUE : MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+          color: showBreakdown ? BLUE : MUTED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.3,
         }}>Info {showBreakdown ? '▲' : '▼'}</button>
       </div>
       {showBreakdown && (
