@@ -39,21 +39,27 @@ function dateLabel(date: string): string {
 function groupByDate(logs: FoodLog[]): DaySummary[] {
   const map = new Map<string, FoodLog[]>();
   for (const log of logs) {
-    if (log.removed) continue;
     const d = log.logged_at.slice(0, 10);
     if (!map.has(d)) map.set(d, []);
     map.get(d)!.push(log);
   }
   return Array.from(map.entries())
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([date, items]) => ({
-      date, label: dateLabel(date),
-      totalCal:     Math.round(items.reduce((s, i) => s + Number(i.calories), 0)),
-      totalProtein: Math.round(items.reduce((s, i) => s + Number(i.protein),  0)),
-      totalCarbs:   Math.round(items.reduce((s, i) => s + Number(i.carbs),    0)),
-      totalFat:     Math.round(items.reduce((s, i) => s + Number(i.fat),      0)),
-      items,
-    }));
+    .map(([date, items]) => {
+      const active = items.filter((i) => !i.removed);
+      // Only show days that had at least one active entry ever
+      if (active.length === 0 && items.every((i) => i.removed)) {
+        // Keep the day visible so removed items are still accessible
+      }
+      return {
+        date, label: dateLabel(date),
+        totalCal:     Math.round(active.reduce((s, i) => s + Number(i.calories), 0)),
+        totalProtein: Math.round(active.reduce((s, i) => s + Number(i.protein),  0)),
+        totalCarbs:   Math.round(active.reduce((s, i) => s + Number(i.carbs),    0)),
+        totalFat:     Math.round(active.reduce((s, i) => s + Number(i.fat),      0)),
+        items,  // includes both active and removed
+      };
+    });
 }
 
 function calcStreak(days: DaySummary[]): number {
@@ -474,14 +480,22 @@ export default function HistoryScreen() {
                   {isOpen && (
                     <div style={{ borderTop: `1px solid ${EDGE}`, background: `${BLUE}02` }}>
                       {day.items.map((item, idx) => {
-                        const hasIngs    = item.ingredients && item.ingredients.length > 1;
+                        const isRemoved  = !!item.removed;
+                        const hasIngs    = !isRemoved && item.ingredients && item.ingredients.length > 1;
                         const isFoodOpen = expandedFood === item.id;
                         return (
-                          <div key={item.id} style={{ borderBottom: idx < day.items.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
+                          <div key={item.id} style={{ borderBottom: idx < day.items.length - 1 ? `1px solid ${EDGE}` : 'none', opacity: isRemoved ? 0.55 : 1 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px' }}>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {item.food_name}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: isRemoved ? MUTED : TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isRemoved ? 'line-through' : 'none' }}>
+                                    {item.food_name}
+                                  </div>
+                                  {isRemoved && (
+                                    <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 0.5, color: RED, background: `${RED}12`, border: `1px solid ${RED}25`, borderRadius: 4, padding: '1px 5px', flexShrink: 0 }}>
+                                      REMOVED
+                                    </div>
+                                  )}
                                 </div>
                                 <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
                                   {MEAL_LABEL[item.meal_type] ?? item.meal_type}
@@ -490,7 +504,7 @@ export default function HistoryScreen() {
                                 </div>
                               </div>
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                <div style={{ fontSize: 15, fontWeight: 900, color: BLUE, letterSpacing: -0.5 }}>
+                                <div style={{ fontSize: 15, fontWeight: 900, color: isRemoved ? MUTED : BLUE, letterSpacing: -0.5, textDecoration: isRemoved ? 'line-through' : 'none' }}>
                                   {Math.round(Number(item.calories))}
                                 </div>
                                 <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
@@ -512,7 +526,7 @@ export default function HistoryScreen() {
                                 </button>
                               )}
                               <button onClick={() => handleRelog(item)} disabled={relogged === item.id}
-                                title="Add to today's fuel"
+                                title={isRemoved ? 'Re-add to today' : "Add to today's fuel"}
                                 style={{
                                   width: 30, height: 30, borderRadius: 9,
                                   border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,

@@ -40,6 +40,14 @@ export interface LocalFoodLog {
   date: string;
   ingredients?: Ingredient[] | null;
   removed?: boolean;    // soft-delete: excluded from active log, stays in history
+  // micronutrients (optional — populated by AI/USDA sources)
+  fiber_g?: number | null;
+  cholesterol_mg?: number | null;
+  sodium_mg?: number | null;
+  vitamin_c_mg?: number | null;
+  vitamin_d_mcg?: number | null;
+  calcium_mg?: number | null;
+  iron_mg?: number | null;
 }
 
 export interface WeightLog {

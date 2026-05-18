@@ -219,6 +219,9 @@ export default function FoodScreen() {
   const [loggingAll, setLoggingAll] = useState(false);
   const [editableIngredients, setEditableIngredients] = useState<IngredientItem[] | null>(null);
 
+  // Tracks the most recently applied USDA/OFF product (for micro scaling at submit)
+  const [currentProduct, setCurrentProduct] = useState<OFFProduct | null>(null);
+
   // Search + barcode state
   const [searchQuery,   setSearchQuery]   = useState('');
   const [searchResults, setSearchResults] = useState<OFFProduct[]>([]);
@@ -353,6 +356,8 @@ export default function FoodScreen() {
     const fat      = Math.round(product.fatPer100g      * factor * 10) / 10;
     const calories = Math.round(product.caloriesPer100g * factor);
     setBasePerGram({ protein: product.proteinPer100g / 100, carbs: product.carbsPer100g / 100, fat: product.fatPer100g / 100 });
+    setCurrentProduct(product);
+    setEstimate(null);
     setForm((f) => ({
       ...f,
       name:     product.name + (product.brand ? ` (${product.brand})` : ''),
@@ -400,6 +405,10 @@ export default function FoodScreen() {
           weight_grams: entry.weight_grams ?? undefined,
           meal_type:    entry.meal_type,
           ingredients:  entry.ingredients ?? undefined,
+          fiber_g: entry.fiber_g, cholesterol_mg: entry.cholesterol_mg,
+          sodium_mg: entry.sodium_mg, vitamin_c_mg: entry.vitamin_c_mg,
+          vitamin_d_mcg: entry.vitamin_d_mcg, calcium_mg: entry.calcium_mg,
+          iron_mg: entry.iron_mg,
         });
       }
       playFoodLogSound();
@@ -482,7 +491,7 @@ export default function FoodScreen() {
   };
 
   const resetSheet = () => {
-    setForm(emptyForm()); setEstimate(null);
+    setForm(emptyForm()); setEstimate(null); setCurrentProduct(null);
     setAiError(''); setFormError(''); setAiQuery(''); setEditingId(null); setBasePerGram(null);
     setSuggestResult(null); setEditableIngredients(null);
     setSearchQuery(''); setSearchResults([]); setSearchError('');
@@ -518,6 +527,10 @@ export default function FoodScreen() {
       weight_grams: entry.weight_grams ?? undefined,
       meal_type: mealFromTime(), image_url: entry.image_url ?? undefined,
       ingredients: entry.ingredients ?? undefined,
+      fiber_g: entry.fiber_g, cholesterol_mg: entry.cholesterol_mg,
+      sodium_mg: entry.sodium_mg, vitamin_c_mg: entry.vitamin_c_mg,
+      vitamin_d_mcg: entry.vitamin_d_mcg, calcium_mg: entry.calcium_mg,
+      iron_mg: entry.iron_mg,
     });
     playFoodLogSound();
     fetchLogs();
@@ -585,6 +598,10 @@ export default function FoodScreen() {
         weight_grams: suggestResult.estimated_weight_grams || undefined,
         meal_type: meal,
         ingredients: suggestResult.ingredients ?? undefined,
+        fiber_g: suggestResult.fiber_g, cholesterol_mg: suggestResult.cholesterol_mg,
+        sodium_mg: suggestResult.sodium_mg, vitamin_c_mg: suggestResult.vitamin_c_mg,
+        vitamin_d_mcg: suggestResult.vitamin_d_mcg, calcium_mg: suggestResult.calcium_mg,
+        iron_mg: suggestResult.iron_mg,
       });
       playFoodLogSound();
       fetchLogs(); closeSheet();
@@ -673,6 +690,25 @@ export default function FoodScreen() {
     if (err) { setFormError(err); return; }
     const w = form.amountIsText ? null : parseFloat(form.amount);
     setSubmitting(true); setFormError('');
+    // Compute micros: prefer AI estimate; fall back to scaled product values
+    const micros = (() => {
+      if (estimate) {
+        return { fiber_g: estimate.fiber_g, cholesterol_mg: estimate.cholesterol_mg, sodium_mg: estimate.sodium_mg, vitamin_c_mg: estimate.vitamin_c_mg, vitamin_d_mcg: estimate.vitamin_d_mcg, calcium_mg: estimate.calcium_mg, iron_mg: estimate.iron_mg };
+      }
+      if (currentProduct && w && !isNaN(w)) {
+        const f = w / 100;
+        return {
+          fiber_g:        currentProduct.fiberPer100g        != null ? Math.round(currentProduct.fiberPer100g        * f * 10) / 10 : null,
+          cholesterol_mg: currentProduct.cholesterolPer100g  != null ? Math.round(currentProduct.cholesterolPer100g  * f)           : null,
+          sodium_mg:      currentProduct.sodiumPer100g       != null ? Math.round(currentProduct.sodiumPer100g       * f)           : null,
+          vitamin_c_mg:   currentProduct.vitaminCPer100g     != null ? Math.round(currentProduct.vitaminCPer100g     * f * 10) / 10 : null,
+          vitamin_d_mcg:  currentProduct.vitaminDPer100g     != null ? Math.round(currentProduct.vitaminDPer100g     * f * 100) / 100 : null,
+          calcium_mg:     currentProduct.calciumPer100g      != null ? Math.round(currentProduct.calciumPer100g      * f)           : null,
+          iron_mg:        currentProduct.ironPer100g         != null ? Math.round(currentProduct.ironPer100g         * f * 100) / 100 : null,
+        };
+      }
+      return {};
+    })();
     try {
       if (editingId !== null) await deleteLog(editingId);
       await addLog({
@@ -681,6 +717,7 @@ export default function FoodScreen() {
         weight_grams: w && !isNaN(w) ? w : undefined, meal_type: form.meal,
         image_url: estimate?.imageUrl ?? undefined,
         ingredients: editableIngredients?.length ? editableIngredients : null,
+        ...micros,
       });
       if (!editingId) {
         playFoodLogSound();

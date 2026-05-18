@@ -17,6 +17,13 @@ export interface FoodLog {
   logged_at: string;
   ingredients?: Ingredient[] | null;
   removed?: boolean;
+  fiber_g?: number | null;
+  cholesterol_mg?: number | null;
+  sodium_mg?: number | null;
+  vitamin_c_mg?: number | null;
+  vitamin_d_mcg?: number | null;
+  calcium_mg?: number | null;
+  iron_mg?: number | null;
 }
 
 export interface IngredientItem {
@@ -39,6 +46,13 @@ export interface AIEstimate {
   breakdown?: string | null;
   imageUrl?: string | null;
   ingredients?: IngredientItem[] | null;
+  fiber_g?: number | null;
+  cholesterol_mg?: number | null;
+  sodium_mg?: number | null;
+  vitamin_c_mg?: number | null;
+  vitamin_d_mcg?: number | null;
+  calcium_mg?: number | null;
+  iron_mg?: number | null;
 }
 
 function toFoodLog(row: LocalFoodLog): FoodLog {
@@ -55,6 +69,13 @@ function toFoodLog(row: LocalFoodLog): FoodLog {
     logged_at: row.logged_at,
     ingredients: row.ingredients ?? null,
     removed: row.removed ?? false,
+    fiber_g:        row.fiber_g        ?? null,
+    cholesterol_mg: row.cholesterol_mg ?? null,
+    sodium_mg:      row.sodium_mg      ?? null,
+    vitamin_c_mg:   row.vitamin_c_mg   ?? null,
+    vitamin_d_mcg:  row.vitamin_d_mcg  ?? null,
+    calcium_mg:     row.calcium_mg     ?? null,
+    iron_mg:        row.iron_mg        ?? null,
   };
 }
 
@@ -167,6 +188,13 @@ export async function addLog(entry: {
   meal_type?: string; image_url?: string;
   ingredients?: Ingredient[] | null;
   logged_at?: string;
+  fiber_g?: number | null;
+  cholesterol_mg?: number | null;
+  sodium_mg?: number | null;
+  vitamin_c_mg?: number | null;
+  vitamin_d_mcg?: number | null;
+  calcium_mg?: number | null;
+  iron_mg?: number | null;
 }): Promise<FoodLog> {
   const sync_id = crypto.randomUUID();
   const now = entry.logged_at ?? new Date().toISOString();
@@ -184,6 +212,13 @@ export async function addLog(entry: {
     ingredients: entry.ingredients ?? null,
     logged_at: now,
     date,
+    fiber_g:        entry.fiber_g        ?? null,
+    cholesterol_mg: entry.cholesterol_mg ?? null,
+    sodium_mg:      entry.sodium_mg      ?? null,
+    vitamin_c_mg:   entry.vitamin_c_mg   ?? null,
+    vitamin_d_mcg:  entry.vitamin_d_mcg  ?? null,
+    calcium_mg:     entry.calcium_mg     ?? null,
+    iron_mg:        entry.iron_mg        ?? null,
   });
   const row = await db.food_logs.get(id);
   const log = toFoodLog(row!);

@@ -15,6 +15,13 @@ export interface OFFProduct {
   servingSizeG: number | null;
   imageUrl: string | null;
   barcode?: string;
+  fiberPer100g?: number | null;
+  cholesterolPer100g?: number | null;
+  sodiumPer100g?: number | null;
+  vitaminCPer100g?: number | null;
+  vitaminDPer100g?: number | null;
+  calciumPer100g?: number | null;
+  ironPer100g?: number | null;
 }
 
 // ── USDA parser ───────────────────────────────────────────────────────────────
@@ -49,9 +56,16 @@ function parseUSDA(f: USDAFood): OFFProduct | null {
   }
   if (cal == null || isNaN(cal)) return null;
 
-  const protein = nuts.get('Protein') ?? 0;
-  const carbs   = nuts.get('Carbohydrate, by difference') ?? 0;
-  const fat     = nuts.get('Total lipid (fat)') ?? 0;
+  const protein     = nuts.get('Protein') ?? 0;
+  const carbs       = nuts.get('Carbohydrate, by difference') ?? 0;
+  const fat         = nuts.get('Total lipid (fat)') ?? 0;
+  const fiber       = nuts.get('Fiber, total dietary');
+  const cholesterol = nuts.get('Cholesterol');
+  const sodium      = nuts.get('Sodium, Na');
+  const vitaminC    = nuts.get('Vitamin C, total ascorbic acid');
+  const vitaminD    = nuts.get('Vitamin D (D2 + D3)');
+  const calcium     = nuts.get('Calcium, Ca');
+  const iron        = nuts.get('Iron, Fe');
 
   const servingSizeG =
     f.servingSize && f.servingSizeUnit?.toLowerCase().startsWith('g')
@@ -59,20 +73,27 @@ function parseUSDA(f: USDAFood): OFFProduct | null {
       : null;
 
   return {
-    name:            f.description,
-    brand:           f.brandOwner ?? '',
-    caloriesPer100g: Math.round(cal),
-    proteinPer100g:  Math.round(protein * 10) / 10,
-    carbsPer100g:    Math.round(Math.max(0, carbs) * 10) / 10,
-    fatPer100g:      Math.round(fat * 10) / 10,
+    name:               f.description,
+    brand:              f.brandOwner ?? '',
+    caloriesPer100g:    Math.round(cal),
+    proteinPer100g:     Math.round(protein * 10) / 10,
+    carbsPer100g:       Math.round(Math.max(0, carbs) * 10) / 10,
+    fatPer100g:         Math.round(fat * 10) / 10,
     servingSizeG,
-    imageUrl:        null,
+    imageUrl:           null,
+    fiberPer100g:       fiber       != null ? Math.round(fiber       * 10) / 10 : null,
+    cholesterolPer100g: cholesterol != null ? Math.round(cholesterol)           : null,
+    sodiumPer100g:      sodium      != null ? Math.round(sodium)                : null,
+    vitaminCPer100g:    vitaminC    != null ? Math.round(vitaminC    * 10) / 10 : null,
+    vitaminDPer100g:    vitaminD    != null ? Math.round(vitaminD    * 100) / 100 : null,
+    calciumPer100g:     calcium     != null ? Math.round(calcium)               : null,
+    ironPer100g:        iron        != null ? Math.round(iron        * 100) / 100 : null,
   };
 }
 
 // ── Public: food search (USDA) ────────────────────────────────────────────────
 export async function searchFood(query: string): Promise<OFFProduct[]> {
-  const url = `${USDA_BASE}/foods/search?query=${encodeURIComponent(query)}&api_key=${USDA_KEY}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)&pageSize=20&nutrients=1003,1004,1005,1008`;
+  const url = `${USDA_BASE}/foods/search?query=${encodeURIComponent(query)}&api_key=${USDA_KEY}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)&pageSize=20&nutrients=1003,1004,1005,1008,1079,1253,1093,1162,1114,1087,1089`;
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) return [];
   const data = await res.json() as { foods?: USDAFood[] };
@@ -92,16 +113,24 @@ function parseOFF(raw: Record<string, unknown>, barcode?: string): OFFProduct | 
   if (cal == null || isNaN(Number(cal))) return null;
   const name = (raw.product_name as string) || (raw.product_name_en as string) || '';
   if (!name.trim()) return null;
+  const nn = (key: string) => { const v = n[key]; return v != null ? Number(v) : null; };
   return {
-    name:            name.trim(),
-    brand:           (raw.brands as string) || '',
-    caloriesPer100g: Math.round(Number(cal)),
-    proteinPer100g:  Number(n['proteins_100g'] ?? 0),
-    carbsPer100g:    Number(n['carbohydrates_100g'] ?? 0),
-    fatPer100g:      Number(n['fat_100g'] ?? 0),
-    servingSizeG:    parseServingSize(raw.serving_size as string | undefined),
-    imageUrl:        (raw.image_thumb_url as string) || (raw.image_url as string) || null,
+    name:               name.trim(),
+    brand:              (raw.brands as string) || '',
+    caloriesPer100g:    Math.round(Number(cal)),
+    proteinPer100g:     Number(n['proteins_100g'] ?? 0),
+    carbsPer100g:       Number(n['carbohydrates_100g'] ?? 0),
+    fatPer100g:         Number(n['fat_100g'] ?? 0),
+    servingSizeG:       parseServingSize(raw.serving_size as string | undefined),
+    imageUrl:           (raw.image_thumb_url as string) || (raw.image_url as string) || null,
     barcode,
+    fiberPer100g:       nn('fiber_100g')       ?? nn('dietary-fiber_100g'),
+    cholesterolPer100g: nn('cholesterol_100g'),
+    sodiumPer100g:      nn('sodium_100g'),
+    vitaminCPer100g:    nn('vitamin-c_100g'),
+    vitaminDPer100g:    nn('vitamin-d_100g'),
+    calciumPer100g:     nn('calcium_100g'),
+    ironPer100g:        nn('iron_100g'),
   };
 }
 

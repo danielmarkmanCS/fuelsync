@@ -51,6 +51,27 @@ function sumLogs(logs: FoodLog[]): MacroTargets {
   }), emptyMacros());
 }
 
+interface MicroTotals {
+  fiber_g: number; cholesterol_mg: number; sodium_mg: number;
+  vitamin_c_mg: number; vitamin_d_mcg: number; calcium_mg: number; iron_mg: number;
+}
+const emptyMicros = (): MicroTotals => ({ fiber_g: 0, cholesterol_mg: 0, sodium_mg: 0, vitamin_c_mg: 0, vitamin_d_mcg: 0, calcium_mg: 0, iron_mg: 0 });
+function sumMicros(logs: FoodLog[]): MicroTotals {
+  return logs.reduce<MicroTotals>((acc, l) => ({
+    fiber_g:        acc.fiber_g        + (Number(l.fiber_g)        || 0),
+    cholesterol_mg: acc.cholesterol_mg + (Number(l.cholesterol_mg) || 0),
+    sodium_mg:      acc.sodium_mg      + (Number(l.sodium_mg)      || 0),
+    vitamin_c_mg:   acc.vitamin_c_mg   + (Number(l.vitamin_c_mg)   || 0),
+    vitamin_d_mcg:  acc.vitamin_d_mcg  + (Number(l.vitamin_d_mcg)  || 0),
+    calcium_mg:     acc.calcium_mg     + (Number(l.calcium_mg)     || 0),
+    iron_mg:        acc.iron_mg        + (Number(l.iron_mg)        || 0),
+  }), emptyMicros());
+}
+function getMicroTargets(gender: string) {
+  const male = gender === 'male';
+  return { fiber_g: male ? 38 : 25, cholesterol_mg: 300, sodium_mg: 2300, vitamin_c_mg: male ? 90 : 75, vitamin_d_mcg: 15, calcium_mg: 1000, iron_mg: male ? 8 : 18 };
+}
+
 function paceMultiplier(paceMinPerKm?: number): number {
   if (paceMinPerKm == null) return 1.0;
   if (paceMinPerKm < 4.5)  return 1.5;
@@ -413,6 +434,86 @@ function DailyInsight({ trainingType }: { trainingType?: string }) {
   );
 }
 
+// ── MICRONUTRIENT TABLE ───────────────────────────────────────────
+function MicroTable({ consumed, targets, hasData }: { consumed: MicroTotals; targets: ReturnType<typeof getMicroTargets>; hasData: boolean }) {
+  const [open, setOpen] = useState(false);
+
+  const rows: { key: keyof MicroTotals; label: string; unit: string; isLimit: boolean; color: string }[] = [
+    { key: 'fiber_g',        label: 'Fiber',       unit: 'g',   isLimit: false, color: GREEN  },
+    { key: 'cholesterol_mg', label: 'Cholesterol', unit: 'mg',  isLimit: true,  color: ORANGE },
+    { key: 'sodium_mg',      label: 'Sodium',      unit: 'mg',  isLimit: true,  color: ORANGE },
+    { key: 'vitamin_c_mg',   label: 'Vitamin C',   unit: 'mg',  isLimit: false, color: CYAN   },
+    { key: 'vitamin_d_mcg',  label: 'Vitamin D',   unit: 'mcg', isLimit: false, color: YELLOW },
+    { key: 'calcium_mg',     label: 'Calcium',     unit: 'mg',  isLimit: false, color: BLUE2  },
+    { key: 'iron_mg',        label: 'Iron',        unit: 'mg',  isLimit: false, color: RED    },
+  ];
+
+  return (
+    <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW, overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '16px 18px', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Micronutrients</div>
+          {!hasData && !open && (
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 3, fontWeight: 500 }}>Log foods via AI or search to track</div>
+          )}
+        </div>
+        <div style={{ color: MUTED, fontSize: 18, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</div>
+      </button>
+
+      {open && (
+        <div style={{ borderTop: `1px solid ${EDGE}`, padding: '14px 18px 16px' }}>
+          {!hasData && (
+            <div style={{ fontSize: 11, color: MUTED, marginBottom: 14, lineHeight: 1.5 }}>
+              Micronutrients are tracked when you log food via AI Smart or USDA search.
+              Values will appear here once tracked data exists.
+            </div>
+          )}
+          {rows.map(({ key, label, unit, isLimit, color }) => {
+            const val    = Math.round(consumed[key] * 10) / 10;
+            const target = targets[key];
+            const pct    = target > 0 ? Math.min(100, (val / target) * 100) : 0;
+            const over   = val > target && target > 0;
+            const barCol = isLimit
+              ? (over ? RED : GREEN)
+              : pct >= 80 ? GREEN : pct >= 40 ? ORANGE : RED;
+            const displayPct = Math.round(pct);
+
+            return (
+              <div key={key} style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: 2, background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>{label}</span>
+                    {isLimit && <span style={{ fontSize: 8, fontWeight: 700, color: MUTED, letterSpacing: 1 }}>LIMIT</span>}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: barCol }}>
+                    {val}{unit}
+                    <span style={{ fontSize: 9, color: MUTED, fontWeight: 500 }}> / {target}{unit}</span>
+                    <span style={{ fontSize: 9, color: barCol, fontWeight: 700, marginLeft: 5 }}>{displayPct}%</span>
+                  </div>
+                </div>
+                <div style={{ height: 5, background: `${barCol}12`, borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', width: `${pct}%`,
+                    background: `linear-gradient(90deg, ${barCol}60, ${barCol})`,
+                    borderRadius: 3, transition: 'width 0.7s ease',
+                  }} />
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ marginTop: 8, fontSize: 9, color: MUTED, fontWeight: 500, lineHeight: 1.5 }}>
+            Based on DRI/RDA guidelines. Targets personalised by gender.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── WATER TRACKER ─────────────────────────────────────────────────
 function WaterTracker({ date }: { date: string }) {
   const TARGET = 8;
@@ -536,6 +637,7 @@ export default function HomeScreen() {
   const startNewWeek          = useNutritionStore((s) => s.startNewWeek);
 
   const [consumed,        setConsumed]        = useState<MacroTargets>(emptyMacros());
+  const [consumedMicros,  setConsumedMicros]  = useState<MicroTotals>(emptyMicros());
   const [stepDescription, setStepDescription] = useState('');
   const [stepEstimate,    setStepEstimate]    = useState<number | null>(null);
   const [stepLoading,     setStepLoading]     = useState(false);
@@ -557,7 +659,7 @@ export default function HomeScreen() {
     if (weeklyLoad.weekStart !== monday) startNewWeek(monday);
   }, []);
 
-  useEffect(() => { getLogs(today).then((l) => setConsumed(sumLogs(l))).catch(() => {}); }, [today]);
+  useEffect(() => { getLogs(today).then((l) => { setConsumed(sumLogs(l)); setConsumedMicros(sumMicros(l)); }).catch(() => {}); }, [today]);
   useEffect(() => { refreshWeather().catch(() => {}); }, []);
 
   useEffect(() => {
@@ -957,6 +1059,15 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
+
+      {/* ── MICRONUTRIENTS ── */}
+      <div className="nrc-a nrc-a3" style={{ padding: '12px 22px 0' }}>
+        <MicroTable
+          consumed={consumedMicros}
+          targets={getMicroTargets(user?.gender ?? 'male')}
+          hasData={Object.values(consumedMicros).some((v) => v > 0)}
+        />
+      </div>
 
       {/* ── RECOVERY ── */}
       {effectiveTargets && (

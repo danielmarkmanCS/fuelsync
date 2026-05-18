@@ -72,12 +72,12 @@ function parseJSON(text: string): unknown {
 }
 
 const MACRO_SCHEMA = `Respond ONLY with valid JSON:
-{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high"|"medium"|"low","ingredients":[{"name":"string","amount":"string","calories":number,"protein":number,"carbs":number,"fat":number}]}
-ingredients: every separate food item/component with its own realistic macros and a human-readable amount (e.g. "2 large eggs", "150g", "1 tbsp olive oil"). If it's a single-ingredient food, still wrap it in the ingredients array.`;
+{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"fiber_g":number,"cholesterol_mg":number,"sodium_mg":number,"vitamin_c_mg":number,"vitamin_d_mcg":number,"calcium_mg":number,"iron_mg":number,"confidence":"high"|"medium"|"low","ingredients":[{"name":"string","amount":"string","calories":number,"protein":number,"carbs":number,"fat":number}]}
+micronutrients are for the total meal (not per ingredient). ingredients: every separate food item/component with its own realistic macros and a human-readable amount (e.g. "2 large eggs", "150g", "1 tbsp olive oil"). If it's a single-ingredient food, still wrap it in the ingredients array.`;
 
 const SUGGEST_SCHEMA = `Respond ONLY with valid JSON:
-{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"confidence":"high","ingredients":[{"name":"string","amount":"string","calories":number,"protein":number,"carbs":number,"fat":number}]}
-ingredients: every item with its exact amount and individual macros. Be specific and practical.`;
+{"food_name":"string","estimated_weight_grams":number,"calories":number,"protein":number,"carbs":number,"fat":number,"fiber_g":number,"cholesterol_mg":number,"sodium_mg":number,"vitamin_c_mg":number,"vitamin_d_mcg":number,"calcium_mg":number,"iron_mg":number,"confidence":"high","ingredients":[{"name":"string","amount":"string","calories":number,"protein":number,"carbs":number,"fat":number}]}
+micronutrients are for the total meal. ingredients: every item with its exact amount and individual macros. Be specific and practical.`;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
