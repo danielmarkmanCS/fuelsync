@@ -6,10 +6,10 @@ import { db } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
 
-const BG     = '#F0F5FF';
+const BG     = '#F3F6FD';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E6EEFF';
-const EDGE   = 'rgba(30,64,220,0.09)';
+const SURF2  = '#EAF0FF';
+const EDGE   = 'rgba(30,64,220,0.07)';
 const TEXT   = '#080F30';
 const MUTED  = '#5E71A8';
 const BLUE   = '#1E40DC';
@@ -19,7 +19,7 @@ const CYAN   = '#00BDD0';
 const ORANGE = '#FF8B00';
 const RED    = '#EF3340';
 const PURPLE = '#8034E0';
-const CARD_SHADOW = '0 2px 20px rgba(30,64,220,0.08), 0 1px 4px rgba(0,0,0,0.05)';
+const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
@@ -194,8 +194,9 @@ export default function ProfileSetupScreen() {
               { label: 'BMI',  value: bmi?.toString() ?? '—',  unit: bmiInfo?.label ?? '',  color: bmiInfo?.color ?? BLUE, desc: 'Body mass index' },
             ].map(({ label, value, unit, color, desc }) => (
               <div key={label} style={{
-                background: SURF, borderRadius: 16, padding: '14px 12px',
-                border: `1px solid ${EDGE}`, borderTop: `3px solid ${color}`,
+                background: `linear-gradient(160deg, ${color}06 0%, #FFFFFF 50%, #FAFCFF 100%)`,
+                borderRadius: 16, padding: '14px 12px',
+                border: `1px solid ${color}18`, borderTop: `3px solid ${color}`,
                 boxShadow: CARD_SHADOW, textAlign: 'center',
               }}>
                 <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color, textTransform: 'uppercase', marginBottom: 6 }}>
@@ -338,11 +339,11 @@ export default function ProfileSetupScreen() {
 
         <button onClick={handleSave} disabled={saving} className="nrc-press" style={{
           width: '100%', padding: '17px 0', borderRadius: 16, marginBottom: 14,
-          background: saved ? `${GREEN}12` : saving ? SURF2 : `linear-gradient(135deg, ${BLUE}, ${BLUE2})`,
+          background: saved ? `${GREEN}12` : saving ? SURF2 : `linear-gradient(135deg, ${BLUE} 0%, ${BLUE2} 100%)`,
           color: saved ? GREEN : saving ? MUTED : '#fff',
           fontWeight: 900, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer',
           border: saved ? `1px solid ${GREEN}35` : '1px solid transparent',
-          boxShadow: (!saved && !saving) ? `0 6px 24px ${BLUE}40` : 'none',
+          boxShadow: (!saved && !saving) ? `0 4px 16px ${BLUE}35, 0 8px 32px ${BLUE}20, inset 0 1px 0 rgba(255,255,255,0.18)` : 'none',
           transition: 'all 0.25s',
           letterSpacing: 0.5,
         }}>
@@ -351,7 +352,8 @@ export default function ProfileSetupScreen() {
 
         {/* Account Section */}
         <div style={{
-          background: SURF, borderRadius: 18, padding: '18px 18px',
+          background: 'linear-gradient(160deg, #FFFFFF 0%, #FAFCFF 100%)',
+          borderRadius: 18, padding: '18px 18px',
           border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
         }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>

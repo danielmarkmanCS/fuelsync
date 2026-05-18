@@ -4,10 +4,10 @@ import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
 
-const BG     = '#F0F5FF';
+const BG     = '#F3F6FD';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E6EEFF';
-const EDGE   = 'rgba(30,64,220,0.09)';
+const SURF2  = '#EAF0FF';
+const EDGE   = 'rgba(30,64,220,0.07)';
 const TEXT   = '#080F30';
 const MUTED  = '#5E71A8';
 const BLUE   = '#1E40DC';
@@ -17,7 +17,7 @@ const ORANGE = '#FF8B00';
 const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
 const RED    = '#EF3340';
-const CARD_SHADOW = '0 2px 16px rgba(30,64,220,0.07), 0 1px 3px rgba(0,0,0,0.04)';
+const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -594,15 +594,25 @@ export default function FoodScreen() {
       {/* ── FOOD LOG ── */}
       <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
         {byMeal.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '56px 20px' }}>
-            <div style={{ fontSize: 72, fontWeight: 900, letterSpacing: -6, color: 'rgba(30,64,220,0.06)', marginBottom: 16, lineHeight: 1 }}>
-              EMPTY
+          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+            {/* Plate illustration */}
+            <div className="float" style={{ display: 'inline-block', marginBottom: 20 }}>
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <circle cx="40" cy="40" r="36" fill="rgba(30,64,220,0.04)" stroke="rgba(30,64,220,0.10)" strokeWidth="1.5" />
+                <circle cx="40" cy="40" r="26" fill="rgba(30,64,220,0.04)" stroke="rgba(30,64,220,0.08)" strokeWidth="1" strokeDasharray="3 4" />
+                <path d="M30 38 Q40 30 50 38 Q40 46 30 38Z" fill="rgba(30,64,220,0.10)" />
+                <circle cx="40" cy="38" r="5" fill="rgba(30,64,220,0.14)" />
+                <line x1="40" y1="20" x2="40" y2="14" stroke="rgba(30,64,220,0.20)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="37" y1="20" x2="37" y2="15" stroke="rgba(30,64,220,0.12)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="43" y1="20" x2="43" y2="15" stroke="rgba(30,64,220,0.12)" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M48 14 Q52 16 52 20 Q52 24 48 24" stroke="rgba(30,64,220,0.20)" strokeWidth="2" strokeLinecap="round" fill="none" />
+              </svg>
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 8 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8, letterSpacing: -0.5 }}>
               Nothing logged yet
             </div>
-            <div style={{ color: MUTED, fontSize: 13, fontWeight: 500, lineHeight: 1.6, marginBottom: 20 }}>
-              Tap the + button to log your first meal — use AI Smart to make it effortless.
+            <div style={{ color: MUTED, fontSize: 13, fontWeight: 500, lineHeight: 1.65, maxWidth: 260, margin: '0 auto 24px' }}>
+              Tap <strong style={{ color: BLUE }}>+</strong> to log a meal — describe anything in plain English and AI will handle the rest.
             </div>
           </div>
         ) : byMeal.map(({ meal, entries }) => {
@@ -638,12 +648,18 @@ export default function FoodScreen() {
           className="nrc-press fab-pulse"
           style={{
             position: 'fixed', bottom: 84, right: 'max(20px, calc(50vw - 220px))',
-            width: 58, height: 58, borderRadius: 29,
-            background: `linear-gradient(135deg, ${CYAN}, ${BLUE})`,
-            border: 'none', cursor: 'pointer', fontSize: 30, fontWeight: 900,
+            width: 60, height: 60, borderRadius: 30,
+            background: `linear-gradient(135deg, ${CYAN} 0%, ${BLUE} 100%)`,
+            border: 'none', cursor: 'pointer',
             color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 4px 20px ${BLUE}50, 0 1px 4px rgba(0,0,0,0.15)`,
           }}
-        >+</button>
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
       )}
 
       {/* ── UNDO TOAST ── */}
@@ -671,7 +687,7 @@ export default function FoodScreen() {
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: SURF, borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(30,64,220,0.12)' }}>
+          <div style={{ background: 'linear-gradient(160deg, #FFFFFF 0%, #FAFCFF 100%)', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -12px 48px rgba(30,64,220,0.15), 0 -1px 0 rgba(30,64,220,0.06)' }}>
 
             <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
               <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(30,64,220,0.15)' }} />
@@ -974,10 +990,11 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
   const hasIngredients = entry.ingredients && entry.ingredients.length > 1;
   const accentColor = getDominantColor(Number(entry.protein), Number(entry.carbs), Number(entry.fat));
   return (
-    <div style={{
-      background: SURF, borderRadius: 18, marginBottom: 10,
-      border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW,
-      borderLeft: `4px solid ${accentColor}`,
+    <div className="card-lift" style={{
+      background: `linear-gradient(135deg, ${accentColor}05 0%, #FFFFFF 30%, #FAFCFF 100%)`,
+      borderRadius: 18, marginBottom: 10,
+      border: `1px solid ${accentColor}18`, overflow: 'hidden', boxShadow: CARD_SHADOW,
+      borderLeft: `3px solid ${accentColor}`,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px 12px' }}>
         {entry.image_url && (

@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG     = '#F0F5FF';
+const BG     = '#F3F6FD';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E6EEFF';
-const EDGE   = 'rgba(30,64,220,0.09)';
+const SURF2  = '#EAF0FF';
+const EDGE   = 'rgba(30,64,220,0.07)';
 const TEXT   = '#080F30';
 const MUTED  = '#5E71A8';
 const BLUE   = '#1E40DC';
@@ -15,7 +15,7 @@ const ORANGE = '#FF8B00';
 const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
 const RED    = '#EF3340';
-const CARD_SHADOW = '0 2px 16px rgba(30,64,220,0.07), 0 1px 3px rgba(0,0,0,0.04)';
+const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -171,12 +171,10 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
                   )}
                   <div style={{
                     width: '100%', height: barH,
-                    background: isToday
-                      ? `linear-gradient(180deg, ${color}CC 0%, ${color} 100%)`
-                      : color,
+                    background: `linear-gradient(180deg, ${color}88 0%, ${color} 100%)`,
                     borderRadius: '5px 5px 3px 3px',
-                    boxShadow: isToday ? `0 0 12px ${color}50` : 'none',
-                    opacity: isToday ? 1 : 0.72,
+                    boxShadow: isToday ? `0 0 14px ${color}55, 0 2px 6px ${color}30` : `0 1px 4px ${color}20`,
+                    opacity: isToday ? 1 : 0.78,
                     transition: 'height 0.6s cubic-bezier(0.4,0,0.2,1)',
                   }} />
                 </div>
@@ -412,10 +410,11 @@ export default function HistoryScreen() {
               const perfCol  = pct >= 85 && pct <= 110 ? GREEN : pct > 110 ? RED : BLUE;
 
               return (
-                <div key={day.date} style={{
-                  background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`,
+                <div key={day.date} className="card-lift" style={{
+                  background: `linear-gradient(135deg, ${barColor}05 0%, #FFFFFF 35%, #FAFCFF 100%)`,
+                  borderRadius: 20, border: `1px solid ${barColor}18`,
                   marginBottom: 12, overflow: 'hidden', boxShadow: CARD_SHADOW,
-                  borderLeft: `4px solid ${barColor}`,
+                  borderLeft: `3px solid ${barColor}`,
                 }}>
                   <button
                     onClick={() => setExpanded(isOpen ? null : day.date)}

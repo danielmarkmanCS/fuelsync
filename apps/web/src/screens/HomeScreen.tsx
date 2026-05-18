@@ -10,10 +10,10 @@ import { computeMacros } from '@mobile/services/nutritionEngine';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 
-const BG     = '#F0F5FF';
+const BG     = '#F3F6FD';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E6EEFF';
-const EDGE   = 'rgba(30,64,220,0.09)';
+const SURF2  = '#EAF0FF';
+const EDGE   = 'rgba(30,64,220,0.07)';
 const TEXT   = '#080F30';
 const MUTED  = '#5E71A8';
 const BLUE   = '#1E40DC';
@@ -24,7 +24,7 @@ const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
 const YELLOW = '#FFC107';
 const RED    = '#EF3340';
-const CARD_SHADOW = '0 2px 20px rgba(30,64,220,0.08), 0 1px 4px rgba(0,0,0,0.05)';
+const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
 
 const ACTIVITY_MULT: Record<string, number> = {
   sedentary: 0.4, light: 0.65, moderate: 1.0, very_active: 1.7, extra_active: 2.4,
@@ -220,7 +220,8 @@ function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: 
 
   return (
     <div style={{
-      background: SURF, borderRadius: 20, padding: '20px 20px 16px',
+      background: 'linear-gradient(160deg, #FFFFFF 0%, #F8FAFF 100%)',
+      borderRadius: 20, padding: '20px 20px 16px',
       border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
     }}>
       {macros.map(({ id, label, current, target, color }, i) => {
@@ -230,10 +231,13 @@ function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: 
         const remaining = Math.max(0, Math.round(target - current));
 
         return (
-          <div key={id} style={{ marginBottom: i < 2 ? 18 : 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: c, textTransform: 'uppercase' }}>
-                {label}
+          <div key={id} style={{ marginBottom: i < 2 ? 20 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 3, background: c, flexShrink: 0 }} />
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: c, textTransform: 'uppercase' }}>
+                  {label}
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
                 <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: c, lineHeight: 1 }}>
@@ -244,14 +248,15 @@ function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: 
                 </span>
               </div>
             </div>
-            <div style={{ height: 7, background: `${c}14`, borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: 8, background: `${c}12`, borderRadius: 6, overflow: 'hidden' }}>
               <div
                 className="bar-ani"
                 style={{
                   height: '100%', width: `${pct}%`,
-                  background: `linear-gradient(90deg, ${c}70, ${c})`,
-                  borderRadius: 5,
+                  background: `linear-gradient(90deg, ${c}55, ${c}CC, ${c})`,
+                  borderRadius: 6,
                   transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)',
+                  boxShadow: `0 0 8px ${c}40`,
                 }}
               />
             </div>
@@ -306,11 +311,12 @@ function RecoveryCard({ recovery }: { recovery: { label: string; color: string; 
 
   return (
     <div style={{
-      background: SURF, borderRadius: 18, padding: '16px 18px',
-      border: `1px solid ${EDGE}`,
-      borderLeft: `4px solid ${recovery.color}`,
+      background: `linear-gradient(135deg, ${recovery.color}08 0%, #FFFFFF 50%, #FAFCFF 100%)`,
+      borderRadius: 18, padding: '16px 18px',
+      border: `1px solid ${recovery.color}22`,
+      borderLeft: `3px solid ${recovery.color}`,
       display: 'flex', alignItems: 'center', gap: 16,
-      boxShadow: `0 2px 20px ${recovery.color}10, 0 1px 4px rgba(0,0,0,0.04)`,
+      boxShadow: `0 1px 2px rgba(10,22,40,0.04), 0 4px 20px ${recovery.color}14, 0 0 0 1px ${recovery.color}08`,
     }}>
       {/* Gauge */}
       <div style={{ position: 'relative', flexShrink: 0, width: S, height: S }}>
@@ -767,12 +773,22 @@ export default function HomeScreen() {
             </div>
           )}
           <div style={{
-            background: SURF, borderRadius: weatherRec ? '0 0 24px 24px' : 24,
-            padding: '24px 20px 20px',
-            boxShadow: '0 6px 30px rgba(30,64,220,0.10)', border: `1px solid ${EDGE}`,
+            background: 'linear-gradient(160deg, #FFFFFF 0%, #F6F9FF 100%)',
+            borderRadius: weatherRec ? '0 0 24px 24px' : 24,
+            padding: '28px 20px 24px',
+            boxShadow: CARD_SHADOW, border: `1px solid ${EDGE}`,
             borderTop: weatherRec ? 'none' : undefined,
             display: 'flex', flexDirection: 'column', alignItems: 'center',
+            position: 'relative', overflow: 'hidden',
           }}>
+            {/* Ambient glow behind ring */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -55%)',
+              width: 200, height: 200, borderRadius: '50%',
+              background: `radial-gradient(circle, ${calPct >= 100 ? RED : calPct >= 78 ? GREEN : BLUE}0A 0%, transparent 70%)`,
+              pointerEvents: 'none',
+            }} />
             <CalRing pct={calPct} cal={consumed.calories} target={targets.calories} />
           </div>
         </div>
