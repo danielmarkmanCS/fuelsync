@@ -670,7 +670,7 @@ export default function FoodScreen() {
           display: 'flex', alignItems: 'center', gap: 14,
           boxShadow: '0 4px 20px rgba(10,22,40,0.25)',
           zIndex: 200, maxWidth: 340, width: 'calc(100vw - 40px)',
-          animation: 'slideUp 0.3s ease both',
+          animation: 'slideUpCenter 0.3s ease both',
         }}>
           <div style={{ flex: 1, fontSize: 13, color: '#FFFFFF', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Removed "{undoEntry.food_name}"

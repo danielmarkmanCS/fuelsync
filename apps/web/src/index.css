@@ -219,7 +219,7 @@ input[type="number"] { -moz-appearance: textfield; }
   0%, 100% { box-shadow: 0 4px 24px rgba(30,64,220,0.45), 0 0 0 0 rgba(30,64,220,0.3); }
   50%       { box-shadow: 0 6px 30px rgba(30,64,220,0.55), 0 0 0 8px rgba(30,64,220,0); }
 }
-@keyframes slideUp {
+@keyframes slideUpCenter {
   from { transform: translateX(-50%) translateY(20px); opacity: 0; }
   to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
 }
