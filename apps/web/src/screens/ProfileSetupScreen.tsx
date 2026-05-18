@@ -72,6 +72,10 @@ export default function ProfileSetupScreen() {
 
   const profileComplete = user?.weightKg && user?.heightCm && user?.age;
 
+  const filledFields    = [displayName.trim(), weightKg, heightCm, age].filter(Boolean).length;
+  const completenessPct = Math.round((filledFields / 4) * 100);
+  const isFullyComplete = filledFields === 4;
+
   // Computed stats
   const w = parseFloat(weightKg), h = parseFloat(heightCm), a = parseInt(age, 10);
   const hasStats = !isNaN(w) && !isNaN(h) && !isNaN(a) && w > 0 && h > 0 && a > 0;
@@ -155,6 +159,29 @@ export default function ProfileSetupScreen() {
             )}
           </div>
         </div>
+
+        {/* Completeness bar */}
+        <div className="nrc-a nrc-a2" style={{ position: 'relative', zIndex: 1, marginTop: 18 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
+              {isFullyComplete ? 'Profile Complete' : `Profile ${completenessPct}% complete`}
+            </div>
+            {isFullyComplete
+              ? <div style={{ fontSize: 10, fontWeight: 800, color: GREEN }}>✓ All Set</div>
+              : <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>
+                  {4 - filledFields} field{4 - filledFields !== 1 ? 's' : ''} remaining
+                </div>
+            }
+          </div>
+          <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', width: `${completenessPct}%`,
+              background: isFullyComplete ? GREEN : 'rgba(255,255,255,0.75)',
+              borderRadius: 3, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
+            }} />
+          </div>
+        </div>
+
       </div>
 
       {/* ── COMPUTED STATS ── */}

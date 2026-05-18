@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNutrition } from '../hooks/useNutrition';
 import { useAuthStore } from '../store/authStore';
 import { useNutritionStore } from '../store/nutritionStore';
@@ -89,11 +89,38 @@ function getHeaderGradient(hour: number): string {
   return 'linear-gradient(145deg, #070412 0%, #100828 40%, #180C50 100%)';
 }
 
+// ── COUNT-UP ANIMATION HOOK ────────────────────────────────────
+function useCountUp(to: number, duration = 750): number {
+  const [val, setVal] = useState(0);
+  const frameRef = useRef<number>();
+  const prevTo   = useRef(0);
+  useEffect(() => {
+    if (prevTo.current === to) return;
+    const from = prevTo.current;
+    prevTo.current = to;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const p    = Math.min((now - t0) / duration, 1);
+      const ease = 1 - (1 - p) * (1 - p);
+      setVal(Math.round(from + (to - from) * ease));
+      if (p < 1) frameRef.current = requestAnimationFrame(step);
+    };
+    frameRef.current = requestAnimationFrame(step);
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
+  }, [to, duration]);
+  return val;
+}
+
 // ── CALORIE RING ─────────────────────────────────────────────────
 function CalRing({ pct, cal, target }: { pct: number; cal: number; target: number }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
+  const displayCal = useCountUp(mounted ? cal : 0);
+  const displayPct = mounted ? pct : 0;
+
   const S = 220, W = 13, r = (S - W * 2) / 2;
   const circ = 2 * Math.PI * r;
-  const arc  = Math.min(pct / 100, 1) * circ;
+  const arc  = Math.min(displayPct / 100, 1) * circ;
   const over = pct >= 100;
   const onTrack = pct >= 78 && pct < 100;
   const gradId = over ? 'ringOver' : 'ringNormal';
@@ -155,7 +182,7 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
           color: over ? RED : onTrack ? GREEN : TEXT,
           transition: 'color 0.4s',
         }}>
-          {Math.round(cal).toLocaleString()}
+          {displayCal.toLocaleString()}
         </div>
         <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, marginTop: 4, letterSpacing: 0.3 }}>
           of <span style={{ color: over ? RED : BLUE, fontWeight: 800 }}>
@@ -236,6 +263,35 @@ function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: 
           </div>
         );
       })}
+
+      {/* ── CALORIC SPLIT BAR ── */}
+      {(() => {
+        const tot = consumed.proteinG * 4 + consumed.carbsG * 4 + consumed.fatG * 9;
+        if (tot <= 0) return null;
+        const pP = Math.round(consumed.proteinG * 4 / tot * 100);
+        const cP = Math.round(consumed.carbsG   * 4 / tot * 100);
+        const fP = Math.max(0, 100 - pP - cP);
+        return (
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${EDGE}` }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+              Caloric Split
+            </div>
+            <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', gap: 1 }}>
+              <div style={{ width: `${pP}%`, background: RED,    transition: 'width 0.8s ease' }} />
+              <div style={{ width: `${cP}%`, background: CYAN,   transition: 'width 0.8s ease' }} />
+              <div style={{ width: `${fP}%`, background: PURPLE, transition: 'width 0.8s ease', borderRadius: '0 6px 6px 0' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 7 }}>
+              {[['Protein', pP, RED], ['Carbs', cP, CYAN], ['Fat', fP, PURPLE]].map(([lbl, pct, color]) => (
+                <div key={String(lbl)} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: String(color) }} />
+                  <span style={{ fontSize: 10, color: String(color), fontWeight: 700 }}>{lbl} {pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

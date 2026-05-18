@@ -26,6 +26,10 @@ const MEAL_LABEL: Record<MealType, string> = {
   lunch: 'Lunch', post_workout: 'Post-Workout', dinner: 'Dinner', snack: 'Snack',
 };
 
+const MEAL_ICON: Record<string, string> = {
+  breakfast: '🌅', pre_workout: '⚡', lunch: '☀️', post_workout: '💪', dinner: '🌙', snack: '🍎', other: '🍽️',
+};
+
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
 type SuggestCtx = typeof SUGGEST_CTX[number];
 const CTX_LABEL: Record<SuggestCtx, string> = {
@@ -555,6 +559,38 @@ export default function FoodScreen() {
         </div>
       </div>
 
+      {/* ── REMAINING MACROS ── */}
+      {isToday && targets && (consumed.protein > 0 || consumed.carbs > 0 || consumed.fat > 0) && (
+        <div className="nrc-a nrc-a3" style={{ padding: '10px 22px 0' }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { label: 'Protein', got: consumed.protein, need: targets.proteinG ?? 0, color: RED    },
+              { label: 'Carbs',   got: consumed.carbs,   need: targets.carbsG   ?? 0, color: CYAN   },
+              { label: 'Fat',     got: consumed.fat,      need: targets.fatG     ?? 0, color: PURPLE },
+            ].map(({ label, got, need, color }) => {
+              const rem  = need - got;
+              const over = rem < 0;
+              const disp = Math.abs(Math.round(rem));
+              return (
+                <div key={label} style={{
+                  flex: 1, textAlign: 'center', padding: '9px 6px',
+                  background: over ? `${color}08` : SURF,
+                  borderRadius: 12, border: `1px solid ${over ? color + '30' : EDGE}`,
+                  boxShadow: over ? `0 2px 12px ${color}14` : CARD_SHADOW,
+                }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: over ? color : TEXT, letterSpacing: -0.5, lineHeight: 1 }}>
+                    {over ? `+${disp}` : disp}g
+                  </div>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: over ? color : MUTED, letterSpacing: 0.8, marginTop: 3, textTransform: 'uppercase' }}>
+                    {over ? `${label} over` : `${label} left`}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── FOOD LOG ── */}
       <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
         {byMeal.length === 0 ? (
@@ -574,7 +610,8 @@ export default function FoodScreen() {
           return (
             <div key={meal} style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ fontSize: 15, lineHeight: 1 }}>{MEAL_ICON[meal] ?? '🍽️'}</span>
                   <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>
                     {MEAL_LABEL[meal as MealType] ?? 'Other'}
                   </div>

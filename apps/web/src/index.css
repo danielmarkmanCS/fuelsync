@@ -204,6 +204,20 @@ input[type="number"] { -moz-appearance: textfield; }
   0%, 100% { box-shadow: 0 4px 24px rgba(30,64,220,0.45), 0 0 0 0 rgba(30,64,220,0.3); }
   50%       { box-shadow: 0 6px 30px rgba(30,64,220,0.55), 0 0 0 8px rgba(30,64,220,0); }
 }
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+@keyframes milestoneIn {
+  0%   { transform: scale(0.88) translateY(8px); opacity: 0; }
+  65%  { transform: scale(1.03) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes numberPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
 
 /* ── ANIMATION UTILITY CLASSES ───────────────────── */
 .orb1 { animation: orbFloat1  9s ease-in-out infinite; pointer-events: none; }
@@ -215,8 +229,10 @@ input[type="number"] { -moz-appearance: textfield; }
 .celebrate { animation: celebrate 0.65s var(--spring) both; }
 .float     { animation: float 4s ease-in-out infinite; }
 .notif-pop { animation: notifPop 0.38s var(--spring) both; }
-.bar-ani   { animation: barFillAni 0.95s var(--ease) both; }
-.fab-pulse { animation: fabPulse 2.8s ease-in-out infinite; }
+.bar-ani        { animation: barFillAni   0.95s var(--ease) both; }
+.fab-pulse      { animation: fabPulse    2.8s ease-in-out infinite; }
+.milestone-in   { animation: milestoneIn 0.5s var(--spring) both; }
+.number-pop     { animation: numberPop   0.35s var(--spring) both; }
 
 /* ── GLASS MORPHISM ──────────────────────────────── */
 .glass {

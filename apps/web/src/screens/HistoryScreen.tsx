@@ -73,6 +73,37 @@ function calcStreak(days: DaySummary[]): number {
   return streak;
 }
 
+// ── STREAK MILESTONE ──────────────────────────────────────────────
+function StreakMilestone({ streak }: { streak: number }) {
+  if (streak < 3) return null;
+  const milestones = [
+    { min: 30, label: 'ELITE ATHLETE', emoji: '🏆', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
+    { min: 14, label: 'COMMITTED',     emoji: '🎯', color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
+    { min: 7,  label: 'ON FIRE',       emoji: '🔥', color: ORANGE,    msg: '7 day streak — a perfect week of fuel tracking.' },
+    { min: 3,  label: 'BUILDING',      emoji: '⚡', color: BLUE2,     msg: '3 day streak — momentum is everything. Keep going.' },
+  ];
+  const m = milestones.find((x) => streak >= x.min)!;
+  return (
+    <div className="milestone-in" style={{
+      background: `linear-gradient(135deg, ${m.color}18, ${m.color}06)`,
+      border: `1px solid ${m.color}40`,
+      borderRadius: 20, padding: '18px 20px', marginBottom: 16,
+      display: 'flex', alignItems: 'center', gap: 16,
+      boxShadow: `0 4px 24px ${m.color}18`,
+    }}>
+      <div style={{ fontSize: 42, lineHeight: 1, flexShrink: 0 }}>{m.emoji}</div>
+      <div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: m.color, textTransform: 'uppercase', marginBottom: 4 }}>
+          {streak} Day Streak · {m.label}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, lineHeight: 1.4 }}>
+          {m.msg}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── WEEKLY BAR CHART ──────────────────────────────────────────────
 function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
   const today = new Date();
@@ -83,17 +114,31 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
     return d.toISOString().split('T')[0];
   });
 
-  const dayMap = new Map(days.map(d => [d.date, d]));
-  const maxCal = Math.max(goalCal * 1.2, ...week.map(d => dayMap.get(d)?.totalCal ?? 0), 1);
-  const CHART_H = 80;
+  const dayMap    = new Map(days.map(d => [d.date, d]));
+  const maxCal    = Math.max(goalCal * 1.2, ...week.map(d => dayMap.get(d)?.totalCal ?? 0), 1);
+  const CHART_H   = 80;
+  const weekTotal  = week.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
+  const daysLogged = week.filter(d => (dayMap.get(d)?.totalCal ?? 0) > 0).length;
 
   return (
     <div style={{
       background: SURF, borderRadius: 20, padding: '18px 16px 14px',
       border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW,
     }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
-        This Week
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
+          This Week
+        </div>
+        {weekTotal > 0 && (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1.2, color: TEXT, lineHeight: 1 }}>
+              {weekTotal.toLocaleString()}
+            </div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>
+              kcal · {daysLogged} day{daysLogged !== 1 ? 's' : ''}
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ position: 'relative' }}>
@@ -354,6 +399,9 @@ export default function HistoryScreen() {
             {totalDays > 0 && (
               <StatsRow streak={streak} totalDays={totalDays} avgCal={avgCal} goalCal={goalCal} />
             )}
+
+            {/* Streak milestone */}
+            {streak >= 3 && <StreakMilestone streak={streak} />}
 
             {/* Day cards */}
             {days.map((day) => {
