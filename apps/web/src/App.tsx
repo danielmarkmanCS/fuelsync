@@ -235,7 +235,7 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#EEF4FF', overflow: 'hidden',
+      background: '#0E1117', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {activeTab === 'home'    && <HomeScreen />}
@@ -246,11 +246,11 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(255,255,255,0.96)',
-        borderTop: '1px solid rgba(30,64,220,0.07)',
+        background: 'rgba(18,22,32,0.97)',
+        borderTop: '1px solid rgba(255,255,255,0.07)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        boxShadow: '0 -6px 24px rgba(30,64,220,0.07)',
+        boxShadow: '0 -6px 32px rgba(0,0,0,0.5)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,

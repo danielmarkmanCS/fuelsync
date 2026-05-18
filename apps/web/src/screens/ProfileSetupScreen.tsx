@@ -6,12 +6,12 @@ import { db } from '../lib/db';
 import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
 
-const BG     = '#F3F6FD';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EAF0FF';
-const EDGE   = 'rgba(30,64,220,0.07)';
-const TEXT   = '#080F30';
-const MUTED  = '#5E71A8';
+const BG     = '#0E1117';
+const SURF   = '#161B27';
+const SURF2  = '#1D2333';
+const EDGE   = 'rgba(255,255,255,0.07)';
+const TEXT   = '#DCE6FF';
+const MUTED  = '#5A6990';
 const BLUE   = '#1E40DC';
 const BLUE2  = '#4B6FFF';
 const GREEN  = '#05C56B';
@@ -19,7 +19,7 @@ const CYAN   = '#00BDD0';
 const ORANGE = '#FF8B00';
 const RED    = '#EF3340';
 const PURPLE = '#8034E0';
-const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
+const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
@@ -194,7 +194,7 @@ export default function ProfileSetupScreen() {
               { label: 'BMI',  value: bmi?.toString() ?? '—',  unit: bmiInfo?.label ?? '',  color: bmiInfo?.color ?? BLUE, desc: 'Body mass index' },
             ].map(({ label, value, unit, color, desc }) => (
               <div key={label} style={{
-                background: `linear-gradient(160deg, ${color}06 0%, #FFFFFF 50%, #FAFCFF 100%)`,
+                background: `linear-gradient(160deg, ${color}20 0%, ${SURF} 60%)`,
                 borderRadius: 16, padding: '14px 12px',
                 border: `1px solid ${color}18`, borderTop: `3px solid ${color}`,
                 boxShadow: CARD_SHADOW, textAlign: 'center',
@@ -352,7 +352,7 @@ export default function ProfileSetupScreen() {
 
         {/* Account Section */}
         <div style={{
-          background: 'linear-gradient(160deg, #FFFFFF 0%, #FAFCFF 100%)',
+          background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
           borderRadius: 18, padding: '18px 18px',
           border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
         }}>

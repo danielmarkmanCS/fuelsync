@@ -4,12 +4,12 @@ import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
 
-const BG     = '#F3F6FD';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EAF0FF';
-const EDGE   = 'rgba(30,64,220,0.07)';
-const TEXT   = '#080F30';
-const MUTED  = '#5E71A8';
+const BG     = '#0E1117';
+const SURF   = '#161B27';
+const SURF2  = '#1D2333';
+const EDGE   = 'rgba(255,255,255,0.07)';
+const TEXT   = '#DCE6FF';
+const MUTED  = '#5A6990';
 const BLUE   = '#1E40DC';
 const BLUE2  = '#4B6FFF';
 const GREEN  = '#05C56B';
@@ -17,7 +17,7 @@ const ORANGE = '#FF8B00';
 const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
 const RED    = '#EF3340';
-const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
+const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -446,7 +446,7 @@ export default function FoodScreen() {
         padding: '44px 22px 22px', position: 'relative', overflow: 'hidden',
       }}>
         <div className="orb1" style={{ position: 'absolute', top: -20, right: 5, width: 150, height: 150, borderRadius: '50%', background: 'rgba(0,189,208,0.12)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: -20, left: -5, width: 100, height: 100, borderRadius: '50%', background: 'rgba(30,64,220,0.08)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: -20, left: -5, width: 100, height: 100, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 10, textTransform: 'uppercase' }}>Fuel Log</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -518,7 +518,7 @@ export default function FoodScreen() {
               </div>
             )}
           </div>
-          <div style={{ height: 7, background: 'rgba(30,64,220,0.07)', borderRadius: 4, overflow: 'hidden', marginBottom: 18 }}>
+          <div style={{ height: 7, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 18 }}>
             <div
               className="bar-ani"
               style={{
@@ -598,14 +598,14 @@ export default function FoodScreen() {
             {/* Plate illustration */}
             <div className="float" style={{ display: 'inline-block', marginBottom: 20 }}>
               <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                <circle cx="40" cy="40" r="36" fill="rgba(30,64,220,0.04)" stroke="rgba(30,64,220,0.10)" strokeWidth="1.5" />
-                <circle cx="40" cy="40" r="26" fill="rgba(30,64,220,0.04)" stroke="rgba(30,64,220,0.08)" strokeWidth="1" strokeDasharray="3 4" />
-                <path d="M30 38 Q40 30 50 38 Q40 46 30 38Z" fill="rgba(30,64,220,0.10)" />
-                <circle cx="40" cy="38" r="5" fill="rgba(30,64,220,0.14)" />
-                <line x1="40" y1="20" x2="40" y2="14" stroke="rgba(30,64,220,0.20)" strokeWidth="2" strokeLinecap="round" />
-                <line x1="37" y1="20" x2="37" y2="15" stroke="rgba(30,64,220,0.12)" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="43" y1="20" x2="43" y2="15" stroke="rgba(30,64,220,0.12)" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M48 14 Q52 16 52 20 Q52 24 48 24" stroke="rgba(30,64,220,0.20)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                <circle cx="40" cy="40" r="36" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+                <circle cx="40" cy="40" r="26" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="3 4" />
+                <path d="M30 38 Q40 30 50 38 Q40 46 30 38Z" fill="rgba(75,111,255,0.20)" />
+                <circle cx="40" cy="38" r="5" fill="rgba(75,111,255,0.28)" />
+                <line x1="40" y1="20" x2="40" y2="14" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="37" y1="20" x2="37" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="43" y1="20" x2="43" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M48 14 Q52 16 52 20 Q52 24 48 24" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" fill="none" />
               </svg>
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8, letterSpacing: -0.5 }}>
@@ -687,10 +687,10 @@ export default function FoodScreen() {
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: 'linear-gradient(160deg, #FFFFFF 0%, #FAFCFF 100%)', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -12px 48px rgba(30,64,220,0.15), 0 -1px 0 rgba(30,64,220,0.06)' }}>
+          <div style={{ background: SURF, borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -12px 48px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.07)' }}>
 
             <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(30,64,220,0.15)' }} />
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.18)' }} />
             </div>
 
             <div style={{ padding: '16px 22px 44px' }}>
@@ -744,7 +744,7 @@ export default function FoodScreen() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     gap: 12, padding: '32px 20px', borderRadius: 16,
                     border: `2px dashed ${aiLoading ? EDGE : BLUE}`,
-                    background: aiLoading ? SURF2 : 'rgba(30,64,220,0.03)',
+                    background: aiLoading ? SURF2 : SURF,
                     cursor: aiLoading ? 'not-allowed' : 'pointer',
                   }}>
                     <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} disabled={aiLoading}
@@ -991,7 +991,7 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
   const accentColor = getDominantColor(Number(entry.protein), Number(entry.carbs), Number(entry.fat));
   return (
     <div className="card-lift" style={{
-      background: `linear-gradient(135deg, ${accentColor}05 0%, #FFFFFF 30%, #FAFCFF 100%)`,
+      background: `linear-gradient(135deg, ${accentColor}18 0%, ${SURF} 50%)`,
       borderRadius: 18, marginBottom: 10,
       border: `1px solid ${accentColor}18`, overflow: 'hidden', boxShadow: CARD_SHADOW,
       borderLeft: `3px solid ${accentColor}`,

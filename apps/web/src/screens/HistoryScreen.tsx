@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG     = '#F3F6FD';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EAF0FF';
-const EDGE   = 'rgba(30,64,220,0.07)';
-const TEXT   = '#080F30';
-const MUTED  = '#5E71A8';
+const BG     = '#0E1117';
+const SURF   = '#161B27';
+const SURF2  = '#1D2333';
+const EDGE   = 'rgba(255,255,255,0.07)';
+const TEXT   = '#DCE6FF';
+const MUTED  = '#5A6990';
 const BLUE   = '#1E40DC';
 const BLUE2  = '#4B6FFF';
 const GREEN  = '#05C56B';
@@ -15,7 +15,7 @@ const ORANGE = '#FF8B00';
 const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
 const RED    = '#EF3340';
-const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
+const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -158,7 +158,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
             const barH  = cal > 0 ? Math.max((cal / maxCal) * CHART_H, 6) : 3;
             const pct   = goalCal > 0 ? (cal / goalCal) * 100 : 0;
             const isToday = date === todayStr;
-            const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? BLUE2 : 'rgba(30,64,220,0.12)';
+            const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? BLUE2 : 'rgba(255,255,255,0.10)';
             const dayLbl = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
 
             return (
@@ -327,7 +327,7 @@ export default function HistoryScreen() {
         padding: '52px 22px 0', position: 'relative', overflow: 'hidden',
       }}>
         <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 140, height: 140, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: 20, left: -10, width: 100, height: 100, borderRadius: '50%', background: 'rgba(30,64,220,0.08)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: 20, left: -10, width: 100, height: 100, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 5, textTransform: 'uppercase' }}>
@@ -378,7 +378,7 @@ export default function HistoryScreen() {
           </div>
         ) : allLogs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '56px 24px' }}>
-            <div style={{ fontSize: 60, fontWeight: 900, letterSpacing: -4, color: 'rgba(30,64,220,0.07)', marginBottom: 16 }}>
+            <div style={{ fontSize: 60, fontWeight: 900, letterSpacing: -4, color: 'rgba(255,255,255,0.08)', marginBottom: 16 }}>
               EMPTY
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 8 }}>
@@ -411,7 +411,7 @@ export default function HistoryScreen() {
 
               return (
                 <div key={day.date} className="card-lift" style={{
-                  background: `linear-gradient(135deg, ${barColor}05 0%, #FFFFFF 35%, #FAFCFF 100%)`,
+                  background: `linear-gradient(135deg, ${barColor}18 0%, ${SURF} 50%)`,
                   borderRadius: 20, border: `1px solid ${barColor}18`,
                   marginBottom: 12, overflow: 'hidden', boxShadow: CARD_SHADOW,
                   borderLeft: `3px solid ${barColor}`,

@@ -10,12 +10,12 @@ import { computeMacros } from '@mobile/services/nutritionEngine';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 
-const BG     = '#F3F6FD';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EAF0FF';
-const EDGE   = 'rgba(30,64,220,0.07)';
-const TEXT   = '#080F30';
-const MUTED  = '#5E71A8';
+const BG     = '#0E1117';
+const SURF   = '#161B27';
+const SURF2  = '#1D2333';
+const EDGE   = 'rgba(255,255,255,0.07)';
+const TEXT   = '#DCE6FF';
+const MUTED  = '#5A6990';
 const BLUE   = '#1E40DC';
 const BLUE2  = '#4B6FFF';
 const GREEN  = '#05C56B';
@@ -24,7 +24,7 @@ const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
 const YELLOW = '#FFC107';
 const RED    = '#EF3340';
-const CARD_SHADOW = '0 1px 2px rgba(10,22,40,0.04), 0 4px 20px rgba(30,64,220,0.07), 0 0 0 1px rgba(30,64,220,0.025)';
+const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const ACTIVITY_MULT: Record<string, number> = {
   sedentary: 0.4, light: 0.65, moderate: 1.0, very_active: 1.7, extra_active: 2.4,
@@ -220,7 +220,7 @@ function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: 
 
   return (
     <div style={{
-      background: 'linear-gradient(160deg, #FFFFFF 0%, #F8FAFF 100%)',
+      background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
       borderRadius: 20, padding: '20px 20px 16px',
       border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
     }}>
@@ -311,7 +311,7 @@ function RecoveryCard({ recovery }: { recovery: { label: string; color: string; 
 
   return (
     <div style={{
-      background: `linear-gradient(135deg, ${recovery.color}08 0%, #FFFFFF 50%, #FAFCFF 100%)`,
+      background: `linear-gradient(135deg, ${recovery.color}20 0%, ${SURF} 60%)`,
       borderRadius: 18, padding: '16px 18px',
       border: `1px solid ${recovery.color}22`,
       borderLeft: `3px solid ${recovery.color}`,
@@ -412,12 +412,86 @@ function DailyInsight({ trainingType }: { trainingType?: string }) {
   );
 }
 
+// ── WATER TRACKER ─────────────────────────────────────────────────
+function WaterTracker({ date }: { date: string }) {
+  const TARGET = 8;
+  const KEY = `fs_water_${date}`;
+  const [glasses, setGlasses] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem(KEY) ?? '0', 10) || 0; } catch { return 0; }
+  });
+
+  const update = (n: number) => {
+    const clamped = Math.max(0, Math.min(12, n));
+    setGlasses(clamped);
+    try { localStorage.setItem(KEY, String(clamped)); } catch { /* ignore */ }
+  };
+
+  const pct   = Math.min(100, (glasses / TARGET) * 100);
+  const done  = glasses >= TARGET;
+  const color = done ? GREEN : CYAN;
+
+  return (
+    <div style={{ background: SURF, borderRadius: 18, padding: '16px 18px', border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Hydration</div>
+          {done && (
+            <div style={{ padding: '2px 8px', borderRadius: 10, background: `${GREEN}20`, color: GREEN, fontSize: 9, fontWeight: 800 }}>GOAL MET</div>
+          )}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1, color, lineHeight: 1 }}>
+          {glasses}<span style={{ fontSize: 10, color: MUTED, fontWeight: 700 }}>/{TARGET}</span>
+          <span style={{ fontSize: 10, color: MUTED, fontWeight: 600, marginLeft: 4 }}>glasses</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+        {Array.from({ length: TARGET }, (_, i) => (
+          <div
+            key={i}
+            onClick={() => update(i < glasses ? i : i + 1)}
+            style={{
+              flex: 1, height: 26, borderRadius: 6,
+              background: i < glasses ? `${color}BB` : `${color}12`,
+              border: `1px solid ${i < glasses ? `${color}80` : `${color}20`}`,
+              cursor: 'pointer', transition: 'all 0.18s ease',
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ height: 5, background: `${color}12`, borderRadius: 3, overflow: 'hidden', marginBottom: 10 }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${color}80, ${color})`, borderRadius: 3, transition: 'width 0.3s ease' }} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={() => update(glasses - 1)} disabled={glasses <= 0} className="nrc-press" style={{
+          width: 36, height: 34, borderRadius: 9, flexShrink: 0,
+          background: SURF2, border: `1px solid ${EDGE}`,
+          color: glasses > 0 ? MUTED : `${MUTED}40`, fontWeight: 900, fontSize: 17, cursor: glasses > 0 ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>−</button>
+        <button onClick={() => update(glasses + 1)} disabled={glasses >= 12} className="nrc-press" style={{
+          flex: 1, height: 34, borderRadius: 9,
+          background: done ? `${GREEN}18` : `${color}12`,
+          border: `1px solid ${done ? `${GREEN}40` : `${color}25`}`,
+          color: done ? GREEN : color,
+          fontWeight: 800, fontSize: 12, letterSpacing: 0.5, cursor: glasses >= 12 ? 'default' : 'pointer',
+          opacity: glasses >= 12 ? 0.5 : 1,
+        }}>
+          {glasses >= TARGET ? '+ More' : '+ Glass  ·  250 ml'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── STEPS DISPLAY ─────────────────────────────────────────────────
 function StepsBar({ steps, color }: { steps: number; color: string }) {
   const pct = Math.min(100, (steps / 10000) * 100);
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ position: 'relative', height: 8, background: 'rgba(30,64,220,0.07)', borderRadius: 5, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 5, overflow: 'hidden' }}>
         {/* Zone markers */}
         <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: `${ORANGE}30` }} />
         <div style={{ position: 'absolute', left: '80%', top: 0, bottom: 0, width: 1, background: `${GREEN}30` }} />
@@ -583,7 +657,7 @@ export default function HomeScreen() {
         }} />
         <div className="orb2" style={{
           position: 'absolute', bottom: -40, left: -20, width: 130, height: 130,
-          borderRadius: '50%', background: 'rgba(30,64,220,0.10)',
+          borderRadius: '50%', background: 'rgba(75,111,255,0.12)',
         }} />
         <div className="orb3" style={{
           position: 'absolute', top: 50, left: '38%', width: 70, height: 70,
@@ -759,6 +833,11 @@ export default function HomeScreen() {
         </div>
       )}
 
+      {/* ── WATER TRACKER ── */}
+      <div className="nrc-a nrc-a2" style={{ padding: '14px 22px 0' }}>
+        <WaterTracker date={today} />
+      </div>
+
       {/* ── CALORIE RING ── */}
       {targets ? (
         <div className="nrc-a nrc-a2" style={{ padding: '22px 22px 0' }}>
@@ -773,7 +852,7 @@ export default function HomeScreen() {
             </div>
           )}
           <div style={{
-            background: 'linear-gradient(160deg, #FFFFFF 0%, #F6F9FF 100%)',
+            background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
             borderRadius: weatherRec ? '0 0 24px 24px' : 24,
             padding: '28px 20px 24px',
             boxShadow: CARD_SHADOW, border: `1px solid ${EDGE}`,
