@@ -479,12 +479,16 @@ export default function HistoryScreen() {
 
                   {isOpen && (
                     <div style={{ borderTop: `1px solid ${EDGE}`, background: `${BLUE}02` }}>
-                      {day.items.map((item, idx) => {
+                      {(() => {
+                        // Suppress a removed entry when an active entry with the same name exists in the same day
+                        const activeNames = new Set(day.items.filter((i) => !i.removed).map((i) => i.food_name.toLowerCase()));
+                        return day.items.filter((item) => !item.removed || !activeNames.has(item.food_name.toLowerCase()));
+                      })().map((item, idx, arr) => {
                         const isRemoved  = !!item.removed;
                         const hasIngs    = !isRemoved && item.ingredients && item.ingredients.length > 1;
                         const isFoodOpen = expandedFood === item.id;
                         return (
-                          <div key={item.id} style={{ borderBottom: idx < day.items.length - 1 ? `1px solid ${EDGE}` : 'none', opacity: isRemoved ? 0.55 : 1 }}>
+                          <div key={item.id} style={{ borderBottom: idx < arr.length - 1 ? `1px solid ${EDGE}` : 'none', opacity: isRemoved ? 0.55 : 1 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px' }}>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
