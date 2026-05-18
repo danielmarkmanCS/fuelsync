@@ -42,6 +42,13 @@ export interface LocalFoodLog {
   removed?: boolean;    // soft-delete: excluded from active log, stays in history
 }
 
+export interface WeightLog {
+  id?: number;
+  date: string;       // YYYY-MM-DD
+  weightKg: number;
+  logged_at: string;  // ISO timestamp
+}
+
 export interface PinState {
   id?: number;
   hash: string;
@@ -56,9 +63,10 @@ export interface PinState {
 }
 
 class FuelSyncDB extends Dexie {
-  profile!: Table<LocalProfile, number>;
-  food_logs!: Table<LocalFoodLog, number>;
-  pin_state!: Table<PinState, number>;
+  profile!:      Table<LocalProfile, number>;
+  food_logs!:    Table<LocalFoodLog, number>;
+  pin_state!:    Table<PinState, number>;
+  weight_logs!:  Table<WeightLog, number>;
 
   constructor() {
     super('FuelSyncDB');
@@ -69,6 +77,9 @@ class FuelSyncDB extends Dexie {
     });
     this.version(2).stores({
       food_logs:  '++id, date, logged_at, sync_id',
+    });
+    this.version(3).stores({
+      weight_logs: '++id, date',
     });
   }
 }

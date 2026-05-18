@@ -3,6 +3,10 @@ import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeigh
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
+import { searchFood, lookupBarcode } from '../api/openFoodFacts';
+import type { OFFProduct } from '../api/openFoodFacts';
+import { getRecentFoods, getFavoriteFoods, addRecentFood, toggleFavorite, isFavorite } from '../lib/recentFoods';
+import type { SavedFood } from '../lib/recentFoods';
 
 const BG     = '#0E1117';
 const SURF   = '#161B27';
@@ -197,7 +201,7 @@ export default function FoodScreen() {
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
-  const [mode,       setMode]       = useState<'ai' | 'photo' | 'manual' | 'suggest'>('ai');
+  const [mode,       setMode]       = useState<'search' | 'ai' | 'photo' | 'manual' | 'suggest'>('search');
   const [form,       setForm]       = useState<Form>(emptyForm);
   const [estimate,   setEstimate]   = useState<AIEstimate | null>(null);
   const [aiLoading,  setAiLoading]  = useState(false);
@@ -213,6 +217,32 @@ export default function FoodScreen() {
   const [loggingAll, setLoggingAll] = useState(false);
   const [editableIngredients, setEditableIngredients] = useState<IngredientItem[] | null>(null);
 
+  // Search + barcode state
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [searchResults, setSearchResults] = useState<OFFProduct[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError,   setSearchError]   = useState('');
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Barcode scanner state
+  const [scanActive,   setScanActive]   = useState(false);
+  const [scanError,    setScanError]    = useState('');
+  const [scanSupported, setScanSupported] = useState<boolean | null>(null);
+  const [manualBarcode, setManualBarcode] = useState('');
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const videoRef    = useRef<HTMLVideoElement>(null);
+  const streamRef   = useRef<MediaStream | null>(null);
+  const detectingRef = useRef(false);
+
+  // Recents + favorites
+  const [recents,   setRecents]   = useState<SavedFood[]>([]);
+  const [favorites, setFavorites] = useState<SavedFood[]>([]);
+  const [favTab,    setFavTab]    = useState<'recent' | 'fav'>('recent');
+  const [favoriteStates, setFavoriteStates] = useState<Record<string, boolean>>({});
+
+  // Copy yesterday
+  const [copyingYesterday, setCopyingYesterday] = useState(false);
+
   // Undo deleted meal
   const [undoEntry, setUndoEntry] = useState<FoodLog | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,10 +257,156 @@ export default function FoodScreen() {
   const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
+  // Load recents + favorites when sheet opens
+  useEffect(() => {
+    if (open) {
+      setRecents(getRecentFoods());
+      setFavorites(getFavoriteFoods());
+    }
+  }, [open]);
+
+  // Debounced food search
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!searchQuery.trim()) { setSearchResults([]); setSearchError(''); return; }
+    searchTimer.current = setTimeout(async () => {
+      setSearchLoading(true); setSearchError('');
+      try {
+        const results = await searchFood(searchQuery.trim());
+        setSearchResults(results);
+        if (results.length === 0) setSearchError('No results found. Try a different name.');
+      } catch { setSearchError('Search failed — check connection.'); }
+      finally { setSearchLoading(false); }
+    }, 500);
+  }, [searchQuery]);
+
+  // Barcode scanner helpers
+  const stopScan = () => {
+    detectingRef.current = false;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setScanActive(false);
+  };
+
+  const startScan = async () => {
+    setScanError('');
+    const supported = 'BarcodeDetector' in window;
+    setScanSupported(supported);
+    if (!supported) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setScanActive(true);
+        detectingRef.current = true;
+        const detector = new (window as unknown as { BarcodeDetector: new (opts: object) => { detect: (el: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector(
+          { formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'] }
+        );
+        const loop = async () => {
+          if (!detectingRef.current || !videoRef.current) return;
+          try {
+            const found = await detector.detect(videoRef.current);
+            if (found.length > 0) {
+              stopScan();
+              await handleBarcodeFound(found[0].rawValue);
+              return;
+            }
+          } catch {}
+          if (detectingRef.current) requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+    } catch { setScanError('Camera access denied.'); }
+  };
+
+  const handleBarcodeFound = async (barcode: string) => {
+    setBarcodeLoading(true); setScanError('');
+    try {
+      const product = await lookupBarcode(barcode);
+      if (!product) { setScanError(`Barcode ${barcode} not found in database.`); setBarcodeLoading(false); return; }
+      applyOFFProduct(product);
+    } catch { setScanError('Lookup failed — check connection.'); }
+    finally { setBarcodeLoading(false); }
+  };
+
+  const applyOFFProduct = (product: OFFProduct, weightG = product.servingSizeG ?? 100) => {
+    const factor = weightG / 100;
+    const protein  = Math.round(product.proteinPer100g  * factor * 10) / 10;
+    const carbs    = Math.round(product.carbsPer100g    * factor * 10) / 10;
+    const fat      = Math.round(product.fatPer100g      * factor * 10) / 10;
+    const calories = Math.round(product.caloriesPer100g * factor);
+    setBasePerGram({ protein: product.proteinPer100g / 100, carbs: product.carbsPer100g / 100, fat: product.fatPer100g / 100 });
+    setForm((f) => ({
+      ...f,
+      name:     product.name + (product.brand ? ` (${product.brand})` : ''),
+      amount:   String(weightG),
+      amountIsText: false,
+      protein:  String(protein),
+      carbs:    String(carbs),
+      fat:      String(fat),
+      calories: String(calories),
+    }));
+    setMode('manual');
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const applySavedFood = (food: SavedFood) => {
+    setBasePerGram(null);
+    setForm({
+      name:         food.food_name,
+      amount:       food.weight_grams ? String(food.weight_grams) : '1',
+      amountIsText: !food.weight_grams,
+      calories:     String(Math.round(food.calories)),
+      protein:      String(Math.round(food.protein)),
+      carbs:        String(Math.round(food.carbs)),
+      fat:          String(Math.round(food.fat)),
+      meal:         food.meal_type as MealType ?? mealFromTime(),
+    });
+    setMode('manual');
+    setSearchQuery('');
+  };
+
+  const handleCopyYesterday = async () => {
+    const yesterday = offsetDate(todayStr, -1);
+    setCopyingYesterday(true);
+    try {
+      const yesterdayLogs = await getLogs(yesterday);
+      if (yesterdayLogs.length === 0) { alert('No meals logged yesterday.'); return; }
+      for (const entry of yesterdayLogs) {
+        await addLog({
+          food_name:    entry.food_name,
+          calories:     entry.calories,
+          protein:      entry.protein,
+          carbs:        entry.carbs,
+          fat:          entry.fat,
+          weight_grams: entry.weight_grams ?? undefined,
+          meal_type:    entry.meal_type,
+          ingredients:  entry.ingredients ?? undefined,
+        });
+      }
+      playFoodLogSound();
+      fetchLogs();
+    } catch {}
+    finally { setCopyingYesterday(false); }
+  };
+
+  const handleToggleFavorite = (food: SavedFood) => {
+    const nowFav = toggleFavorite(food);
+    setFavoriteStates((prev) => ({ ...prev, [food.food_name]: nowFav }));
+    setFavorites(getFavoriteFoods());
+    setRecents(getRecentFoods());
+  };
+
   const resetSheet = () => {
     setForm(emptyForm()); setEstimate(null);
     setAiError(''); setFormError(''); setAiQuery(''); setEditingId(null); setBasePerGram(null);
     setSuggestResult(null); setEditableIngredients(null);
+    setSearchQuery(''); setSearchResults([]); setSearchError('');
+    setScanError(''); setManualBarcode('');
+    stopScan();
   };
   const closeSheet = () => { setOpen(false); resetSheet(); };
 
@@ -423,7 +599,18 @@ export default function FoodScreen() {
         image_url: estimate?.imageUrl ?? undefined,
         ingredients: editableIngredients?.length ? editableIngredients : null,
       });
-      if (!editingId) playFoodLogSound();
+      if (!editingId) {
+        playFoodLogSound();
+        addRecentFood({
+          food_name:    form.name.trim(),
+          calories:     parseFloat(form.calories),
+          protein:      parseFloat(form.protein),
+          carbs:        parseFloat(form.carbs),
+          fat:          parseFloat(form.fat),
+          weight_grams: w && !isNaN(w) ? w : null,
+          meal_type:    form.meal,
+        });
+      }
       fetchLogs(); closeSheet();
     } catch (e: unknown) { setFormError(e instanceof Error ? e.message : 'Failed to save'); }
     finally { setSubmitting(false); }
@@ -591,6 +778,22 @@ export default function FoodScreen() {
         </div>
       )}
 
+      {/* ── COPY YESTERDAY ── */}
+      {isToday && logs.length === 0 && (
+        <div style={{ padding: '12px 22px 0' }}>
+          <button onClick={handleCopyYesterday} disabled={copyingYesterday} style={{
+            width: '100%', padding: '12px 0', borderRadius: 14,
+            background: copyingYesterday ? SURF2 : `${BLUE}08`,
+            border: `1px solid ${BLUE}22`,
+            color: copyingYesterday ? MUTED : BLUE,
+            fontWeight: 700, fontSize: 13, cursor: copyingYesterday ? 'not-allowed' : 'pointer',
+            fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            {copyingYesterday ? 'Copying…' : '↩ Copy Yesterday\'s Meals'}
+          </button>
+        </div>
+      )}
+
       {/* ── FOOD LOG ── */}
       <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
         {byMeal.length === 0 ? (
@@ -702,19 +905,239 @@ export default function FoodScreen() {
               </div>
 
               {/* Mode tabs */}
-              <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24 }}>
-                {([['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
-                  <button key={m} onClick={() => { setMode(m); setAiError(''); setFormError(''); setSuggestResult(null); }} style={{
-                    flex: 1, padding: '10px 0', background: 'none', border: 'none',
+              <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24, overflowX: 'auto' }}>
+                {([['search', 'Search'], ['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
+                  <button key={m} onClick={() => {
+                    setMode(m); setAiError(''); setFormError(''); setSuggestResult(null);
+                    if (m !== 'search') { setScanActive(false); stopScan(); }
+                  }} style={{
+                    flexShrink: 0, flex: 1, padding: '10px 0', background: 'none', border: 'none',
                     borderBottom: `2px solid ${mode === m ? BLUE : 'transparent'}`,
                     marginBottom: -2,
                     color: mode === m ? BLUE : MUTED,
                     fontWeight: mode === m ? 800 : 600,
-                    fontSize: 12, cursor: 'pointer', transition: 'color 0.15s',
+                    fontSize: 11, cursor: 'pointer', transition: 'color 0.15s',
                     fontFamily: 'inherit', letterSpacing: 0.3,
                   }}>{label}</button>
                 ))}
               </div>
+
+              {/* SEARCH MODE */}
+              {mode === 'search' && !scanActive && !barcodeLoading && (
+                <>
+                  {/* Search bar + barcode button */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      <input
+                        autoFocus
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search food database (3M+ foods)…"
+                        style={{ ...inp, width: '100%', paddingRight: 36, boxSizing: 'border-box' }}
+                      />
+                      {searchLoading && (
+                        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: MUTED, fontSize: 14 }}>···</div>
+                      )}
+                      {searchQuery && !searchLoading && (
+                        <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} style={{
+                          position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', color: MUTED, fontSize: 18, cursor: 'pointer',
+                        }}>×</button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => startScan()}
+                      title="Scan barcode"
+                      style={{
+                        background: `${BLUE}0C`, border: `1px solid ${BLUE}25`,
+                        borderRadius: 12, color: BLUE, width: 50, flexShrink: 0,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M3 9V5a2 2 0 012-2h4M15 3h4a2 2 0 012 2v4M21 15v4a2 2 0 01-2 2h-4M9 21H5a2 2 0 01-2-2v-4"/>
+                        <line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/>
+                        <line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="11"/>
+                        <line x1="16" y1="13" x2="16" y2="16"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  {searchError && <ErrBox msg={searchError} />}
+
+                  {/* Search results */}
+                  {searchQuery && searchResults.length > 0 && (
+                    <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', marginBottom: 16 }}>
+                      <div style={{ padding: '10px 14px 6px', fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>
+                        {searchResults.length} results · Open Food Facts
+                      </div>
+                      {searchResults.map((product, i) => (
+                        <button key={i} onClick={() => applyOFFProduct(product)} style={{
+                          width: '100%', textAlign: 'left', padding: '10px 14px',
+                          background: 'none', border: 'none', borderTop: i === 0 ? 'none' : `1px solid ${EDGE}`,
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+                          fontFamily: 'inherit',
+                        }}>
+                          {product.imageUrl && (
+                            <img src={product.imageUrl} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                          )}
+                          {!product.imageUrl && (
+                            <div style={{ width: 36, height: 36, borderRadius: 8, background: `${BLUE}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <span style={{ fontSize: 16 }}>🥫</span>
+                            </div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {product.name}
+                            </div>
+                            <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>
+                              {product.brand && `${product.brand} · `}per 100g: {product.caloriesPer100g} kcal · P{Math.round(product.proteinPer100g)}g · C{Math.round(product.carbsPer100g)}g · F{Math.round(product.fatPer100g)}g
+                            </div>
+                          </div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: BLUE, flexShrink: 0 }}>{product.caloriesPer100g}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Recents + Favorites (when not searching) */}
+                  {!searchQuery && (
+                    <>
+                      {(recents.length > 0 || favorites.length > 0) && (
+                        <>
+                          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                            {(['recent', 'fav'] as const).map((t) => (
+                              <button key={t} onClick={() => setFavTab(t)} style={{
+                                flex: 1, padding: '8px 0', borderRadius: 10, cursor: 'pointer',
+                                background: favTab === t ? `${BLUE}08` : SURF2,
+                                border: `1px solid ${favTab === t ? BLUE : EDGE}`,
+                                color: favTab === t ? BLUE : MUTED,
+                                fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+                              }}>
+                                {t === 'recent' ? `Recent (${recents.length})` : `Favourites (${favorites.length})`}
+                              </button>
+                            ))}
+                          </div>
+
+                          {(() => {
+                            const list = favTab === 'recent' ? recents : favorites;
+                            if (list.length === 0) return (
+                              <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 600 }}>
+                                {favTab === 'recent' ? 'No recent foods yet' : 'No favourites yet — tap ★ on a recent food'}
+                              </div>
+                            );
+                            return (
+                              <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+                                {list.map((food, i) => {
+                                  const isFav = favoriteStates[food.food_name] ?? isFavorite(food.food_name);
+                                  return (
+                                    <div key={i} style={{
+                                      display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
+                                      borderTop: i === 0 ? 'none' : `1px solid ${EDGE}`,
+                                    }}>
+                                      <button onClick={() => applySavedFood(food)} style={{
+                                        flex: 1, textAlign: 'left', background: 'none', border: 'none',
+                                        cursor: 'pointer', fontFamily: 'inherit', minWidth: 0,
+                                      }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {food.food_name}
+                                        </div>
+                                        <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>
+                                          {Math.round(food.calories)} kcal · P{Math.round(food.protein)}g · C{Math.round(food.carbs)}g · F{Math.round(food.fat)}g
+                                          {food.weight_grams ? ` · ${food.weight_grams}g` : ''}
+                                        </div>
+                                      </button>
+                                      <button onClick={() => handleToggleFavorite(food)} style={{
+                                        background: 'none', border: 'none', cursor: 'pointer',
+                                        color: isFav ? '#FFC107' : MUTED, fontSize: 18, padding: '0 4px', flexShrink: 0,
+                                      }}>★</button>
+                                      <button onClick={() => applySavedFood(food)} style={{
+                                        background: `${BLUE}0C`, border: `1px solid ${BLUE}25`,
+                                        borderRadius: 8, color: BLUE, fontWeight: 800,
+                                        fontSize: 13, cursor: 'pointer', padding: '5px 12px',
+                                        flexShrink: 0, fontFamily: 'inherit',
+                                      }}>+</button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </>
+                      )}
+
+                      {recents.length === 0 && favorites.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '32px 20px', color: MUTED }}>
+                          <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 6 }}>Search millions of foods</div>
+                          <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+                            Type a food name above, or tap the barcode icon to scan a product.
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* BARCODE SCANNER */}
+              {mode === 'search' && (scanActive || barcodeLoading) && (
+                <div>
+                  {barcodeLoading && (
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: MUTED, fontSize: 14, fontWeight: 600 }}>
+                      Looking up product…
+                    </div>
+                  )}
+                  {scanActive && (
+                    <div style={{ position: 'relative', marginBottom: 16 }}>
+                      <video ref={videoRef} playsInline muted style={{ width: '100%', borderRadius: 14, display: 'block', background: '#000' }} />
+                      <div style={{
+                        position: 'absolute', inset: 0, borderRadius: 14,
+                        border: `2px solid ${BLUE}`, pointerEvents: 'none',
+                        boxShadow: `inset 0 0 0 2000px rgba(0,0,0,0.3)`,
+                      }}>
+                        <div style={{
+                          position: 'absolute', top: '50%', left: '10%', right: '10%',
+                          height: 2, background: `${BLUE}90`, transform: 'translateY(-50%)',
+                          boxShadow: `0 0 8px ${BLUE}`,
+                        }} />
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '10px 0', fontSize: 12, fontWeight: 700, color: MUTED }}>
+                        Point camera at barcode
+                      </div>
+                      <button onClick={() => stopScan()} style={{
+                        width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${EDGE}`,
+                        background: SURF2, color: MUTED, fontWeight: 700, fontSize: 13,
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}>Cancel Scan</button>
+                    </div>
+                  )}
+                  {scanError && <ErrBox msg={scanError} />}
+                  {scanSupported === false && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 12, color: MUTED, marginBottom: 10, lineHeight: 1.6 }}>
+                        Live scanning isn't supported in this browser. Enter the barcode number manually:
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          value={manualBarcode}
+                          onChange={(e) => setManualBarcode(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' && manualBarcode.trim()) handleBarcodeFound(manualBarcode.trim()); }}
+                          placeholder="Barcode number (e.g. 5000112637922)"
+                          style={{ ...inp, flex: 1 }}
+                          type="text"
+                          inputMode="numeric"
+                        />
+                        <button onClick={() => manualBarcode.trim() && handleBarcodeFound(manualBarcode.trim())} style={{
+                          background: BLUE, border: 'none', borderRadius: 12, color: '#fff',
+                          fontWeight: 800, fontSize: 13, cursor: 'pointer', padding: '0 18px',
+                          fontFamily: 'inherit',
+                        }}>Go</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* AI MODE */}
               {mode === 'ai' && (
