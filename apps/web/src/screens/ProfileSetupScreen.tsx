@@ -78,6 +78,18 @@ export default function ProfileSetupScreen() {
   const [todayWeightInput, setTodayWeightInput] = useState('');
   const [savingWeight,    setSavingWeight]    = useState(false);
 
+  // Goal mode
+  const GOAL_KEY = 'fs_goal_mode_v1';
+  type GoalMode = 'lose' | 'maintain' | 'gain';
+  const [goalMode, setGoalModeState] = useState<GoalMode>(() => {
+    try { return (localStorage.getItem(GOAL_KEY) as GoalMode) ?? 'maintain'; } catch { return 'maintain'; }
+  });
+  const handleSetGoalMode = (mode: GoalMode) => {
+    setGoalModeState(mode);
+    try { localStorage.setItem(GOAL_KEY, mode); } catch {}
+  };
+  const goalCalAdj: Record<GoalMode, number> = { lose: -500, maintain: 0, gain: 300 };
+
   // Custom targets
   const [customTargets, setCustomTargetsState] = useState<CustomTargets>(getCustomTargets);
   const handleCustomTargetChange = (field: keyof CustomTargets, value: string | boolean) => {
@@ -488,6 +500,48 @@ export default function ProfileSetupScreen() {
           {weightLogs.length === 0 && (
             <div style={{ textAlign: 'center', padding: '12px 0', color: MUTED, fontSize: 12, fontWeight: 600 }}>
               Log your first weigh-in above to track progress
+            </div>
+          )}
+        </div>
+
+        {/* Goal Mode */}
+        <div style={{
+          background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
+          borderRadius: 18, padding: '18px 18px', marginBottom: 20,
+          border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+            Calorie Goal
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            {([
+              ['lose',     'Lose Weight',   RED,    '-500 kcal/day'],
+              ['maintain', 'Maintain',      GREEN,  'TDEE target'],
+              ['gain',     'Gain Muscle',   BLUE2,  '+300 kcal/day'],
+            ] as const).map(([mode, label, color, sub]) => (
+              <button key={mode} onClick={() => handleSetGoalMode(mode)} style={{
+                flex: 1, padding: '12px 6px', borderRadius: 12,
+                border: `1px solid ${goalMode === mode ? color + '60' : EDGE}`,
+                background: goalMode === mode ? `${color}14` : SURF2,
+                color: goalMode === mode ? color : MUTED,
+                fontWeight: 800, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              }}>
+                <span>{label}</span>
+                <span style={{ fontSize: 9, fontWeight: 600, opacity: 0.8 }}>{sub}</span>
+              </button>
+            ))}
+          </div>
+          {tdee && (
+            <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, textAlign: 'center' }}>
+              Your target: <strong style={{ color: TEXT }}>
+                {(tdee + goalCalAdj[goalMode]).toLocaleString()} kcal/day
+              </strong>
+              {goalMode !== 'maintain' && (
+                <span style={{ color: goalMode === 'lose' ? RED : BLUE2 }}>
+                  {' '}({goalCalAdj[goalMode] > 0 ? '+' : ''}{goalCalAdj[goalMode]} from TDEE)
+                </span>
+              )}
             </div>
           )}
         </div>
