@@ -2,15 +2,20 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, getLogs, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG    = '#EEF4FF';
-const SURF  = '#FFFFFF';
-const SURF2 = '#E4EEFF';
-const EDGE  = 'rgba(0,56,168,0.10)';
-const TEXT  = '#0A1628';
-const MUTED = '#6878A0';
-const BLUE  = '#0038A8';
-const GREEN = '#34c759';
-const RED   = '#C62828';
+const BG     = '#F0F5FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#E6EEFF';
+const EDGE   = 'rgba(30,64,220,0.09)';
+const TEXT   = '#080F30';
+const MUTED  = '#5E71A8';
+const BLUE   = '#1E40DC';
+const BLUE2  = '#4B6FFF';
+const GREEN  = '#05C56B';
+const ORANGE = '#FF8B00';
+const PURPLE = '#8034E0';
+const CYAN   = '#00BDD0';
+const RED    = '#EF3340';
+const CARD_SHADOW = '0 2px 16px rgba(30,64,220,0.07), 0 1px 3px rgba(0,0,0,0.04)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -139,7 +144,7 @@ export default function HistoryScreen() {
     <div style={{ minHeight: '100%', background: BG }}>
 
       {/* ── HEADER ── */}
-      <div style={{ padding: '52px 22px 0', background: `linear-gradient(135deg, ${BLUE} 0%, #1a5fd4 100%)` }}>
+      <div style={{ padding: '52px 22px 0', background: `linear-gradient(140deg, #080F30 0%, ${BLUE} 45%, ${BLUE2} 100%)` }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 6, textTransform: 'uppercase' }}>Fuel Log</div>
         <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, color: '#fff' }}>History</div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 4, marginBottom: 20 }}>
@@ -174,10 +179,10 @@ export default function HistoryScreen() {
           days.map((day) => {
             const isOpen   = expanded === day.date;
             const pct      = Math.min(100, Math.round((day.totalCal / goalCal) * 100));
-            const barColor = pct >= 110 ? '#e05050' : pct >= 90 ? '#34c759' : BLUE;
+            const barColor = pct >= 110 ? RED : pct >= 90 ? GREEN : BLUE;
 
             return (
-              <div key={day.date} style={{ background: SURF, borderRadius: 16, border: `1px solid ${EDGE}`, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.06)' }}>
+              <div key={day.date} style={{ background: SURF, borderRadius: 18, border: `1px solid ${EDGE}`, marginBottom: 12, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
                 <button
                   onClick={() => setExpanded(isOpen ? null : day.date)}
                   style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 16px 12px', textAlign: 'left' }}
@@ -210,9 +215,9 @@ export default function HistoryScreen() {
                       const cP  = Math.round(day.totalCarbs   * 4 / tot * 100);
                       const fP  = 100 - pP - cP;
                       return (<>
-                        <MacroChip label="Protein" value={day.totalProtein} color="#e05050" pct={pP} />
-                        <MacroChip label="Carbs"   value={day.totalCarbs}   color="#f5a623" pct={cP} />
-                        <MacroChip label="Fat"     value={day.totalFat}     color="#34c759" pct={fP} />
+                        <MacroChip label="Protein" value={day.totalProtein} color={RED}    pct={pP} />
+                        <MacroChip label="Carbs"   value={day.totalCarbs}   color={CYAN}   pct={cP} />
+                        <MacroChip label="Fat"     value={day.totalFat}     color={PURPLE} pct={fP} />
                       </>);
                     })()}
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
@@ -240,9 +245,9 @@ export default function HistoryScreen() {
                             <div style={{ textAlign: 'right', flexShrink: 0 }}>
                               <div style={{ fontSize: 14, fontWeight: 800, color: BLUE }}>{Math.round(Number(item.calories))}</div>
                               <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 2 }}>
-                                <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
-                                <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
-                                <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                                <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
+                                <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
+                                <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                               </div>
                             </div>
                             {hasIngs && (
@@ -266,7 +271,7 @@ export default function HistoryScreen() {
                             </button>
                           </div>
                           {isFoodOpen && hasIngs && (
-                            <div style={{ background: '#F8FBFF', borderTop: `1px solid ${EDGE}`, padding: '4px 0 6px' }}>
+                            <div style={{ background: SURF2, borderTop: `1px solid ${EDGE}`, padding: '4px 0 6px' }}>
                               {item.ingredients!.map((ing, i) => {
                                 const ingKey = `${item.id}-${i}`;
                                 return (
@@ -277,9 +282,9 @@ export default function HistoryScreen() {
                                     </div>
                                     <div style={{ fontSize: 12, fontWeight: 800, color: BLUE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
                                     <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
-                                      <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
-                                      <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
-                                      <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                                      <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                                      <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                                      <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                                     </div>
                                     <button onClick={() => handleRelogIngredient(ing, item.meal_type, ingKey)}
                                       disabled={reloggedIng === ingKey}
@@ -310,7 +315,7 @@ export default function HistoryScreen() {
         ) : (
 
           /* ── FOODS TAB ── */
-          <div style={{ background: SURF, borderRadius: 16, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.06)' }}>
+          <div style={{ background: SURF, borderRadius: 18, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
             {allLogs.map((item, idx) => {
               const isRemoved  = !!item.removed;
               const logDate    = item.logged_at.slice(0, 10);
@@ -333,9 +338,9 @@ export default function HistoryScreen() {
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: isRemoved ? MUTED : BLUE }}>{Math.round(Number(item.calories))} kcal</div>
                       <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
-                        <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
-                        <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
-                        <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                        <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
+                        <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
+                        <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                       </div>
                     </div>
                     {hasIngs && !isRemoved && (
@@ -362,7 +367,7 @@ export default function HistoryScreen() {
 
                   {/* Ingredient expansion */}
                   {isFoodOpen && hasIngs && !isRemoved && (
-                    <div style={{ borderTop: `1px solid ${EDGE}`, background: '#F8FBFF', padding: '4px 0 6px' }}>
+                    <div style={{ borderTop: `1px solid ${EDGE}`, background: SURF2, padding: '4px 0 6px' }}>
                       {item.ingredients!.map((ing, i) => {
                         const ingKey = `${item.id}-${i}`;
                         return (
@@ -373,9 +378,9 @@ export default function HistoryScreen() {
                             </div>
                             <div style={{ fontSize: 13, fontWeight: 800, color: BLUE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
                             <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
-                              <span style={{ fontSize: 9, color: '#e05050', fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
-                              <span style={{ fontSize: 9, color: '#f5a623', fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
-                              <span style={{ fontSize: 9, color: '#34c759', fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                              <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                              <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                              <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                             </div>
                             <button onClick={() => handleRelogIngredient(ing, item.meal_type, ingKey)}
                               disabled={reloggedIng === ingKey}

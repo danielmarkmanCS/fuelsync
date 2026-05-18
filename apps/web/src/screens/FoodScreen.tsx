@@ -4,17 +4,20 @@ import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
 
-const BG     = '#EEF4FF';
+const BG     = '#F0F5FF';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E4EEFF';
-const EDGE   = 'rgba(0,56,168,0.10)';
-const TEXT   = '#0A1628';
-const MUTED  = '#6878A0';
-const BLUE   = '#0038A8';
-const GREEN  = '#00A651';
-const ORANGE = '#E65100';
-const PURPLE = '#7B1FA2';
-const RED    = '#C62828';
+const SURF2  = '#E6EEFF';
+const EDGE   = 'rgba(30,64,220,0.09)';
+const TEXT   = '#080F30';
+const MUTED  = '#5E71A8';
+const BLUE   = '#1E40DC';
+const BLUE2  = '#4B6FFF';
+const GREEN  = '#05C56B';
+const ORANGE = '#FF8B00';
+const PURPLE = '#8034E0';
+const CYAN   = '#00BDD0';
+const RED    = '#EF3340';
+const CARD_SHADOW = '0 2px 16px rgba(30,64,220,0.07), 0 1px 3px rgba(0,0,0,0.04)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -124,8 +127,8 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
               <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
             </div>
             <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 9, color: GREEN, fontWeight: 700 }}>P{Math.round(item.protein)}</span>
-              <span style={{ fontSize: 9, color: ORANGE, fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
+              <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(item.protein)}</span>
+              <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
               <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(item.fat)}</span>
             </div>
             {onEdit && (
@@ -142,8 +145,8 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
                 {([
                   { label: 'kcal', key: 'calories' as const, color: BLUE },
-                  { label: 'P(g)',  key: 'protein'  as const, color: GREEN },
-                  { label: 'C(g)',  key: 'carbs'    as const, color: ORANGE },
+                  { label: 'P(g)',  key: 'protein'  as const, color: RED    },
+                  { label: 'C(g)',  key: 'carbs'    as const, color: CYAN   },
                   { label: 'F(g)',  key: 'fat'      as const, color: PURPLE },
                 ]).map(({ label, key, color }) => (
                   <div key={key}>
@@ -435,7 +438,7 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: 'linear-gradient(135deg, #0038A8 0%, #1565E0 100%)',
+        background: `linear-gradient(140deg, #080F30 0%, ${BLUE} 45%, ${BLUE2} 100%)`,
         padding: '44px 22px 20px',
       }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.6)', marginBottom: 8, textTransform: 'uppercase' }}>Fuel Log</div>
@@ -472,8 +475,8 @@ export default function FoodScreen() {
 
       {/* ── CALORIE + MACROS ── */}
       <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
-        <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, padding: '20px 20px 16px', overflow: 'hidden', position: 'relative', boxShadow: '0 4px 20px rgba(0,56,168,0.08)' }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,56,168,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, padding: '20px 20px 16px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(30,64,220,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Calories Consumed</div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 14 }}>
             <div style={{ fontSize: 68, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: calPct >= 100 ? RED : TEXT }}>
@@ -481,13 +484,13 @@ export default function FoodScreen() {
             </div>
             {targets && <div style={{ fontSize: 14, fontWeight: 700, color: MUTED, paddingBottom: 8 }}>/ {Math.round(targets.calories).toLocaleString()}</div>}
           </div>
-          <div style={{ height: 4, background: 'rgba(0,56,168,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ height: 4, background: 'rgba(30,64,220,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{ height: '100%', width: `${calPct}%`, background: calPct >= 100 ? RED : BLUE, borderRadius: 2, transition: 'width 0.6s ease' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             {[
-              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: GREEN },
-              { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: ORANGE },
+              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: RED    },
+              { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: CYAN   },
               { name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: PURPLE },
             ].map(({ name, val, tgt, color }) => {
               const pct2 = tgt && tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
@@ -497,7 +500,7 @@ export default function FoodScreen() {
                   <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: TEXT, lineHeight: 1 }}>
                     {Math.round(val)}<span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>g</span>
                   </div>
-                  <div style={{ marginTop: 6, height: 3, background: 'rgba(0,56,168,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ marginTop: 6, height: 3, background: 'rgba(30,64,220,0.08)', borderRadius: 2, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct2}%`, background: color, borderRadius: 2, transition: 'width 0.6s ease' }} />
                   </div>
                 </div>
@@ -511,7 +514,7 @@ export default function FoodScreen() {
       <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
         {byMeal.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '56px 0' }}>
-            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3, color: 'rgba(0,56,168,0.07)', marginBottom: 14 }}>EMPTY</div>
+            <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3, color: 'rgba(30,64,220,0.07)', marginBottom: 14 }}>EMPTY</div>
             <div style={{ color: MUTED, fontSize: 13, fontWeight: 600 }}>Tap + to log your first meal</div>
           </div>
         ) : byMeal.map(({ meal, entries }) => (
@@ -561,10 +564,10 @@ export default function FoodScreen() {
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: '#F8FBFF', borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,56,168,0.12)' }}>
+          <div style={{ background: SURF, borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(30,64,220,0.12)' }}>
 
             <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,56,168,0.15)' }} />
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(30,64,220,0.15)' }} />
             </div>
 
             <div style={{ padding: '16px 22px 44px' }}>
@@ -618,7 +621,7 @@ export default function FoodScreen() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     gap: 12, padding: '32px 20px', borderRadius: 16,
                     border: `2px dashed ${aiLoading ? EDGE : BLUE}`,
-                    background: aiLoading ? SURF2 : 'rgba(0,56,168,0.03)',
+                    background: aiLoading ? SURF2 : 'rgba(30,64,220,0.03)',
                     cursor: aiLoading ? 'not-allowed' : 'pointer',
                   }}>
                     <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} disabled={aiLoading}
@@ -856,14 +859,14 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const hasIngredients = entry.ingredients && entry.ingredients.length > 1;
   return (
-    <div style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
+    <div style={{ background: SURF, borderRadius: 16, marginBottom: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px' }}>
         {entry.image_url && <img src={entry.image_url} alt={entry.food_name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{entry.food_name}</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
-            <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>P {Math.round(Number(entry.protein))}g</span>
-            <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
+            <span style={{ fontSize: 10, color: RED,    fontWeight: 700 }}>P {Math.round(Number(entry.protein))}g</span>
+            <span style={{ fontSize: 10, color: CYAN,   fontWeight: 700 }}>C {Math.round(Number(entry.carbs))}g</span>
             <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {Math.round(Number(entry.fat))}g</span>
             {entry.weight_grams && <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>{entry.weight_grams}g</span>}
             {hasIngredients && <span style={{ fontSize: 10, color: BLUE, fontWeight: 600 }}>{entry.ingredients!.length} items</span>}
@@ -898,11 +901,11 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
         }}>Info {showBreakdown ? '▲' : '▼'}</button>
       </div>
       {showBreakdown && (
-        <div style={{ padding: '12px 16px', borderTop: `1px solid ${EDGE}`, background: '#F8FBFF' }}>
+        <div style={{ padding: '12px 16px', borderTop: `1px solid ${EDGE}`, background: SURF2 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             {[
-              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: GREEN },
-              { label: 'Carbs',   val: Math.round(Number(entry.carbs)),   unit: 'g', color: ORANGE },
+              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: RED    },
+              { label: 'Carbs',   val: Math.round(Number(entry.carbs)),   unit: 'g', color: CYAN   },
               { label: 'Fat',     val: Math.round(Number(entry.fat)),     unit: 'g', color: PURPLE },
             ].map(({ label, val, unit, color }) => (
               <div key={label} style={{ textAlign: 'center', background: SURF, borderRadius: 10, padding: '8px 4px', border: `1px solid ${EDGE}` }}>
@@ -921,13 +924,13 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
             return (
               <div style={{ marginTop: 10 }}>
                 <div style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', marginBottom: 5 }}>
-                  <div style={{ width: `${pP}%`, background: GREEN }} />
-                  <div style={{ width: `${cP}%`, background: ORANGE }} />
+                  <div style={{ width: `${pP}%`, background: RED    }} />
+                  <div style={{ width: `${cP}%`, background: CYAN   }} />
                   <div style={{ width: `${fP}%`, background: PURPLE }} />
                 </div>
                 <div style={{ display: 'flex', gap: 14, justifyContent: 'center' }}>
-                  <span style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>P {pP}%</span>
-                  <span style={{ fontSize: 10, color: ORANGE, fontWeight: 700 }}>C {cP}%</span>
+                  <span style={{ fontSize: 10, color: RED,    fontWeight: 700 }}>P {pP}%</span>
+                  <span style={{ fontSize: 10, color: CYAN,   fontWeight: 700 }}>C {cP}%</span>
                   <span style={{ fontSize: 10, color: PURPLE, fontWeight: 700 }}>F {fP}%</span>
                 </div>
               </div>

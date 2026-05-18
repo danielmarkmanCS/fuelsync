@@ -10,19 +10,21 @@ import { computeMacros } from '@mobile/services/nutritionEngine';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 
-const BG     = '#EEF4FF';
+const BG     = '#F0F5FF';
 const SURF   = '#FFFFFF';
-const SURF2  = '#E4EEFF';
-const EDGE   = 'rgba(0,56,168,0.10)';
-const TEXT   = '#0A1628';
-const MUTED  = '#6878A0';
-const BLUE   = '#0038A8';
-const GREEN  = '#00A651';
-const ORANGE = '#E65100';
-const PURPLE = '#7B1FA2';
-const CYAN   = '#0288D1';
-const YELLOW = '#F9A825';
-const RED    = '#C62828';
+const SURF2  = '#E6EEFF';
+const EDGE   = 'rgba(30,64,220,0.09)';
+const TEXT   = '#080F30';
+const MUTED  = '#5E71A8';
+const BLUE   = '#1E40DC';
+const BLUE2  = '#4B6FFF';
+const GREEN  = '#05C56B';
+const ORANGE = '#FF8B00';
+const PURPLE = '#8034E0';
+const CYAN   = '#00BDD0';
+const YELLOW = '#FFC107';
+const RED    = '#EF3340';
+const CARD_SHADOW = '0 2px 20px rgba(30,64,220,0.08), 0 1px 4px rgba(0,0,0,0.05)';
 
 // Load multiplier by activity level — higher = more load capacity before fatigue
 const ACTIVITY_MULT: Record<string, number> = {
@@ -92,32 +94,51 @@ function buildRecovery(loggedRuns: LoggedRun[], strengthSessions: number, activi
 }
 
 function CalRing({ pct, cal, target }: { pct: number; cal: number; target: number }) {
-  const S = 188, W = 10, r = (S - W * 2) / 2;
+  const S = 196, W = 11, r = (S - W * 2) / 2;
   const circ = 2 * Math.PI * r;
   const arc  = Math.min(pct / 100, 1) * circ;
   const over = pct >= 100;
-  const color = over ? RED : BLUE;
+  const gradId = over ? 'ringOver' : 'ringNormal';
   return (
-    <div style={{ position: 'relative', width: S, height: S }}>
+    <div className="ring-enter" style={{ position: 'relative', width: S, height: S }}>
       <svg width={S} height={S} style={{ position: 'absolute', top: 0, left: 0 }}>
-        <circle cx={S/2} cy={S/2} r={r} fill="none" stroke="rgba(0,56,168,0.08)" strokeWidth={W} />
+        <defs>
+          <linearGradient id="ringNormal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={BLUE2} />
+            <stop offset="100%" stopColor={BLUE} />
+          </linearGradient>
+          <linearGradient id="ringOver" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={ORANGE} />
+            <stop offset="100%" stopColor={RED} />
+          </linearGradient>
+          <filter id="ringGlow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        <circle cx={S/2} cy={S/2} r={r} fill="none" stroke={over ? `${RED}18` : `${BLUE}12`} strokeWidth={W} />
         <circle cx={S/2} cy={S/2} r={r} fill="none"
-          stroke={color} strokeWidth={W}
+          stroke={`url(#${gradId})`} strokeWidth={W}
           strokeDasharray={`${arc} ${circ - arc}`}
           strokeLinecap="round"
           transform={`rotate(-90 ${S/2} ${S/2})`}
-          style={{ transition: 'stroke-dasharray 0.8s ease', filter: `drop-shadow(0 0 8px ${color}55)` }} />
+          filter="url(#ringGlow)"
+          style={{ transition: 'stroke-dasharray 0.85s cubic-bezier(0.4,0,0.2,1)' }} />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: MUTED, marginBottom: 6, textTransform: 'uppercase' }}>Calories</div>
-        <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: -3, color: over ? RED : TEXT, lineHeight: 1 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, marginBottom: 4, textTransform: 'uppercase' }}>Consumed</div>
+        <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -3.5, color: over ? RED : TEXT, lineHeight: 1 }}>
           {Math.round(cal).toLocaleString()}
         </div>
-        <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, marginTop: 4, letterSpacing: 1 }}>
-          of {Math.round(target).toLocaleString()} kcal
+        <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, marginTop: 5, letterSpacing: 0.5 }}>
+          of <span style={{ color: over ? RED : BLUE, fontWeight: 800 }}>{Math.round(target).toLocaleString()}</span> kcal
         </div>
         {pct > 0 && (
-          <div style={{ fontSize: 11, fontWeight: 800, color: over ? RED : BLUE, marginTop: 6, letterSpacing: 0.5 }}>
+          <div style={{
+            marginTop: 8, padding: '2px 10px', borderRadius: 20,
+            background: over ? `${RED}12` : `${BLUE}10`,
+            color: over ? RED : BLUE, fontSize: 10, fontWeight: 800, letterSpacing: 1,
+          }}>
             {Math.round(pct)}%
           </div>
         )}
@@ -130,20 +151,23 @@ function MacroPill({ label, current, target, color }: { label: string; current: 
   const pct  = target > 0 ? Math.min((current / target) * 100, 100) : 0;
   const over = current > target && target > 0;
   const c    = over ? RED : color;
+  const remaining = Math.max(0, Math.round(target - current));
   return (
     <div style={{
-      flex: 1, background: SURF, borderRadius: 16, padding: '14px 12px 12px',
-      border: `1px solid ${EDGE}`, borderTop: `3px solid ${c}`,
-      boxShadow: '0 2px 12px rgba(0,56,168,0.06)',
+      flex: 1, background: SURF, borderRadius: 18, padding: '14px 13px 13px',
+      border: `1px solid ${c}20`, borderTop: `3px solid ${c}`,
+      boxShadow: `0 2px 16px ${c}10, 0 1px 4px rgba(0,0,0,0.04)`,
     }}>
-      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: c, marginBottom: 8, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, color: TEXT, lineHeight: 1 }}>
-        {Math.round(current)}<span style={{ fontSize: 12, color: MUTED, fontWeight: 600 }}>g</span>
+      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: c, marginBottom: 7, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -2, color: TEXT, lineHeight: 1 }}>
+        {Math.round(current)}<span style={{ fontSize: 11, color: MUTED, fontWeight: 600, letterSpacing: 0 }}>g</span>
       </div>
-      <div style={{ margin: '10px 0 6px', height: 3, background: 'rgba(0,56,168,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: c, borderRadius: 2, transition: 'width 0.7s ease' }} />
+      <div style={{ margin: '10px 0 5px', height: 5, background: `${c}14`, borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${c}CC, ${c})`, borderRadius: 3, transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1)' }} />
       </div>
-      <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{Math.round(target)}g</div>
+      <div style={{ fontSize: 9, color: over ? RED : MUTED, fontWeight: 700 }}>
+        {over ? `+${Math.round(current - target)}g over` : `${remaining}g left`}
+      </div>
     </div>
   );
 }
@@ -279,7 +303,7 @@ export default function HomeScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: `linear-gradient(135deg, ${BLUE} 0%, #1565E0 100%)`,
+        background: `linear-gradient(140deg, #080F30 0%, ${BLUE} 45%, ${BLUE2} 100%)`,
         padding: '44px 22px 28px', position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
@@ -324,7 +348,7 @@ export default function HomeScreen() {
       {/* ── STEPS ── */}
       {todayLog && (
         <div style={{ padding: '12px 22px 0' }}>
-          <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 1px 6px rgba(0,56,168,0.05)' }}>
+          <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: '0 1px 6px rgba(30,64,220,0.05)' }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: stepEstimate !== null ? 10 : 8 }}>Daily Activity</div>
 
             {/* Result banner */}
@@ -405,7 +429,7 @@ export default function HomeScreen() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: weatherRec.color, lineHeight: 1.4 }}>{weatherRec.text}</div>
               </div>
             )}
-            <div style={{ background: SURF, borderRadius: weatherRec ? '0 0 24px 24px' : 24, padding: '20px', boxShadow: '0 4px 24px rgba(0,56,168,0.10)', border: `1px solid ${EDGE}`, borderTop: weatherRec ? 'none' : undefined }}>
+            <div style={{ background: SURF, borderRadius: weatherRec ? '0 0 24px 24px' : 24, padding: '20px', boxShadow: '0 4px 24px rgba(30,64,220,0.10)', border: `1px solid ${EDGE}`, borderTop: weatherRec ? 'none' : undefined }}>
               <CalRing pct={calPct} cal={consumed.calories} target={targets.calories} />
               {weather && (
                 <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: MUTED, fontWeight: 600, letterSpacing: 0.2 }}>
@@ -422,7 +446,7 @@ export default function HomeScreen() {
         </div>
       ) : (
         <div className="nrc-a nrc-a2" style={{ padding: '24px 22px 0' }}>
-          <div style={{ background: SURF, borderRadius: 20, padding: '28px 22px', border: `1px solid ${EDGE}`, textAlign: 'center', boxShadow: '0 2px 12px rgba(0,56,168,0.06)' }}>
+          <div style={{ background: SURF, borderRadius: 20, padding: '28px 22px', border: `1px solid ${EDGE}`, textAlign: 'center', boxShadow: '0 2px 12px rgba(30,64,220,0.06)' }}>
             <div style={{ fontSize: 80, fontWeight: 900, letterSpacing: -4, color: TEXT, lineHeight: 1 }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
@@ -440,8 +464,8 @@ export default function HomeScreen() {
       {/* ── MACRO ROW ── */}
       {targets && (
         <div className="nrc-a nrc-a3" style={{ padding: '14px 22px 0', display: 'flex', gap: 10 }}>
-          <MacroPill label="Protein" current={consumed.proteinG} target={targets.proteinG} color={GREEN} />
-          <MacroPill label="Carbs"   current={consumed.carbsG}   target={targets.carbsG}   color={ORANGE} />
+          <MacroPill label="Protein" current={consumed.proteinG} target={targets.proteinG} color={RED}    />
+          <MacroPill label="Carbs"   current={consumed.carbsG}   target={targets.carbsG}   color={CYAN}   />
           <MacroPill label="Fat"     current={consumed.fatG}     target={targets.fatG}     color={PURPLE} />
         </div>
       )}
@@ -453,7 +477,7 @@ export default function HomeScreen() {
             background: SURF, borderRadius: 16, padding: '16px 18px',
             border: `1px solid ${EDGE}`, borderLeft: `4px solid ${recovery.color}`,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            boxShadow: '0 2px 12px rgba(0,56,168,0.06)',
+            boxShadow: '0 2px 12px rgba(30,64,220,0.06)',
           }}>
             <div>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, marginBottom: 4, textTransform: 'uppercase' }}>Recovery</div>
@@ -485,7 +509,7 @@ export default function HomeScreen() {
       {/* ── WEEKLY LOAD TABLE ── */}
       <div className="nrc-a nrc-a5" style={{ padding: '16px 22px 0' }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Weekly Load</div>
-        <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+        <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(30,64,220,0.05)' }}>
 
           {/* Runs row */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${EDGE}` }}>
@@ -596,7 +620,7 @@ export default function HomeScreen() {
           </div>
         )}
 
-        <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,56,168,0.05)' }}>
+        <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(30,64,220,0.05)' }}>
           {loggedRuns.length === 0 ? (
             <div style={{ padding: '18px 14px', textAlign: 'center', color: MUTED, fontSize: 12, fontWeight: 600 }}>
               No runs logged this week
