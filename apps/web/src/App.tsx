@@ -212,22 +212,36 @@ export default function App() {
   }
 
   if (!user) return (
-    <GoogleAuthScreen onSignedIn={async (u) => {
-      let local = await getProfile();
-      if (!local) {
-        local = await createProfile({
-          displayName: u.displayName,
-          weightKg: u.weightKg ?? 0,
-          heightCm: u.heightCm ?? 0,
-          age: u.age ?? 0,
-          gender: (u.gender as 'male' | 'female') ?? 'male',
-          activityLevel: (u.activityLevel as 'moderate') ?? 'moderate',
-          dailyGoal: u.dailyGoal ?? 2000,
-        });
-      }
-      setUser(local);
-      setPinVerified(true);
-    }} />
+    <GoogleAuthScreen
+      onSignedIn={async (u) => {
+        let local = await getProfile();
+        if (!local) {
+          local = await createProfile({
+            displayName: u.displayName,
+            weightKg: u.weightKg ?? 0,
+            heightCm: u.heightCm ?? 0,
+            age: u.age ?? 0,
+            gender: (u.gender as 'male' | 'female') ?? 'male',
+            activityLevel: (u.activityLevel as 'moderate') ?? 'moderate',
+            dailyGoal: u.dailyGoal ?? 2000,
+          });
+        }
+        setUser(local);
+        setPinVerified(true);
+      }}
+      onSkip={async () => {
+        let local = await getProfile();
+        if (!local) {
+          local = await createProfile({
+            displayName: 'Athlete',
+            weightKg: 0, heightCm: 0, age: 0,
+            gender: 'male', activityLevel: 'moderate', dailyGoal: 2000,
+          });
+        }
+        setUser(local);
+        setPinVerified(true);
+      }}
+    />
   );
   if (needsPin && !pinVerified) return <PinScreen />;
 
