@@ -28,7 +28,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin') ?? '*';
     const allowed = env.APP_URL ?? 'https://foodaniel.danielmms.site';
-    const allowedOrigin = origin === allowed || origin.startsWith('http://localhost') ? origin : allowed;
+    const allowedOrigin = origin === allowed || origin.startsWith('http://localhost') || origin === 'capacitor://localhost' || origin === 'https://localhost' ? origin : allowed;
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: cors(allowedOrigin) });
@@ -38,18 +38,21 @@ export default {
 
     // GET /auth-url — return Strava OAuth URL
     if (url.pathname.endsWith('/auth-url') && request.method === 'GET') {
-      const redirectUri = `${env.WORKER_URL}/callback`;
+      const platform = url.searchParams.get('platform') ?? 'web';
+      const redirectUri = `${env.WORKER_URL}/callback?platform=${platform}`;
       const stravaUrl = `https://www.strava.com/oauth/authorize?client_id=${env.STRAVA_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=read,activity:read_all`;
       return json({ url: stravaUrl }, 200, allowedOrigin);
     }
 
     // GET /callback — Strava redirects here after OAuth
     if (url.pathname.endsWith('/callback') && request.method === 'GET') {
-      const code  = url.searchParams.get('code');
-      const error = url.searchParams.get('error');
+      const code     = url.searchParams.get('code');
+      const error    = url.searchParams.get('error');
+      const platform = url.searchParams.get('platform') ?? 'web';
+      const appBase  = platform === 'android' ? 'fuelsync://strava' : env.APP_URL;
 
       if (error || !code) {
-        return Response.redirect(`${env.APP_URL}?strava_error=${error ?? 'cancelled'}`, 302);
+        return Response.redirect(`${appBase}?strava_error=${error ?? 'cancelled'}`, 302);
       }
 
       const tokenRes = await fetch('https://www.strava.com/oauth/token', {
@@ -85,7 +88,7 @@ export default {
         strava_athlete_pic:   pic,
       });
 
-      return Response.redirect(`${env.APP_URL}?${params.toString()}`, 302);
+      return Response.redirect(`${appBase}?${params.toString()}`, 302);
     }
 
     // POST /refresh — exchange refresh token for new access token

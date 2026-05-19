@@ -78,7 +78,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin') ?? '*';
     const allowed = env.ALLOWED_ORIGIN ?? 'https://foodaniel.danielmms.site';
-    const ao = origin === allowed || origin.startsWith('http://localhost') ? origin : allowed;
+    const ao = origin === allowed || origin.startsWith('http://localhost') || origin === 'capacitor://localhost' || origin === 'https://localhost' ? origin : allowed;
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(ao) });
 

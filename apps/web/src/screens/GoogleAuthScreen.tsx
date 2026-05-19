@@ -92,8 +92,14 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
     setLoading(true);
     setError('');
     try {
+      await GoogleAuth.initialize({
+        clientId: CLIENT_ID,
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      });
       const googleUser = await GoogleAuth.signIn();
-      const idToken = googleUser.authentication.idToken;
+      const idToken = googleUser?.authentication?.idToken;
+      if (!idToken) throw new Error('No ID token returned');
       const { token, user } = await googleSignIn(idToken);
       setSyncToken(token);
       onSignedIn({
@@ -107,8 +113,9 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
         activityLevel: user.activity_level ?? 'moderate',
         dailyGoal: user.daily_goal ?? 2000,
       });
-    } catch {
-      setError('Sign-in failed. Please try again.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      setError(`Sign-in failed: ${msg}`);
     } finally {
       setLoading(false);
     }

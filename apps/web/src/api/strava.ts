@@ -72,8 +72,8 @@ async function refreshIfNeeded(): Promise<string | null> {
   }
 }
 
-export async function getStravaAuthUrl(): Promise<{ url: string }> {
-  return workerGet<{ url: string }>('strava', '/auth-url');
+export async function getStravaAuthUrl(platform = 'web'): Promise<{ url: string }> {
+  return workerGet<{ url: string }>('strava', `/auth-url?platform=${platform}`);
 }
 
 // Called by App.tsx after Strava Worker redirects back with tokens in URL params

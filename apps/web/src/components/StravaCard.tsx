@@ -3,6 +3,8 @@ import { getStravaStats, getStravaAuthUrl, disconnectStrava } from '../api/strav
 import { useNutritionStore } from '../store/nutritionStore';
 import { shareRunCard } from '../utils/runShareCard';
 import type { StravaStats, StravaRun, StravaData } from '../api/strava';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 const STRAVA = '#FC4C02';
 const SURF   = '#161B27';
@@ -189,8 +191,13 @@ export default function StravaCard() {
   const handleConnect = async () => {
     setConnecting(true); setConnectErr('');
     try {
-      const { url } = await getStravaAuthUrl();
-      window.location.href = url;
+      const platform = Capacitor.isNativePlatform() ? 'android' : 'web';
+      const { url } = await getStravaAuthUrl(platform);
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url, presentationStyle: 'popover' });
+      } else {
+        window.location.href = url;
+      }
     } catch (e: unknown) {
       setConnectErr(e instanceof Error ? e.message : 'Strava not configured yet');
       setConnecting(false);

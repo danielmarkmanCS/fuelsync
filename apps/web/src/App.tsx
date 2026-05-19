@@ -6,6 +6,8 @@ import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
 import { getSyncToken, getMe, syncProfile } from './api/syncClient';
 import { clearPullCache } from './api/localFood';
+import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 import GoogleAuthScreen from './screens/GoogleAuthScreen';
 import PinScreen from './screens/PinScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -66,6 +68,7 @@ const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> 
 export default function App() {
   const { user, pinVerified, setUser, setPinVerified } = useAuthStore();
   const [activeTab,        setActiveTab]        = useState<Tab>('home');
+  const profileIncomplete = !!user && (!user.weightKg || !user.heightCm || !user.age);
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
   const [stravaConnecting, setStravaConnecting] = useState(false);
@@ -144,11 +147,33 @@ export default function App() {
   }, []);
 
   // Clear D1 pull cache whenever the user brings the app to foreground
-  // so switching back from another app/tab always gets fresh data
   useEffect(() => {
     const onVisible = () => { if (!document.hidden) clearPullCache(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
+  // Handle fuelsync:// deep links (Strava OAuth callback on Android)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const sub = CapApp.addListener('appUrlOpen', ({ url }) => {
+      if (!url.startsWith('fuelsync://strava')) return;
+      const params = new URLSearchParams(url.split('?')[1] ?? '');
+      const access_token  = params.get('strava_access_token');
+      const refresh_token = params.get('strava_refresh_token');
+      const expires_at    = params.get('strava_expires_at');
+      const athlete_name  = params.get('strava_athlete_name');
+      const athlete_pic   = params.get('strava_athlete_pic') ?? '';
+      if (!access_token || !refresh_token || !expires_at) return;
+      setStravaConnecting(true);
+      connectStrava({
+        access_token, refresh_token,
+        expires_at: Number(expires_at),
+        athlete_name: athlete_name ?? '',
+        athlete_pic,
+      }).catch(() => {}).finally(() => { setStravaConnecting(false); setActiveTab('home'); });
+    });
+    return () => { sub.then((s) => s.remove()); };
   }, []);
 
   useEffect(() => {
@@ -252,7 +277,8 @@ export default function App() {
       background: '#0E1117', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
-        {activeTab === 'home'    && <HomeScreen />}
+        {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
+        {(activeTab === 'home' && profileIncomplete)     && <ProfileSetupScreen />}
         {activeTab === 'food'    && <FoodScreen />}
         {activeTab === 'history' && <HistoryScreen />}
         {activeTab === 'profile' && <ProfileSetupScreen />}
