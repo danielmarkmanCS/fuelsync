@@ -4,6 +4,43 @@ import { syncAddLog, syncDeleteLog, getSyncToken, fetchLogsForDate, fetchAllLogs
 
 export type { Ingredient };
 
+async function queueAdd(payload: object): Promise<void> {
+  await db.sync_queue.add({ operation: 'add', payload: JSON.stringify(payload), retries: 0, created_at: new Date().toISOString() }).catch(() => {});
+}
+
+async function queueDelete(id: string): Promise<void> {
+  await db.sync_queue.add({ operation: 'delete', payload: JSON.stringify({ id }), retries: 0, created_at: new Date().toISOString() }).catch(() => {});
+}
+
+export async function drainSyncQueue(): Promise<void> {
+  if (!getSyncToken()) return;
+  const items = await db.sync_queue.toArray();
+  if (items.length === 0) return;
+  for (const item of items) {
+    try {
+      const payload = JSON.parse(item.payload);
+      if (item.operation === 'add') {
+        await syncAddLog(payload);
+      } else {
+        await syncDeleteLog(payload.id);
+      }
+      await db.sync_queue.delete(item.id!);
+    } catch {
+      const retries = (item.retries ?? 0) + 1;
+      if (retries >= 5) {
+        await db.sync_queue.delete(item.id!);
+      } else {
+        await db.sync_queue.update(item.id!, { retries }).catch(() => {});
+      }
+    }
+  }
+  clearPullCache();
+}
+
+export async function getSyncQueueSize(): Promise<number> {
+  return db.sync_queue.count();
+}
+
 export interface FoodLog {
   id: string;
   food_name: string;
@@ -94,6 +131,7 @@ interface D1FoodLog {
   ingredients: Ingredient[] | null;
   logged_at: string;
   date: string;
+  deleted_at?: string | null;
 }
 
 async function upsertD1Logs(d1logs: unknown[]) {
@@ -101,8 +139,17 @@ async function upsertD1Logs(d1logs: unknown[]) {
     const log = raw as D1FoodLog;
     if (!log.id) continue;
 
-    // Already synced by sync_id?
     const bySyncId = await db.food_logs.where('sync_id').equals(log.id).first();
+
+    // Propagate deletions from other devices
+    if (log.deleted_at) {
+      if (bySyncId?.id != null && !bySyncId.removed) {
+        await db.food_logs.update(bySyncId.id, { removed: true });
+      }
+      continue;
+    }
+
+    // Already synced by sync_id?
     if (bySyncId) continue;
 
     // Legacy log: D1 id is the string of the local numeric id (e.g. "1", "2")
@@ -171,13 +218,13 @@ function withTimeout(promise: Promise<void>, ms: number): Promise<void> {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function getLogs(date: string): Promise<FoodLog[]> {
-  await withTimeout(pullWithKey(`d:${date}`, () => fetchLogsForDate(date)), 3000);
+  await withTimeout(pullWithKey(`d:${date}`, () => fetchLogsForDate(date)), 8000);
   const rows = await db.food_logs.where('date').equals(date).sortBy('logged_at');
   return rows.filter((r) => !r.removed).map(toFoodLog);
 }
 
 export async function getAllLogs(): Promise<FoodLog[]> {
-  await withTimeout(pullWithKey('all', fetchAllLogs), 5000);
+  await withTimeout(pullWithKey('all', fetchAllLogs), 10000);
   const rows = await db.food_logs.orderBy('logged_at').reverse().toArray();
   return rows.map(toFoodLog);
 }
@@ -222,14 +269,15 @@ export async function addLog(entry: {
   });
   const row = await db.food_logs.get(id);
   const log = toFoodLog(row!);
-  syncAddLog({
+  const syncPayload = {
     id: sync_id,
     food_name: log.food_name, calories: log.calories,
     protein: log.protein, carbs: log.carbs, fat: log.fat,
     weight_grams: log.weight_grams, meal_type: log.meal_type,
     image_url: log.image_url, ingredients: log.ingredients,
     logged_at: log.logged_at, date: log.logged_at.slice(0, 10),
-  }).catch(() => {});
+  };
+  syncAddLog(syncPayload).catch(() => queueAdd(syncPayload));
   return log;
 }
 
@@ -241,7 +289,7 @@ export async function deleteLog(id: string): Promise<void> {
   } else {
     await db.food_logs.delete(Number(id));
   }
-  syncDeleteLog(id).catch(() => {});
+  syncDeleteLog(id).catch(() => queueDelete(id));
 }
 
 // Soft-delete: removes from active log but keeps in History Foods tab
@@ -249,11 +297,13 @@ export async function softDeleteLog(id: string): Promise<void> {
   const bySync = await db.food_logs.where('sync_id').equals(id).first();
   if (bySync?.id != null) {
     await db.food_logs.update(bySync.id, { removed: true });
+    syncDeleteLog(id).catch(() => queueDelete(id));
     return;
   }
   const numId = Number(id);
   if (!isNaN(numId) && Number.isInteger(numId)) {
     await db.food_logs.update(numId, { removed: true });
+    syncDeleteLog(id).catch(() => queueDelete(id));
   }
 }
 

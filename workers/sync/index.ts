@@ -174,7 +174,7 @@ export default {
           ).bind(userId).all();
         } else if (date) {
           rows = await env.DB.prepare(
-            'SELECT * FROM food_logs WHERE user_id = ? AND date = ? AND deleted_at IS NULL ORDER BY logged_at ASC'
+            'SELECT * FROM food_logs WHERE user_id = ? AND date = ? ORDER BY logged_at ASC'
           ).bind(userId, date).all();
         } else {
           return err('date or all param required', 400, ao);
@@ -232,6 +232,41 @@ export default {
         if (!userId) return err('Unauthorized', 401, ao);
 
         await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+        return json({ ok: true }, 200, ao);
+      }
+
+      // ── GET /training-state ───────────────────────────────────────────────
+      if (path === '/training-state' && request.method === 'GET') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+
+        const row = await env.DB.prepare('SELECT * FROM training_state WHERE user_id = ?')
+          .bind(userId).first<Record<string, unknown>>();
+        if (!row) return json({ todayLog: null, weeklyLoad: null }, 200, ao);
+        return json({
+          todayLog:   row.today_log   ? JSON.parse(row.today_log   as string) : null,
+          weeklyLoad: row.weekly_load ? JSON.parse(row.weekly_load as string) : null,
+        }, 200, ao);
+      }
+
+      // ── PUT /training-state ───────────────────────────────────────────────
+      if (path === '/training-state' && request.method === 'PUT') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+
+        const body = await request.json() as Record<string, unknown>;
+        await env.DB.prepare(`
+          INSERT INTO training_state (user_id, today_log, weekly_load, updated_at)
+          VALUES (?, ?, ?, datetime('now'))
+          ON CONFLICT(user_id) DO UPDATE SET
+            today_log=excluded.today_log,
+            weekly_load=excluded.weekly_load,
+            updated_at=excluded.updated_at
+        `).bind(
+          userId,
+          body.todayLog   != null ? JSON.stringify(body.todayLog)   : null,
+          body.weeklyLoad != null ? JSON.stringify(body.weeklyLoad) : null,
+        ).run();
         return json({ ok: true }, 200, ao);
       }
 

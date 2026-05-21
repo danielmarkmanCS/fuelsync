@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal } from '../api/localFood';
+import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { playFoodLogSound } from '../utils/sounds';
@@ -300,6 +300,17 @@ export default function FoodScreen() {
 
   const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  // Re-fetch from D1 when app comes back to foreground (picks up changes from other devices)
+  const fetchLogsRef = useRef(fetchLogs);
+  fetchLogsRef.current = fetchLogs;
+  useEffect(() => {
+    const onVisible = () => {
+      if (!document.hidden) { clearPullCache(); fetchLogsRef.current(); }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   // Load diary note when date changes
   useEffect(() => {
