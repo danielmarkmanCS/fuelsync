@@ -5,7 +5,7 @@ import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
 import { getSyncToken, getMe, syncProfile } from './api/syncClient';
-import { clearPullCache } from './api/localFood';
+import { clearPullCache, drainSyncQueue } from './api/localFood';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import GoogleAuthScreen from './screens/GoogleAuthScreen';
@@ -18,9 +18,9 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 type Tab = 'home' | 'food' | 'history' | 'profile';
 const NAV_H = 68;
 
-const BLUE  = '#0038A8';
+const BLUE  = '#4B6FFF';
 const TEXT  = '#0A1628';
-const MUTED2 = '#C0CCDF';
+const MUTED2 = '#3A4E72';
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
@@ -153,6 +153,14 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
+  // Retry any queued sync operations when the device comes back online
+  useEffect(() => {
+    if (!user) return;
+    const handleOnline = () => drainSyncQueue().catch(() => {});
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [user]);
+
   // Handle fuelsync:// deep links (Strava OAuth callback on Android)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -274,7 +282,7 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#0E1117', overflow: 'hidden',
+      background: '#0A0F1E', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
@@ -286,7 +294,7 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(18,22,32,0.97)',
+        background: 'rgba(10,15,30,0.97)',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',

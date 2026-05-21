@@ -11,9 +11,9 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 import { getCustomTargets } from '../lib/customTargets';
 
-const BG     = '#0E1117';
-const SURF   = '#161B27';
-const SURF2  = '#1D2333';
+const BG     = '#0A0F1E';
+const SURF   = '#131C2E';
+const SURF2  = '#1C2540';
 const EDGE   = 'rgba(255,255,255,0.07)';
 const TEXT   = '#DCE6FF';
 const MUTED  = '#5A6990';
@@ -23,7 +23,7 @@ const GREEN  = '#05C56B';
 const ORANGE = '#FF8B00';
 const PURPLE = '#8034E0';
 const CYAN   = '#00BDD0';
-const YELLOW = '#FFC107';
+const YELLOW = '#F59E0B';
 const RED    = '#EF3340';
 const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
 
@@ -105,7 +105,7 @@ function buildRecovery(loggedRuns: LoggedRun[], strengthSessions: number, activi
 }
 
 function getHeaderGradient(hour: number): string {
-  if (hour >= 5 && hour < 9)  return 'linear-gradient(145deg, #071A3E 0%, #0F3870 40%, #1860C8 100%)';
+  if (hour >= 5 && hour < 9)  return 'linear-gradient(145deg, #071A3E 0%, #0F3870 40%, #1E40DC 100%)';
   if (hour >= 9 && hour < 15) return 'linear-gradient(145deg, #080F30 0%, #1428A0 40%, #1E40DC 100%)';
   if (hour >= 15 && hour < 20) return 'linear-gradient(145deg, #100830 0%, #281060 40%, #3018A0 100%)';
   return 'linear-gradient(145deg, #070412 0%, #100828 40%, #180C50 100%)';

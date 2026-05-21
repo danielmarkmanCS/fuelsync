@@ -2,9 +2,9 @@
 
 :root {
   /* ── Surfaces ── */
-  --bg:      #0E1117;
-  --surf:    #161B27;
-  --surf2:   #1D2333;
+  --bg:      #0A0F1E;
+  --surf:    #131C2E;
+  --surf2:   #1C2540;
   --edge:    rgba(255,255,255,0.07);
   --edge2:   rgba(255,255,255,0.14);
 
@@ -29,7 +29,7 @@
   --orange:  #FF8B00;
   --purple:  #8034E0;
   --red:     #EF3340;
-  --yellow:  #FFC107;
+  --yellow:  #F59E0B;
   --cyan:    #00BDD0;
 
   /* ── Macro palette ── */

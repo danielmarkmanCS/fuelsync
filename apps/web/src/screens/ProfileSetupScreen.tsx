@@ -9,9 +9,9 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
 
-const BG     = '#0E1117';
-const SURF   = '#161B27';
-const SURF2  = '#1D2333';
+const BG     = '#0A0F1E';
+const SURF   = '#131C2E';
+const SURF2  = '#1C2540';
 const EDGE   = 'rgba(255,255,255,0.07)';
 const TEXT   = '#DCE6FF';
 const MUTED  = '#5A6990';

@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG     = '#0E1117';
-const SURF   = '#161B27';
-const SURF2  = '#1D2333';
+const BG     = '#0A0F1E';
+const SURF   = '#131C2E';
+const SURF2  = '#1C2540';
 const EDGE   = 'rgba(255,255,255,0.07)';
 const TEXT   = '#DCE6FF';
 const MUTED  = '#5A6990';
