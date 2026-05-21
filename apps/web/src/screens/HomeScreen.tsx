@@ -698,14 +698,6 @@ export default function HomeScreen() {
       ? { ...targets, calories: Math.max(1200, targets.calories + goalCalAdj[goalMode]) }
       : targets;
 
-  // Net calories: estimate burned from today's training type + logged runs this week
-  const userWeightKg = profile?.weightKg ?? 75;
-  const runCalBurned = Math.round(loggedRuns.reduce((s, r) => s + r.km * userWeightKg * 1.05, 0));
-  const strengthSets = weeklyLoad.totalStrengthSets ?? 0;
-  const strengthCalBurned = Math.round(strengthSets * 7);
-  const totalBurned = runCalBurned + strengthCalBurned;
-  const netCal = effectiveTargets ? Math.round(effectiveTargets.calories + totalBurned - consumed.calories) : 0;
-
   const calPct   = effectiveTargets && effectiveTargets.calories > 0 ? (consumed.calories / effectiveTargets.calories) * 100 : 0;
   const calLeft  = effectiveTargets ? Math.round(effectiveTargets.calories - consumed.calories) : 0;
   const strength = weeklyLoad.totalStrengthSets ?? 0;
@@ -1025,41 +1017,6 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* ── NET CALORIES ── */}
-      {effectiveTargets && totalBurned > 0 && (
-        <div className="nrc-a nrc-a3" style={{ padding: '12px 22px 0' }}>
-          <div style={{
-            background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
-            borderRadius: 18, padding: '16px 18px',
-            border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase', marginBottom: 12 }}>
-              Net Calories
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
-              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: TEXT, letterSpacing: -0.5 }}>{effectiveTargets.calories.toLocaleString()}</div>
-                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>GOAL</div>
-              </div>
-              <div style={{ color: GREEN, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>+</div>
-              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: GREEN, letterSpacing: -0.5 }}>{totalBurned.toLocaleString()}</div>
-                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>BURNED</div>
-              </div>
-              <div style={{ color: MUTED, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>−</div>
-              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: ORANGE, letterSpacing: -0.5 }}>{Math.round(consumed.calories).toLocaleString()}</div>
-                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>EATEN</div>
-              </div>
-              <div style={{ color: MUTED, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>=</div>
-              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: netCal >= 0 ? GREEN : RED, letterSpacing: -0.5 }}>{netCal.toLocaleString()}</div>
-                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>NET LEFT</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── MICRONUTRIENTS ── */}
       <div className="nrc-a nrc-a3" style={{ padding: '12px 22px 0' }}>
