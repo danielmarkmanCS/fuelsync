@@ -3,7 +3,7 @@ WORKDIR /app
 
 # Install web app dependencies
 COPY apps/web/package*.json ./apps/web/
-RUN cd apps/web && npm ci
+RUN cd apps/web && npm ci --legacy-peer-deps
 
 # Copy source: web app + mobile services (reused by web) + shared types
 COPY apps/web        ./apps/web

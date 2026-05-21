@@ -54,29 +54,6 @@ const inp: React.CSSProperties = {
   fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
 };
 
-function TokenCopyButton() {
-  const [copied, setCopied] = useState(false);
-  const token = getSyncToken();
-  if (!token) return null;
-  return (
-    <button
-      onClick={async () => {
-        try { await navigator.clipboard.writeText(token); } catch { /* fallback */ }
-        setCopied(true); setTimeout(() => setCopied(false), 2500);
-      }}
-      className="nrc-press"
-      style={{
-        width: '100%', padding: 14, borderRadius: 12,
-        border: `1px solid ${copied ? '#22C55E35' : 'rgba(255,255,255,0.08)'}`,
-        background: copied ? '#22C55E08' : '#1E1E1E',
-        color: copied ? '#22C55E' : '#AAAAAA',
-        fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
-      }}
-    >
-      {copied ? '✓ Token copied!' : '⎘ Copy sync token'}
-    </button>
-  );
-}
 
 export default function ProfileSetupScreen() {
   const { user, setUser, logout } = useAuthStore();
@@ -664,7 +641,7 @@ export default function ProfileSetupScreen() {
                 }}>
                   {syncing ? 'Pushing to cloud…' : syncDone ?? '↑ Push all logs to cloud'}
                 </button>
-                <TokenCopyButton />
+
               </>
             )}
             <button onClick={async () => {

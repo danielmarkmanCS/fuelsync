@@ -22,6 +22,7 @@ interface NutritionState {
   addStrengthSession: () => void;
   removeStrengthSession: () => void;
   startNewWeek: (monday: string) => void;
+  setWeeklyLoad: (weeklyLoad: WeeklyLoad) => void;
   resetDay: () => void;
   resetAll: () => void;
 }
@@ -116,6 +117,8 @@ export const useNutritionStore = create<NutritionState>()(
         recoveryScore: 80,
         loggedRuns: [],
       }}),
+
+      setWeeklyLoad: (weeklyLoad) => set({ weeklyLoad }),
 
       resetDay: () => set({ todayLog: null, targets: null }),
 

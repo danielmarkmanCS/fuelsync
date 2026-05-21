@@ -199,18 +199,23 @@ export default {
         const date = (body.date as string | null) ?? (loggedAt ? loggedAt.split('T')[0] : null);
 
         await env.DB.prepare(`
-          INSERT INTO food_logs (id, user_id, food_name, calories, protein, carbs, fat, weight_grams, meal_type, image_url, ingredients, logged_at, date)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO food_logs (id, user_id, food_name, calories, protein, carbs, fat, weight_grams, meal_type, image_url, ingredients, logged_at, date, fiber_g, cholesterol_mg, sodium_mg, vitamin_c_mg, vitamin_d_mcg, calcium_mg, iron_mg)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id, user_id) DO UPDATE SET
             food_name=excluded.food_name, calories=excluded.calories, protein=excluded.protein,
             carbs=excluded.carbs, fat=excluded.fat, weight_grams=excluded.weight_grams,
             meal_type=excluded.meal_type, image_url=excluded.image_url, ingredients=excluded.ingredients,
-            logged_at=excluded.logged_at, date=COALESCE(excluded.date, date), deleted_at=NULL
+            logged_at=excluded.logged_at, date=COALESCE(excluded.date, date), deleted_at=NULL,
+            fiber_g=excluded.fiber_g, cholesterol_mg=excluded.cholesterol_mg, sodium_mg=excluded.sodium_mg,
+            vitamin_c_mg=excluded.vitamin_c_mg, vitamin_d_mcg=excluded.vitamin_d_mcg,
+            calcium_mg=excluded.calcium_mg, iron_mg=excluded.iron_mg
         `).bind(
           body.id, userId, body.food_name, body.calories, body.protein ?? 0, body.carbs ?? 0, body.fat ?? 0,
           body.weight_grams ?? null, body.meal_type ?? 'other', body.image_url ?? null,
           body.ingredients ? JSON.stringify(body.ingredients) : null,
           loggedAt, date,
+          body.fiber_g ?? null, body.cholesterol_mg ?? null, body.sodium_mg ?? null,
+          body.vitamin_c_mg ?? null, body.vitamin_d_mcg ?? null, body.calcium_mg ?? null, body.iron_mg ?? null,
         ).run();
 
         return json({ ok: true }, 200, ao);

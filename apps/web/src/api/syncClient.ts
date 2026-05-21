@@ -101,3 +101,24 @@ export async function deleteAccount(): Promise<void> {
   await fetch(`${SYNC_URL}/account`, { method: 'DELETE', headers: authHeaders() });
   clearSyncToken();
 }
+
+export interface SyncTrainingState {
+  todayLog:   unknown | null;
+  weeklyLoad: unknown | null;
+}
+
+export async function fetchTrainingState(): Promise<SyncTrainingState | null> {
+  if (!getSyncToken()) return null;
+  const res = await fetch(`${SYNC_URL}/training-state`, { headers: authHeaders() });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function saveTrainingState(state: SyncTrainingState): Promise<void> {
+  if (!getSyncToken()) return;
+  await fetch(`${SYNC_URL}/training-state`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(state),
+  });
+}

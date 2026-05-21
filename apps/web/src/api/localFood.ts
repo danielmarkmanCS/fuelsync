@@ -132,6 +132,13 @@ interface D1FoodLog {
   logged_at: string;
   date: string;
   deleted_at?: string | null;
+  fiber_g?: number | null;
+  cholesterol_mg?: number | null;
+  sodium_mg?: number | null;
+  vitamin_c_mg?: number | null;
+  vitamin_d_mcg?: number | null;
+  calcium_mg?: number | null;
+  iron_mg?: number | null;
 }
 
 async function upsertD1Logs(d1logs: unknown[]) {
@@ -177,6 +184,13 @@ async function upsertD1Logs(d1logs: unknown[]) {
       ingredients: log.ingredients ?? null,
       logged_at: log.logged_at,
       date: log.date ?? (log.logged_at ? log.logged_at.split('T')[0] : null),
+      fiber_g:        log.fiber_g        ?? null,
+      cholesterol_mg: log.cholesterol_mg ?? null,
+      sodium_mg:      log.sodium_mg      ?? null,
+      vitamin_c_mg:   log.vitamin_c_mg   ?? null,
+      vitamin_d_mcg:  log.vitamin_d_mcg  ?? null,
+      calcium_mg:     log.calcium_mg     ?? null,
+      iron_mg:        log.iron_mg        ?? null,
     });
   }
 }
@@ -276,6 +290,10 @@ export async function addLog(entry: {
     weight_grams: log.weight_grams, meal_type: log.meal_type,
     image_url: log.image_url, ingredients: log.ingredients,
     logged_at: log.logged_at, date: log.logged_at.slice(0, 10),
+    fiber_g: log.fiber_g ?? null, cholesterol_mg: log.cholesterol_mg ?? null,
+    sodium_mg: log.sodium_mg ?? null, vitamin_c_mg: log.vitamin_c_mg ?? null,
+    vitamin_d_mcg: log.vitamin_d_mcg ?? null, calcium_mg: log.calcium_mg ?? null,
+    iron_mg: log.iron_mg ?? null,
   };
   syncAddLog(syncPayload).catch(() => queueAdd(syncPayload));
   return log;

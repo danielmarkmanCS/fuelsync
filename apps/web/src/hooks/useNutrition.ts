@@ -1,9 +1,11 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNutritionStore } from '../store/nutritionStore';
 import { useAuthStore } from '../store/authStore';
 import { fetchWeather, evaluateEnvironment } from '@mobile/services/weatherService';
 import { computeMacros, checkLegFatigueGate } from '@mobile/services/nutritionEngine';
-import type { DailyLog, TrainingType, UserProfile, WeatherConditions, EnvironmentAlert } from '@shared/types';
+import { fetchTrainingState, saveTrainingState, getSyncToken } from '../api/syncClient';
+import { drainSyncQueue, clearPullCache } from '../api/localFood';
+import type { DailyLog, TrainingType, UserProfile, WeatherConditions, EnvironmentAlert, WeeklyLoad } from '@shared/types';
 import type { BackendUser } from '../api/auth';
 
 const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_KEY ?? '';
@@ -27,19 +29,91 @@ export function useNutrition() {
 
   const profile = user ? toUserProfile(user) : null;
 
-  // Auto-reset training type if it's from a previous day
+  // trainingLoaded gates the save effect so it never fires before the remote load finishes
+  const [trainingLoaded, setTrainingLoaded] = useState(false);
+  const isFirstSaveRender = useRef(true);
+
+  // On mount: drain queue, load training state from D1, then apply date resets
   useEffect(() => {
+    drainSyncQueue().catch(() => {});
+    clearPullCache();
+
     const today = new Date().toISOString().split('T')[0];
-    if (store.todayLog && store.todayLog.date !== today) {
-      store.resetDay();
+    const getMonday = () => {
+      const d = new Date();
+      const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
+    };
+
+    const applyDateResets = () => {
+      // Reset today's log if it's from a previous day
+      if (store.todayLog && store.todayLog.date !== today) store.resetDay();
+      // Reset weekly load on a new Monday
+      const monday = getMonday();
+      if (store.weeklyLoad.weekStart !== monday) store.startNewWeek(monday);
+    };
+
+    if (!getSyncToken()) {
+      applyDateResets();
+      setTrainingLoaded(true);
+      return;
     }
-    // Auto-reset weekly load on a new Monday
-    const d = new Date();
-    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
-    const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
-    if (store.weeklyLoad.weekStart !== monday) {
-      store.startNewWeek(monday);
-    }
+
+    fetchTrainingState().then((remote) => {
+      if (!remote) {
+        // D1 has no row yet — push local state if it has meaningful data
+        const hasLocal = store.weeklyLoad.totalRunKm > 0 ||
+          store.weeklyLoad.totalStrengthSets > 0 ||
+          store.todayLog !== null;
+        if (hasLocal) saveTrainingState({ todayLog: store.todayLog, weeklyLoad: store.weeklyLoad }).catch(() => {});
+        return;
+      }
+      const monday = getMonday();
+      // Restore today's log from D1 if it matches today
+      if (remote.todayLog && (remote.todayLog as DailyLog).date === today) {
+        store.setTodayLog(remote.todayLog as DailyLog);
+      }
+      // Restore weekly load from D1 if it matches the current week
+      if (remote.weeklyLoad && (remote.weeklyLoad as WeeklyLoad).weekStart === monday) {
+        store.setWeeklyLoad(remote.weeklyLoad as WeeklyLoad);
+      }
+    }).catch(() => {}).finally(() => {
+      applyDateResets();
+      setTrainingLoaded(true);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced push to D1 on every training state change — skipped until load completes
+  useEffect(() => {
+    if (!trainingLoaded) return;
+    if (isFirstSaveRender.current) { isFirstSaveRender.current = false; return; }
+    if (!getSyncToken()) return;
+    const timer = setTimeout(() => {
+      saveTrainingState({ todayLog: store.todayLog, weeklyLoad: store.weeklyLoad }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.todayLog, store.weeklyLoad, trainingLoaded]);
+
+  // Midnight reset — fires when the clock ticks past 00:00 while the app is open
+  useEffect(() => {
+    const scheduleReset = () => {
+      const now = new Date();
+      const msUntilMidnight =
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime();
+      return setTimeout(() => {
+        const monday = (() => {
+          const d = new Date();
+          const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+          return new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
+        })();
+        store.resetDay();
+        store.startNewWeek(monday);
+      }, msUntilMidnight);
+    };
+    const t = scheduleReset();
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -116,6 +190,7 @@ export function useNutrition() {
     weeklyLoad: store.weeklyLoad,
     weather: store.weather,
     environmentAlert: store.environmentAlert,
+    trainingLoaded,
     logDay,
     refreshWeather,
     getMacroBreakdown,

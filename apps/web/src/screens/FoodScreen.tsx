@@ -1245,14 +1245,14 @@ export default function FoodScreen() {
             <div style={{ padding: '16px 22px 44px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, textTransform: 'uppercase' }}>
-                  {editingId ? 'Edit Fuel' : 'Log Fuel'}
+                  {editingId ? 'EDIT' : 'LOG IT'}
                 </div>
                 <button onClick={closeSheet} style={{ background: SURF2, border: `1px solid ${EDGE}`, color: MUTED, fontSize: 18, cursor: 'pointer', borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
 
               {/* Mode tabs */}
               <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24, overflowX: 'auto' }}>
-                {([['quick', 'Quick'], ['search', 'Search'], ['recipe', 'Recipe'], ['ai', 'AI'], ['photo', 'Photo'], ['manual', 'Manual'], ['suggest', 'Suggest']] as const).map(([m, label]) => (
+                {([['quick', 'FAST'], ['search', 'SEARCH'], ['recipe', 'RECIPE'], ['ai', 'DESCRIBE'], ['photo', 'CAMERA'], ['manual', 'MANUAL'], ['suggest', 'SUGGEST']] as const).map(([m, label]) => (
                   <button key={m} onClick={() => {
                     setMode(m); setAiError(''); setFormError(''); setSuggestResult(null);
                     if (m !== 'search') { setScanActive(false); stopScan(); }
@@ -1272,7 +1272,7 @@ export default function FoodScreen() {
               {mode === 'quick' && (
                 <>
                   <div style={{ fontSize: 12, color: MUTED, marginBottom: 16, lineHeight: 1.6 }}>
-                    Log calories fast — food name is optional.
+                    Just the calories. Name is optional.
                   </div>
 
                   <input
@@ -1839,7 +1839,7 @@ export default function FoodScreen() {
                   )}
                   {aiError && <ErrBox msg={aiError} />}
                   <button onClick={handleSuggest} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, ORANGE)}>
-                    {aiLoading ? 'Generating meal…' : 'Suggest a meal →'}
+                    {aiLoading ? 'thinking…' : 'suggest →'}
                   </button>
                 </>
               )}
@@ -1994,7 +1994,7 @@ export default function FoodScreen() {
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                     <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`, background: 'none', color: MUTED, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
                     <button onClick={handleAdd} disabled={submitting} className="nrc-press" style={bigBtn(submitting, ORANGE, 2)}>
-                      {submitting ? 'Saving…' : editingId ? 'Save Changes →' : 'Log Fuel →'}
+                      {submitting ? '···' : editingId ? 'save →' : 'log it →'}
                     </button>
                   </div>
                 </>

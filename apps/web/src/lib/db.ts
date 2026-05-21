@@ -57,6 +57,14 @@ export interface WeightLog {
   logged_at: string;  // ISO timestamp
 }
 
+export interface SyncQueueItem {
+  id?: number;
+  operation: 'add' | 'delete';
+  payload: string;    // JSON-stringified log or { id }
+  retries: number;
+  created_at: string;
+}
+
 export interface PinState {
   id?: number;
   hash: string;
@@ -75,6 +83,7 @@ class FuelSyncDB extends Dexie {
   food_logs!:    Table<LocalFoodLog, number>;
   pin_state!:    Table<PinState, number>;
   weight_logs!:  Table<WeightLog, number>;
+  sync_queue!:   Table<SyncQueueItem, number>;
 
   constructor() {
     super('FuelSyncDB');
@@ -88,6 +97,9 @@ class FuelSyncDB extends Dexie {
     });
     this.version(3).stores({
       weight_logs: '++id, date',
+    });
+    this.version(4).stores({
+      sync_queue: '++id, operation',
     });
   }
 }

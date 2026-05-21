@@ -59,10 +59,10 @@ function ProfileIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',    label: 'Home',    Icon: HomeIcon },
-  { id: 'food',    label: 'Fuel',    Icon: FuelIcon },
-  { id: 'history', label: 'History', Icon: HistoryIcon },
-  { id: 'profile', label: 'Profile', Icon: ProfileIcon },
+  { id: 'home',    label: 'TODAY',   Icon: HomeIcon },
+  { id: 'food',    label: 'LOG',     Icon: FuelIcon },
+  { id: 'history', label: 'HISTORY', Icon: HistoryIcon },
+  { id: 'profile', label: 'ME',      Icon: ProfileIcon },
 ];
 
 export default function App() {
@@ -211,12 +211,7 @@ export default function App() {
         background: 'linear-gradient(160deg, #0A0A0A 0%, #CC5500 50%, #FF8000 100%)',
         gap: 0, position: 'relative', overflow: 'hidden',
       }}>
-        {/* Background orbs */}
-        <div className="orb1" style={{ position: 'absolute', top: '10%', right: '5%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,128,0,0.18)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: '15%', left: '5%', width: 150, height: 150, borderRadius: '50%', background: 'rgba(245,197,24,0.12)' }} />
-        <div className="orb3" style={{ position: 'absolute', top: '40%', left: '35%', width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1, color: '#FFFFFF' }}>
             FUEL
           </div>
