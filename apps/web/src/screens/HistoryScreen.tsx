@@ -2,20 +2,18 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG     = '#070C18';
-const SURF   = '#0E1624';
-const SURF2  = '#162030';
-const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#E8EEFF';
-const MUTED  = '#546078';
-const BLUE   = '#3D65FF';
-const BLUE2  = '#6B8BFF';
-const GREEN  = '#0DBA6A';
-const ORANGE = '#F07800';
-const PURPLE = '#8844EE';
-const CYAN   = '#00C8E8';
-const RED    = '#FF3355';
-const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
+const BG     = '#0A0A0A';
+const SURF   = '#141414';
+const SURF2  = '#1E1E1E';
+const EDGE   = 'rgba(255,255,255,0.08)';
+const TEXT   = '#F0F0F0';
+const MUTED  = '#707070';
+const ORANGE = '#FF8000';
+const YELLOW = '#F5C518';
+const GREEN  = '#22C55E';
+const RED    = '#EF4444';
+const FAT_CLR = '#AAAAAA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -86,7 +84,7 @@ function StreakMilestone({ streak }: { streak: number }) {
     { min: 30, label: 'ELITE ATHLETE', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
     { min: 14, label: 'COMMITTED',     color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
     { min: 7,  label: 'ON FIRE',       color: ORANGE,    msg: '7 day streak — a perfect week of fuel tracking.' },
-    { min: 3,  label: 'BUILDING',      color: BLUE2,     msg: '3 day streak — momentum is everything. Keep going.' },
+    { min: 3,  label: 'BUILDING',      color: YELLOW,     msg: '3 day streak — momentum is everything. Keep going.' },
   ];
   const m = milestones.find((x) => streak >= x.min)!;
   return (
@@ -166,7 +164,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
             const barH  = cal > 0 ? Math.max((cal / maxCal) * CHART_H, 6) : 3;
             const pct   = goalCal > 0 ? (cal / goalCal) * 100 : 0;
             const isToday = date === todayStr;
-            const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? BLUE2 : 'rgba(255,255,255,0.10)';
+            const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? YELLOW : 'rgba(255,255,255,0.10)';
             const dayLbl = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
 
             return (
@@ -188,7 +186,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
                 </div>
                 <div style={{
                   fontSize: 8, fontWeight: isToday ? 800 : 600,
-                  color: isToday ? BLUE : MUTED, marginTop: 7, letterSpacing: 0.5,
+                  color: isToday ? ORANGE : MUTED, marginTop: 7, letterSpacing: 0.5,
                 }}>
                   {isToday ? 'TODAY' : dayLbl}
                 </div>
@@ -222,9 +220,9 @@ function StatsRow({ streak, totalDays, avgCal, goalCal }: { streak: number; tota
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
       {[
-        { label: 'Day Streak', value: streak, unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : BLUE, highlight: streak >= 3 },
-        { label: 'Days Logged', value: totalDays, unit: 'total', color: CYAN, highlight: false },
-        { label: 'Avg Daily', value: goalPct, unit: `% of goal`, color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : BLUE, highlight: goalPct >= 85 && goalPct <= 115 },
+        { label: 'Day Streak', value: streak, unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE, highlight: streak >= 3 },
+        { label: 'Days Logged', value: totalDays, unit: 'total', color: YELLOW, highlight: false },
+        { label: 'Avg Daily', value: goalPct, unit: `% of goal`, color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE, highlight: goalPct >= 85 && goalPct <= 115 },
       ].map(({ label, value, unit, color, highlight }) => (
         <div key={label} style={{
           background: highlight ? `${color}08` : SURF,
@@ -331,7 +329,7 @@ export default function HistoryScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(145deg, #050A18 0%, #3D65FF 50%, #6B8BFF 100%)',
+        background: 'linear-gradient(145deg, #0A0A0A 0%, #CC5500 50%, #FF8000 100%)',
         padding: '52px 22px 0', position: 'relative', overflow: 'hidden',
       }}>
         <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 140, height: 140, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
@@ -412,9 +410,9 @@ export default function HistoryScreen() {
             {days.map((day) => {
               const isOpen   = expanded === day.date;
               const pct      = Math.min(100, Math.round((day.totalCal / goalCal) * 100));
-              const barColor = pct >= 110 ? RED : pct >= 85 ? GREEN : BLUE;
+              const barColor = pct >= 110 ? RED : pct >= 85 ? GREEN : ORANGE;
               const perf     = pct >= 85 && pct <= 110 ? 'ON TARGET' : pct > 110 ? 'OVER' : 'UNDER';
-              const perfCol  = pct >= 85 && pct <= 110 ? GREEN : pct > 110 ? RED : BLUE;
+              const perfCol  = pct >= 85 && pct <= 110 ? GREEN : pct > 110 ? RED : ORANGE;
 
               return (
                 <div key={day.date} className="card-lift" style={{
@@ -469,8 +467,8 @@ export default function HistoryScreen() {
                         return (
                           <>
                             <MacroChip label="Pro" value={day.totalProtein} color={RED}    pct={pP} />
-                            <MacroChip label="Crb" value={day.totalCarbs}   color={CYAN}   pct={cP} />
-                            <MacroChip label="Fat" value={day.totalFat}     color={PURPLE} pct={fP} />
+                            <MacroChip label="Crb" value={day.totalCarbs}   color={YELLOW}   pct={cP} />
+                            <MacroChip label="Fat" value={day.totalFat}     color={FAT_CLR} pct={fP} />
                           </>
                         );
                       })()}
@@ -479,7 +477,7 @@ export default function HistoryScreen() {
                   </button>
 
                   {isOpen && (
-                    <div style={{ borderTop: `1px solid ${EDGE}`, background: `${BLUE}02` }}>
+                    <div style={{ borderTop: `1px solid ${EDGE}`, background: `${ORANGE}02` }}>
                       {(() => {
                         // Suppress a removed entry when an active entry with the same name exists in the same day
                         const activeNames = new Set(day.items.filter((i) => !i.removed).map((i) => i.food_name.toLowerCase()));
@@ -509,21 +507,21 @@ export default function HistoryScreen() {
                                 </div>
                               </div>
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                <div style={{ fontSize: 15, fontWeight: 900, color: isRemoved ? MUTED : BLUE, letterSpacing: -0.5, textDecoration: isRemoved ? 'line-through' : 'none' }}>
+                                <div style={{ fontSize: 15, fontWeight: 900, color: isRemoved ? MUTED : ORANGE, letterSpacing: -0.5, textDecoration: isRemoved ? 'line-through' : 'none' }}>
                                   {Math.round(Number(item.calories))}
                                 </div>
                                 <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
                                   <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
-                                  <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
-                                  <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                                  <span style={{ fontSize: 9, color: YELLOW,   fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
+                                  <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                                 </div>
                               </div>
                               {hasIngs && (
                                 <button onClick={() => setExpandedFood(isFoodOpen ? null : item.id)} style={{
                                   width: 26, height: 26, borderRadius: 8,
-                                  border: `1px solid ${isFoodOpen ? BLUE : EDGE}`,
-                                  background: isFoodOpen ? `${BLUE}10` : SURF2,
-                                  color: isFoodOpen ? BLUE : MUTED,
+                                  border: `1px solid ${isFoodOpen ? ORANGE : EDGE}`,
+                                  background: isFoodOpen ? `${ORANGE}10` : SURF2,
+                                  color: isFoodOpen ? ORANGE : MUTED,
                                   fontWeight: 700, fontSize: 10, cursor: 'pointer', flexShrink: 0,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}>
@@ -536,7 +534,7 @@ export default function HistoryScreen() {
                                   width: 30, height: 30, borderRadius: 9,
                                   border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
                                   background: relogged === item.id ? `${GREEN}15` : SURF2,
-                                  color: relogged === item.id ? GREEN : BLUE,
+                                  color: relogged === item.id ? GREEN : ORANGE,
                                   fontWeight: 900, fontSize: 15, cursor: relogged === item.id ? 'default' : 'pointer',
                                   flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   transition: 'all 0.2s',
@@ -554,11 +552,11 @@ export default function HistoryScreen() {
                                         <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
                                         <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
                                       </div>
-                                      <div style={{ fontSize: 12, fontWeight: 800, color: BLUE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
+                                      <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
                                       <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
                                         <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
-                                        <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
-                                        <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                                        <span style={{ fontSize: 9, color: YELLOW,   fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                                        <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                                       </div>
                                       <button onClick={() => handleRelogIngredient(ing, item.meal_type, ingKey)}
                                         disabled={reloggedIng === ingKey}
@@ -566,7 +564,7 @@ export default function HistoryScreen() {
                                           width: 26, height: 26, borderRadius: 8,
                                           border: `1px solid ${reloggedIng === ingKey ? GREEN : EDGE}`,
                                           background: reloggedIng === ingKey ? `${GREEN}15` : SURF,
-                                          color: reloggedIng === ingKey ? GREEN : BLUE,
+                                          color: reloggedIng === ingKey ? GREEN : ORANGE,
                                           fontWeight: 900, fontSize: 13, cursor: reloggedIng === ingKey ? 'default' : 'pointer',
                                           flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         }}>
@@ -615,20 +613,20 @@ export default function HistoryScreen() {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: isRemoved ? MUTED : BLUE, letterSpacing: -0.5 }}>
+                      <div style={{ fontSize: 15, fontWeight: 900, color: isRemoved ? MUTED : ORANGE, letterSpacing: -0.5 }}>
                         {Math.round(Number(item.calories))} kcal
                       </div>
                       <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
                         <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
-                        <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
-                        <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
+                        <span style={{ fontSize: 9, color: YELLOW,   fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
+                        <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                       </div>
                     </div>
                     {hasIngs && !isRemoved && (
                       <button onClick={() => setExpandedFood(isFoodOpen ? null : item.id)} style={{
                         width: 28, height: 28, borderRadius: 8,
-                        border: `1px solid ${isFoodOpen ? BLUE : EDGE}`,
-                        background: isFoodOpen ? `${BLUE}10` : SURF2, color: isFoodOpen ? BLUE : MUTED,
+                        border: `1px solid ${isFoodOpen ? ORANGE : EDGE}`,
+                        background: isFoodOpen ? `${ORANGE}10` : SURF2, color: isFoodOpen ? ORANGE : MUTED,
                         fontWeight: 700, fontSize: 11, cursor: 'pointer', flexShrink: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
@@ -641,7 +639,7 @@ export default function HistoryScreen() {
                         width: 30, height: 30, borderRadius: 9,
                         border: `1px solid ${relogged === item.id ? GREEN : EDGE}`,
                         background: relogged === item.id ? `${GREEN}15` : SURF2,
-                        color: relogged === item.id ? GREEN : BLUE,
+                        color: relogged === item.id ? GREEN : ORANGE,
                         fontWeight: 900, fontSize: 15, cursor: relogged === item.id ? 'default' : 'pointer',
                         flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.2s',
@@ -660,11 +658,11 @@ export default function HistoryScreen() {
                               <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
                               <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
                             </div>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: BLUE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
                             <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
                               <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
-                              <span style={{ fontSize: 9, color: CYAN,   fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
-                              <span style={{ fontSize: 9, color: PURPLE, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
+                              <span style={{ fontSize: 9, color: YELLOW,   fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
+                              <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                             </div>
                             <button onClick={() => handleRelogIngredient(ing, item.meal_type, ingKey)}
                               disabled={reloggedIng === ingKey}
@@ -672,7 +670,7 @@ export default function HistoryScreen() {
                                 width: 26, height: 26, borderRadius: 8,
                                 border: `1px solid ${reloggedIng === ingKey ? GREEN : EDGE}`,
                                 background: reloggedIng === ingKey ? `${GREEN}15` : SURF,
-                                color: reloggedIng === ingKey ? GREEN : BLUE,
+                                color: reloggedIng === ingKey ? GREEN : ORANGE,
                                 fontWeight: 900, fontSize: 13, cursor: reloggedIng === ingKey ? 'default' : 'pointer',
                                 flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                               }}>

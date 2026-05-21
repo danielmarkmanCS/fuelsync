@@ -9,20 +9,18 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
 
-const BG     = '#070C18';
-const SURF   = '#0E1624';
-const SURF2  = '#162030';
-const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#E8EEFF';
-const MUTED  = '#546078';
-const BLUE   = '#3D65FF';
-const BLUE2  = '#6B8BFF';
-const GREEN  = '#0DBA6A';
-const CYAN   = '#00C8E8';
-const ORANGE = '#F07800';
-const RED    = '#FF3355';
-const PURPLE = '#8844EE';
-const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
+const BG     = '#0A0A0A';
+const SURF   = '#141414';
+const SURF2  = '#1E1E1E';
+const EDGE   = 'rgba(255,255,255,0.08)';
+const TEXT   = '#F0F0F0';
+const MUTED  = '#707070';
+const ORANGE = '#FF8000';
+const YELLOW = '#F5C518';
+const GREEN  = '#22C55E';
+const RED    = '#EF4444';
+const FAT_CLR = '#AAAAAA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
@@ -43,7 +41,7 @@ function calcBMI(w: number, h: number): number {
 }
 
 function getBMILabel(bmi: number): { label: string; color: string } {
-  if (bmi < 18.5) return { label: 'Underweight', color: CYAN };
+  if (bmi < 18.5) return { label: 'Underweight', color: YELLOW };
   if (bmi < 25)   return { label: 'Healthy',     color: GREEN };
   if (bmi < 30)   return { label: 'Overweight',  color: ORANGE };
   return               { label: 'Obese',         color: RED };
@@ -178,11 +176,11 @@ export default function ProfileSetupScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(145deg, #050A18 0%, #122060 40%, #3D65FF 100%)',
+        background: 'linear-gradient(145deg, #0A0A0A 0%, #1A0900 40%, #FF8000 100%)',
         padding: '44px 22px 32px', position: 'relative', overflow: 'hidden',
       }}>
-        <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(30,64,220,0.08)' }} />
+        <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,128,0,0.12)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(245,197,24,0.08)' }} />
 
         <div className="nrc-a nrc-a1" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Avatar */}
@@ -240,9 +238,9 @@ export default function ProfileSetupScreen() {
         <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
             {[
-              { label: 'BMR', value: bmr?.toLocaleString() ?? '—', unit: 'kcal/day', color: BLUE,   desc: 'Basal metabolic rate' },
+              { label: 'BMR', value: bmr?.toLocaleString() ?? '—', unit: 'kcal/day', color: ORANGE,   desc: 'Basal metabolic rate' },
               { label: 'TDEE', value: tdee?.toLocaleString() ?? '—', unit: 'kcal/day', color: GREEN,  desc: 'Total daily expenditure' },
-              { label: 'BMI',  value: bmi?.toString() ?? '—',  unit: bmiInfo?.label ?? '',  color: bmiInfo?.color ?? BLUE, desc: 'Body mass index' },
+              { label: 'BMI',  value: bmi?.toString() ?? '—',  unit: bmiInfo?.label ?? '',  color: bmiInfo?.color ?? ORANGE, desc: 'Body mass index' },
             ].map(({ label, value, unit, color, desc }) => (
               <div key={label} style={{
                 background: `linear-gradient(160deg, ${color}20 0%, ${SURF} 60%)`,
@@ -266,15 +264,15 @@ export default function ProfileSetupScreen() {
           {/* TDEE context bar */}
           {tdee && (
             <div style={{
-              background: `${BLUE}06`, borderRadius: 14, padding: '13px 16px',
-              border: `1px solid ${BLUE}15`, borderLeft: `3px solid ${BLUE}`,
+              background: `${ORANGE}06`, borderRadius: 14, padding: '13px 16px',
+              border: `1px solid ${ORANGE}15`, borderLeft: `3px solid ${ORANGE}`,
               marginBottom: 0,
             }}>
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: BLUE, textTransform: 'uppercase', marginBottom: 4 }}>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: ORANGE, textTransform: 'uppercase', marginBottom: 4 }}>
                 Your Energy Target
               </div>
               <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6, fontWeight: 500 }}>
-                Based on your stats, you need ~<strong style={{ color: BLUE }}>{tdee.toLocaleString()} kcal/day</strong> to maintain weight.
+                Based on your stats, you need ~<strong style={{ color: ORANGE }}>{tdee.toLocaleString()} kcal/day</strong> to maintain weight.
                 {' '}FuelSync adjusts this daily based on training type.
               </div>
             </div>
@@ -287,8 +285,8 @@ export default function ProfileSetupScreen() {
         <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { label: 'Weight', value: `${user!.weightKg}`, unit: 'KG', color: BLUE   },
-              { label: 'Height', value: `${user!.heightCm}`, unit: 'CM', color: CYAN   },
+              { label: 'Weight', value: `${user!.weightKg}`, unit: 'KG', color: ORANGE   },
+              { label: 'Height', value: `${user!.heightCm}`, unit: 'CM', color: YELLOW   },
               { label: 'Age',    value: `${user!.age}`,      unit: 'YR', color: GREEN  },
             ].map(({ label, value, unit, color }) => (
               <div key={label} style={{
@@ -332,12 +330,12 @@ export default function ProfileSetupScreen() {
           {(['male', 'female'] as const).map((g) => (
             <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
               flex: 1, padding: 15, borderRadius: 12, cursor: 'pointer',
-              border: `1px solid ${gender === g ? BLUE : EDGE}`,
-              borderTop: gender === g ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
-              background: gender === g ? `${BLUE}08` : SURF2,
-              color: gender === g ? BLUE : MUTED,
+              border: `1px solid ${gender === g ? ORANGE : EDGE}`,
+              borderTop: gender === g ? `3px solid ${ORANGE}` : `1px solid ${EDGE}`,
+              background: gender === g ? `${ORANGE}08` : SURF2,
+              color: gender === g ? ORANGE : MUTED,
               fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
-              boxShadow: gender === g ? `0 4px 16px ${BLUE}14` : 'none',
+              boxShadow: gender === g ? `0 4px 16px ${ORANGE}14` : 'none',
             }}>
               {g.charAt(0).toUpperCase() + g.slice(1)}
             </button>
@@ -354,15 +352,15 @@ export default function ProfileSetupScreen() {
             return (
               <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
                 textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
-                background: active ? `${BLUE}07` : SURF2,
-                border: `1px solid ${active ? BLUE : EDGE}`,
-                borderLeft: active ? `3px solid ${BLUE}` : `1px solid ${EDGE}`,
+                background: active ? `${ORANGE}07` : SURF2,
+                border: `1px solid ${active ? ORANGE : EDGE}`,
+                borderLeft: active ? `3px solid ${ORANGE}` : `1px solid ${EDGE}`,
                 transition: 'all 0.2s',
-                boxShadow: active ? `0 4px 16px ${BLUE}12` : 'none',
+                boxShadow: active ? `0 4px 16px ${ORANGE}12` : 'none',
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: active ? BLUE : TEXT, marginBottom: 3 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: active ? ORANGE : TEXT, marginBottom: 3 }}>
                     {label}
                   </div>
                   <div style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>
@@ -370,7 +368,7 @@ export default function ProfileSetupScreen() {
                   </div>
                 </div>
                 {active && (
-                  <div style={{ marginLeft: 'auto', color: BLUE, fontSize: 18, fontWeight: 900 }}>✓</div>
+                  <div style={{ marginLeft: 'auto', color: ORANGE, fontSize: 18, fontWeight: 900 }}>✓</div>
                 )}
               </button>
             );
@@ -400,9 +398,9 @@ export default function ProfileSetupScreen() {
               disabled={savingWeight || !todayWeightInput.trim()}
               className="nrc-press"
               style={{
-                background: savingWeight || !todayWeightInput.trim() ? SURF2 : `${BLUE}12`,
-                border: `1px solid ${savingWeight || !todayWeightInput.trim() ? EDGE : BLUE + '40'}`,
-                borderRadius: 12, color: savingWeight || !todayWeightInput.trim() ? MUTED : BLUE,
+                background: savingWeight || !todayWeightInput.trim() ? SURF2 : `${ORANGE}12`,
+                border: `1px solid ${savingWeight || !todayWeightInput.trim() ? EDGE : ORANGE + '40'}`,
+                borderRadius: 12, color: savingWeight || !todayWeightInput.trim() ? MUTED : ORANGE,
                 fontWeight: 800, fontSize: 13, cursor: 'pointer', padding: '0 18px',
                 flexShrink: 0, whiteSpace: 'nowrap',
               }}
@@ -427,8 +425,8 @@ export default function ProfileSetupScreen() {
                   <svg width="100%" height={CHART_H} style={{ overflow: 'visible' }}>
                     <defs>
                       <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={CYAN} stopOpacity="0.3" />
-                        <stop offset="100%" stopColor={CYAN} stopOpacity="0" />
+                        <stop offset="0%" stopColor={YELLOW} stopOpacity="0.3" />
+                        <stop offset="100%" stopColor={YELLOW} stopOpacity="0" />
                       </linearGradient>
                     </defs>
                     {reversed.length > 1 && (() => {
@@ -442,15 +440,15 @@ export default function ProfileSetupScreen() {
                       return (
                         <>
                           <path d={area} fill="url(#weightGrad)" />
-                          <path d={line} fill="none" stroke={CYAN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d={line} fill="none" stroke={YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           {reversed.map((l, i) => {
                             const x = `${(i / (reversed.length - 1)) * 100}%`;
                             const y = CHART_H - ((l.weightKg - min) / range) * CHART_H;
                             const isToday2 = l.date === today;
                             return (
                               <circle key={i} cx={x} cy={y} r={isToday2 ? 4 : 2.5}
-                                fill={isToday2 ? CYAN : SURF}
-                                stroke={CYAN} strokeWidth={isToday2 ? 2 : 1.5}
+                                fill={isToday2 ? YELLOW : SURF}
+                                stroke={YELLOW} strokeWidth={isToday2 ? 2 : 1.5}
                               />
                             );
                           })}
@@ -475,12 +473,12 @@ export default function ProfileSetupScreen() {
                           <div style={{
                             height: '100%',
                             width: `${((log.weightKg - min) / range) * 100}%`,
-                            background: log.date === today ? CYAN : `${CYAN}70`,
+                            background: log.date === today ? YELLOW : `${YELLOW}70`,
                             borderRadius: 2,
                             transition: 'width 0.4s ease',
                           }} />
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 900, color: log.date === today ? CYAN : TEXT, minWidth: 52, textAlign: 'right', letterSpacing: -0.5 }}>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: log.date === today ? YELLOW : TEXT, minWidth: 52, textAlign: 'right', letterSpacing: -0.5 }}>
                           {log.weightKg}<span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>kg</span>
                         </div>
                         {diff !== null && (
@@ -516,7 +514,7 @@ export default function ProfileSetupScreen() {
             {([
               ['lose',     'Lose Weight',   RED,    '-500 kcal/day'],
               ['maintain', 'Maintain',      GREEN,  'TDEE target'],
-              ['gain',     'Gain Muscle',   BLUE2,  '+300 kcal/day'],
+              ['gain',     'Gain Muscle',   YELLOW,  '+300 kcal/day'],
             ] as const).map(([mode, label, color, sub]) => (
               <button key={mode} onClick={() => handleSetGoalMode(mode)} style={{
                 flex: 1, padding: '12px 6px', borderRadius: 12,
@@ -537,7 +535,7 @@ export default function ProfileSetupScreen() {
                 {(tdee + goalCalAdj[goalMode]).toLocaleString()} kcal/day
               </strong>
               {goalMode !== 'maintain' && (
-                <span style={{ color: goalMode === 'lose' ? RED : BLUE2 }}>
+                <span style={{ color: goalMode === 'lose' ? RED : YELLOW }}>
                   {' '}({goalCalAdj[goalMode] > 0 ? '+' : ''}{goalCalAdj[goalMode]} from TDEE)
                 </span>
               )}
@@ -572,9 +570,9 @@ export default function ProfileSetupScreen() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {([
                 ['calories', 'Calories (kcal)', ORANGE],
-                ['proteinG', 'Protein (g)',     BLUE2],
+                ['proteinG', 'Protein (g)',     YELLOW],
                 ['carbsG',   'Carbs (g)',        GREEN],
-                ['fatG',     'Fat (g)',           PURPLE],
+                ['fatG',     'Fat (g)',           FAT_CLR],
               ] as const).map(([field, label, color]) => (
                 <div key={field}>
                   <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: 1, marginBottom: 5, textTransform: 'uppercase' }}>{label}</div>
@@ -608,11 +606,11 @@ export default function ProfileSetupScreen() {
 
         <button onClick={handleSave} disabled={saving} className="nrc-press" style={{
           width: '100%', padding: '17px 0', borderRadius: 16, marginBottom: 14,
-          background: saved ? `${GREEN}12` : saving ? SURF2 : `linear-gradient(135deg, ${BLUE} 0%, ${BLUE2} 100%)`,
+          background: saved ? `${GREEN}12` : saving ? SURF2 : `linear-gradient(135deg, ${ORANGE} 0%, ${YELLOW} 100%)`,
           color: saved ? GREEN : saving ? MUTED : '#fff',
           fontWeight: 900, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer',
           border: saved ? `1px solid ${GREEN}35` : '1px solid transparent',
-          boxShadow: (!saved && !saving) ? `0 4px 16px ${BLUE}35, 0 8px 32px ${BLUE}20, inset 0 1px 0 rgba(255,255,255,0.18)` : 'none',
+          boxShadow: (!saved && !saving) ? `0 4px 16px ${ORANGE}35, 0 8px 32px ${ORANGE}20, inset 0 1px 0 rgba(255,255,255,0.18)` : 'none',
           transition: 'all 0.25s',
           letterSpacing: 0.5,
         }}>
@@ -634,7 +632,7 @@ export default function ProfileSetupScreen() {
                 width: '100%', padding: 14, borderRadius: 12,
                 border: `1px solid ${syncDone && !syncDone.includes('failed') ? GREEN + '35' : EDGE}`,
                 background: syncDone && !syncDone.includes('failed') ? `${GREEN}08` : SURF2,
-                color: syncDone && !syncDone.includes('failed') ? GREEN : BLUE,
+                color: syncDone && !syncDone.includes('failed') ? GREEN : ORANGE,
                 fontWeight: 700, fontSize: 13, cursor: syncing ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
               }}>

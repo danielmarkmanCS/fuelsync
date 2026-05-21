@@ -11,21 +11,18 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 import { getCustomTargets } from '../lib/customTargets';
 
-const BG     = '#070C18';
-const SURF   = '#0E1624';
-const SURF2  = '#162030';
-const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#E8EEFF';
-const MUTED  = '#546078';
-const BLUE   = '#3D65FF';
-const BLUE2  = '#6B8BFF';
-const GREEN  = '#0DBA6A';
-const ORANGE = '#F07800';
-const PURPLE = '#8844EE';
-const CYAN   = '#00C8E8';
-const YELLOW = '#F59E0B';
-const RED    = '#FF3355';
-const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
+const BG     = '#0A0A0A';
+const SURF   = '#141414';
+const SURF2  = '#1E1E1E';
+const EDGE   = 'rgba(255,255,255,0.08)';
+const TEXT   = '#F0F0F0';
+const MUTED  = '#707070';
+const ORANGE = '#FF8000';
+const YELLOW = '#F5C518';
+const GREEN  = '#22C55E';
+const RED    = '#EF4444';
+const FAT_CLR = '#AAAAAA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const ACTIVITY_MULT: Record<string, number> = {
   sedentary: 0.4, light: 0.65, moderate: 1.0, very_active: 1.7, extra_active: 2.4,
@@ -97,7 +94,7 @@ function buildRecovery(loggedRuns: LoggedRun[], strengthSessions: number, activi
   if (runs > 0)             parts.push(`${runs} run${runs > 1 ? 's' : ''} · ${totalKm.toFixed(1)} km`);
   if (strengthSessions > 0) parts.push(`${strengthSessions} strength`);
   const sub = parts.length ? parts.join(' · ') : 'No training this week';
-  if (score >= 90) return { label: 'FRESH',      color: CYAN,   sub, score };
+  if (score >= 90) return { label: 'FRESH',      color: YELLOW,   sub, score };
   if (score >= 65) return { label: 'ACTIVE',     color: GREEN,  sub, score };
   if (score >= 40) return { label: 'BUILDING',   color: YELLOW, sub, score };
   if (score >= 20) return { label: 'LOADED',     color: ORANGE, sub, score };
@@ -105,10 +102,10 @@ function buildRecovery(loggedRuns: LoggedRun[], strengthSessions: number, activi
 }
 
 function getHeaderGradient(hour: number): string {
-  if (hour >= 5 && hour < 9)  return 'linear-gradient(145deg, #071530 0%, #0D2A60 40%, #3D65FF 100%)';
-  if (hour >= 9 && hour < 15) return 'linear-gradient(145deg, #050A18 0%, #122060 40%, #3D65FF 100%)';
-  if (hour >= 15 && hour < 20) return 'linear-gradient(145deg, #0E0620 0%, #250E50 40%, #2C188A 100%)';
-  return 'linear-gradient(145deg, #070412 0%, #0E0620 40%, #160840 100%)';
+  if (hour >= 5 && hour < 9)  return 'linear-gradient(145deg, #0A0A0A 0%, #1A0800 45%, #CC5500 100%)';
+  if (hour >= 9 && hour < 15) return 'linear-gradient(145deg, #0A0A0A 0%, #1A0900 45%, #FF8000 100%)';
+  if (hour >= 15 && hour < 20) return 'linear-gradient(145deg, #0A0A0A 0%, #1A0500 45%, #CC4400 100%)';
+  return 'linear-gradient(145deg, #0A0A0A 0%, #120800 45%, #331500 100%)';
 }
 
 // ── COUNT-UP ANIMATION HOOK ────────────────────────────────────
@@ -146,7 +143,7 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
   const over = pct >= 100;
   const onTrack = pct >= 78 && pct < 100;
   const gradId = over ? 'ringOver' : 'ringNormal';
-  const breatheClass = over ? 'breathe-r' : onTrack ? 'breathe-g' : 'breathe-b';
+  const breatheClass = over ? 'breathe-r' : onTrack ? 'breathe-g' : '';
 
   return (
     <div
@@ -156,17 +153,17 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
       <svg width={S} height={S} style={{ position: 'absolute', top: 0, left: 0 }}>
         <defs>
           <linearGradient id="ringNormal" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor={CYAN}  />
-            <stop offset="50%"  stopColor={BLUE2} />
-            <stop offset="100%" stopColor={BLUE}  />
+            <stop offset="0%"   stopColor={YELLOW} />
+            <stop offset="50%"  stopColor={ORANGE} />
+            <stop offset="100%" stopColor="#CC5500" />
           </linearGradient>
           <linearGradient id="ringOver" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%"   stopColor={YELLOW} />
             <stop offset="100%" stopColor={RED}    />
           </linearGradient>
           <linearGradient id="ringOnTrack" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor={CYAN}  />
-            <stop offset="100%" stopColor={GREEN} />
+            <stop offset="0%"   stopColor={YELLOW} />
+            <stop offset="100%" stopColor={GREEN}  />
           </linearGradient>
           <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -175,11 +172,11 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
         </defs>
         {/* Track */}
         <circle cx={S/2} cy={S/2} r={r} fill="none"
-          stroke={over ? `${RED}14` : onTrack ? `${GREEN}14` : `${BLUE}10`}
+          stroke={over ? `${RED}14` : onTrack ? `${GREEN}14` : `${ORANGE}10`}
           strokeWidth={W} />
         {/* Decorative inner ring */}
         <circle cx={S/2} cy={S/2} r={r - 20} fill="none"
-          stroke={over ? `${RED}06` : `${BLUE}05`}
+          stroke={over ? `${RED}06` : `${ORANGE}05`}
           strokeWidth={1} strokeDasharray="4 8" />
         {/* Fill */}
         <circle cx={S/2} cy={S/2} r={r} fill="none"
@@ -207,15 +204,15 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
           {displayCal.toLocaleString()}
         </div>
         <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, marginTop: 4, letterSpacing: 0.3 }}>
-          of <span style={{ color: over ? RED : BLUE, fontWeight: 800 }}>
+          of <span style={{ color: over ? RED : ORANGE, fontWeight: 800 }}>
             {Math.round(target).toLocaleString()}
           </span> kcal
         </div>
         {pct > 0 && (
           <div style={{
             marginTop: 10, padding: '3px 12px', borderRadius: 20,
-            background: over ? `${RED}12` : onTrack ? `${GREEN}12` : `${BLUE}10`,
-            color: over ? RED : onTrack ? GREEN : BLUE,
+            background: over ? `${RED}12` : onTrack ? `${GREEN}12` : `${ORANGE}10`,
+            color: over ? RED : onTrack ? GREEN : ORANGE,
             fontSize: 11, fontWeight: 800, letterSpacing: 0.5,
             transition: 'all 0.4s',
           }}>
@@ -236,8 +233,8 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
 function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
   const macros = [
     { id: 'pro', label: 'PROTEIN', current: consumed.proteinG, target: targets?.proteinG ?? 0, color: RED    },
-    { id: 'crb', label: 'CARBS',   current: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: CYAN   },
-    { id: 'fat', label: 'FAT',     current: consumed.fatG,     target: targets?.fatG     ?? 0, color: PURPLE },
+    { id: 'crb', label: 'CARBS',   current: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: YELLOW },
+    { id: 'fat', label: 'FAT',     current: consumed.fatG,     target: targets?.fatG     ?? 0, color: FAT_CLR },
   ];
 
   return (
@@ -305,11 +302,11 @@ function MacroSection({ consumed, targets }: { consumed: MacroTargets; targets: 
             </div>
             <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', gap: 1 }}>
               <div style={{ width: `${pP}%`, background: RED,    transition: 'width 0.8s ease' }} />
-              <div style={{ width: `${cP}%`, background: CYAN,   transition: 'width 0.8s ease' }} />
-              <div style={{ width: `${fP}%`, background: PURPLE, transition: 'width 0.8s ease', borderRadius: '0 6px 6px 0' }} />
+              <div style={{ width: `${cP}%`, background: YELLOW,   transition: 'width 0.8s ease' }} />
+              <div style={{ width: `${fP}%`, background: FAT_CLR, transition: 'width 0.8s ease', borderRadius: '0 6px 6px 0' }} />
             </div>
             <div style={{ display: 'flex', gap: 16, marginTop: 7 }}>
-              {[['Protein', pP, RED], ['Carbs', cP, CYAN], ['Fat', fP, PURPLE]].map(([lbl, pct, color]) => (
+              {[['Protein', pP, RED], ['Carbs', cP, YELLOW], ['Fat', fP, FAT_CLR]].map(([lbl, pct, color]) => (
                 <div key={String(lbl)} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: String(color) }} />
                   <span style={{ fontSize: 10, color: String(color), fontWeight: 700 }}>{lbl} {pct}%</span>
@@ -404,13 +401,13 @@ const INSIGHTS: Record<string, string[]> = {
 };
 
 const INSIGHT_COLORS: Record<string, string> = {
-  rest: CYAN, strength: GREEN, cardio: ORANGE, hybrid: PURPLE,
+  rest: YELLOW, strength: GREEN, cardio: ORANGE, hybrid: FAT_CLR,
 };
 
 function DailyInsight({ trainingType }: { trainingType?: string }) {
   const type  = trainingType ?? 'rest';
   const tips  = INSIGHTS[type] ?? INSIGHTS.rest;
-  const color = INSIGHT_COLORS[type] ?? BLUE;
+  const color = INSIGHT_COLORS[type] ?? ORANGE;
   const idx   = Math.floor(Date.now() / (24 * 60 * 60 * 1000)) % tips.length;
 
   return (
@@ -442,9 +439,9 @@ function MicroTable({ consumed, targets, hasData }: { consumed: MicroTotals; tar
     { key: 'fiber_g',        label: 'Fiber',       unit: 'g',   isLimit: false, color: GREEN  },
     { key: 'cholesterol_mg', label: 'Cholesterol', unit: 'mg',  isLimit: true,  color: ORANGE },
     { key: 'sodium_mg',      label: 'Sodium',      unit: 'mg',  isLimit: true,  color: ORANGE },
-    { key: 'vitamin_c_mg',   label: 'Vitamin C',   unit: 'mg',  isLimit: false, color: CYAN   },
+    { key: 'vitamin_c_mg',   label: 'Vitamin C',   unit: 'mg',  isLimit: false, color: YELLOW },
     { key: 'vitamin_d_mcg',  label: 'Vitamin D',   unit: 'mcg', isLimit: false, color: YELLOW },
-    { key: 'calcium_mg',     label: 'Calcium',     unit: 'mg',  isLimit: false, color: BLUE2  },
+    { key: 'calcium_mg',     label: 'Calcium',     unit: 'mg',  isLimit: false, color: YELLOW },
     { key: 'iron_mg',        label: 'Iron',        unit: 'mg',  isLimit: false, color: RED    },
   ];
 
@@ -530,7 +527,7 @@ function WaterTracker({ date }: { date: string }) {
 
   const pct   = Math.min(100, (glasses / TARGET) * 100);
   const done  = glasses >= TARGET;
-  const color = done ? GREEN : CYAN;
+  const color = done ? GREEN : ORANGE;
 
   return (
     <div style={{ background: SURF, borderRadius: 18, padding: '16px 18px', border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW }}>
@@ -691,11 +688,15 @@ export default function HomeScreen() {
     if (r.blocked) logDay(type);
   };
 
-  // Custom targets override
+  // Custom targets override — or apply goal mode adjustment to computed targets
   const customTargets = getCustomTargets();
-  const effectiveTargets = (customTargets.enabled && targets)
+  const goalMode = (() => { try { return (localStorage.getItem('fs_goal_mode_v1') ?? 'maintain') as 'lose' | 'maintain' | 'gain'; } catch { return 'maintain' as const; } })();
+  const goalCalAdj: Record<'lose' | 'maintain' | 'gain', number> = { lose: -500, maintain: 0, gain: 300 };
+  const effectiveTargets = customTargets.enabled && targets
     ? { ...targets, calories: customTargets.calories, proteinG: customTargets.proteinG, carbsG: customTargets.carbsG, fatG: customTargets.fatG }
-    : targets;
+    : targets
+      ? { ...targets, calories: Math.max(1200, targets.calories + goalCalAdj[goalMode]) }
+      : targets;
 
   // Net calories: estimate burned from today's training type + logged runs this week
   const userWeightKg = profile?.weightKg ?? 75;
@@ -718,7 +719,7 @@ export default function HomeScreen() {
     : todayLog?.dailyActivityModifier === 'low' ? 'LOW'
     : todayLog?.dailyActivityModifier === 'high' ? 'HIGH'
     : null;
-  const stepLabelColor = stepLabel === 'LOW' ? ORANGE : stepLabel === 'HIGH' ? GREEN : BLUE;
+  const stepLabelColor = stepLabel === 'LOW' ? ORANGE : stepLabel === 'HIGH' ? GREEN : ORANGE;
 
   const applyStepModifier = (modifier: 'low' | 'normal' | 'high') => {
     storeSetModifier(modifier);
@@ -770,15 +771,15 @@ export default function HomeScreen() {
         {/* Floating orbs */}
         <div className="orb1" style={{
           position: 'absolute', top: -30, right: 10, width: 180, height: 180,
-          borderRadius: '50%', background: 'rgba(75,111,255,0.12)',
+          borderRadius: '50%', background: 'rgba(255,128,0,0.15)',
         }} />
         <div className="orb2" style={{
           position: 'absolute', bottom: -40, left: -20, width: 130, height: 130,
-          borderRadius: '50%', background: 'rgba(75,111,255,0.12)',
+          borderRadius: '50%', background: 'rgba(245,197,24,0.10)',
         }} />
         <div className="orb3" style={{
           position: 'absolute', top: 50, left: '38%', width: 70, height: 70,
-          borderRadius: '50%', background: 'rgba(255,255,255,0.05)',
+          borderRadius: '50%', background: 'rgba(255,255,255,0.04)',
         }} />
 
         <div className="nrc-a nrc-a1" style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -935,7 +936,7 @@ export default function HomeScreen() {
                 onClick={handleEstimateSteps}
                 disabled={stepLoading || !stepDescription.trim()}
                 style={{
-                  background: BLUE, border: 'none', borderRadius: 11, color: '#fff',
+                  background: ORANGE, border: 'none', borderRadius: 11, color: '#fff',
                   fontWeight: 800, fontSize: 11, letterSpacing: 0.5,
                   cursor: (!stepDescription.trim() || stepLoading) ? 'not-allowed' : 'pointer',
                   padding: '0 15px', whiteSpace: 'nowrap',
@@ -982,7 +983,7 @@ export default function HomeScreen() {
               position: 'absolute', top: '50%', left: '50%',
               transform: 'translate(-50%, -55%)',
               width: 200, height: 200, borderRadius: '50%',
-              background: `radial-gradient(circle, ${calPct >= 100 ? RED : calPct >= 78 ? GREEN : BLUE}0A 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${calPct >= 100 ? RED : calPct >= 78 ? GREEN : ORANGE}0A 0%, transparent 70%)`,
               pointerEvents: 'none',
             }} />
             <CalRing pct={calPct} cal={consumed.calories} target={effectiveTargets.calories} />
@@ -1002,10 +1003,10 @@ export default function HomeScreen() {
             </div>
             {profileComplete && (
               <div style={{
-                marginTop: 16, padding: '11px 16px', background: `${BLUE}08`,
-                borderRadius: 14, border: `1px solid ${BLUE}18`,
+                marginTop: 16, padding: '11px 16px', background: `${ORANGE}08`,
+                borderRadius: 14, border: `1px solid ${ORANGE}18`,
               }}>
-                <div style={{ fontSize: 13, color: BLUE, fontWeight: 700 }}>
+                <div style={{ fontSize: 13, color: ORANGE, fontWeight: 700 }}>
                   Pick a training mode below
                 </div>
                 <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
@@ -1136,8 +1137,8 @@ export default function HomeScreen() {
 
           {/* Strength */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '14px 18px' }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: `${PURPLE}12`, border: `1px solid ${PURPLE}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={PURPLE} strokeWidth="2.5" strokeLinecap="round">
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: `${FAT_CLR}12`, border: `1px solid ${FAT_CLR}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={FAT_CLR} strokeWidth="2.5" strokeLinecap="round">
                 <circle cx="5" cy="12" r="1.8" />
                 <circle cx="19" cy="12" r="1.8" />
                 <line x1="6.8" y1="12" x2="9.5" y2="12" />
@@ -1161,11 +1162,11 @@ export default function HomeScreen() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
                 }}>−</button>
               )}
-              <div style={{ fontSize: 22, fontWeight: 900, color: strength > 0 ? PURPLE : MUTED, minWidth: 20, textAlign: 'center', letterSpacing: -1 }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: strength > 0 ? FAT_CLR : MUTED, minWidth: 20, textAlign: 'center', letterSpacing: -1 }}>
                 {strength}
               </div>
               <button onClick={() => addStrengthSession()} className="nrc-press" style={{
-                background: `${PURPLE}12`, border: `1px solid ${PURPLE}30`, color: PURPLE,
+                background: `${FAT_CLR}12`, border: `1px solid ${FAT_CLR}30`, color: FAT_CLR,
                 borderRadius: 8, fontWeight: 700, fontSize: 10, letterSpacing: 0.5, cursor: 'pointer',
                 padding: '5px 10px', whiteSpace: 'nowrap',
               }}>
@@ -1232,7 +1233,7 @@ export default function HomeScreen() {
               />
             </div>
             {workoutKm && workoutDuration && parseFloat(workoutKm) > 0 && parseFloat(workoutDuration) > 0 && (
-              <div style={{ fontSize: 11, color: BLUE, fontWeight: 700, marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: ORANGE, fontWeight: 700, marginBottom: 10 }}>
                 Pace: {fmtPace(parseFloat(workoutDuration) / parseFloat(workoutKm))}
               </div>
             )}
