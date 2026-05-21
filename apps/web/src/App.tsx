@@ -18,9 +18,9 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 type Tab = 'home' | 'food' | 'history' | 'profile';
 const NAV_H = 68;
 
-const ORANGE = '#FF8000';
-const TEXT   = '#0A0A0A';
-const MUTED2 = '#555555';
+const BLUE   = '#2563EB';
+const TEXT   = '#0F172A';
+const MUTED2 = '#94A3B8';
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
@@ -208,16 +208,16 @@ export default function App() {
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #0A0A0A 0%, #CC5500 50%, #FF8000 100%)',
+        background: 'linear-gradient(160deg, #EFF6FF 0%, #BFDBFE 40%, #2563EB 100%)',
         gap: 0, position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1, color: '#FFFFFF' }}>
+          <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1, color: '#0F172A' }}>
             FUEL
           </div>
           <div style={{
             fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1,
-            background: 'linear-gradient(135deg, #FF8000, #F5C518)',
+            background: 'linear-gradient(135deg, #2563EB, #60A5FA)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>
             SYNC
@@ -226,12 +226,12 @@ export default function App() {
             {[0, 1, 2].map((i) => (
               <div key={i} style={{
                 width: 6, height: 6, borderRadius: '50%',
-                background: i === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.25)',
+                background: i === 0 ? '#2563EB' : 'rgba(37,99,235,0.25)',
                 animation: `pulse 1.3s ${i * 0.22}s infinite ease-in-out`,
               }} />
             ))}
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, letterSpacing: 5, marginTop: 22, fontWeight: 700, textTransform: 'uppercase' }}>
+          <div style={{ color: 'rgba(37,99,235,0.6)', fontSize: 10, letterSpacing: 5, marginTop: 22, fontWeight: 700, textTransform: 'uppercase' }}>
             {stravaConnecting ? 'Syncing with Strava' : 'Loading'}
           </div>
         </div>
@@ -289,11 +289,11 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(10,10,10,0.97)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(255,255,255,0.97)',
+        borderTop: '1px solid rgba(37,99,235,0.12)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.6)',
+        boxShadow: '0 -2px 20px rgba(37,99,235,0.10)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
@@ -310,29 +310,29 @@ export default function App() {
                 <>
                   <div style={{
                     position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 36, height: 3, background: `linear-gradient(90deg, #FF8000, #F5C518)`,
+                    width: 36, height: 3, background: `linear-gradient(90deg, #2563EB, #60A5FA)`,
                     borderRadius: '0 0 3px 3px',
-                    boxShadow: `0 2px 10px rgba(255,128,0,0.55)`,
+                    boxShadow: `0 2px 10px rgba(37,99,235,0.40)`,
                   }} />
                   <div style={{
                     position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
                     width: 40, height: 40, borderRadius: '50%',
-                    background: 'rgba(255,128,0,0.07)', pointerEvents: 'none',
+                    background: 'rgba(37,99,235,0.07)', pointerEvents: 'none',
                   }} />
                 </>
               )}
               <div style={{
-                color: active ? ORANGE : MUTED2,
+                color: active ? BLUE : MUTED2,
                 transition: 'color 0.22s, transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
                 transform: active ? 'scale(1.1)' : 'scale(1)',
-                filter: active ? `drop-shadow(0 0 6px rgba(255,128,0,0.50))` : 'none',
+                filter: active ? `drop-shadow(0 0 6px rgba(37,99,235,0.40))` : 'none',
                 position: 'relative', zIndex: 1,
               }}>
                 <Icon active={active} />
               </div>
               <span style={{
                 fontSize: 9, fontWeight: active ? 800 : 600, letterSpacing: 1.2,
-                color: active ? ORANGE : MUTED2, transition: 'all 0.22s',
+                color: active ? BLUE : MUTED2, transition: 'all 0.22s',
                 position: 'relative', zIndex: 1,
               }}>
                 {label.toUpperCase()}

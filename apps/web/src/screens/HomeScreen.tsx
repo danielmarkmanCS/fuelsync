@@ -11,18 +11,19 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 import { getCustomTargets } from '../lib/customTargets';
 
-const BG      = '#0A0A0A';
-const SURF    = '#141414';
-const SURF2   = '#1E1E1E';
-const EDGE    = 'rgba(255,255,255,0.08)';
-const TEXT    = '#F0F0F0';
-const MUTED   = '#505050';
-const MUTED2  = '#333';
-const ORANGE  = '#FF8000';
-const YELLOW  = '#F5C518';
-const GREEN   = '#22C55E';
-const RED     = '#EF4444';
-const GREY    = '#AAAAAA';
+const BG     = '#F0F6FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#EBF3FF';
+const EDGE   = 'rgba(37, 99, 235, 0.12)';
+const TEXT   = '#0F172A';
+const MUTED  = '#64748B';
+const MUTED2 = '#E2EAF4';
+const BLUE   = '#2563EB';
+const GREEN  = '#16A34A';
+const YELLOW = '#D97706';
+const RED    = '#DC2626';
+const GREY   = '#94A3B8';
+const CARD_SHADOW = '0 2px 12px rgba(37,99,235,0.08), 0 0 0 1px rgba(37,99,235,0.07)';
 
 const ACTIVITY_MULT: Record<string, number> = {
   sedentary: 0.4, light: 0.65, moderate: 1.0, very_active: 1.7, extra_active: 2.4,
@@ -91,11 +92,11 @@ function buildRecovery(runs: LoggedRun[], sessions: number, act = 'moderate') {
   if (runs.length) parts.push(`${runs.length}R · ${km.toFixed(1)}km`);
   if (sessions)    parts.push(`${sessions}S`);
   const sub = parts.join(' · ') || '—';
-  if (score >= 90) return { label: 'FRESH',      color: YELLOW,  sub, score };
-  if (score >= 65) return { label: 'ACTIVE',     color: GREEN,   sub, score };
-  if (score >= 40) return { label: 'BUILDING',   color: YELLOW,  sub, score };
-  if (score >= 20) return { label: 'LOADED',     color: ORANGE,  sub, score };
-  return             { label: 'OVERLOADED', color: RED,     sub, score };
+  if (score >= 90) return { label: 'FRESH',      color: BLUE,      sub, score };
+  if (score >= 65) return { label: 'ACTIVE',     color: GREEN,     sub, score };
+  if (score >= 40) return { label: 'BUILDING',   color: YELLOW,    sub, score };
+  if (score >= 20) return { label: 'LOADED',     color: '#F97316', sub, score };
+  return             { label: 'OVERLOADED', color: RED,       sub, score };
 }
 
 function useCountUp(to: number, ms = 600): number {
@@ -128,52 +129,54 @@ function HeroCalories({ cal, target }: { cal: number; target: number }) {
   const numColor = over ? RED : cal > target * 0.9 ? YELLOW : TEXT;
 
   return (
-    <div style={{ padding: '28px 22px 0' }}>
-      {/* Big number */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 6 }}>
-        <div style={{
-          fontFamily: "'Barlow Condensed', system-ui, sans-serif",
-          fontSize: 88, fontWeight: 900, letterSpacing: -5, lineHeight: 0.88,
-          color: numColor, transition: 'color 0.3s',
-        }}>
-          {display.toLocaleString()}
-        </div>
-        <div style={{ paddingBottom: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
-          {target > 0 && (
-            <div style={{ fontSize: 11, color: MUTED, fontWeight: 500, marginTop: 1 }}>
-              of {target.toLocaleString()}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Remaining */}
-      {left !== null && (
-        <div style={{
-          fontSize: 12, fontWeight: 700,
-          color: over ? RED : left < 200 ? YELLOW : MUTED,
-          marginBottom: 10, letterSpacing: 0.3,
-        }}>
-          {over
-            ? `${Math.abs(left)} over`
-            : left < 50 ? 'basically done'
-            : `${left} left`}
-        </div>
-      )}
-
-      {/* Fill bar */}
-      {target > 0 && (
-        <div style={{ height: 6, background: SURF2, borderRadius: 3, overflow: 'hidden' }}>
+    <div style={{ padding: '20px 16px 0' }}>
+      <div style={{
+        background: SURF, borderRadius: 18, padding: '20px 20px 18px',
+        boxShadow: CARD_SHADOW, border: `1px solid ${EDGE}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 6 }}>
           <div style={{
-            height: '100%',
-            width: `${Math.min(pct, 100)}%`,
-            background: over ? RED : pct > 90 ? YELLOW : ORANGE,
-            borderRadius: 3,
-            transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-          }} />
+            fontFamily: "'Barlow Condensed', system-ui, sans-serif",
+            fontSize: 88, fontWeight: 900, letterSpacing: -5, lineHeight: 0.88,
+            color: numColor, transition: 'color 0.3s',
+          }}>
+            {display.toLocaleString()}
+          </div>
+          <div style={{ paddingBottom: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
+            {target > 0 && (
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 500, marginTop: 1 }}>
+                of {target.toLocaleString()}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        {left !== null && (
+          <div style={{
+            fontSize: 12, fontWeight: 700,
+            color: over ? RED : left < 200 ? YELLOW : MUTED,
+            marginBottom: 10, letterSpacing: 0.3,
+          }}>
+            {over
+              ? `${Math.abs(left)} over`
+              : left < 50 ? 'basically done'
+              : `${left} left`}
+          </div>
+        )}
+
+        {target > 0 && (
+          <div style={{ height: 8, background: SURF2, borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${Math.min(pct, 100)}%`,
+              background: over ? RED : pct > 90 ? YELLOW : `linear-gradient(90deg, ${BLUE}, #60A5FA)`,
+              borderRadius: 4,
+              transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
+            }} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -181,24 +184,26 @@ function HeroCalories({ cal, target }: { cal: number; target: number }) {
 // ── MACRO GRID ────────────────────────────────────────────────────
 function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
   const items = [
-    { key: 'P', val: consumed.proteinG, target: targets?.proteinG ?? 0, color: ORANGE },
-    { key: 'C', val: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: YELLOW },
-    { key: 'F', val: consumed.fatG,     target: targets?.fatG     ?? 0, color: GREY   },
+    { key: 'P', label: 'Protein', val: consumed.proteinG, target: targets?.proteinG ?? 0, color: BLUE   },
+    { key: 'C', label: 'Carbs',   val: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: GREEN  },
+    { key: 'F', label: 'Fat',     val: consumed.fatG,     target: targets?.fatG     ?? 0, color: YELLOW },
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '14px 22px 0' }}>
-      {items.map(({ key, val, target, color }) => {
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '10px 16px 0' }}>
+      {items.map(({ key, label, val, target, color }) => {
         const pct  = target > 0 ? Math.min((val / target) * 100, 100) : 0;
         const over = val > target && target > 0;
         const c    = over ? RED : color;
         return (
           <div key={key} style={{
-            background: SURF, borderRadius: 12, padding: '12px 14px 10px',
-            border: `1px solid ${over ? `${RED}40` : EDGE}`,
+            background: SURF, borderRadius: 14, padding: '14px 14px 12px',
+            border: `1px solid ${over ? `${RED}30` : EDGE}`,
+            borderTop: `3px solid ${c}`,
+            boxShadow: CARD_SHADOW,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: c, letterSpacing: 0.5 }}>{key}</div>
-              <div style={{ fontSize: 10, color: MUTED, fontWeight: 500 }}>
+              <div style={{ fontSize: 9, color: MUTED, fontWeight: 500 }}>
                 {target > 0 ? `/${Math.round(target)}` : ''}
               </div>
             </div>
@@ -208,8 +213,8 @@ function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: Mac
             }}>
               {Math.round(val)}
             </div>
-            <div style={{ fontSize: 9, color: MUTED, fontWeight: 500, marginBottom: 6 }}>g</div>
-            <div style={{ height: 3, background: MUTED2, borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ fontSize: 9, color: MUTED, fontWeight: 500, marginBottom: 7 }}>{label}</div>
+            <div style={{ height: 4, background: MUTED2, borderRadius: 2, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', width: `${pct}%`,
                 background: c, borderRadius: 2,
@@ -235,24 +240,25 @@ function Water({ date }: { date: string }) {
   };
   const done = n >= 8;
   return (
-    <div style={{ padding: '14px 22px 0' }}>
+    <div style={{ padding: '10px 16px 0' }}>
       <div style={{
-        background: SURF, borderRadius: 12, padding: '14px 16px',
-        border: `1px solid ${done ? `${GREEN}30` : EDGE}`,
+        background: SURF, borderRadius: 14, padding: '14px 16px',
+        border: `1px solid ${done ? `${GREEN}40` : EDGE}`,
+        boxShadow: CARD_SHADOW,
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', minWidth: 38 }}>
           WATER
         </div>
-        <div style={{ display: 'flex', gap: 5, flex: 1 }}>
+        <div style={{ display: 'flex', gap: 4, flex: 1 }}>
           {Array.from({ length: 8 }, (_, i) => (
             <div
               key={i}
               onClick={() => save(i < n ? i : i + 1)}
               style={{
-                flex: 1, height: 22, borderRadius: 4, cursor: 'pointer',
-                background: i < n ? (done ? GREEN : ORANGE) : MUTED2,
-                transition: 'background 0.15s',
+                flex: 1, height: 24, borderRadius: 5, cursor: 'pointer',
+                background: i < n ? (done ? GREEN : BLUE) : MUTED2,
+                transition: 'background 0.15s, transform 0.1s',
               }}
             />
           ))}
@@ -321,13 +327,13 @@ function Steps({ todayLog, profile, weeklyLoad }: { todayLog: ReturnType<typeof 
   const label = steps !== null
     ? steps < 6000 ? 'LOW' : steps > 10000 ? 'HIGH' : 'OK'
     : null;
-  const lc = label === 'LOW' ? ORANGE : label === 'HIGH' ? GREEN : MUTED;
+  const lc = label === 'LOW' ? '#F97316' : label === 'HIGH' ? GREEN : MUTED;
 
   return (
-    <div style={{ padding: '10px 22px 0' }}>
+    <div style={{ padding: '10px 16px 0' }}>
       <div style={{
-        background: SURF, borderRadius: 12, padding: '13px 15px',
-        border: `1px solid ${EDGE}`,
+        background: SURF, borderRadius: 14, padding: '13px 15px',
+        border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: steps !== null ? 8 : 0 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>
@@ -374,7 +380,7 @@ function Steps({ todayLog, profile, weeklyLoad }: { todayLog: ReturnType<typeof 
             onClick={estimate}
             disabled={loading || !desc.trim()}
             style={{
-              background: ORANGE, border: 'none', borderRadius: 8,
+              background: BLUE, border: 'none', borderRadius: 8,
               color: '#fff', fontWeight: 800, fontSize: 11, padding: '0 13px',
               cursor: !desc.trim() || loading ? 'not-allowed' : 'pointer',
               opacity: !desc.trim() || loading ? 0.5 : 1,
@@ -396,27 +402,27 @@ function Micros({ consumed, targets, hasData }: {
   const [open, setOpen] = useState(false);
   const rows = [
     { k: 'fiber_g'        as keyof MicroTotals, label: 'Fiber',   unit: 'g',   limit: false, color: GREEN  },
-    { k: 'cholesterol_mg' as keyof MicroTotals, label: 'Chol',    unit: 'mg',  limit: true,  color: ORANGE },
-    { k: 'sodium_mg'      as keyof MicroTotals, label: 'Sodium',  unit: 'mg',  limit: true,  color: ORANGE },
-    { k: 'vitamin_c_mg'   as keyof MicroTotals, label: 'Vit C',   unit: 'mg',  limit: false, color: YELLOW },
-    { k: 'vitamin_d_mcg'  as keyof MicroTotals, label: 'Vit D',   unit: 'mcg', limit: false, color: YELLOW },
-    { k: 'calcium_mg'     as keyof MicroTotals, label: 'Ca',      unit: 'mg',  limit: false, color: YELLOW },
+    { k: 'cholesterol_mg' as keyof MicroTotals, label: 'Chol',    unit: 'mg',  limit: true,  color: YELLOW },
+    { k: 'sodium_mg'      as keyof MicroTotals, label: 'Sodium',  unit: 'mg',  limit: true,  color: YELLOW },
+    { k: 'vitamin_c_mg'   as keyof MicroTotals, label: 'Vit C',   unit: 'mg',  limit: false, color: BLUE   },
+    { k: 'vitamin_d_mcg'  as keyof MicroTotals, label: 'Vit D',   unit: 'mcg', limit: false, color: BLUE   },
+    { k: 'calcium_mg'     as keyof MicroTotals, label: 'Ca',      unit: 'mg',  limit: false, color: BLUE   },
     { k: 'iron_mg'        as keyof MicroTotals, label: 'Iron',    unit: 'mg',  limit: false, color: RED    },
   ];
   return (
-    <div style={{ padding: '12px 22px 0' }}>
+    <div style={{ padding: '12px 16px 0' }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
           width: '100%', background: SURF, border: `1px solid ${EDGE}`,
-          borderRadius: open ? '12px 12px 0 0' : 12,
+          borderRadius: open ? '14px 14px 0 0' : 14,
           padding: '12px 15px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontFamily: 'inherit',
+          fontFamily: 'inherit', boxShadow: open ? 'none' : CARD_SHADOW,
         }}
       >
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>
-          MICROS {!hasData && !open && <span style={{ color: MUTED2, fontWeight: 500, letterSpacing: 0 }}>· log food to track</span>}
+          MICROS {!hasData && !open && <span style={{ color: GREY, fontWeight: 500, letterSpacing: 0 }}>· log food to track</span>}
         </div>
         <div style={{ color: MUTED, fontSize: 14, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</div>
       </button>
@@ -424,14 +430,15 @@ function Micros({ consumed, targets, hasData }: {
       {open && (
         <div style={{
           background: SURF, border: `1px solid ${EDGE}`, borderTop: 'none',
-          borderRadius: '0 0 12px 12px', padding: '12px 15px 14px',
+          borderRadius: '0 0 14px 14px', padding: '12px 15px 14px',
+          boxShadow: CARD_SHADOW,
         }}>
           {rows.map(({ k, label, unit, limit, color }) => {
             const val  = Math.round(consumed[k] * 10) / 10;
             const tgt  = targets[k];
             const pct  = tgt > 0 ? Math.min(100, (val / tgt) * 100) : 0;
             const over = val > tgt && tgt > 0;
-            const bc   = limit ? (over ? RED : GREEN) : pct >= 80 ? GREEN : pct >= 40 ? ORANGE : RED;
+            const bc   = limit ? (over ? RED : GREEN) : pct >= 80 ? GREEN : pct >= 40 ? BLUE : RED;
             return (
               <div key={k} style={{ marginBottom: 9, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
@@ -462,15 +469,13 @@ const TIPS: Record<string, string[]> = {
 function Insight({ type }: { type?: string }) {
   const tips = TIPS[type ?? 'rest'] ?? TIPS.rest;
   const tip  = tips[Math.floor(Date.now() / 86400000) % tips.length];
-  const c    = type === 'strength' ? GREEN : type === 'cardio' ? ORANGE : type === 'hybrid' ? GREY : YELLOW;
+  const c    = type === 'strength' ? BLUE : type === 'cardio' ? GREEN : type === 'hybrid' ? GREY : YELLOW;
   return (
-    <div style={{
-      padding: '12px 22px 0',
-    }}>
+    <div style={{ padding: '10px 16px 0' }}>
       <div style={{
         padding: '13px 15px', borderRadius: 12,
-        background: `${c}08`, borderLeft: `3px solid ${c}`,
-        border: `1px solid ${c}15`,
+        background: `${c}10`, borderLeft: `3px solid ${c}`,
+        border: `1px solid ${c}20`,
       }}>
         <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.6, fontWeight: 500 }}>{tip}</div>
       </div>
@@ -553,7 +558,7 @@ export default function HomeScreen() {
     if (!weather || !todayLog?.trainingType || todayLog.trainingType === 'rest') return null;
     const t = weather.tempC, d = weather.description.toLowerCase();
     if (t > 38 || t < -5 || d.includes('storm')) return { text: 'Extreme conditions — stay inside', color: RED };
-    if (t > 32 || d.includes('rain')) return { text: 'Tough outdoor conditions today', color: ORANGE };
+    if (t > 32 || d.includes('rain')) return { text: 'Tough outdoor conditions today', color: '#F97316' };
     return { text: 'Good conditions', color: GREEN };
   })();
 
@@ -561,27 +566,33 @@ export default function HomeScreen() {
     <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
       {/* ── HEADER ── */}
-      <div style={{ padding: '44px 22px 20px', borderBottom: `1px solid ${MUTED2}` }}>
+      <div style={{
+        padding: '44px 20px 16px',
+        background: `linear-gradient(180deg, ${BLUE} 0%, #3B82F6 100%)`,
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{
               fontFamily: "'Barlow Condensed', system-ui, sans-serif",
-              fontSize: 42, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: TEXT,
+              fontSize: 42, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF',
             }}>
               {name}
             </div>
             {weather && (
-              <div style={{ fontSize: 11, color: MUTED, fontWeight: 500, marginTop: 5 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: 500, marginTop: 5 }}>
                 {Math.round(weather.tempC)}° · {weather.description}
               </div>
             )}
           </div>
           <div style={{ textAlign: 'right', paddingTop: 3 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>{dateLabel}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>{dateLabel}</div>
             {recovery.label && (
               <div style={{
-                marginTop: 4, fontSize: 10, fontWeight: 800,
-                color: recovery.color, letterSpacing: 0.5,
+                marginTop: 6, display: 'inline-block',
+                background: 'rgba(255,255,255,0.18)', borderRadius: 20,
+                padding: '3px 10px',
+                fontSize: 10, fontWeight: 800,
+                color: '#FFFFFF', letterSpacing: 0.5,
               }}>
                 {recovery.label} · {recovery.score}
               </div>
@@ -592,29 +603,29 @@ export default function HomeScreen() {
 
       {/* ── PROFILE ALERT ── */}
       {!profileComplete && (
-        <div style={{ padding: '14px 22px 0' }}>
+        <div style={{ padding: '14px 16px 0' }}>
           <div style={{
-            background: `${ORANGE}0A`, border: `1px solid ${ORANGE}20`,
-            borderLeft: `3px solid ${ORANGE}`, borderRadius: 10,
+            background: `${BLUE}0F`, border: `1px solid ${BLUE}25`,
+            borderLeft: `3px solid ${BLUE}`, borderRadius: 12,
             padding: '12px 15px', display: 'flex', alignItems: 'center', gap: 10,
           }}>
             <div style={{ flex: 1, fontSize: 12, color: TEXT, fontWeight: 600 }}>
               Set up your profile to unlock macro targets
             </div>
-            <div style={{ color: ORANGE, fontWeight: 900, fontSize: 16 }}>→</div>
+            <div style={{ color: BLUE, fontWeight: 900, fontSize: 16 }}>→</div>
           </div>
         </div>
       )}
 
       {/* ── WEATHER BANNER ── */}
       {environmentAlert && environmentAlert.level !== 'none' && weather && (
-        <div style={{ padding: '12px 22px 0' }}>
+        <div style={{ padding: '12px 16px 0' }}>
           <WeatherBanner weather={weather} alert={environmentAlert} />
         </div>
       )}
 
       {/* ── TODAY'S PLAN ── */}
-      <div style={{ padding: '22px 22px 0' }}>
+      <div style={{ padding: '18px 16px 0' }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: 10,
@@ -650,9 +661,8 @@ export default function HomeScreen() {
         target={effectiveTargets?.calories ?? 0}
       />
 
-      {/* No targets state */}
       {!effectiveTargets && profileComplete && (
-        <div style={{ padding: '10px 22px 0' }}>
+        <div style={{ padding: '10px 16px 0' }}>
           <div style={{ fontSize: 12, color: MUTED }}>pick a training type above to unlock targets</div>
         </div>
       )}
@@ -666,11 +676,11 @@ export default function HomeScreen() {
 
       {/* Weather rec */}
       {weatherRec && (
-        <div style={{ padding: '12px 22px 0' }}>
+        <div style={{ padding: '12px 16px 0' }}>
           <div style={{
             fontSize: 11, fontWeight: 600, color: weatherRec.color,
-            padding: '9px 13px', background: `${weatherRec.color}0A`,
-            border: `1px solid ${weatherRec.color}25`, borderRadius: 8,
+            padding: '9px 13px', background: `${weatherRec.color}0F`,
+            border: `1px solid ${weatherRec.color}25`, borderRadius: 10,
           }}>
             {weatherRec.text}
           </div>
@@ -687,17 +697,18 @@ export default function HomeScreen() {
       <Steps todayLog={todayLog} profile={profile} weeklyLoad={weeklyLoad} />
 
       {/* ── THIS WEEK ── */}
-      <div style={{ padding: '20px 22px 0' }}>
+      <div style={{ padding: '20px 16px 0' }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
           THIS WEEK
         </div>
         <div style={{
-          background: SURF, borderRadius: 12, border: `1px solid ${EDGE}`,
+          background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`,
+          boxShadow: CARD_SHADOW,
           display: 'grid', gridTemplateColumns: '1fr 1fr',
         }}>
           {/* Running */}
           <div style={{
-            padding: '14px 16px', borderRight: `1px solid ${EDGE}`,
+            padding: '16px 16px', borderRight: `1px solid ${EDGE}`,
             borderBottom: loggedRuns.length > 0 ? `1px solid ${EDGE}` : undefined,
           }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
@@ -721,14 +732,14 @@ export default function HomeScreen() {
           </div>
 
           {/* Strength */}
-          <div style={{ padding: '14px 16px' }}>
+          <div style={{ padding: '16px 16px' }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
               SESSIONS
             </div>
             <div style={{
               fontFamily: "'Barlow Condensed', system-ui, sans-serif",
               fontSize: 36, fontWeight: 900, letterSpacing: -2, lineHeight: 1,
-              color: strength > 0 ? GREY : MUTED2,
+              color: strength > 0 ? BLUE : MUTED2,
             }}>
               {strength}
             </div>
@@ -736,14 +747,14 @@ export default function HomeScreen() {
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               {strength > 0 && (
                 <button onClick={() => removeStrengthSession()} className="press" style={{
-                  width: 28, height: 26, borderRadius: 6, border: `1px solid ${EDGE}`,
+                  width: 28, height: 28, borderRadius: 8, border: `1px solid ${EDGE}`,
                   background: SURF2, color: MUTED, fontWeight: 900, fontSize: 14,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>−</button>
               )}
               <button onClick={() => addStrengthSession()} className="press" style={{
-                flex: 1, height: 26, borderRadius: 6, border: `1px solid ${GREY}30`,
-                background: `${GREY}10`, color: GREY,
+                flex: 1, height: 28, borderRadius: 8, border: `1px solid ${BLUE}30`,
+                background: `${BLUE}10`, color: BLUE,
                 fontWeight: 700, fontSize: 10, cursor: 'pointer',
               }}>
                 + LOG
@@ -772,7 +783,7 @@ export default function HomeScreen() {
                     onClick={() => setShowRunForm(!showRunForm)}
                     className="press"
                     style={{
-                      background: `${GREEN}10`, border: `1px solid ${GREEN}25`, color: GREEN,
+                      background: `${GREEN}15`, border: `1px solid ${GREEN}30`, color: GREEN,
                       borderRadius: 20, fontWeight: 700, fontSize: 10, cursor: 'pointer', padding: '3px 11px',
                     }}
                   >
@@ -833,28 +844,28 @@ export default function HomeScreen() {
         {/* Run log form */}
         {(loggedRuns.length === 0 || showRunForm) && (
           <div style={{
-            background: SURF2, borderRadius: 10, padding: '14px 14px 12px',
-            border: `1px solid ${EDGE}`, marginTop: 8,
+            background: SURF, borderRadius: 12, padding: '14px 14px 12px',
+            border: `1px solid ${EDGE}`, marginTop: 8, boxShadow: CARD_SHADOW,
           }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
               {loggedRuns.length === 0 ? 'no runs this week — add one' : 'log a run'}
             </div>
             <input type="text" value={runName} placeholder="run name (optional)"
               onChange={(e) => setRunName(e.target.value)}
-              style={{ width: '100%', background: SURF, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', marginBottom: 7, boxSizing: 'border-box', fontFamily: 'inherit' }}
+              style={{ width: '100%', background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', marginBottom: 7, boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
             <div style={{ display: 'flex', gap: 7, marginBottom: 7 }}>
               <input type="number" value={runKm} placeholder="km" min={0}
                 onChange={(e) => { if (e.target.value === '' || +e.target.value >= 0) setRunKm(e.target.value); }}
-                style={{ flex: 1, background: SURF, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', fontFamily: 'inherit' }}
               />
               <input type="number" value={runDur} placeholder="min" min={0}
                 onChange={(e) => { if (e.target.value === '' || +e.target.value >= 0) setRunDur(e.target.value); }}
-                style={{ flex: 1, background: SURF, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', fontFamily: 'inherit' }}
               />
             </div>
             {runKm && runDur && +runKm > 0 && +runDur > 0 && (
-              <div style={{ fontSize: 11, color: ORANGE, fontWeight: 700, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: BLUE, fontWeight: 700, marginBottom: 8 }}>
                 {fmtPace(+runDur / +runKm)}
               </div>
             )}
@@ -893,7 +904,7 @@ export default function HomeScreen() {
       <Micros consumed={consumedMicros} targets={getMicroTargets(user?.gender ?? 'male')} hasData={hasMicros} />
 
       {/* ── STRAVA ── */}
-      <div style={{ padding: '14px 22px 0' }}>
+      <div style={{ padding: '14px 16px 0' }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 12 }}>
           STRAVA
         </div>

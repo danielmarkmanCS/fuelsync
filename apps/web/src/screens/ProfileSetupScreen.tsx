@@ -9,18 +9,18 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
 
-const BG     = '#0A0A0A';
-const SURF   = '#141414';
-const SURF2  = '#1E1E1E';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const TEXT   = '#F0F0F0';
-const MUTED  = '#707070';
-const ORANGE = '#FF8000';
-const YELLOW = '#F5C518';
-const GREEN  = '#22C55E';
-const RED    = '#EF4444';
-const FAT_CLR = '#AAAAAA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
+const BG     = '#F0F6FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#EBF3FF';
+const EDGE   = 'rgba(37, 99, 235, 0.12)';
+const TEXT   = '#0F172A';
+const MUTED  = '#64748B';
+const ORANGE = '#2563EB';
+const YELLOW = '#D97706';
+const GREEN  = '#16A34A';
+const RED    = '#DC2626';
+const FAT_CLR = '#D97706';
+const CARD_SHADOW = '0 2px 12px rgba(37,99,235,0.10), 0 0 0 1px rgba(37,99,235,0.07)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
@@ -52,6 +52,7 @@ const inp: React.CSSProperties = {
   borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
   outline: 'none', boxSizing: 'border-box',
   fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
+  boxShadow: '0 1px 3px rgba(37,99,235,0.06)',
 };
 
 
