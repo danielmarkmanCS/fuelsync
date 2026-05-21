@@ -18,8 +18,8 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 type Tab = 'home' | 'food' | 'history' | 'profile';
 const NAV_H = 68;
 
-const BLUE  = '#4B6FFF';
-const TEXT  = '#0A1628';
+const BLUE  = '#3D65FF';
+const TEXT  = '#070C18';
 const MUTED2 = '#3A4E72';
 
 function HomeIcon({ active }: { active: boolean }) {
@@ -208,7 +208,7 @@ export default function App() {
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #080F30 0%, #1E40DC 50%, #4B6FFF 100%)',
+        background: 'linear-gradient(160deg, #050A18 0%, #3D65FF 50%, #6B8BFF 100%)',
         gap: 0, position: 'relative', overflow: 'hidden',
       }}>
         {/* Background orbs */}
@@ -222,7 +222,7 @@ export default function App() {
           </div>
           <div style={{
             fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1,
-            background: 'linear-gradient(135deg, #00BDD0, #4B6FFF)',
+            background: 'linear-gradient(135deg, #00C8E8, #3D65FF)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>
             SYNC
@@ -282,7 +282,7 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#0A0F1E', overflow: 'hidden',
+      background: '#070C18', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
@@ -294,7 +294,7 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(10,15,30,0.97)',
+        background: 'rgba(7,12,24,0.97)',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
@@ -315,14 +315,14 @@ export default function App() {
                 <>
                   <div style={{
                     position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 36, height: 3, background: `linear-gradient(90deg, #1E40DC, #4B6FFF)`,
+                    width: 36, height: 3, background: `linear-gradient(90deg, #3D65FF, #6B8BFF)`,
                     borderRadius: '0 0 3px 3px',
-                    boxShadow: `0 2px 10px rgba(30,64,220,0.50)`,
+                    boxShadow: `0 2px 10px rgba(61,101,255,0.50)`,
                   }} />
                   <div style={{
                     position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
                     width: 40, height: 40, borderRadius: '50%',
-                    background: 'rgba(30,64,220,0.06)', pointerEvents: 'none',
+                    background: 'rgba(61,101,255,0.06)', pointerEvents: 'none',
                   }} />
                 </>
               )}
@@ -330,7 +330,7 @@ export default function App() {
                 color: active ? BLUE : MUTED2,
                 transition: 'color 0.22s, transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
                 transform: active ? 'scale(1.1)' : 'scale(1)',
-                filter: active ? `drop-shadow(0 0 5px rgba(30,64,220,0.40))` : 'none',
+                filter: active ? `drop-shadow(0 0 5px rgba(61,101,255,0.40))` : 'none',
                 position: 'relative', zIndex: 1,
               }}>
                 <Icon active={active} />

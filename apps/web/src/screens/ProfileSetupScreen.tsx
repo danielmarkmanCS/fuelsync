@@ -9,20 +9,20 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
 
-const BG     = '#0A0F1E';
-const SURF   = '#131C2E';
-const SURF2  = '#1C2540';
+const BG     = '#070C18';
+const SURF   = '#0E1624';
+const SURF2  = '#162030';
 const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#DCE6FF';
-const MUTED  = '#5A6990';
-const BLUE   = '#1E40DC';
-const BLUE2  = '#4B6FFF';
-const GREEN  = '#05C56B';
-const CYAN   = '#00BDD0';
-const ORANGE = '#FF8B00';
-const RED    = '#EF3340';
-const PURPLE = '#8034E0';
-const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
+const TEXT   = '#E8EEFF';
+const MUTED  = '#546078';
+const BLUE   = '#3D65FF';
+const BLUE2  = '#6B8BFF';
+const GREEN  = '#0DBA6A';
+const CYAN   = '#00C8E8';
+const ORANGE = '#F07800';
+const RED    = '#FF3355';
+const PURPLE = '#8844EE';
+const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
@@ -178,7 +178,7 @@ export default function ProfileSetupScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(145deg, #080F30 0%, #1428A0 40%, #1E40DC 100%)',
+        background: 'linear-gradient(145deg, #050A18 0%, #122060 40%, #3D65FF 100%)',
         padding: '44px 22px 32px', position: 'relative', overflow: 'hidden',
       }}>
         <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
@@ -349,7 +349,7 @@ export default function ProfileSetupScreen() {
           Activity Level
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
-          {ACTIVITY_LEVELS.map(({ value, label, desc, icon }) => {
+          {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
             const active = activityLevel === value;
             return (
               <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
@@ -361,7 +361,6 @@ export default function ProfileSetupScreen() {
                 boxShadow: active ? `0 4px 16px ${BLUE}12` : 'none',
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
-                <div style={{ fontSize: 22, flexShrink: 0 }}>{icon}</div>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: active ? BLUE : TEXT, marginBottom: 3 }}>
                     {label}

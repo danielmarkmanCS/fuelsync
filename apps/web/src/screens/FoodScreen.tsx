@@ -15,20 +15,20 @@ import { getNoteForDate, setNoteForDate } from '../lib/diaryNotes';
 import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
 
-const BG     = '#0A0F1E';
-const SURF   = '#131C2E';
-const SURF2  = '#1C2540';
+const BG     = '#070C18';
+const SURF   = '#0E1624';
+const SURF2  = '#162030';
 const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#DCE6FF';
-const MUTED  = '#5A6990';
-const BLUE   = '#1E40DC';
-const BLUE2  = '#4B6FFF';
-const GREEN  = '#05C56B';
-const ORANGE = '#FF8B00';
-const PURPLE = '#8034E0';
-const CYAN   = '#00BDD0';
-const RED    = '#EF3340';
-const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
+const TEXT   = '#E8EEFF';
+const MUTED  = '#546078';
+const BLUE   = '#3D65FF';
+const BLUE2  = '#6B8BFF';
+const GREEN  = '#0DBA6A';
+const ORANGE = '#F07800';
+const PURPLE = '#8844EE';
+const CYAN   = '#00C8E8';
+const RED    = '#FF3355';
+const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -37,8 +37,8 @@ const MEAL_LABEL: Record<MealType, string> = {
   lunch: 'Lunch', post_workout: 'Post-Workout', dinner: 'Dinner', snack: 'Snack',
 };
 
-const MEAL_ICON: Record<string, string> = {
-  breakfast: '🌅', pre_workout: '⚡', lunch: '☀️', post_workout: '💪', dinner: '🌙', snack: '🍎', other: '🍽️',
+const MEAL_COLOR: Record<string, string> = {
+  breakfast: '#F59E0B', pre_workout: '#3D65FF', lunch: '#0DBA6A', post_workout: '#FF3355', dinner: '#8844EE', snack: '#00C8E8', other: '#546078',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
@@ -871,7 +871,7 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: 'linear-gradient(145deg, #080F30 0%, #1428A0 40%, #1E40DC 100%)',
+        background: 'linear-gradient(145deg, #050A18 0%, #122060 40%, #3D65FF 100%)',
         padding: '44px 22px 22px', position: 'relative', overflow: 'hidden',
       }}>
         <div className="orb1" style={{ position: 'absolute', top: -20, right: 5, width: 150, height: 150, borderRadius: '50%', background: 'rgba(75,111,255,0.12)' }} />
@@ -922,7 +922,7 @@ export default function FoodScreen() {
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 12 }}>
             <div style={{
-              fontSize: 72, fontWeight: 900, letterSpacing: -5, lineHeight: 1,
+              fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
               color: calPct >= 100 ? RED : calPct >= 85 ? GREEN : TEXT,
               transition: 'color 0.4s',
             }}>
@@ -1069,7 +1069,7 @@ export default function FoodScreen() {
             <div key={meal} style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mealTarget > 0 ? 6 : 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: 15, lineHeight: 1 }}>{MEAL_ICON[meal] ?? '🍽️'}</span>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: MEAL_COLOR[meal] ?? MUTED, flexShrink: 0 }} />
                   <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>
                     {MEAL_LABEL[meal as MealType] ?? 'Other'}
                   </div>
@@ -1554,7 +1554,7 @@ export default function FoodScreen() {
                           )}
                           {!product.imageUrl && (
                             <div style={{ width: 36, height: 36, borderRadius: 8, background: `${BLUE}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <span style={{ fontSize: 16 }}>🥫</span>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2" strokeLinecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="5" y1="8" x2="19" y2="8"/><line x1="12" y1="3" x2="12" y2="8"/></svg>
                             </div>
                           )}
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1680,7 +1680,9 @@ export default function FoodScreen() {
 
                       {recents.length === 0 && favorites.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '32px 20px', color: MUTED }}>
-                          <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+                          <div style={{ marginBottom: 10 }}>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="1.5" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+                          </div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 6 }}>Search millions of foods</div>
                           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
                             Type a food name above, or tap the barcode icon to scan a product.

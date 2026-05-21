@@ -11,21 +11,21 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 import { getCustomTargets } from '../lib/customTargets';
 
-const BG     = '#0A0F1E';
-const SURF   = '#131C2E';
-const SURF2  = '#1C2540';
+const BG     = '#070C18';
+const SURF   = '#0E1624';
+const SURF2  = '#162030';
 const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#DCE6FF';
-const MUTED  = '#5A6990';
-const BLUE   = '#1E40DC';
-const BLUE2  = '#4B6FFF';
-const GREEN  = '#05C56B';
-const ORANGE = '#FF8B00';
-const PURPLE = '#8034E0';
-const CYAN   = '#00BDD0';
+const TEXT   = '#E8EEFF';
+const MUTED  = '#546078';
+const BLUE   = '#3D65FF';
+const BLUE2  = '#6B8BFF';
+const GREEN  = '#0DBA6A';
+const ORANGE = '#F07800';
+const PURPLE = '#8844EE';
+const CYAN   = '#00C8E8';
 const YELLOW = '#F59E0B';
-const RED    = '#EF3340';
-const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
+const RED    = '#FF3355';
+const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
 
 const ACTIVITY_MULT: Record<string, number> = {
   sedentary: 0.4, light: 0.65, moderate: 1.0, very_active: 1.7, extra_active: 2.4,
@@ -105,10 +105,10 @@ function buildRecovery(loggedRuns: LoggedRun[], strengthSessions: number, activi
 }
 
 function getHeaderGradient(hour: number): string {
-  if (hour >= 5 && hour < 9)  return 'linear-gradient(145deg, #071A3E 0%, #0F3870 40%, #1E40DC 100%)';
-  if (hour >= 9 && hour < 15) return 'linear-gradient(145deg, #080F30 0%, #1428A0 40%, #1E40DC 100%)';
-  if (hour >= 15 && hour < 20) return 'linear-gradient(145deg, #100830 0%, #281060 40%, #3018A0 100%)';
-  return 'linear-gradient(145deg, #070412 0%, #100828 40%, #180C50 100%)';
+  if (hour >= 5 && hour < 9)  return 'linear-gradient(145deg, #071530 0%, #0D2A60 40%, #3D65FF 100%)';
+  if (hour >= 9 && hour < 15) return 'linear-gradient(145deg, #050A18 0%, #122060 40%, #3D65FF 100%)';
+  if (hour >= 15 && hour < 20) return 'linear-gradient(145deg, #0E0620 0%, #250E50 40%, #2C188A 100%)';
+  return 'linear-gradient(145deg, #070412 0%, #0E0620 40%, #160840 100%)';
 }
 
 // ── COUNT-UP ANIMATION HOOK ────────────────────────────────────
@@ -140,7 +140,7 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
   const displayCal = useCountUp(mounted ? cal : 0);
   const displayPct = mounted ? pct : 0;
 
-  const S = 220, W = 13, r = (S - W * 2) / 2;
+  const S = 180, W = 11, r = (S - W * 2) / 2;
   const circ = 2 * Math.PI * r;
   const arc  = Math.min(displayPct / 100, 1) * circ;
   const over = pct >= 100;
@@ -200,7 +200,7 @@ function CalRing({ pct, cal, target }: { pct: number; cal: number; target: numbe
           Consumed
         </div>
         <div style={{
-          fontSize: 56, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
+          fontSize: 40, fontWeight: 900, letterSpacing: -3, lineHeight: 1,
           color: over ? RED : onTrack ? GREEN : TEXT,
           transition: 'color 0.4s',
         }}>
@@ -994,7 +994,7 @@ export default function HomeScreen() {
             background: SURF, borderRadius: 22, padding: '32px 22px',
             border: `1px solid ${EDGE}`, textAlign: 'center', boxShadow: CARD_SHADOW,
           }}>
-            <div style={{ fontSize: 88, fontWeight: 900, letterSpacing: -6, color: TEXT, lineHeight: 1 }}>
+            <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: -4, color: TEXT, lineHeight: 1 }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
             <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 3, marginTop: 10 }}>
@@ -1035,25 +1035,25 @@ export default function HomeScreen() {
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase', marginBottom: 12 }}>
               Net Calories
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: TEXT, letterSpacing: -1 }}>{effectiveTargets.calories.toLocaleString()}</div>
-                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>GOAL</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: TEXT, letterSpacing: -0.5 }}>{effectiveTargets.calories.toLocaleString()}</div>
+                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>GOAL</div>
               </div>
-              <div style={{ color: GREEN, fontSize: 13, fontWeight: 800 }}>+</div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: GREEN, letterSpacing: -1 }}>{totalBurned.toLocaleString()}</div>
-                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>BURNED</div>
+              <div style={{ color: GREEN, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>+</div>
+              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: GREEN, letterSpacing: -0.5 }}>{totalBurned.toLocaleString()}</div>
+                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>BURNED</div>
               </div>
-              <div style={{ color: MUTED, fontSize: 13, fontWeight: 800 }}>−</div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: ORANGE, letterSpacing: -1 }}>{Math.round(consumed.calories).toLocaleString()}</div>
-                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>EATEN</div>
+              <div style={{ color: MUTED, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>−</div>
+              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: ORANGE, letterSpacing: -0.5 }}>{Math.round(consumed.calories).toLocaleString()}</div>
+                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>EATEN</div>
               </div>
-              <div style={{ color: MUTED, fontSize: 13, fontWeight: 800 }}>=</div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: netCal >= 0 ? GREEN : RED, letterSpacing: -1 }}>{netCal.toLocaleString()}</div>
-                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>NET LEFT</div>
+              <div style={{ color: MUTED, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>=</div>
+              <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: netCal >= 0 ? GREEN : RED, letterSpacing: -0.5 }}>{netCal.toLocaleString()}</div>
+                <div style={{ fontSize: 8, color: MUTED, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>NET LEFT</div>
               </div>
             </div>
           </div>

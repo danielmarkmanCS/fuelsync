@@ -2,20 +2,20 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG     = '#0A0F1E';
-const SURF   = '#131C2E';
-const SURF2  = '#1C2540';
+const BG     = '#070C18';
+const SURF   = '#0E1624';
+const SURF2  = '#162030';
 const EDGE   = 'rgba(255,255,255,0.07)';
-const TEXT   = '#DCE6FF';
-const MUTED  = '#5A6990';
-const BLUE   = '#1E40DC';
-const BLUE2  = '#4B6FFF';
-const GREEN  = '#05C56B';
-const ORANGE = '#FF8B00';
-const PURPLE = '#8034E0';
-const CYAN   = '#00BDD0';
-const RED    = '#EF3340';
-const CARD_SHADOW = '0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06)';
+const TEXT   = '#E8EEFF';
+const MUTED  = '#546078';
+const BLUE   = '#3D65FF';
+const BLUE2  = '#6B8BFF';
+const GREEN  = '#0DBA6A';
+const ORANGE = '#F07800';
+const PURPLE = '#8844EE';
+const CYAN   = '#00C8E8';
+const RED    = '#FF3355';
+const CARD_SHADOW = '0 2px 8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -83,10 +83,10 @@ function calcStreak(days: DaySummary[]): number {
 function StreakMilestone({ streak }: { streak: number }) {
   if (streak < 3) return null;
   const milestones = [
-    { min: 30, label: 'ELITE ATHLETE', emoji: '🏆', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
-    { min: 14, label: 'COMMITTED',     emoji: '🎯', color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
-    { min: 7,  label: 'ON FIRE',       emoji: '🔥', color: ORANGE,    msg: '7 day streak — a perfect week of fuel tracking.' },
-    { min: 3,  label: 'BUILDING',      emoji: '⚡', color: BLUE2,     msg: '3 day streak — momentum is everything. Keep going.' },
+    { min: 30, label: 'ELITE ATHLETE', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
+    { min: 14, label: 'COMMITTED',     color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
+    { min: 7,  label: 'ON FIRE',       color: ORANGE,    msg: '7 day streak — a perfect week of fuel tracking.' },
+    { min: 3,  label: 'BUILDING',      color: BLUE2,     msg: '3 day streak — momentum is everything. Keep going.' },
   ];
   const m = milestones.find((x) => streak >= x.min)!;
   return (
@@ -97,7 +97,9 @@ function StreakMilestone({ streak }: { streak: number }) {
       display: 'flex', alignItems: 'center', gap: 16,
       boxShadow: `0 4px 24px ${m.color}18`,
     }}>
-      <div style={{ fontSize: 42, lineHeight: 1, flexShrink: 0 }}>{m.emoji}</div>
+      <div style={{ width: 52, height: 52, borderRadius: 14, background: `${m.color}20`, border: `2px solid ${m.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: m.color, letterSpacing: -1 }}>{streak}</div>
+      </div>
       <div>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: m.color, textTransform: 'uppercase', marginBottom: 4 }}>
           {streak} Day Streak · {m.label}
@@ -329,7 +331,7 @@ export default function HistoryScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(145deg, #080F30 0%, #1E40DC 50%, #4B6FFF 100%)',
+        background: 'linear-gradient(145deg, #050A18 0%, #3D65FF 50%, #6B8BFF 100%)',
         padding: '52px 22px 0', position: 'relative', overflow: 'hidden',
       }}>
         <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 140, height: 140, borderRadius: '50%', background: 'rgba(75,111,255,0.10)' }} />
@@ -345,12 +347,11 @@ export default function HistoryScreen() {
             </div>
             {streak >= 2 && (
               <div className="notif-pop" style={{
-                background: 'rgba(255,139,0,0.2)', border: '1px solid rgba(255,139,0,0.4)',
-                borderRadius: 20, padding: '5px 12px',
+                background: 'rgba(240,120,0,0.2)', border: '1px solid rgba(240,120,0,0.4)',
+                borderRadius: 20, padding: '5px 14px',
                 fontSize: 12, fontWeight: 800, color: '#FFCA70',
-                display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                <span>🔥</span> {streak} day streak
+                {streak} day streak
               </div>
             )}
           </div>
