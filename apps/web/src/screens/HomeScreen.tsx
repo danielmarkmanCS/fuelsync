@@ -160,7 +160,7 @@ function CalRing({ cal, target }: { cal: number; target: number }) {
             </div>
           )}
           {target > 0 && (
-            <div style={{ fontSize: 9, color: MUTED, fontWeight: 500, marginTop: 1 }}>
+            <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginTop: 1 }}>
               of {target.toLocaleString()}
             </div>
           )}
@@ -192,7 +192,7 @@ function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: Mac
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: c, letterSpacing: 0.5 }}>{key}</div>
-              <div style={{ fontSize: 9, color: MUTED, fontWeight: 500 }}>
+              <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
                 {target > 0 ? `/${Math.round(target)}` : ''}
               </div>
             </div>
@@ -202,7 +202,7 @@ function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: Mac
             }}>
               {Math.round(val)}
             </div>
-            <div style={{ fontSize: 9, color: MUTED, fontWeight: 500, marginBottom: 7 }}>{label}</div>
+            <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginBottom: 7 }}>{label}</div>
             <div style={{ height: 4, background: MUTED2, borderRadius: 2, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', width: `${pct}%`,
@@ -431,7 +431,7 @@ function Micros({ consumed, targets, hasData }: {
             return (
               <div key={k} style={{ marginBottom: 9, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, minWidth: 44 }}>{label}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, minWidth: 44 }}>{label}</div>
                 <div style={{ flex: 1, height: 3, background: MUTED2, borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: bc, borderRadius: 2, transition: 'width 0.5s ease' }} />
                 </div>
@@ -466,7 +466,7 @@ function Insight({ type }: { type?: string }) {
         background: `${c}10`, borderLeft: `3px solid ${c}`,
         border: `1px solid ${c}20`,
       }}>
-        <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.6, fontWeight: 500 }}>{tip}</div>
+        <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.6, fontWeight: 700 }}>{tip}</div>
       </div>
     </div>
   );
@@ -568,13 +568,13 @@ export default function HomeScreen() {
               {name}
             </div>
             {weather && (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: 500, marginTop: 5 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginTop: 5 }}>
                 {Math.round(weather.tempC)}° · {weather.description}
               </div>
             )}
           </div>
           <div style={{ textAlign: 'right', paddingTop: 3 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>{dateLabel}</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.9)' }}>{dateLabel}</div>
             {recovery.label && (
               <div style={{
                 marginTop: 6, display: 'inline-block',
@@ -598,7 +598,7 @@ export default function HomeScreen() {
             borderLeft: `3px solid ${BLUE}`, borderRadius: 12,
             padding: '12px 15px', display: 'flex', alignItems: 'center', gap: 10,
           }}>
-            <div style={{ flex: 1, fontSize: 12, color: TEXT, fontWeight: 600 }}>
+            <div style={{ flex: 1, fontSize: 12, color: TEXT, fontWeight: 700 }}>
               Set up your profile to unlock macro targets
             </div>
             <div style={{ color: BLUE, fontWeight: 900, fontSize: 16 }}>→</div>
@@ -710,7 +710,7 @@ export default function HomeScreen() {
             }}>
               {weeklyLoad.totalRunKm.toFixed(1)}
             </div>
-            <div style={{ fontSize: 10, color: MUTED, fontWeight: 600, marginTop: 2 }}>km total</div>
+            <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, marginTop: 2 }}>km total</div>
             {(manualKm > 0 || stravaKm > 0) && (
               <div style={{ fontSize: 9, color: MUTED, marginTop: 4, lineHeight: 1.5 }}>
                 {manualKm > 0 && <span>{manualKm.toFixed(1)} manual</span>}
@@ -732,7 +732,7 @@ export default function HomeScreen() {
             }}>
               {strength}
             </div>
-            <div style={{ fontSize: 10, color: MUTED, fontWeight: 600, marginTop: 2 }}>strength</div>
+            <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, marginTop: 2 }}>strength</div>
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               {strength > 0 && (
                 <button onClick={() => removeStrengthSession()} className="press" style={{
@@ -797,7 +797,7 @@ export default function HomeScreen() {
                         if (e.key === 'Escape') setEditIdx(null);
                       }}
                       style={{
-                        flex: 1, fontSize: 12, fontWeight: 600, color: TEXT,
+                        flex: 1, fontSize: 12, fontWeight: 700, color: TEXT,
                         background: 'transparent', border: 'none',
                         borderBottom: `1px solid ${GREEN}`, outline: 'none', padding: '1px 0',
                       }}
@@ -805,7 +805,7 @@ export default function HomeScreen() {
                   ) : (
                     <div
                       onClick={() => { setEditIdx(i); setEditName(r.name); }}
-                      style={{ flex: 1, fontSize: 12, color: TEXT, fontWeight: 600, cursor: 'text', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      style={{ flex: 1, fontSize: 12, color: TEXT, fontWeight: 700, cursor: 'text', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
                       {r.name}
                     </div>
@@ -830,62 +830,83 @@ export default function HomeScreen() {
           )}
         </div>
 
+        {/* No runs prompt */}
+        {loggedRuns.length === 0 && !showRunForm && (
+          <button onClick={() => setShowRunForm(true)} className="press" style={{
+            width: '100%', marginTop: 8, padding: '14px 0',
+            background: `${GREEN}12`, border: `1.5px dashed ${GREEN}50`, borderRadius: 12,
+            color: GREEN, fontWeight: 900, fontSize: 13, cursor: 'pointer', letterSpacing: 0.5,
+          }}>
+            + LOG YOUR FIRST RUN
+          </button>
+        )}
+
         {/* Run log form */}
-        {(loggedRuns.length === 0 || showRunForm) && (
+        {showRunForm && (
           <div style={{
-            background: SURF, borderRadius: 12, padding: '14px 14px 12px',
+            background: SURF, borderRadius: 14, padding: '14px 14px 14px',
             border: `1px solid ${EDGE}`, marginTop: 8, boxShadow: CARD_SHADOW,
           }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
-              {loggedRuns.length === 0 ? 'no runs this week — add one' : 'log a run'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: TEXT, textTransform: 'uppercase' }}>
+                LOG A RUN
+              </div>
+              <button
+                onClick={() => { setShowRunForm(false); setRunKm(''); setRunDur(''); setRunName(''); }}
+                style={{ background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 8, color: MUTED, fontSize: 16, cursor: 'pointer', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}
+              >×</button>
             </div>
-            <input type="text" value={runName} placeholder="run name (optional)"
+            <input type="text" value={runName} placeholder="Run name (optional)"
               onChange={(e) => setRunName(e.target.value)}
-              style={{ width: '100%', background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', marginBottom: 7, boxSizing: 'border-box', fontFamily: 'inherit' }}
+              style={{ width: '100%', background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 10, color: TEXT, fontSize: 14, fontWeight: 700, padding: '11px 13px', outline: 'none', marginBottom: 8, boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
-            <div style={{ display: 'flex', gap: 7, marginBottom: 7 }}>
-              <input type="number" value={runKm} placeholder="km" min={0}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input type="number" value={runKm} placeholder="Distance (km)" min={0}
                 onChange={(e) => { if (e.target.value === '' || +e.target.value >= 0) setRunKm(e.target.value); }}
-                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 10, color: TEXT, fontSize: 14, fontWeight: 700, padding: '11px 13px', outline: 'none', fontFamily: 'inherit' }}
               />
-              <input type="number" value={runDur} placeholder="min" min={0}
+              <input type="number" value={runDur} placeholder="Time (min)" min={0}
                 onChange={(e) => { if (e.target.value === '' || +e.target.value >= 0) setRunDur(e.target.value); }}
-                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 7, color: TEXT, fontSize: 13, padding: '9px 12px', outline: 'none', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 10, color: TEXT, fontSize: 14, fontWeight: 700, padding: '11px 13px', outline: 'none', fontFamily: 'inherit' }}
               />
             </div>
             {runKm && runDur && +runKm > 0 && +runDur > 0 && (
-              <div style={{ fontSize: 11, color: BLUE, fontWeight: 700, marginBottom: 8 }}>
-                {fmtPace(+runDur / +runKm)}
+              <div style={{ fontSize: 13, color: BLUE, fontWeight: 900, marginBottom: 10, textAlign: 'center' }}>
+                {fmtPace(+runDur / +runKm)} avg pace
               </div>
             )}
-            <button onClick={() => {
-              const km = +runKm; if (!km || km <= 0) return;
-              const dur = +runDur || 0;
-              addRunKm(km, runName.trim() || 'Run', 'manual', dur || undefined, dur ? dur / km : undefined);
-              setRunKm(''); setRunDur(''); setRunName(''); setShowRunForm(false);
-            }} className="press" style={{
-              width: '100%', background: GREEN, border: 'none', borderRadius: 8, color: '#fff',
-              fontWeight: 900, fontSize: 13, cursor: 'pointer', padding: '11px 0',
-              fontFamily: 'inherit',
-            }}>
-              DONE
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setShowRunForm(false); setRunKm(''); setRunDur(''); setRunName(''); }}
+                className="press" style={{
+                  flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 10, color: MUTED,
+                  fontWeight: 800, fontSize: 13, cursor: 'pointer', padding: '13px 0', fontFamily: 'inherit',
+                }}>
+                CANCEL
+              </button>
+              <button onClick={() => {
+                const km = +runKm; if (!km || km <= 0) return;
+                const dur = +runDur || 0;
+                addRunKm(km, runName.trim() || 'Run', 'manual', dur || undefined, dur ? dur / km : undefined);
+                setRunKm(''); setRunDur(''); setRunName(''); setShowRunForm(false);
+              }} className="press" style={{
+                flex: 2, background: GREEN, border: 'none', borderRadius: 10, color: '#fff',
+                fontWeight: 900, fontSize: 14, cursor: 'pointer', padding: '13px 0', fontFamily: 'inherit',
+                opacity: !runKm || +runKm <= 0 ? 0.5 : 1,
+              }}>
+                SAVE RUN
+              </button>
+            </div>
           </div>
         )}
 
         {loggedRuns.length > 0 && !showRunForm && (
-          <div style={{ textAlign: 'right', marginTop: 6 }}>
-            <button
-              onClick={() => setShowRunForm(true)}
-              className="press"
-              style={{
-                background: 'none', border: 'none', color: GREEN,
-                fontSize: 10, fontWeight: 700, cursor: 'pointer', letterSpacing: 1,
-              }}
-            >
-              + ADD RUN
-            </button>
-          </div>
+          <button onClick={() => setShowRunForm(true)} className="press" style={{
+            width: '100%', marginTop: 8, padding: '10px 0',
+            background: `${GREEN}10`, border: `1px solid ${GREEN}25`, borderRadius: 10,
+            color: GREEN, fontWeight: 900, fontSize: 12, cursor: 'pointer', letterSpacing: 0.5,
+          }}>
+            + ADD RUN
+          </button>
         )}
       </div>
 

@@ -101,7 +101,7 @@ const inp: React.CSSProperties = {
   background: SURF2, border: `1px solid ${EDGE}`,
   borderRadius: 12, color: TEXT, fontSize: 15,
   padding: '13px 15px', outline: 'none',
-  fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
+  fontFamily: 'inherit', fontWeight: 700,
 };
 
 function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientItem[]; onEdit?: (idx: number, updated: IngredientItem) => void }) {
@@ -133,7 +133,7 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
         <div key={i}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: editingIdx === i ? 6 : 7, marginBottom: editingIdx === i ? 0 : 7, borderBottom: i < ingredients.length - 1 && editingIdx !== i ? `1px solid ${EDGE}` : 'none' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
               <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{item.amount}</div>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
@@ -141,8 +141,8 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
               <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
             </div>
             <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 9, color: RED,    fontWeight: 700 }}>P{Math.round(item.protein)}</span>
-              <span style={{ fontSize: 9, color: YELLOW,   fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
+              <span style={{ fontSize: 9, color: ORANGE,  fontWeight: 700 }}>P{Math.round(item.protein)}</span>
+              <span style={{ fontSize: 9, color: GREEN,   fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
               <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(item.fat)}</span>
             </div>
             {onEdit && (
@@ -158,9 +158,9 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
             <div style={{ padding: '6px 0 10px', borderBottom: i < ingredients.length - 1 ? `1px solid ${EDGE}` : 'none', marginBottom: i < ingredients.length - 1 ? 7 : 0 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
                 {([
-                  { label: 'kcal', key: 'calories' as const, color: ORANGE },
-                  { label: 'P(g)',  key: 'protein'  as const, color: RED    },
-                  { label: 'C(g)',  key: 'carbs'    as const, color: YELLOW   },
+                  { label: 'kcal', key: 'calories' as const, color: ORANGE  },
+                  { label: 'P(g)',  key: 'protein'  as const, color: ORANGE  },
+                  { label: 'C(g)',  key: 'carbs'    as const, color: GREEN   },
                   { label: 'F(g)',  key: 'fat'      as const, color: FAT_CLR },
                 ]).map(({ label, key, color }) => (
                   <div key={key}>
@@ -930,7 +930,7 @@ export default function FoodScreen() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: MUTED }}>
                   / {Math.round(targets.calories).toLocaleString()}
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>kcal</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>kcal</div>
               </div>
             )}
             {calPct >= 85 && calPct < 100 && (
@@ -956,8 +956,8 @@ export default function FoodScreen() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: RED    },
-              { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: YELLOW   },
+              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: ORANGE  },
+              { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: GREEN   },
               { name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: FAT_CLR },
             ].map(({ name, val, tgt, color }) => {
               const pct2 = tgt && tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
@@ -968,13 +968,13 @@ export default function FoodScreen() {
                     {name}
                   </div>
                   <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: over ? RED : TEXT, lineHeight: 1 }}>
-                    {Math.round(val)}<span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>g</span>
+                    {Math.round(val)}<span style={{ fontSize: 10, color: MUTED, fontWeight: 700 }}>g</span>
                   </div>
                   <div style={{ marginTop: 7, height: 4, background: `${color}18`, borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct2}%`, background: `linear-gradient(90deg, ${color}70, ${color})`, borderRadius: 3, transition: 'width 0.7s ease' }} />
                   </div>
                   {tgt && tgt > 0 && (
-                    <div style={{ fontSize: 8, color: over ? RED : MUTED, fontWeight: 600, marginTop: 3 }}>
+                    <div style={{ fontSize: 8, color: over ? RED : MUTED, fontWeight: 700, marginTop: 3 }}>
                       {over ? `+${Math.round(val - tgt)}g` : `${Math.round(tgt - val)}g left`}
                     </div>
                   )}
@@ -990,8 +990,8 @@ export default function FoodScreen() {
         <div className="nrc-a nrc-a3" style={{ padding: '10px 22px 0' }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {[
-              { label: 'Protein', got: consumed.protein, need: targets.proteinG ?? 0, color: RED    },
-              { label: 'Carbs',   got: consumed.carbs,   need: targets.carbsG   ?? 0, color: YELLOW   },
+              { label: 'Protein', got: consumed.protein, need: targets.proteinG ?? 0, color: ORANGE  },
+              { label: 'Carbs',   got: consumed.carbs,   need: targets.carbsG   ?? 0, color: GREEN   },
               { label: 'Fat',     got: consumed.fat,      need: targets.fatG     ?? 0, color: FAT_CLR },
             ].map(({ label, got, need, color }) => {
               const rem  = need - got;
@@ -1053,7 +1053,7 @@ export default function FoodScreen() {
             <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8, letterSpacing: -0.5 }}>
               Nothing logged yet
             </div>
-            <div style={{ color: MUTED, fontSize: 13, fontWeight: 500, lineHeight: 1.65, maxWidth: 260, margin: '0 auto 24px' }}>
+            <div style={{ color: MUTED, fontSize: 13, fontWeight: 700, lineHeight: 1.65, maxWidth: 260, margin: '0 auto 24px' }}>
               Tap <strong style={{ color: ORANGE }}>+</strong> to log a meal — describe anything in plain English and AI will handle the rest.
             </div>
           </div>
@@ -1073,7 +1073,7 @@ export default function FoodScreen() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {mealTarget > 0 && (
-                    <div style={{ fontSize: 10, fontWeight: 600, color: mealOver ? RED : MUTED }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: mealOver ? RED : MUTED }}>
                       / {mealTarget} kcal
                     </div>
                   )}
@@ -1220,7 +1220,7 @@ export default function FoodScreen() {
           zIndex: 200, maxWidth: 340, width: 'calc(100vw - 40px)',
           animation: 'slideUpCenter 0.3s ease both',
         }}>
-          <div style={{ flex: 1, fontSize: 13, color: '#FFFFFF', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ flex: 1, fontSize: 13, color: '#FFFFFF', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Removed "{undoEntry.food_name}"
           </div>
           <button onClick={handleUndo} style={{
@@ -1300,7 +1300,7 @@ export default function FoodScreen() {
                         fontFamily: 'Inter, system-ui, sans-serif',
                       }}
                     />
-                    <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>kcal</div>
+                    <div style={{ fontSize: 11, color: MUTED, fontWeight: 700 }}>kcal</div>
                   </div>
 
                   {/* Optional macros */}
@@ -1590,7 +1590,7 @@ export default function FoodScreen() {
                           {(() => {
                             if (favTab === 'templates') {
                               if (templates.length === 0) return (
-                                <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 600 }}>
+                                <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 700 }}>
                                   No templates yet — tap "Save as Template" on a meal below
                                 </div>
                               );
@@ -1631,7 +1631,7 @@ export default function FoodScreen() {
 
                             const list = favTab === 'recent' ? recents : favorites;
                             if (list.length === 0) return (
-                              <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 600 }}>
+                              <div style={{ textAlign: 'center', padding: '20px 0', color: MUTED, fontSize: 13, fontWeight: 700 }}>
                                 {favTab === 'recent' ? 'No recent foods yet' : 'No favourites yet — tap ★ on a recent food'}
                               </div>
                             );
@@ -1695,7 +1695,7 @@ export default function FoodScreen() {
               {mode === 'search' && (scanActive || barcodeLoading) && (
                 <div>
                   {barcodeLoading && (
-                    <div style={{ textAlign: 'center', padding: '40px 0', color: MUTED, fontSize: 14, fontWeight: 600 }}>
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: MUTED, fontSize: 14, fontWeight: 700 }}>
                       Looking up product…
                     </div>
                   )}
@@ -1861,7 +1861,7 @@ export default function FoodScreen() {
                       ].map(({ label, val, unit, color }) => (
                         <div key={label} style={{ textAlign: 'center', background: SURF, borderRadius: 10, padding: '8px 4px', border: `1px solid ${EDGE}` }}>
                           <div style={{ fontSize: 16, fontWeight: 900, color: color, letterSpacing: -0.5 }}>{val}</div>
-                          <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{unit}</div>
+                          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>{unit}</div>
                           <div style={{ fontSize: 8, color: MUTED, letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
                         </div>
                       ))}
@@ -1982,7 +1982,7 @@ export default function FoodScreen() {
                       if (isNaN(p) || isNaN(c) || isNaN(fa)) return null;
                       const comp = calcCal(p, c, fa);
                       if (!isNaN(entered) && entered > 0 && Math.abs(comp - entered) / entered > 0.12)
-                        return <div style={{ fontSize: 11, color: ORANGE, marginTop: 8, fontWeight: 600 }}>Macros compute to ~{Math.round(comp)} kcal</div>;
+                        return <div style={{ fontSize: 11, color: ORANGE, marginTop: 8, fontWeight: 700 }}>Macros compute to ~{Math.round(comp)} kcal</div>;
                       return null;
                     })()}
                   </div>
@@ -2008,8 +2008,8 @@ export default function FoodScreen() {
 
 function getDominantColor(protein: number, carbs: number, fat: number): string {
   const pC = protein * 4, cC = carbs * 4, fC = fat * 9;
-  if (pC >= cC && pC >= fC) return RED;
-  if (cC >= pC && cC >= fC) return YELLOW;
+  if (pC >= cC && pC >= fC) return ORANGE;
+  if (cC >= pC && cC >= fC) return GREEN;
   return FAT_CLR;
 }
 
@@ -2039,22 +2039,22 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
             {entry.food_name}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ background: `${RED}10`,    border: `1px solid ${RED}20`,    borderRadius: 6, padding: '2px 7px', fontSize: 10, color: RED,    fontWeight: 700 }}>
+            <span style={{ background: `${ORANGE}10`,   border: `1px solid ${ORANGE}20`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: ORANGE,  fontWeight: 700 }}>
               P {Math.round(Number(entry.protein))}g
             </span>
-            <span style={{ background: `${YELLOW}10`,   border: `1px solid ${YELLOW}20`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: YELLOW,   fontWeight: 700 }}>
+            <span style={{ background: `${GREEN}10`,    border: `1px solid ${GREEN}20`,    borderRadius: 6, padding: '2px 7px', fontSize: 10, color: GREEN,   fontWeight: 700 }}>
               C {Math.round(Number(entry.carbs))}g
             </span>
             <span style={{ background: `${FAT_CLR}10`, border: `1px solid ${FAT_CLR}20`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: FAT_CLR, fontWeight: 700 }}>
               F {Math.round(Number(entry.fat))}g
             </span>
             {entry.weight_grams && (
-              <span style={{ background: SURF2, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: MUTED, fontWeight: 600 }}>
+              <span style={{ background: SURF2, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: MUTED, fontWeight: 700 }}>
                 {entry.weight_grams}g
               </span>
             )}
             {hasIngredients && (
-              <span style={{ background: `${ORANGE}08`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: ORANGE, fontWeight: 600 }}>
+              <span style={{ background: `${ORANGE}08`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: ORANGE, fontWeight: 700 }}>
                 {entry.ingredients!.length} items
               </span>
             )}
@@ -2094,13 +2094,13 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
         <div style={{ padding: '12px 16px', borderTop: `1px solid ${EDGE}`, background: SURF2 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             {[
-              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: RED    },
-              { label: 'Carbs',   val: Math.round(Number(entry.carbs)),   unit: 'g', color: YELLOW   },
+              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: ORANGE  },
+              { label: 'Carbs',   val: Math.round(Number(entry.carbs)),   unit: 'g', color: GREEN   },
               { label: 'Fat',     val: Math.round(Number(entry.fat)),     unit: 'g', color: FAT_CLR },
             ].map(({ label, val, unit, color }) => (
               <div key={label} style={{ textAlign: 'center', background: SURF, borderRadius: 10, padding: '8px 4px', border: `1px solid ${EDGE}` }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color, letterSpacing: -0.5 }}>{val}{unit}</div>
-                <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{label}</div>
+                <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -2202,7 +2202,7 @@ function MealChips({ form, setForm }: { form: Form; setForm: React.Dispatch<Reac
 
 function ErrBox({ msg }: { msg: string }) {
   return (
-    <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '10px 13px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, fontWeight: 600, border: '1px solid rgba(198,40,40,0.18)', lineHeight: 1.5 }}>
+    <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '10px 13px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, fontWeight: 700, border: '1px solid rgba(198,40,40,0.18)', lineHeight: 1.5 }}>
       {msg}
     </div>
   );

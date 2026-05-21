@@ -49,7 +49,7 @@ export default function TrainingPicker({ selected, onSelect }: Props) {
             }}>
               {label}
             </div>
-            <div style={{ fontSize: 9, color: active ? color : MUTED2, fontWeight: 600, marginTop: 3, opacity: active ? 0.85 : 0.6 }}>
+            <div style={{ fontSize: 9, color: active ? color : MUTED2, fontWeight: 700, marginTop: 3, opacity: active ? 0.9 : 0.7 }}>
               {sub}
             </div>
           </button>

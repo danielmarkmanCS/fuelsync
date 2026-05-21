@@ -142,7 +142,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
             <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1.2, color: TEXT, lineHeight: 1 }}>
               {weekTotal.toLocaleString()}
             </div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>
               kcal · {daysLogged} day{daysLogged !== 1 ? 's' : ''}
             </div>
           </div>
@@ -200,14 +200,14 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
         <div style={{ width: 16, height: 0, borderTop: `2px dashed ${ORANGE}70` }} />
-        <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>
+        <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
           Goal {goalCal.toLocaleString()} kcal
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           {[[GREEN, '85–110%'], [RED, '110%+']].map(([c, lbl]) => (
             <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <div style={{ width: 6, height: 6, borderRadius: 2, background: c }} />
-              <div style={{ fontSize: 8, color: MUTED, fontWeight: 600 }}>{lbl}</div>
+              <div style={{ fontSize: 8, color: MUTED, fontWeight: 700 }}>{lbl}</div>
             </div>
           ))}
         </div>
@@ -240,7 +240,7 @@ function StatsRow({ streak, totalDays, avgCal, goalCal }: { streak: number; tota
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -2, color: color, lineHeight: 1 }}>
             {value}
           </div>
-          <div style={{ fontSize: 9, fontWeight: 600, color: MUTED, marginTop: 3 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 3 }}>
             {unit}
           </div>
         </div>
@@ -353,7 +353,7 @@ export default function HistoryScreen() {
             </div>
           )}
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 14, fontWeight: 500 }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 14, fontWeight: 700 }}>
           {totalDays > 0
             ? `${totalDays} days · ${allLogs.length} entries · avg ${avgCal.toLocaleString()} kcal`
             : 'Log food in the Fuel tab to build your history'}
@@ -378,7 +378,7 @@ export default function HistoryScreen() {
       <div style={{ padding: '18px 16px 40px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 56, color: MUTED }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Loading your history…</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Loading your history…</div>
           </div>
         ) : allLogs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '56px 24px' }}>
@@ -440,7 +440,7 @@ export default function HistoryScreen() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 3 }}>
                           <div style={{ fontSize: 9, fontWeight: 800, color: perfCol, letterSpacing: 0.5 }}>{perf}</div>
-                          <div style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>{pct}%</div>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>{pct}%</div>
                         </div>
                       </div>
                     </div>
@@ -452,7 +452,7 @@ export default function HistoryScreen() {
                           borderRadius: 4, transition: 'width 0.5s ease',
                         }} />
                       </div>
-                      <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>
+                      <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
                         of {goalCal.toLocaleString()}
                       </div>
                     </div>
@@ -548,7 +548,7 @@ export default function HistoryScreen() {
                                   return (
                                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 16px 7px 28px', borderBottom: i < item.ingredients!.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
                                       <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
                                         <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
                                       </div>
                                       <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
@@ -654,7 +654,7 @@ export default function HistoryScreen() {
                         return (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 16px 7px 24px', borderBottom: i < item.ingredients!.length - 1 ? `1px solid ${EDGE}` : 'none' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.name}</div>
                               <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{ing.amount}</div>
                             </div>
                             <div style={{ fontSize: 13, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>

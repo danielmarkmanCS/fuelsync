@@ -51,7 +51,7 @@ const inp: React.CSSProperties = {
   width: '100%', background: SURF2, border: `1px solid ${EDGE}`,
   borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
   outline: 'none', boxSizing: 'border-box',
-  fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
+  fontFamily: 'inherit', fontWeight: 700,
   boxShadow: '0 1px 3px rgba(37,99,235,0.06)',
 };
 
@@ -205,7 +205,7 @@ export default function ProfileSetupScreen() {
               {name.toUpperCase()}
             </div>
             {!profileComplete && (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 5, fontWeight: 500 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 5, fontWeight: 700 }}>
                 Complete your profile to unlock smart targets
               </div>
             )}
@@ -220,7 +220,7 @@ export default function ProfileSetupScreen() {
             </div>
             {isFullyComplete
               ? <div style={{ fontSize: 10, fontWeight: 800, color: GREEN }}>✓ All Set</div>
-              : <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>
+              : <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
                   {4 - filledFields} field{4 - filledFields !== 1 ? 's' : ''} remaining
                 </div>
             }
@@ -257,7 +257,7 @@ export default function ProfileSetupScreen() {
                 <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1.5, color, lineHeight: 1 }}>
                   {value}
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: MUTED, marginTop: 4 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 4 }}>
                   {unit}
                 </div>
               </div>
@@ -274,7 +274,7 @@ export default function ProfileSetupScreen() {
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: ORANGE, textTransform: 'uppercase', marginBottom: 4 }}>
                 Your Energy Target
               </div>
-              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6, fontWeight: 500 }}>
+              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6, fontWeight: 700 }}>
                 Based on your stats, you need ~<strong style={{ color: ORANGE }}>{tdee.toLocaleString()} kcal/day</strong> to maintain weight.
                 {' '}FuelSync adjusts this daily based on training type.
               </div>
@@ -366,7 +366,7 @@ export default function ProfileSetupScreen() {
                   <div style={{ fontSize: 15, fontWeight: 800, color: active ? ORANGE : TEXT, marginBottom: 3 }}>
                     {label}
                   </div>
-                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>
+                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>
                     {desc}
                   </div>
                 </div>
@@ -469,7 +469,7 @@ export default function ProfileSetupScreen() {
                     const diffColor = diff == null ? MUTED : diff < 0 ? GREEN : diff > 0 ? RED : MUTED;
                     return (
                       <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, minWidth: 72 }}>
+                        <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, minWidth: 72 }}>
                           {log.date === today ? 'Today' : new Date(log.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </div>
                         <div style={{ flex: 1, height: 4, background: SURF2, borderRadius: 2, overflow: 'hidden' }}>
@@ -482,7 +482,7 @@ export default function ProfileSetupScreen() {
                           }} />
                         </div>
                         <div style={{ fontSize: 14, fontWeight: 900, color: log.date === today ? YELLOW : TEXT, minWidth: 52, textAlign: 'right', letterSpacing: -0.5 }}>
-                          {log.weightKg}<span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>kg</span>
+                          {log.weightKg}<span style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>kg</span>
                         </div>
                         {diff !== null && (
                           <div style={{ fontSize: 10, fontWeight: 700, color: diffColor, minWidth: 36, textAlign: 'right' }}>
@@ -498,7 +498,7 @@ export default function ProfileSetupScreen() {
           })()}
 
           {weightLogs.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '12px 0', color: MUTED, fontSize: 12, fontWeight: 600 }}>
+            <div style={{ textAlign: 'center', padding: '12px 0', color: MUTED, fontSize: 12, fontWeight: 700 }}>
               Log your first weigh-in above to track progress
             </div>
           )}
@@ -528,7 +528,7 @@ export default function ProfileSetupScreen() {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               }}>
                 <span>{label}</span>
-                <span style={{ fontSize: 9, fontWeight: 600, opacity: 0.8 }}>{sub}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, opacity: 0.8 }}>{sub}</span>
               </button>
             ))}
           </div>
@@ -600,7 +600,7 @@ export default function ProfileSetupScreen() {
         {error && (
           <div style={{
             color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px',
-            background: 'rgba(239,51,64,0.06)', borderRadius: 12, fontWeight: 600,
+            background: 'rgba(239,51,64,0.06)', borderRadius: 12, fontWeight: 700,
             border: '1px solid rgba(239,51,64,0.18)',
           }}>
             {error}
