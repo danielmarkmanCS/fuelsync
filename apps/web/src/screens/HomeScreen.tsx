@@ -118,64 +118,53 @@ function useCountUp(to: number, ms = 600): number {
   return val;
 }
 
-// ── HERO CALORIES ─────────────────────────────────────────────────
-function HeroCalories({ cal, target }: { cal: number; target: number }) {
+// ── CAL RING ──────────────────────────────────────────────────────
+function CalRing({ cal, target }: { cal: number; target: number }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
   const display = useCountUp(mounted ? Math.round(cal) : 0);
-  const pct     = target > 0 ? Math.min((cal / target) * 100, 100) : 0;
-  const over    = cal > target && target > 0;
-  const left    = target > 0 ? Math.round(target - cal) : null;
-  const numColor = over ? RED : cal > target * 0.9 ? YELLOW : TEXT;
+  const R   = 60;
+  const C   = 2 * Math.PI * R;
+  const pct = target > 0 ? Math.min(cal / target, 1) : 0;
+  const over = cal > target && target > 0;
+  const color = over ? RED : pct > 0.9 ? YELLOW : BLUE;
+  const left  = target > 0 ? Math.round(target - cal) : null;
 
   return (
-    <div style={{ padding: '20px 16px 0' }}>
-      <div style={{
-        background: SURF, borderRadius: 18, padding: '20px 20px 18px',
-        boxShadow: CARD_SHADOW, border: `1px solid ${EDGE}`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 6 }}>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 16px 0' }}>
+      <div style={{ position: 'relative', width: 152, height: 152 }}>
+        <svg width="152" height="152" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="76" cy="76" r={R} fill="none" stroke={MUTED2} strokeWidth="10" />
+          <circle cx="76" cy="76" r={R} fill="none" stroke={color} strokeWidth="10"
+            strokeLinecap="round"
+            strokeDasharray={`${C}`}
+            strokeDashoffset={C * (1 - pct)}
+            style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }}
+          />
+        </svg>
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
           <div style={{
             fontFamily: "'Barlow Condensed', system-ui, sans-serif",
-            fontSize: 88, fontWeight: 900, letterSpacing: -5, lineHeight: 0.88,
-            color: numColor, transition: 'color 0.3s',
+            fontSize: 40, fontWeight: 900, letterSpacing: -2, lineHeight: 1,
+            color, transition: 'color 0.3s',
           }}>
             {display.toLocaleString()}
           </div>
-          <div style={{ paddingBottom: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
-            {target > 0 && (
-              <div style={{ fontSize: 11, color: MUTED, fontWeight: 500, marginTop: 1 }}>
-                of {target.toLocaleString()}
-              </div>
-            )}
-          </div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
+          {left !== null && (
+            <div style={{ fontSize: 9, color: over ? RED : MUTED, fontWeight: 700, marginTop: 2 }}>
+              {over ? `${Math.abs(left)} over` : `${left} left`}
+            </div>
+          )}
+          {target > 0 && (
+            <div style={{ fontSize: 9, color: MUTED, fontWeight: 500, marginTop: 1 }}>
+              of {target.toLocaleString()}
+            </div>
+          )}
         </div>
-
-        {left !== null && (
-          <div style={{
-            fontSize: 12, fontWeight: 700,
-            color: over ? RED : left < 200 ? YELLOW : MUTED,
-            marginBottom: 10, letterSpacing: 0.3,
-          }}>
-            {over
-              ? `${Math.abs(left)} over`
-              : left < 50 ? 'basically done'
-              : `${left} left`}
-          </div>
-        )}
-
-        {target > 0 && (
-          <div style={{ height: 8, background: SURF2, borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${Math.min(pct, 100)}%`,
-              background: over ? RED : pct > 90 ? YELLOW : `linear-gradient(90deg, ${BLUE}, #60A5FA)`,
-              borderRadius: 4,
-              transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-            }} />
-          </div>
-        )}
       </div>
     </div>
   );
@@ -189,14 +178,14 @@ function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: Mac
     { key: 'F', label: 'Fat',     val: consumed.fatG,     target: targets?.fatG     ?? 0, color: YELLOW },
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '10px 16px 0' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, padding: '8px 16px 0' }}>
       {items.map(({ key, label, val, target, color }) => {
         const pct  = target > 0 ? Math.min((val / target) * 100, 100) : 0;
         const over = val > target && target > 0;
         const c    = over ? RED : color;
         return (
           <div key={key} style={{
-            background: SURF, borderRadius: 14, padding: '14px 14px 12px',
+            background: SURF, borderRadius: 12, padding: '10px 12px 8px',
             border: `1px solid ${over ? `${RED}30` : EDGE}`,
             borderTop: `3px solid ${c}`,
             boxShadow: CARD_SHADOW,
@@ -209,7 +198,7 @@ function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: Mac
             </div>
             <div style={{
               fontFamily: "'Barlow Condensed', system-ui, sans-serif",
-              fontSize: 32, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: c,
+              fontSize: 26, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1, color: c,
             }}>
               {Math.round(val)}
             </div>
@@ -567,7 +556,7 @@ export default function HomeScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        padding: '44px 20px 16px',
+        padding: '30px 16px 12px',
         background: `linear-gradient(180deg, ${BLUE} 0%, #3B82F6 100%)`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -625,7 +614,7 @@ export default function HomeScreen() {
       )}
 
       {/* ── TODAY'S PLAN ── */}
-      <div style={{ padding: '18px 16px 0' }}>
+      <div style={{ padding: '12px 16px 0' }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: 10,
@@ -656,7 +645,7 @@ export default function HomeScreen() {
       </div>
 
       {/* ── CALORIES ── */}
-      <HeroCalories
+      <CalRing
         cal={consumed.calories}
         target={effectiveTargets?.calories ?? 0}
       />

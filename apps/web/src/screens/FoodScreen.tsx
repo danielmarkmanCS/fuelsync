@@ -15,18 +15,19 @@ import { getNoteForDate, setNoteForDate } from '../lib/diaryNotes';
 import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
 
-const BG     = '#0A0A0A';
-const SURF   = '#141414';
-const SURF2  = '#1E1E1E';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const TEXT   = '#F0F0F0';
-const MUTED  = '#707070';
-const ORANGE = '#FF8000';
-const YELLOW = '#F5C518';
-const GREEN  = '#22C55E';
-const RED    = '#EF4444';
-const FAT_CLR = '#AAAAAA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
+const BG     = '#F0F6FF';
+const SURF   = '#FFFFFF';
+const SURF2  = '#EBF3FF';
+const EDGE   = 'rgba(37, 99, 235, 0.12)';
+const TEXT   = '#0F172A';
+const MUTED  = '#64748B';
+const MUTED2 = '#E2EAF4';
+const ORANGE = '#2563EB';
+const YELLOW = '#D97706';
+const GREEN  = '#16A34A';
+const RED    = '#DC2626';
+const FAT_CLR = '#D97706';
+const CARD_SHADOW = '0 2px 12px rgba(37,99,235,0.10), 0 0 0 1px rgba(37,99,235,0.07)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -36,7 +37,7 @@ const MEAL_LABEL: Record<MealType, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: '#F5C518', pre_workout: '#FF8000', lunch: '#22C55E', post_workout: '#EF4444', dinner: '#AAAAAA', snack: '#FF8000', other: '#707070',
+  breakfast: '#D97706', pre_workout: '#2563EB', lunch: '#16A34A', post_workout: '#16A34A', dinner: '#94A3B8', snack: '#D97706', other: '#64748B',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
@@ -869,11 +870,9 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: 'linear-gradient(145deg, #0A0A0A 0%, #1A0900 40%, #FF8000 100%)',
-        padding: '44px 22px 22px', position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(180deg, #2563EB 0%, #3B82F6 100%)',
+        padding: '32px 16px 16px', position: 'relative', overflow: 'hidden',
       }}>
-        <div className="orb1" style={{ position: 'absolute', top: -20, right: 5, width: 150, height: 150, borderRadius: '50%', background: 'rgba(75,111,255,0.12)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: -20, left: -5, width: 100, height: 100, borderRadius: '50%', background: 'rgba(0,189,208,0.08)' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 10, textTransform: 'uppercase' }}>Fuel Log</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
