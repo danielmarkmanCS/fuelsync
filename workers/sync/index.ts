@@ -174,8 +174,8 @@ export default {
           ).bind(userId).all();
         } else if (date) {
           rows = await env.DB.prepare(
-            'SELECT * FROM food_logs WHERE user_id = ? AND date = ? ORDER BY logged_at ASC'
-          ).bind(userId, date).all();
+            'SELECT * FROM food_logs WHERE user_id = ? AND deleted_at IS NULL AND (date = ? OR (date IS NULL AND substr(logged_at, 1, 10) = ?)) ORDER BY logged_at ASC'
+          ).bind(userId, date, date).all();
         } else {
           return err('date or all param required', 400, ao);
         }
@@ -195,6 +195,9 @@ export default {
         const body = await request.json() as Record<string, unknown>;
         if (!body.id || !body.food_name || body.calories == null) return err('id, food_name, calories required', 400, ao);
 
+        const loggedAt = body.logged_at as string | null ?? null;
+        const date = (body.date as string | null) ?? (loggedAt ? loggedAt.split('T')[0] : null);
+
         await env.DB.prepare(`
           INSERT INTO food_logs (id, user_id, food_name, calories, protein, carbs, fat, weight_grams, meal_type, image_url, ingredients, logged_at, date)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -202,12 +205,12 @@ export default {
             food_name=excluded.food_name, calories=excluded.calories, protein=excluded.protein,
             carbs=excluded.carbs, fat=excluded.fat, weight_grams=excluded.weight_grams,
             meal_type=excluded.meal_type, image_url=excluded.image_url, ingredients=excluded.ingredients,
-            logged_at=excluded.logged_at, date=excluded.date, deleted_at=NULL
+            logged_at=excluded.logged_at, date=COALESCE(excluded.date, date), deleted_at=NULL
         `).bind(
           body.id, userId, body.food_name, body.calories, body.protein ?? 0, body.carbs ?? 0, body.fat ?? 0,
           body.weight_grams ?? null, body.meal_type ?? 'other', body.image_url ?? null,
           body.ingredients ? JSON.stringify(body.ingredients) : null,
-          body.logged_at, body.date,
+          loggedAt, date,
         ).run();
 
         return json({ ok: true }, 200, ao);

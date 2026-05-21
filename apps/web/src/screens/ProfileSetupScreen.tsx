@@ -160,7 +160,8 @@ export default function ProfileSetupScreen() {
           protein: row.protein, carbs: row.carbs, fat: row.fat,
           weight_grams: row.weight_grams, meal_type: row.meal_type,
           image_url: row.image_url, ingredients: row.ingredients,
-          logged_at: row.logged_at, date: row.date,
+          logged_at: row.logged_at,
+          date: row.date ?? row.logged_at?.split('T')[0] ?? null,
         });
         if (!row.sync_id) await db.food_logs.update(row.id!, { sync_id: id });
         pushed++;

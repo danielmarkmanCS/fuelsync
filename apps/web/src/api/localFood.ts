@@ -176,7 +176,7 @@ async function upsertD1Logs(d1logs: unknown[]) {
       image_url: log.image_url ?? null,
       ingredients: log.ingredients ?? null,
       logged_at: log.logged_at,
-      date: log.date,
+      date: log.date ?? (log.logged_at ? log.logged_at.split('T')[0] : null),
     });
   }
 }
