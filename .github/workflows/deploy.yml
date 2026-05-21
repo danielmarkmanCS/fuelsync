@@ -28,11 +28,11 @@ jobs:
 
       - name: Install web dependencies
         working-directory: apps/web
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Install mobile dependencies
         working-directory: apps/mobile
-        run: npm install --ignore-scripts
+        run: npm install --ignore-scripts --legacy-peer-deps
 
       - name: Build
         working-directory: apps/web
@@ -40,6 +40,8 @@ jobs:
           VITE_AI_WORKER_URL: ${{ secrets.VITE_AI_WORKER_URL }}
           VITE_STRAVA_WORKER_URL: ${{ secrets.VITE_STRAVA_WORKER_URL }}
           VITE_OPENWEATHER_KEY: ${{ secrets.VITE_OPENWEATHER_KEY }}
+          VITE_SYNC_WORKER_URL: ${{ secrets.VITE_SYNC_WORKER_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
