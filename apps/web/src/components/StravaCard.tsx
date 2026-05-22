@@ -7,15 +7,15 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 
 const STRAVA = '#FC4C02';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EBF3FF';
-const EDGE   = 'rgba(37, 99, 235, 0.12)';
-const TEXT   = '#0F172A';
-const MUTED  = '#64748B';
-const GREEN  = '#16A34A';
-const BLUE   = '#2563EB';
-const RED    = '#DC2626';
-const CARD_SHADOW = '0 2px 12px rgba(37,99,235,0.10), 0 0 0 1px rgba(37,99,235,0.07)';
+const SURF   = '#141414';
+const SURF2  = '#1E1E1E';
+const EDGE   = 'rgba(255,255,255,0.08)';
+const TEXT   = '#F0F0F0';
+const MUTED  = '#707070';
+const GREEN  = '#22C55E';
+const BLUE   = '#FF8000';
+const RED    = '#EF4444';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });

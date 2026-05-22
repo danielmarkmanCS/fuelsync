@@ -1,21 +1,21 @@
 import type { TrainingType } from '@shared/types';
 
-const BLUE   = '#2563EB';
-const GREEN  = '#16A34A';
-const YELLOW = '#D97706';
-const MUTED  = '#64748B';
-const SURF   = '#FFFFFF';
-const EDGE   = 'rgba(37, 99, 235, 0.12)';
-const TEXT   = '#0F172A';
-const MUTED2 = '#E2EAF4';
+const ORANGE = '#FF8000';
+const GREEN  = '#22C55E';
+const YELLOW = '#F5C518';
+const MUTED  = '#707070';
+const SURF   = '#141414';
+const EDGE   = 'rgba(255,255,255,0.08)';
+const TEXT   = '#F0F0F0';
+const MUTED2 = '#3A3A3A';
 
 interface Props { selected: TrainingType | null; onSelect: (t: TrainingType) => void; }
 
 const TYPES: Array<{ value: TrainingType; label: string; sub: string; color: string }> = [
-  { value: 'rest',     label: 'REST',   sub: 'fat + recovery', color: YELLOW },
-  { value: 'strength', label: 'LIFT',   sub: 'protein up',     color: BLUE   },
-  { value: 'cardio',   label: 'RUN',    sub: 'carbs = fuel',   color: GREEN  },
-  { value: 'hybrid',   label: 'HYBRID', sub: 'balanced',       color: '#64748B' },
+  { value: 'rest',     label: 'REST',   sub: 'fat + recovery', color: YELLOW  },
+  { value: 'strength', label: 'LIFT',   sub: 'protein up',     color: ORANGE  },
+  { value: 'cardio',   label: 'RUN',    sub: 'carbs = fuel',   color: GREEN   },
+  { value: 'hybrid',   label: 'HYBRID', sub: 'balanced',       color: '#707070' },
 ];
 
 export default function TrainingPicker({ selected, onSelect }: Props) {

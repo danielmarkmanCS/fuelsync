@@ -11,19 +11,21 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
 import { getCustomTargets } from '../lib/customTargets';
 
-const BG     = '#F0F6FF';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EBF3FF';
-const EDGE   = 'rgba(37, 99, 235, 0.12)';
-const TEXT   = '#0F172A';
-const MUTED  = '#64748B';
-const MUTED2 = '#E2EAF4';
-const BLUE   = '#2563EB';
-const GREEN  = '#16A34A';
-const YELLOW = '#D97706';
-const RED    = '#DC2626';
-const GREY   = '#94A3B8';
-const CARD_SHADOW = '0 2px 12px rgba(37,99,235,0.08), 0 0 0 1px rgba(37,99,235,0.07)';
+const BG      = '#0A0A0A';
+const SURF    = '#141414';
+const SURF2   = '#1E1E1E';
+const EDGE    = 'rgba(255,255,255,0.08)';
+const TEXT    = '#F0F0F0';
+const MUTED   = '#707070';
+const MUTED2  = '#3A3A3A';
+const ORANGE  = '#FF8000';
+const BLUE    = '#FF8000';   // alias — protein uses orange in McLaren
+const GREEN   = '#22C55E';
+const YELLOW  = '#F5C518';
+const RED     = '#EF4444';
+const GREY    = '#707070';
+const FAT_CLR = '#AAAAAA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const ACTIVITY_MULT: Record<string, number> = {
   sedentary: 0.4, light: 0.65, moderate: 1.0, very_active: 1.7, extra_active: 2.4,
@@ -92,11 +94,11 @@ function buildRecovery(runs: LoggedRun[], sessions: number, act = 'moderate') {
   if (runs.length) parts.push(`${runs.length}R · ${km.toFixed(1)}km`);
   if (sessions)    parts.push(`${sessions}S`);
   const sub = parts.join(' · ') || '—';
-  if (score >= 90) return { label: 'FRESH',      color: BLUE,      sub, score };
-  if (score >= 65) return { label: 'ACTIVE',     color: GREEN,     sub, score };
-  if (score >= 40) return { label: 'BUILDING',   color: YELLOW,    sub, score };
-  if (score >= 20) return { label: 'LOADED',     color: '#F97316', sub, score };
-  return             { label: 'OVERLOADED', color: RED,       sub, score };
+  if (score >= 90) return { label: 'FRESH',      color: YELLOW,  sub, score };
+  if (score >= 65) return { label: 'ACTIVE',     color: GREEN,   sub, score };
+  if (score >= 40) return { label: 'BUILDING',   color: YELLOW,  sub, score };
+  if (score >= 20) return { label: 'LOADED',     color: ORANGE,  sub, score };
+  return             { label: 'OVERLOADED', color: RED,     sub, score };
 }
 
 function useCountUp(to: number, ms = 600): number {
@@ -173,9 +175,9 @@ function CalRing({ cal, target }: { cal: number; target: number }) {
 // ── MACRO GRID ────────────────────────────────────────────────────
 function MacroGrid({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
   const items = [
-    { key: 'P', label: 'Protein', val: consumed.proteinG, target: targets?.proteinG ?? 0, color: BLUE   },
-    { key: 'C', label: 'Carbs',   val: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: GREEN  },
-    { key: 'F', label: 'Fat',     val: consumed.fatG,     target: targets?.fatG     ?? 0, color: YELLOW },
+    { key: 'P', label: 'Protein', val: consumed.proteinG, target: targets?.proteinG ?? 0, color: ORANGE  },
+    { key: 'C', label: 'Carbs',   val: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: YELLOW  },
+    { key: 'F', label: 'Fat',     val: consumed.fatG,     target: targets?.fatG     ?? 0, color: FAT_CLR },
   ];
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, padding: '8px 16px 0' }}>
@@ -458,7 +460,7 @@ const TIPS: Record<string, string[]> = {
 function Insight({ type }: { type?: string }) {
   const tips = TIPS[type ?? 'rest'] ?? TIPS.rest;
   const tip  = tips[Math.floor(Date.now() / 86400000) % tips.length];
-  const c    = type === 'strength' ? BLUE : type === 'cardio' ? GREEN : type === 'hybrid' ? GREY : YELLOW;
+  const c    = type === 'strength' ? GREEN : type === 'cardio' ? ORANGE : type === 'hybrid' ? GREY : YELLOW;
   return (
     <div style={{ padding: '10px 16px 0' }}>
       <div style={{
@@ -557,31 +559,32 @@ export default function HomeScreen() {
       {/* ── HEADER ── */}
       <div style={{
         padding: '30px 16px 12px',
-        background: `linear-gradient(180deg, ${BLUE} 0%, #3B82F6 100%)`,
+        background: `linear-gradient(180deg, #1A1A1A 0%, ${BG} 100%)`,
+        borderBottom: `1px solid ${EDGE}`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{
               fontFamily: "'Barlow Condensed', system-ui, sans-serif",
-              fontSize: 42, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF',
+              fontSize: 42, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: ORANGE,
             }}>
               {name}
             </div>
             {weather && (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginTop: 5 }}>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, marginTop: 5 }}>
                 {Math.round(weather.tempC)}° · {weather.description}
               </div>
             )}
           </div>
           <div style={{ textAlign: 'right', paddingTop: 3 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.9)' }}>{dateLabel}</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: MUTED }}>{dateLabel}</div>
             {recovery.label && (
               <div style={{
                 marginTop: 6, display: 'inline-block',
-                background: 'rgba(255,255,255,0.18)', borderRadius: 20,
+                background: `${ORANGE}20`, borderRadius: 20,
                 padding: '3px 10px',
                 fontSize: 10, fontWeight: 800,
-                color: '#FFFFFF', letterSpacing: 0.5,
+                color: ORANGE, letterSpacing: 0.5,
               }}>
                 {recovery.label} · {recovery.score}
               </div>

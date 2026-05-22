@@ -2,20 +2,20 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG     = '#F0F6FF';
-const SURF   = '#FFFFFF';
-const SURF2  = '#EBF3FF';
-const EDGE   = 'rgba(37, 99, 235, 0.12)';
-const TEXT   = '#0F172A';
-const MUTED  = '#64748B';
-const MUTED2 = '#E2EAF4';
-const ORANGE = '#2563EB';
-const YELLOW = '#D97706';
-const GREEN  = '#16A34A';
-const RED    = '#DC2626';
-const BLUE   = '#2563EB';
-const FAT_CLR = '#D97706';
-const CARD_SHADOW = '0 2px 12px rgba(37,99,235,0.10), 0 0 0 1px rgba(37,99,235,0.07)';
+const BG      = '#0A0A0A';
+const SURF    = '#141414';
+const SURF2   = '#1E1E1E';
+const EDGE    = 'rgba(255,255,255,0.08)';
+const TEXT    = '#F0F0F0';
+const MUTED   = '#707070';
+const MUTED2  = '#3A3A3A';
+const ORANGE  = '#FF8000';
+const YELLOW  = '#F5C518';
+const GREEN   = '#22C55E';
+const RED     = '#EF4444';
+const BLUE    = '#FF8000';  // alias — orange in McLaren
+const FAT_CLR = '#AAAAAA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -331,42 +331,43 @@ export default function HistoryScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(180deg, #2563EB 0%, #3B82F6 100%)',
+        background: 'linear-gradient(180deg, #1A1A1A 0%, #0A0A0A 100%)',
         padding: '32px 16px 0', position: 'relative', overflow: 'hidden',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.65)', marginBottom: 4, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginBottom: 4, textTransform: 'uppercase' }}>
               History
             </div>
-            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: '#fff' }}>
+            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: ORANGE }}>
               Your Journey
             </div>
           </div>
           {streak >= 2 && (
             <div style={{
-              background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.30)',
+              background: `${ORANGE}20`, border: `1px solid ${ORANGE}40`,
               borderRadius: 20, padding: '4px 12px',
-              fontSize: 11, fontWeight: 800, color: '#fff',
+              fontSize: 11, fontWeight: 800, color: ORANGE,
             }}>
               {streak} day streak
             </div>
           )}
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 14, fontWeight: 700 }}>
+        <div style={{ fontSize: 11, color: MUTED, marginBottom: 14, fontWeight: 700 }}>
           {totalDays > 0
             ? `${totalDays} days · ${allLogs.length} entries · avg ${avgCal.toLocaleString()} kcal`
             : 'Log food in the Fuel tab to build your history'}
         </div>
 
         {/* Tab bar */}
-        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.20)' }}>
+        <div style={{ display: 'flex', borderBottom: `1px solid ${EDGE}` }}>
           {(['days', 'foods'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)} style={{
               flex: 1, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase',
-              color: tab === t ? '#fff' : 'rgba(255,255,255,0.45)',
-              borderBottom: tab === t ? '3px solid #fff' : '3px solid transparent',
+              color: tab === t ? ORANGE : MUTED,
+              borderBottom: tab === t ? `3px solid ${ORANGE}` : '3px solid transparent',
               marginBottom: -1, transition: 'all 0.15s',
             }}>
               {t === 'days' ? 'Days' : 'Foods'}
