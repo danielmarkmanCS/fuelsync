@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllLogs, addLog, unremoveLog, type FoodLog, type Ingredient } from '../api/localFood';
+import { getAllLogs, addLog, unremoveLog, clearPullCache, type FoodLog, type Ingredient } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG      = '#0A0A0A';
@@ -316,8 +316,8 @@ export default function HistoryScreen() {
   const [foodSearch,   setFoodSearch]   = useState('');
   const relogRef = useRef<Set<string>>(new Set());
 
-  const load = useCallback(() => {
-    setLoading(true);
+  const load = useCallback((silent = false) => {
+    if (!silent) setLoading(true);
     getAllLogs()
       .then((logs) => {
         const sorted = [...logs].sort((a, b) => b.logged_at.localeCompare(a.logged_at));
@@ -328,7 +328,17 @@ export default function HistoryScreen() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Full load on mount
   useEffect(() => { load(); }, [load]);
+
+  // Silent refresh whenever the document becomes visible (app foregrounded or tab focused)
+  const loadRef = useRef(load);
+  loadRef.current = load;
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) { clearPullCache(); loadRef.current(true); } };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   const handleRelog = async (item: FoodLog) => {
     if (relogRef.current.has(item.id)) return;
