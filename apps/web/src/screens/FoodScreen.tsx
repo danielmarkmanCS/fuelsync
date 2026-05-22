@@ -11,7 +11,6 @@ import { getTemplates, saveTemplate, deleteTemplate } from '../lib/mealTemplates
 import type { MealTemplate } from '../lib/mealTemplates';
 import { getRecipes, saveRecipe, deleteRecipe } from '../lib/recipes';
 import type { Recipe, RecipeIngredient } from '../lib/recipes';
-import { getNoteForDate, setNoteForDate } from '../lib/diaryNotes';
 import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
 
@@ -207,7 +206,7 @@ export default function FoodScreen() {
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
-  const [mode,       setMode]       = useState<'quick' | 'search' | 'ai' | 'photo' | 'manual' | 'suggest' | 'recipe'>('search');
+  const [mode,       setMode]       = useState<'search' | 'ai' | 'photo' | 'manual' | 'suggest' | 'recipe'>('search');
   const [form,       setForm]       = useState<Form>(emptyForm);
   const [estimate,   setEstimate]   = useState<AIEstimate | null>(null);
   const [aiLoading,  setAiLoading]  = useState(false);
@@ -250,16 +249,6 @@ export default function FoodScreen() {
   const [favoriteStates, setFavoriteStates] = useState<Record<string, boolean>>({});
   const [templates, setTemplates] = useState<MealTemplate[]>([]);
   const [loggingTemplateId, setLoggingTemplateId] = useState<string | null>(null);
-  const [savingTemplateMeal, setSavingTemplateMeal] = useState<string | null>(null);
-  const [templateNameInput, setTemplateNameInput] = useState('');
-
-  // Quick add
-  const [quickCal,  setQuickCal]  = useState('');
-  const [quickPro,  setQuickPro]  = useState('');
-  const [quickCarb, setQuickCarb] = useState('');
-  const [quickFat,  setQuickFat]  = useState('');
-  const [quickName, setQuickName] = useState('');
-  const [quickMeal, setQuickMeal] = useState<MealType>(mealFromTime());
 
   // Copy yesterday
   const [copyingYesterday, setCopyingYesterday] = useState(false);
@@ -276,11 +265,6 @@ export default function FoodScreen() {
   const [loggingRecipeId,      setLoggingRecipeId]      = useState<string | null>(null);
   const [loggingRecipeServings, setLoggingRecipeServings] = useState('1');
   const recipeSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Diary notes
-  const [diaryNote,     setDiaryNote]     = useState('');
-  const [noteExpanded,  setNoteExpanded]  = useState(false);
-  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Meal calorie targets
   const [mealCalTargets,     setMealCalTargetsState] = useState<MealCalTargets>(getMealCalTargets);
@@ -310,12 +294,6 @@ export default function FoodScreen() {
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
-
-  // Load diary note when date changes
-  useEffect(() => {
-    setDiaryNote(getNoteForDate(selectedDate));
-    setNoteExpanded(false);
-  }, [selectedDate]);
 
   // Load recents + favorites + templates + recipes when sheet opens
   useEffect(() => {
@@ -483,50 +461,6 @@ export default function FoodScreen() {
     finally { setLoggingTemplateId(null); }
   };
 
-  const handleSaveTemplate = (meal: string, entries: FoodLog[]) => {
-    setSavingTemplateMeal(meal);
-    setTemplateNameInput(MEAL_LABEL[meal as MealType] ?? meal);
-  };
-
-  const confirmSaveTemplate = (meal: string, entries: FoodLog[]) => {
-    const name = templateNameInput.trim() || (MEAL_LABEL[meal as MealType] ?? meal);
-    saveTemplate(name, meal, entries.map((e) => ({
-      food_name:    e.food_name,
-      calories:     Number(e.calories),
-      protein:      Number(e.protein),
-      carbs:        Number(e.carbs),
-      fat:          Number(e.fat),
-      weight_grams: e.weight_grams,
-    })));
-    setSavingTemplateMeal(null);
-    setTemplateNameInput('');
-    setTemplates(getTemplates());
-  };
-
-  const handleQuickAdd = async () => {
-    const cal = parseFloat(quickCal);
-    if (isNaN(cal) || cal <= 0) return;
-    const pro  = parseFloat(quickPro)  || 0;
-    const carb = parseFloat(quickCarb) || 0;
-    const fat  = parseFloat(quickFat)  || 0;
-    setSubmitting(true);
-    try {
-      await addLog({
-        food_name: quickName.trim() || 'Quick Add',
-        calories:  cal,
-        protein:   pro,
-        carbs:     carb,
-        fat:       fat,
-        meal_type: quickMeal,
-      });
-      addRecentFood({ food_name: quickName.trim() || 'Quick Add', calories: cal, protein: pro, carbs: carb, fat: fat, weight_grams: null, meal_type: quickMeal });
-      playFoodLogSound();
-      fetchLogs();
-      closeSheet();
-    } catch {}
-    finally { setSubmitting(false); }
-  };
-
   const handleToggleFavorite = (food: SavedFood) => {
     const nowFav = toggleFavorite(food);
     setFavoriteStates((prev) => ({ ...prev, [food.food_name]: nowFav }));
@@ -597,12 +531,6 @@ export default function FoodScreen() {
     setLoggingRecipeId(null);
   };
 
-  const handleNoteChange = (val: string) => {
-    setDiaryNote(val);
-    if (noteTimer.current) clearTimeout(noteTimer.current);
-    noteTimer.current = setTimeout(() => setNoteForDate(selectedDate, val), 600);
-  };
-
   const handleSaveMealCalTargets = (updated: MealCalTargets) => {
     setMealCalTargetsState(updated);
     setMealCalTargets(updated);
@@ -615,8 +543,6 @@ export default function FoodScreen() {
     setSuggestResult(null); setEditableIngredients(null);
     setSearchQuery(''); setSearchResults([]); setSearchError('');
     setScanError(''); setManualBarcode('');
-    setQuickCal(''); setQuickPro(''); setQuickCarb(''); setQuickFat(''); setQuickName(''); setQuickMeal(mealFromTime());
-    setSavingTemplateMeal(null); setTemplateNameInput('');
     setRecipeView('list'); setRecipeSearch(''); setRecipeResults([]);
     setLoggingRecipeId(null); setLoggingRecipeServings('1');
     stopScan();
@@ -1094,33 +1020,6 @@ export default function FoodScreen() {
                   reLogLabel={!isToday ? 'Log today' : undefined}
                 />
               ))}
-              {isToday && entries.length > 0 && (
-                savingTemplateMeal === meal ? (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <input
-                      value={templateNameInput}
-                      onChange={(e) => setTemplateNameInput(e.target.value)}
-                      placeholder="Template name"
-                      style={{ ...inp, flex: 1, padding: '8px 12px', fontSize: 13 }}
-                    />
-                    <button onClick={() => confirmSaveTemplate(meal, entries)} style={{
-                      background: GREEN, border: 'none', borderRadius: 8, color: '#000',
-                      fontWeight: 800, fontSize: 12, cursor: 'pointer', padding: '8px 14px', flexShrink: 0,
-                    }}>Save</button>
-                    <button onClick={() => setSavingTemplateMeal(null)} style={{
-                      background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 8, color: MUTED,
-                      fontWeight: 700, fontSize: 12, cursor: 'pointer', padding: '8px 12px', flexShrink: 0,
-                    }}>Cancel</button>
-                  </div>
-                ) : (
-                  <button onClick={() => handleSaveTemplate(meal, entries)} style={{
-                    marginTop: 8, background: 'none', border: `1px dashed ${EDGE}`,
-                    borderRadius: 8, color: MUTED, fontSize: 11, fontWeight: 700,
-                    cursor: 'pointer', padding: '7px 14px', width: '100%',
-                    letterSpacing: 0.5, fontFamily: 'inherit',
-                  }}>+ Save as Template</button>
-                )
-              )}
             </div>
           );
         })}
@@ -1160,35 +1059,6 @@ export default function FoodScreen() {
           }}>⚙ Meal targets</button>
         </div>
       )}
-
-      {/* ── DIARY NOTE ── */}
-      <div style={{ padding: '0 22px 20px' }}>
-        <button onClick={() => setNoteExpanded((v) => !v)} style={{
-          background: 'none', border: 'none', color: MUTED, fontSize: 11,
-          fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
-          display: 'flex', alignItems: 'center', gap: 6, padding: 0,
-        }}>
-          <span style={{ fontSize: 13 }}>{noteExpanded ? '▾' : '▸'}</span>
-          {diaryNote ? 'Daily Note ✎' : '+ Add Daily Note'}
-        </button>
-        {noteExpanded && (
-          <textarea
-            value={diaryNote}
-            onChange={(e) => handleNoteChange(e.target.value)}
-            placeholder="How are you feeling? Any notes about today's nutrition…"
-            rows={3}
-            style={{
-              ...inp, marginTop: 8, width: '100%', resize: 'vertical',
-              fontSize: 13, lineHeight: 1.6, boxSizing: 'border-box',
-            }}
-          />
-        )}
-        {!noteExpanded && diaryNote && (
-          <div style={{ marginTop: 6, fontSize: 12, color: MUTED, fontStyle: 'italic', lineHeight: 1.5 }}>
-            {diaryNote.slice(0, 120)}{diaryNote.length > 120 ? '…' : ''}
-          </div>
-        )}
-      </div>
 
       {/* ── FAB ── */}
       {isToday && (
@@ -1251,92 +1121,36 @@ export default function FoodScreen() {
               </div>
 
               {/* Mode tabs */}
-              <div style={{ display: 'flex', borderBottom: `2px solid ${EDGE}`, marginBottom: 24, overflowX: 'auto' }}>
-                {([['quick', 'FAST'], ['search', 'SEARCH'], ['recipe', 'RECIPE'], ['ai', 'DESCRIBE'], ['photo', 'CAMERA'], ['manual', 'MANUAL'], ['suggest', 'SUGGEST']] as const).map(([m, label]) => (
-                  <button key={m} onClick={() => {
-                    setMode(m); setAiError(''); setFormError(''); setSuggestResult(null);
-                    if (m !== 'search') { setScanActive(false); stopScan(); }
-                  }} style={{
-                    flexShrink: 0, flex: 1, padding: '10px 0', background: 'none', border: 'none',
-                    borderBottom: `2px solid ${mode === m ? ORANGE : 'transparent'}`,
-                    marginBottom: -2,
-                    color: mode === m ? ORANGE : MUTED,
-                    fontWeight: mode === m ? 800 : 600,
-                    fontSize: 11, cursor: 'pointer', transition: 'color 0.15s',
-                    fontFamily: 'inherit', letterSpacing: 0.3,
-                  }}>{label}</button>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 22 }}>
+                {([
+                  ['search',  '🔍', 'Search'],
+                  ['ai',      '✨', 'Describe'],
+                  ['photo',   '📷', 'Camera'],
+                  ['suggest', '🍽', 'Suggest'],
+                  ['recipe',  '📖', 'Recipe'],
+                  ['manual',  '✏️',  'Manual'],
+                ] as const).map(([m, icon, label]) => {
+                  const active = mode === m;
+                  return (
+                    <button key={m} onClick={() => {
+                      setMode(m); setAiError(''); setFormError(''); setSuggestResult(null);
+                      if (m !== 'search') { setScanActive(false); stopScan(); }
+                    }} style={{
+                      padding: '10px 4px 9px', borderRadius: 12, border: `1px solid ${active ? ORANGE : EDGE}`,
+                      background: active ? `${ORANGE}14` : SURF2,
+                      color: active ? ORANGE : MUTED,
+                      fontWeight: active ? 800 : 600,
+                      fontSize: 10, cursor: 'pointer', transition: 'all 0.15s',
+                      fontFamily: 'inherit', letterSpacing: 0.3,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                      boxShadow: active ? `0 0 12px ${ORANGE}25` : 'none',
+                    }}>
+                      <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
               </div>
-
-              {/* QUICK ADD MODE */}
-              {mode === 'quick' && (
-                <>
-                  <div style={{ fontSize: 12, color: MUTED, marginBottom: 16, lineHeight: 1.6 }}>
-                    Just the calories. Name is optional.
-                  </div>
-
-                  <input
-                    value={quickName}
-                    onChange={(e) => setQuickName(e.target.value)}
-                    placeholder='Food name (optional, e.g. "Snack")'
-                    style={{ ...inp, width: '100%', marginBottom: 10, boxSizing: 'border-box' }}
-                  />
-
-                  {/* Big calorie input */}
-                  <div style={{
-                    background: SURF2, borderRadius: 14, padding: '14px 16px',
-                    border: `1px solid ${ORANGE}20`, marginBottom: 10, textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: ORANGE, textTransform: 'uppercase', marginBottom: 8 }}>Calories</div>
-                    <input
-                      autoFocus
-                      type="number"
-                      value={quickCal}
-                      onChange={(e) => setQuickCal(e.target.value)}
-                      placeholder="0"
-                      style={{
-                        background: 'transparent', border: 'none', outline: 'none',
-                        fontSize: 56, fontWeight: 900, letterSpacing: -4, color: ORANGE,
-                        textAlign: 'center', width: '100%',
-                        fontFamily: 'Inter, system-ui, sans-serif',
-                      }}
-                    />
-                    <div style={{ fontSize: 11, color: MUTED, fontWeight: 700 }}>kcal</div>
-                  </div>
-
-                  {/* Optional macros */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-                    {([
-                      { label: 'Protein', val: quickPro,  set: setQuickPro,  color: RED    },
-                      { label: 'Carbs',   val: quickCarb, set: setQuickCarb, color: YELLOW   },
-                      { label: 'Fat',     val: quickFat,  set: setQuickFat,  color: FAT_CLR },
-                    ] as const).map(({ label, val, set, color }) => (
-                      <div key={label}>
-                        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color, textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
-                        <input
-                          type="number"
-                          value={val}
-                          onChange={(e) => set(e.target.value)}
-                          placeholder="0"
-                          style={{ ...inp, padding: '9px 10px', fontSize: 16, fontWeight: 700, color: TEXT }}
-                        />
-                        <div style={{ fontSize: 9, color: MUTED, marginTop: 2, textAlign: 'right' }}>g (opt.)</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <MealChips form={{ ...form, meal: quickMeal }} setForm={(f) => { const next = typeof f === 'function' ? f({ ...form, meal: quickMeal }) : f; setQuickMeal(next.meal); }} />
-
-                  <button
-                    onClick={handleQuickAdd}
-                    disabled={submitting || !quickCal.trim() || parseFloat(quickCal) <= 0}
-                    className="nrc-press"
-                    style={bigBtn(submitting || !quickCal.trim() || parseFloat(quickCal) <= 0, ORANGE)}
-                  >
-                    {submitting ? 'Logging…' : 'Quick Log →'}
-                  </button>
-                </>
-              )}
 
               {/* RECIPE MODE */}
               {mode === 'recipe' && (
@@ -1772,25 +1586,33 @@ export default function FoodScreen() {
               {/* PHOTO MODE */}
               {mode === 'photo' && (
                 <>
-                  <div style={{ fontSize: 12, color: MUTED, marginBottom: 16, lineHeight: 1.6 }}>
-                    Take a photo — AI estimates the calories and macros.
-                  </div>
                   <label style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    gap: 12, padding: '32px 20px', borderRadius: 16,
+                    gap: 16, padding: '40px 20px', borderRadius: 20,
                     border: `2px dashed ${aiLoading ? EDGE : ORANGE}`,
-                    background: aiLoading ? SURF2 : SURF,
+                    background: aiLoading ? SURF2 : `${ORANGE}05`,
                     cursor: aiLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginBottom: 16,
                   }}>
                     <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} disabled={aiLoading}
                       onChange={(e) => { const file = e.target.files?.[0]; if (file) handlePhotoAnalyze(file); e.target.value = ''; }} />
-                    <div style={{ fontSize: 32, lineHeight: 1, color: aiLoading ? MUTED : ORANGE, fontWeight: 900 }}>
-                      {aiLoading ? '···' : '↑'}
+                    {aiLoading ? (
+                      <div style={{ width: 48, height: 48, borderRadius: '50%', border: `3px solid ${ORANGE}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                    ) : (
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                    )}
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: aiLoading ? MUTED : ORANGE, textAlign: 'center', marginBottom: 4 }}>
+                        {aiLoading ? 'Analysing…' : 'Take a Photo'}
+                      </div>
+                      <div style={{ fontSize: 12, color: MUTED, textAlign: 'center', fontWeight: 600 }}>
+                        {aiLoading ? 'AI is estimating macros' : 'Point camera at your meal'}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: aiLoading ? MUTED : ORANGE }}>
-                      {aiLoading ? 'Analysing photo…' : 'Tap to take or upload photo'}
-                    </div>
-                    <div style={{ fontSize: 11, color: MUTED }}>Camera · Gallery · Screenshot</div>
                   </label>
                   <MealChips form={form} setForm={setForm} />
                   {aiError && <ErrBox msg={aiError} />}
@@ -1946,18 +1768,12 @@ export default function FoodScreen() {
                           color: form.amountIsText === isText ? '#FFFFFF' : MUTED,
                           fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
                           fontFamily: 'inherit',
-                        }}>{isText ? 'qty' : 'g'}</button>
+                        }}>{isText ? 'pcs' : 'g'}</button>
                       ))}
                     </div>
                     <input style={{ ...inp, flex: 1 }} type={form.amountIsText ? 'text' : 'number'}
                       value={form.amount} onChange={(e) => patch({ amount: e.target.value })}
                       placeholder={form.amountIsText ? 'e.g. 2 eggs' : 'Weight in grams'} />
-                    <button onClick={handleWeightAI} disabled={aiLoading} className="nrc-press" style={{
-                      background: `${ORANGE}0C`, border: `1px solid ${ORANGE}25`, borderRadius: 10,
-                      color: aiLoading ? MUTED : ORANGE, fontWeight: 800, fontSize: 11,
-                      cursor: aiLoading ? 'not-allowed' : 'pointer',
-                      padding: '0 14px', whiteSpace: 'nowrap', fontFamily: 'inherit', letterSpacing: 0.5,
-                    }}>{aiLoading ? '···' : 'AI'}</button>
                   </div>
 
                   {aiError && <ErrBox msg={aiError} />}
@@ -1965,8 +1781,8 @@ export default function FoodScreen() {
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Macros</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
-                      <MacroInp label="Protein" color={GREEN}  value={form.protein} onChange={(v) => patch({ protein: v })} />
-                      <MacroInp label="Carbs"   color={ORANGE} value={form.carbs}   onChange={(v) => patch({ carbs: v })} />
+                      <MacroInp label="Protein" color={ORANGE}  value={form.protein} onChange={(v) => patch({ protein: v })} />
+                      <MacroInp label="Carbs"   color={YELLOW}  value={form.carbs}   onChange={(v) => patch({ carbs: v })} />
                       <MacroInp label="Fat"     color={FAT_CLR} value={form.fat}     onChange={(v) => patch({ fat: v })} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: `1px solid ${EDGE}`, paddingTop: 12 }}>
@@ -2115,13 +1931,13 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
             return (
               <div style={{ marginTop: 10 }}>
                 <div style={{ display: 'flex', height: 5, borderRadius: 3, overflow: 'hidden', marginBottom: 5 }}>
-                  <div style={{ width: `${pP}%`, background: RED    }} />
-                  <div style={{ width: `${cP}%`, background: YELLOW   }} />
+                  <div style={{ width: `${pP}%`, background: ORANGE  }} />
+                  <div style={{ width: `${cP}%`, background: YELLOW  }} />
                   <div style={{ width: `${fP}%`, background: FAT_CLR }} />
                 </div>
                 <div style={{ display: 'flex', gap: 14, justifyContent: 'center' }}>
-                  <span style={{ fontSize: 10, color: RED,    fontWeight: 700 }}>P {pP}%</span>
-                  <span style={{ fontSize: 10, color: YELLOW,   fontWeight: 700 }}>C {cP}%</span>
+                  <span style={{ fontSize: 10, color: ORANGE,  fontWeight: 700 }}>P {pP}%</span>
+                  <span style={{ fontSize: 10, color: YELLOW,  fontWeight: 700 }}>C {cP}%</span>
                   <span style={{ fontSize: 10, color: FAT_CLR, fontWeight: 700 }}>F {fP}%</span>
                 </div>
               </div>
