@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from './store/authStore';
 import { getProfile, createProfile, updateProfile } from './api/auth';
 import type { LocalProfile } from './api/auth';
@@ -6,6 +6,7 @@ import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
 import { getSyncToken, getMe, syncProfile } from './api/syncClient';
 import { clearPullCache, drainSyncQueue } from './api/localFood';
+import { db } from './lib/db';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import GoogleAuthScreen from './screens/GoogleAuthScreen';
@@ -73,6 +74,10 @@ export default function App() {
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
   const [stravaConnecting, setStravaConnecting] = useState(false);
+  const [showWeightCheckIn, setShowWeightCheckIn] = useState(false);
+  const [weightInput,       setWeightInput]       = useState('');
+  const [weightSaving,      setWeightSaving]      = useState(false);
+  const weightChecked = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -146,6 +151,19 @@ export default function App() {
       }
     })();
   }, []);
+
+  // Daily weight check-in — once per day after user is ready
+  useEffect(() => {
+    if (!user || !pinVerified || booting || weightChecked.current) return;
+    weightChecked.current = true;
+    const today = new Date().toISOString().split('T')[0];
+    db.weight_logs.where('date').equals(today).count().then((count) => {
+      if (count === 0) {
+        setWeightInput(user.weightKg ? String(user.weightKg) : '');
+        setShowWeightCheckIn(true);
+      }
+    }).catch(() => {});
+  }, [user, pinVerified, booting]);
 
   // Clear D1 pull cache whenever the user brings the app to foreground
   useEffect(() => {
@@ -291,6 +309,22 @@ export default function App() {
   );
   if (needsPin && !pinVerified) return <PinScreen />;
 
+  const handleWeightLog = async (skip?: boolean) => {
+    const kg = skip ? (user?.weightKg ?? 0) : parseFloat(weightInput);
+    if (!skip && (!kg || kg < 20 || kg > 300)) return;
+    setWeightSaving(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await db.weight_logs.add({ date: today, weightKg: kg || 0, logged_at: new Date().toISOString() });
+      if (!skip && kg) {
+        const updated = await updateProfile({ weightKg: kg });
+        setUser(updated);
+        syncProfile({ weight_kg: kg }).catch(() => {});
+      }
+    } catch { /* ignore */ }
+    finally { setWeightSaving(false); setShowWeightCheckIn(false); }
+  };
+
   return (
     <div style={{
       position: 'relative', height: '100dvh',
@@ -304,6 +338,78 @@ export default function App() {
         {activeTab === 'history' && <HistoryScreen />}
         {activeTab === 'profile' && <ProfileSetupScreen />}
       </div>
+
+      {/* Daily weight check-in modal */}
+      {showWeightCheckIn && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px',
+        }}>
+          <div style={{
+            background: '#141414', borderRadius: 24, padding: '28px 24px',
+            width: '100%', maxWidth: 340, textAlign: 'center',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          }}>
+            <div style={{ fontSize: 28, marginBottom: 4 }}>⚖️</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#F0F0F0', marginBottom: 6 }}>
+              Morning Check-In
+            </div>
+            <div style={{ fontSize: 12, color: '#6878A0', marginBottom: 24, lineHeight: 1.6 }}>
+              Log today's weight to keep BMR and targets accurate.
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <button
+                onClick={() => setWeightInput(w => String(Math.max(20, parseFloat(w || '0') - 0.5)))}
+                style={{ width: 40, height: 40, borderRadius: 10, background: '#1E1E1E', border: '1px solid #333', color: '#F0F0F0', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+              >−</button>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <input
+                  type="number"
+                  value={weightInput}
+                  onChange={e => setWeightInput(e.target.value)}
+                  step="0.1"
+                  min="20"
+                  max="300"
+                  style={{
+                    width: '100%', boxSizing: 'border-box', padding: '12px 36px 12px 12px',
+                    borderRadius: 12, border: '1.5px solid #FF8000',
+                    background: '#0A0A0A', color: '#F0F0F0',
+                    fontSize: 22, fontWeight: 800, textAlign: 'center',
+                    outline: 'none', fontFamily: 'inherit',
+                  }}
+                />
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#6878A0', fontSize: 12, fontWeight: 700 }}>kg</span>
+              </div>
+              <button
+                onClick={() => setWeightInput(w => String(Math.min(300, parseFloat(w || '0') + 0.5)))}
+                style={{ width: 40, height: 40, borderRadius: 10, background: '#1E1E1E', border: '1px solid #333', color: '#FF8000', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+              >+</button>
+            </div>
+
+            <button
+              onClick={() => handleWeightLog(false)}
+              disabled={weightSaving}
+              style={{
+                width: '100%', padding: '14px 0', borderRadius: 14,
+                background: weightSaving ? '#333' : '#FF8000', border: 'none',
+                color: '#000', fontSize: 15, fontWeight: 800, cursor: weightSaving ? 'not-allowed' : 'pointer',
+                marginBottom: 10,
+              }}
+            >
+              {weightSaving ? 'Saving…' : 'Log Weight →'}
+            </button>
+            <button
+              onClick={() => handleWeightLog(true)}
+              style={{ background: 'none', border: 'none', color: '#505050', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Skip today
+            </button>
+          </div>
+        </div>
+      )}
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
