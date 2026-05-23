@@ -540,9 +540,18 @@ export default function HomeScreen() {
   const goalAdj: Record<'lose' | 'maintain' | 'gain', number> = { lose: -500, maintain: 0, gain: 300 };
   const effectiveTargets = customTargets.enabled && targets
     ? { ...targets, calories: customTargets.calories, proteinG: customTargets.proteinG, carbsG: customTargets.carbsG, fatG: customTargets.fatG }
-    : targets
-      ? { ...targets, calories: Math.max(1200, targets.calories + goalAdj[goalMode]) }
-      : targets;
+    : targets ? (() => {
+        const adjCal = Math.max(1200, targets.calories + goalAdj[goalMode]);
+        const scale  = adjCal / targets.calories;
+        return {
+          ...targets,
+          calories: adjCal,
+          proteinG: Math.round(targets.proteinG * scale),
+          carbsG:   Math.round(targets.carbsG   * scale),
+          fatG:     Math.round(targets.fatG      * scale),
+        };
+      })()
+    : targets;
 
   const strength = weeklyLoad.totalStrengthSets ?? 0;
   const recovery = buildRecovery(loggedRuns, strength, activityLevel);
