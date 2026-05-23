@@ -32,8 +32,8 @@ const ACTIVITY_LEVELS = [
 type ActivityLevel = typeof ACTIVITY_LEVELS[number]['value'];
 
 function calcBMR(w: number, h: number, a: number, gender: 'male' | 'female'): number {
-  if (gender === 'male') return Math.round(88.36 + 13.4 * w + 5.7 * h - 5.7 * a);
-  return Math.round(447.6 + 9.25 * w + 3.1 * h - 4.33 * a);
+  const base = 10 * w + 6.25 * h - 5 * a;
+  return Math.round(gender === 'male' ? base + 5 : base - 161);
 }
 
 function calcBMI(w: number, h: number): number {
@@ -164,6 +164,10 @@ export default function ProfileSetupScreen() {
           image_url: row.image_url, ingredients: row.ingredients,
           logged_at: row.logged_at,
           date: row.date ?? row.logged_at?.split('T')[0] ?? null,
+          fiber_g: row.fiber_g ?? null, cholesterol_mg: row.cholesterol_mg ?? null,
+          sodium_mg: row.sodium_mg ?? null, vitamin_c_mg: row.vitamin_c_mg ?? null,
+          vitamin_d_mcg: row.vitamin_d_mcg ?? null, calcium_mg: row.calcium_mg ?? null,
+          iron_mg: row.iron_mg ?? null,
         });
         if (!row.sync_id) await db.food_logs.update(row.id!, { sync_id: id });
         pushed++;

@@ -58,10 +58,13 @@ export const useNutritionStore = create<NutritionState>()(
       addRunKm: (km, name = 'Run', source = 'manual', durationMin, paceMinPerKm) => {
         const { weeklyLoad } = get();
         const run = { km, name, source, ...(durationMin != null ? { durationMin } : {}), ...(paceMinPerKm != null ? { paceMinPerKm } : {}) };
+        const legDelta = Math.min(20, km * 1.5);
         set({ weeklyLoad: {
           ...weeklyLoad,
           totalRunKm: parseFloat((weeklyLoad.totalRunKm + km).toFixed(2)),
           loggedRuns: [...(weeklyLoad.loggedRuns ?? []), run],
+          legFatigueScore: Math.min(100, weeklyLoad.legFatigueScore + legDelta),
+          recoveryScore: Math.max(0, weeklyLoad.recoveryScore - 15),
         }});
       },
 
@@ -70,10 +73,13 @@ export const useNutritionStore = create<NutritionState>()(
         const runs = weeklyLoad.loggedRuns ?? [];
         const idx  = runs.findIndex((r) => r.km === km && (!name || r.name === name));
         const loggedRuns = idx >= 0 ? [...runs.slice(0, idx), ...runs.slice(idx + 1)] : runs;
+        const legDelta = Math.min(20, km * 1.5);
         set({ weeklyLoad: {
           ...weeklyLoad,
           totalRunKm: parseFloat((Math.max(0, weeklyLoad.totalRunKm - km)).toFixed(2)),
           loggedRuns,
+          legFatigueScore: Math.max(0, weeklyLoad.legFatigueScore - legDelta),
+          recoveryScore: Math.min(100, weeklyLoad.recoveryScore + 15),
         }});
       },
 

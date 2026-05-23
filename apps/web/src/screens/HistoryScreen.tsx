@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, clearPullCache, type FoodLog, type Ingredient } from '../api/localFood';
+import { playFoodLogSound } from '../utils/sounds';
 import { useNutrition } from '../hooks/useNutrition';
 
 const BG      = '#0A0A0A';
@@ -355,8 +356,13 @@ export default function HistoryScreen() {
           weight_grams: item.weight_grams ?? undefined,
           meal_type: item.meal_type, image_url: item.image_url ?? undefined,
           ingredients: item.ingredients ?? undefined,
+          fiber_g: item.fiber_g, cholesterol_mg: item.cholesterol_mg,
+          sodium_mg: item.sodium_mg, vitamin_c_mg: item.vitamin_c_mg,
+          vitamin_d_mcg: item.vitamin_d_mcg, calcium_mg: item.calcium_mg,
+          iron_mg: item.iron_mg,
         });
       }
+      playFoodLogSound();
     } catch { /* silent */ }
     setTimeout(() => { relogRef.current.delete(item.id); setRelogged(null); }, 1500);
   };

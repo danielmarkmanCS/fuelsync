@@ -68,6 +68,10 @@ export async function syncAddLog(log: {
   carbs: number; fat: number; weight_grams?: number | null;
   meal_type?: string; image_url?: string | null;
   ingredients?: unknown[] | null; logged_at: string; date: string;
+  fiber_g?: number | null; cholesterol_mg?: number | null;
+  sodium_mg?: number | null; vitamin_c_mg?: number | null;
+  vitamin_d_mcg?: number | null; calcium_mg?: number | null;
+  iron_mg?: number | null;
 }): Promise<void> {
   if (!getSyncToken()) return;
   await fetch(`${SYNC_URL}/logs`, {

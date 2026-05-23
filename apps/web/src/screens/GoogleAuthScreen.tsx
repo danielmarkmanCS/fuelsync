@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { googleSignIn, setSyncToken, getMe } from '../api/syncClient';
+import { googleSignIn, setSyncToken } from '../api/syncClient';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
@@ -30,9 +30,6 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
   const btnRef  = useRef<HTMLDivElement>(null);
   const [error,     setError]     = useState('');
   const [loading,   setLoading]   = useState(false);
-  const [showToken, setShowToken] = useState(false);
-  const [token,     setToken]     = useState('');
-  const [tokenErr,  setTokenErr]  = useState('');
 
   useEffect(() => {
     if (IS_NATIVE || !CLIENT_ID) return;
@@ -94,28 +91,7 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
     } finally { setLoading(false); }
   }
 
-  async function handleTokenLink() {
-    const t = token.trim();
-    if (!t) { setTokenErr('Paste your sync token'); return; }
-    setLoading(true); setTokenErr('');
-    try {
-      setSyncToken(t);
-      const user = await getMe();
-      if (!user) throw new Error('Invalid token');
-      onSignedIn({
-        displayName: user.display_name || user.name,
-        email: user.email, picture: user.picture,
-        weightKg: user.weight_kg ?? null, heightCm: user.height_cm ?? null,
-        age: user.age ?? null, gender: (user.gender as string | null) ?? null,
-        activityLevel: user.activity_level ?? 'moderate', dailyGoal: user.daily_goal ?? 2000,
-      });
-    } catch {
-      setSyncToken('');
-      setTokenErr('Token invalid or expired. Copy it again from your phone.');
-    } finally { setLoading(false); }
-  }
-
-  return (
+return (
     <div style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
@@ -134,115 +110,51 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
         boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
         width: '100%', maxWidth: 340, textAlign: 'center',
       }}>
-        {!showToken ? (
-          <>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#F0F0F0', marginBottom: 8 }}>Welcome</div>
-            <div style={{ fontSize: 13, color: MUTED, marginBottom: 28, lineHeight: 1.6 }}>
-              Sign in to sync your data across all devices.
-            </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#F0F0F0', marginBottom: 8 }}>Welcome</div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 28, lineHeight: 1.6 }}>
+          Sign in to sync your data across all devices.
+        </div>
 
-            {loading ? (
-              <div style={{ color: MUTED, fontSize: 13, padding: '12px 0' }}>Signing in…</div>
-            ) : IS_NATIVE ? (
-              <button
-                onClick={handleNativeSignIn}
-                style={{
-                  width: '100%', padding: '14px 0', borderRadius: 12,
-                  background: '#fff', border: '1.5px solid #dadce0', color: TEXT,
-                  fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 12,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 48 48">
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                </svg>
-                Sign in with Google
-              </button>
-            ) : CLIENT_ID ? (
-              <div ref={btnRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }} />
-            ) : (
-              <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 16, fontWeight: 600 }}>
-                Google Sign-In unavailable in this browser.
-              </div>
-            )}
-
-            {!IS_NATIVE && (
-              <button
-                onClick={() => setShowToken(true)}
-                style={{
-                  width: '100%', padding: '12px 0', borderRadius: 12, marginBottom: 4,
-                  background: 'rgba(255,128,0,0.12)', border: '1px solid rgba(255,128,0,0.3)',
-                  color: ORANGE, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                }}
-              >
-                Link via sync token
-              </button>
-            )}
-
-            <button
-              onClick={onSkip}
-              style={{
-                marginTop: 12, background: 'none', border: 'none', cursor: 'pointer',
-                color: MUTED, fontSize: 12, fontWeight: 600, textDecoration: 'underline',
-              }}
-            >
-              Continue without account
-            </button>
-
-            {error && (
-              <div style={{ marginTop: 16, color: '#EF4444', fontSize: 12, fontWeight: 600 }}>{error}</div>
-            )}
-          </>
+        {loading ? (
+          <div style={{ color: MUTED, fontSize: 13, padding: '12px 0' }}>Signing in…</div>
+        ) : IS_NATIVE ? (
+          <button
+            onClick={handleNativeSignIn}
+            style={{
+              width: '100%', padding: '14px 0', borderRadius: 12,
+              background: '#fff', border: '1.5px solid #dadce0', color: TEXT,
+              fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 12,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Sign in with Google
+          </button>
+        ) : CLIENT_ID ? (
+          <div ref={btnRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }} />
         ) : (
-          <>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#F0F0F0', marginBottom: 8 }}>Link Device</div>
-            <div style={{ fontSize: 12, color: MUTED, marginBottom: 20, lineHeight: 1.6 }}>
-              On your phone, go to Profile → copy your sync token, then paste it here.
-            </div>
+          <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 16, fontWeight: 600 }}>
+            Google Sign-In unavailable in this browser.
+          </div>
+        )}
 
-            <textarea
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Paste sync token here…"
-              rows={4}
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '12px',
-                borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)',
-                background: '#0A0A0A', color: '#F0F0F0', fontSize: 11,
-                fontFamily: 'monospace', resize: 'none', marginBottom: 12,
-                outline: 'none',
-              }}
-            />
+        <button
+          onClick={onSkip}
+          style={{
+            marginTop: 12, background: 'none', border: 'none', cursor: 'pointer',
+            color: MUTED, fontSize: 12, fontWeight: 600, textDecoration: 'underline',
+          }}
+        >
+          Continue without account
+        </button>
 
-            {tokenErr && (
-              <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 12, fontWeight: 600 }}>{tokenErr}</div>
-            )}
-
-            <button
-              onClick={handleTokenLink}
-              disabled={loading}
-              style={{
-                width: '100%', padding: '14px 0', borderRadius: 12, marginBottom: 8,
-                background: loading ? '#333' : ORANGE, border: 'none',
-                color: '#000', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loading ? 'Linking…' : 'Link Account'}
-            </button>
-
-            <button
-              onClick={() => setShowToken(false)}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: MUTED, fontSize: 12, fontWeight: 600,
-              }}
-            >
-              Back
-            </button>
-          </>
+        {error && (
+          <div style={{ marginTop: 16, color: '#EF4444', fontSize: 12, fontWeight: 600 }}>{error}</div>
         )}
       </div>
 

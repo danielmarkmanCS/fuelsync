@@ -109,7 +109,7 @@ export function useNutrition() {
           return new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
         })();
         store.resetDay();
-        store.startNewWeek(monday);
+        if (useNutritionStore.getState().weeklyLoad.weekStart !== monday) store.startNewWeek(monday);
       }, msUntilMidnight);
     };
     const t = scheduleReset();
@@ -127,7 +127,7 @@ export function useNutrition() {
   }, [user?.weightKg, user?.heightCm, user?.age, user?.gender, user?.activityLevel, store.todayLog?.trainingType, store.todayLog?.dailyActivityModifier]);
 
   const logDay = useCallback(
-    (trainingType: TrainingType, plannedWorkoutTime?: string, dailyActivityModifier?: DailyLog['dailyActivityModifier']) => {
+    (trainingType: TrainingType, plannedWorkoutTime?: string, dailyActivityModifier?: DailyLog['dailyActivityModifier'], force?: boolean) => {
       const today = new Date().toISOString().split('T')[0];
       const log: DailyLog = {
         id: `${today}-${trainingType}`,
@@ -138,7 +138,7 @@ export function useNutrition() {
         intensity: trainingType === 'rest' ? 'low' : trainingType === 'cardio' ? 'high' : 'moderate',
       };
       const gate = checkLegFatigueGate(store.weeklyLoad, log);
-      if (gate.blocked) return { blocked: true, message: gate.message, log: null };
+      if (gate.blocked && !force) return { blocked: true, message: gate.message, log: null };
       store.setTodayLog(log);
       if (profile) {
         const breakdown = computeMacros(profile, log, store.weeklyLoad);

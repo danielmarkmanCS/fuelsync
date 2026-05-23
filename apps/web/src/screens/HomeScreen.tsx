@@ -274,9 +274,10 @@ function Steps({ todayLog, profile, weeklyLoad }: { todayLog: ReturnType<typeof 
   const today = new Date().toISOString().slice(0, 10);
   const KEY   = `fs_steps_${today}`;
 
-  const [desc,    setDesc]    = useState('');
-  const [steps,   setSteps]   = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [desc,       setDesc]       = useState('');
+  const [steps,      setSteps]      = useState<number | null>(null);
+  const [loading,    setLoading]    = useState(false);
+  const [stepsError, setStepsError] = useState('');
 
   useEffect(() => {
     try {
@@ -306,10 +307,11 @@ function Steps({ todayLog, profile, weeklyLoad }: { todayLog: ReturnType<typeof 
   const estimate = async () => {
     if (!desc.trim() || loading) return;
     setLoading(true);
+    setStepsError('');
     try {
       const r = await estimateSteps(desc.trim());
       setSteps(r.steps); apply(r.steps);
-    } catch { /* */ }
+    } catch { setStepsError('Could not estimate — try again'); }
     setLoading(false);
   };
 
@@ -354,12 +356,15 @@ function Steps({ todayLog, profile, weeklyLoad }: { todayLog: ReturnType<typeof 
           </div>
         )}
 
+        {stepsError && (
+          <div style={{ fontSize: 11, color: RED, fontWeight: 700, marginBottom: 6 }}>{stepsError}</div>
+        )}
         <div style={{ display: 'flex', gap: 7 }}>
           <input
             type="text"
             placeholder="describe your day..."
             value={desc}
-            onChange={(e) => setDesc(e.target.value)}
+            onChange={(e) => { setDesc(e.target.value); setStepsError(''); }}
             onKeyDown={(e) => { if (e.key === 'Enter') estimate(); }}
             style={{
               flex: 1, background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 8,
@@ -524,7 +529,7 @@ export default function HomeScreen() {
     if (r.blocked && !window.confirm(
       'Heavy run load this week. Cardio today risks injury.\n\nLog anyway?'
     )) return;
-    if (r.blocked) logDay(type);
+    if (r.blocked) logDay(type, undefined, undefined, true);
   };
 
   const customTargets = getCustomTargets();
