@@ -3,9 +3,8 @@ import { googleSignIn, setSyncToken } from '../api/syncClient';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
-const TEXT  = '#0A1628';
-const MUTED = '#6878A0';
-const ORANGE = '#FF8000';
+const MUTED = '#8B909A';
+const GREEN = '#6CBB3C';
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 const IS_NATIVE = Capacitor.isNativePlatform();
 
@@ -95,22 +94,21 @@ return (
     <div style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(160deg, #0A0A0A 0%, #1A0900 50%, #CC5500 100%)',
+      background: '#1A1C22',
       padding: '0 24px',
     }}>
       <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1, color: '#FFFFFF', marginBottom: 2 }}>FUEL</div>
       <div style={{
         fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1, marginBottom: 40,
-        background: 'linear-gradient(135deg, #FF8000, #F5C518)',
-        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+        color: GREEN,
       }}>SYNC</div>
 
       <div style={{
-        background: '#141414', borderRadius: 20, padding: '32px 28px',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
+        background: '#242830', borderRadius: 20, padding: '32px 28px',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px #2E3340',
         width: '100%', maxWidth: 340, textAlign: 'center',
       }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#F0F0F0', marginBottom: 8 }}>Welcome</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#FFFFFF', marginBottom: 8 }}>Welcome</div>
         <div style={{ fontSize: 13, color: MUTED, marginBottom: 28, lineHeight: 1.6 }}>
           Sign in to sync your data across all devices.
         </div>
@@ -122,7 +120,7 @@ return (
             onClick={handleNativeSignIn}
             style={{
               width: '100%', padding: '14px 0', borderRadius: 12,
-              background: '#fff', border: '1.5px solid #dadce0', color: TEXT,
+              background: '#fff', border: '1.5px solid #dadce0', color: '#111',
               fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 12,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             }}
@@ -154,11 +152,11 @@ return (
         </button>
 
         {error && (
-          <div style={{ marginTop: 16, color: '#EF4444', fontSize: 12, fontWeight: 600 }}>{error}</div>
+          <div style={{ marginTop: 16, color: '#E8634E', fontSize: 12, fontWeight: 600 }}>{error}</div>
         )}
       </div>
 
-      <div style={{ marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', maxWidth: 280 }}>
+      <div style={{ marginTop: 24, fontSize: 11, color: '#8B909A', textAlign: 'center', maxWidth: 280 }}>
         Your data is stored securely and never shared.
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
+import { useAppStore } from '../store/appStore';
 import { playFoodLogSound } from '../utils/sounds';
 import { searchFood, lookupBarcode } from '../api/openFoodFacts';
 import type { OFFProduct } from '../api/openFoodFacts';
@@ -14,19 +15,20 @@ import type { Recipe, RecipeIngredient } from '../lib/recipes';
 import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
 
-const BG      = '#0A0A0A';
-const SURF    = '#141414';
-const SURF2   = '#1E1E1E';
-const EDGE    = 'rgba(255,255,255,0.08)';
-const TEXT    = '#F0F0F0';
-const MUTED   = '#707070';
-const MUTED2  = '#3A3A3A';
-const ORANGE  = '#FF8000';
-const YELLOW  = '#F5C518';
-const GREEN   = '#22C55E';
-const RED     = '#EF4444';
-const FAT_CLR = '#AAAAAA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
+const BG      = '#1A1C22';
+const SURF    = '#242830';
+const SURF2   = '#2A2F3A';
+const EDGE    = '#2E3340';
+const TEXT    = '#FFFFFF';
+const MUTED   = '#8B909A';
+const MUTED2  = '#4A5060';
+const GREEN   = '#6CBB3C';
+const ORANGE  = '#6CBB3C';
+const YELLOW  = '#F5A623';
+const PROT    = '#E8634E';
+const RED     = '#E8634E';
+const FAT_CLR = '#4A90D9';
+const CARD_SHADOW = '0 2px 12px rgba(0,0,0,0.5)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -36,7 +38,7 @@ const MEAL_LABEL: Record<MealType, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: '#FF8000', pre_workout: '#F5C518', lunch: '#22C55E', post_workout: '#22C55E', dinner: '#707070', snack: '#FF8000', other: '#505050',
+  breakfast: '#6CBB3C', pre_workout: '#F5A623', lunch: '#4A90D9', post_workout: '#4A90D9', dinner: '#8B909A', snack: '#E8634E', other: '#4A5060',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
@@ -140,7 +142,7 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
               <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
             </div>
             <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 9, color: ORANGE,  fontWeight: 700 }}>P{Math.round(item.protein)}</span>
+              <span style={{ fontSize: 9, color: PROT,    fontWeight: 700 }}>P{Math.round(item.protein)}</span>
               <span style={{ fontSize: 9, color: YELLOW,  fontWeight: 700 }}>C{Math.round(item.carbs)}</span>
               <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(item.fat)}</span>
             </div>
@@ -157,8 +159,8 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
             <div style={{ padding: '6px 0 10px', borderBottom: i < ingredients.length - 1 ? `1px solid ${EDGE}` : 'none', marginBottom: i < ingredients.length - 1 ? 7 : 0 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
                 {([
-                  { label: 'kcal', key: 'calories' as const, color: ORANGE  },
-                  { label: 'P(g)',  key: 'protein'  as const, color: ORANGE  },
+                  { label: 'kcal', key: 'calories' as const, color: GREEN   },
+                  { label: 'P(g)',  key: 'protein'  as const, color: PROT    },
                   { label: 'C(g)',  key: 'carbs'    as const, color: YELLOW  },
                   { label: 'F(g)',  key: 'fat'      as const, color: FAT_CLR },
                 ]).map(({ label, key, color }) => (
@@ -200,6 +202,7 @@ function dateLabel(date: string): string {
 
 export default function FoodScreen() {
   const { targets, weather } = useNutrition();
+  const { pendingMealType, setPendingMealType } = useAppStore();
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const isToday = selectedDate === todayStr;
@@ -283,6 +286,15 @@ export default function FoodScreen() {
 
   const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  // Open sheet pre-selecting meal type when navigated from HomeScreen
+  useEffect(() => {
+    if (!pendingMealType) return;
+    setForm((f) => ({ ...f, meal: pendingMealType as MealType }));
+    setMode('ai');
+    setOpen(true);
+    setPendingMealType(null);
+  }, [pendingMealType, setPendingMealType]);
 
   // Re-fetch from D1 when app comes back to foreground (picks up changes from other devices)
   const fetchLogsRef = useRef(fetchLogs);
@@ -796,7 +808,7 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: 'linear-gradient(180deg, #1A1A1A 0%, #0A0A0A 100%)',
+        background: BG,
         padding: '32px 16px 16px', position: 'relative', overflow: 'hidden',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}>
@@ -876,14 +888,14 @@ export default function FoodScreen() {
               className="bar-ani"
               style={{
                 height: '100%', width: `${Math.min(calPct, 100)}%`,
-                background: calPct >= 100 ? `linear-gradient(90deg, ${RED}80, ${RED})` : calPct >= 85 ? `linear-gradient(90deg, ${GREEN}80, ${GREEN})` : `linear-gradient(90deg, ${YELLOW}60, ${ORANGE})`,
+                background: calPct >= 100 ? RED : GREEN,
                 borderRadius: 4, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
               }}
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
-              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: ORANGE  },
+              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: PROT    },
               { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: YELLOW  },
               { name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: FAT_CLR },
             ].map(({ name, val, tgt, color }) => {
@@ -917,7 +929,7 @@ export default function FoodScreen() {
         <div className="nrc-a nrc-a3" style={{ padding: '10px 22px 0' }}>
           <div style={{ display: 'flex', gap: 8 }}>
             {[
-              { label: 'Protein', got: consumed.protein, need: targets.proteinG ?? 0, color: ORANGE  },
+              { label: 'Protein', got: consumed.protein, need: targets.proteinG ?? 0, color: PROT    },
               { label: 'Carbs',   got: consumed.carbs,   need: targets.carbsG   ?? 0, color: YELLOW  },
               { label: 'Fat',     got: consumed.fat,      need: targets.fatG     ?? 0, color: FAT_CLR },
             ].map(({ label, got, need, color }) => {
@@ -1911,7 +1923,7 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
         <div style={{ padding: '12px 16px', borderTop: `1px solid ${EDGE}`, background: SURF2 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             {[
-              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: ORANGE  },
+              { label: 'Protein', val: Math.round(Number(entry.protein)), unit: 'g', color: PROT    },
               { label: 'Carbs',   val: Math.round(Number(entry.carbs)),   unit: 'g', color: YELLOW  },
               { label: 'Fat',     val: Math.round(Number(entry.fat)),     unit: 'g', color: FAT_CLR },
             ].map(({ label, val, unit, color }) => (

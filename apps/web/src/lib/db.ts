@@ -65,6 +65,23 @@ export interface SyncQueueItem {
   created_at: string;
 }
 
+export interface Supplement {
+  id?: number;
+  name: string;
+  dose: string;
+  unit: string;
+  timing: 'morning' | 'pre-workout' | 'post-workout' | 'evening' | 'anytime';
+  active: boolean;
+}
+
+export interface SupplementLog {
+  id?: number;
+  supplement_id: number;
+  date: string;       // YYYY-MM-DD
+  taken: boolean;
+  logged_at: string;
+}
+
 export interface PinState {
   id?: number;
   hash: string;
@@ -79,11 +96,13 @@ export interface PinState {
 }
 
 class FuelSyncDB extends Dexie {
-  profile!:      Table<LocalProfile, number>;
-  food_logs!:    Table<LocalFoodLog, number>;
-  pin_state!:    Table<PinState, number>;
-  weight_logs!:  Table<WeightLog, number>;
-  sync_queue!:   Table<SyncQueueItem, number>;
+  profile!:          Table<LocalProfile, number>;
+  food_logs!:        Table<LocalFoodLog, number>;
+  pin_state!:        Table<PinState, number>;
+  weight_logs!:      Table<WeightLog, number>;
+  sync_queue!:       Table<SyncQueueItem, number>;
+  supplements!:      Table<Supplement, number>;
+  supplement_logs!:  Table<SupplementLog, number>;
 
   constructor() {
     super('FuelSyncDB');
@@ -100,6 +119,10 @@ class FuelSyncDB extends Dexie {
     });
     this.version(4).stores({
       sync_queue: '++id, operation',
+    });
+    this.version(5).stores({
+      supplements:     '++id, active',
+      supplement_logs: '++id, supplement_id, date',
     });
   }
 }

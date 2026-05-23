@@ -1,47 +1,42 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Surfaces ── */
-  --bg:      #0A0A0A;
-  --surf:    #141414;
-  --surf2:   #1E1E1E;
-  --edge:    rgba(255,255,255,0.08);
-  --edge2:   rgba(255,255,255,0.14);
+  /* ── Cronometer surfaces ── */
+  --bg:     #1A1C22;
+  --surf:   #242830;
+  --surf2:  #2A2F3A;
+  --edge:   #2E3340;
+  --edge2:  #3A4050;
 
   /* ── Shadows ── */
-  --shadow-sm:  0 1px 4px rgba(0,0,0,0.5);
-  --shadow-md:  0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
-  --shadow-lg:  0 4px 24px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
-  --shadow-hover: 0 6px 32px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,128,0,0.20);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md: 0 2px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.6);
 
   /* ── Typography ── */
-  --text:    #F0F0F0;
-  --muted:   #707070;
-  --muted2:  #3A3A3A;
+  --text:  #FFFFFF;
+  --muted: #8B909A;
+  --muted2: #4A5060;
 
-  /* ── Brand ── */
-  --orange:  #FF8000;
-  --yellow:  #F5C518;
-  --orange2: #CC6600;
+  /* ── Cronometer brand ── */
+  --green:   #6CBB3C;
+  --green2:  #559930;
+
+  /* ── Macro palette (Cronometer) ── */
+  --prot:  #E8634E;
+  --carb:  #F5A623;
+  --fat:   #4A90D9;
 
   /* ── Semantic ── */
-  --green:   #22C55E;
-  --red:     #EF4444;
-  --blue:    #FF8000;
-  --blue2:   #F5C518;
-  --sky:     #F5C518;
-  --cyan:    #F5C518;
-  --purple:  #AAAAAA;
-
-  /* ── Macro palette ── */
-  --prot:    #FF8000;
-  --carb:    #F5C518;
-  --fat:     #AAAAAA;
+  --red:    #E8634E;
+  --orange: #F5A623;
+  --blue:   #4A90D9;
+  --yellow: #F5D060;
 
   /* ── Easing ── */
-  --spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease:    cubic-bezier(0.4, 0, 0.2, 1);
-  --snappy:  cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease:   cubic-bezier(0.4, 0, 0.2, 1);
+  --snappy: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 html, body, #root {
@@ -58,35 +53,26 @@ body {
   color-scheme: dark;
 }
 
-.display-num {
-  font-family: 'Barlow Condensed', 'Inter', system-ui, sans-serif;
-  font-weight: 900;
-}
-
 button, input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { display: none; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── TYPOGRAPHY ─────────────────────────────────── */
-.hero {
-  font-weight: 900;
-  letter-spacing: -3px;
-  line-height: 0.88;
-  color: var(--text);
-}
 .label {
   font-weight: 700;
-  font-size: 9px;
-  letter-spacing: 3px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--muted);
 }
-.nrc-hero  { font-weight: 900; letter-spacing: -2px; line-height: 0.9; color: var(--text); }
-.nrc-label { font-weight: 700; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+.nrc-label { font-weight: 700; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.nrc-hero  { font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
+.hero      { font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
+.display-num { font-weight: 700; }
 
 /* ── ENTRANCE ANIMATIONS ─────────────────────────── */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(28px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
@@ -105,91 +91,77 @@ button, input, select, textarea { font-family: inherit; }
   0%   { transform: scale(0.95); opacity: 0; }
   100% { transform: scale(1);    opacity: 1; }
 }
+@keyframes barFillAni { from { width: 0 !important; } }
 
-.a  { animation: slideUp 0.46s var(--spring) both; }
+.a  { animation: slideUp 0.36s var(--ease) both; }
 .a1 { animation-delay:   0ms; }
-.a2 { animation-delay:  70ms; }
-.a3 { animation-delay: 140ms; }
-.a4 { animation-delay: 210ms; }
-.a5 { animation-delay: 280ms; }
-.a6 { animation-delay: 350ms; }
+.a2 { animation-delay:  50ms; }
+.a3 { animation-delay: 100ms; }
+.a4 { animation-delay: 150ms; }
+.a5 { animation-delay: 200ms; }
+.a6 { animation-delay: 250ms; }
 
-.nrc-a  { animation: slideUp 0.46s var(--spring) both; }
+.nrc-a  { animation: slideUp 0.36s var(--ease) both; }
 .nrc-a1 { animation-delay:   0ms; }
-.nrc-a2 { animation-delay:  70ms; }
-.nrc-a3 { animation-delay: 140ms; }
-.nrc-a4 { animation-delay: 210ms; }
-.nrc-a5 { animation-delay: 280ms; }
-.nrc-a6 { animation-delay: 350ms; }
+.nrc-a2 { animation-delay:  50ms; }
+.nrc-a3 { animation-delay: 100ms; }
+.nrc-a4 { animation-delay: 150ms; }
+.nrc-a5 { animation-delay: 200ms; }
+.nrc-a6 { animation-delay: 250ms; }
 
-/* ── PRESS SCALE ─────────────────────────────────── */
+/* ── PRESS ────────────────────────────────────────── */
 .nrc-press, .press {
-  transition: transform 0.14s var(--spring), opacity 0.14s ease;
+  transition: transform 0.12s var(--ease), opacity 0.12s ease;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
-.nrc-press:active, .press:active { transform: scale(0.95) !important; }
+.nrc-press:active, .press:active { transform: scale(0.97) !important; opacity: 0.85; }
 
-/* ── CARD LIFT ────────────────────────────────────── */
+/* ── CARD ─────────────────────────────────────────── */
+.card {
+  background: var(--surf);
+  border-radius: 14px;
+  border: 1px solid var(--edge);
+}
 .card-lift {
-  transition: transform 0.22s var(--spring), box-shadow 0.22s ease;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s ease;
 }
-.card-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover) !important;
-}
+.card-lift:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg) !important; }
 
-/* ── BARS ────────────────────────────────────────── */
+/* ── BARS ─────────────────────────────────────────── */
 .bar-track {
-  height: 5px;
-  background: rgba(255,255,255,0.06);
+  height: 6px;
+  background: var(--edge);
   border-radius: 3px;
   overflow: hidden;
 }
 .bar-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.75s var(--ease);
+  transition: width 0.6s var(--ease);
 }
+.bar-ani { animation: barFillAni 0.8s var(--ease) both; }
 
-.volt-bar-track { height: 5px; background: rgba(255,128,0,0.12); border-radius: 3px; overflow: hidden; }
-.volt-bar-fill  { height: 100%; background: linear-gradient(90deg, var(--orange2), var(--orange)); border-radius: 3px; transition: width 0.75s var(--ease); }
+.volt-bar-track { height: 6px; background: rgba(108,187,60,0.15); border-radius: 3px; overflow: hidden; }
+.volt-bar-fill  { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.6s var(--ease); }
 
 /* ── INPUTS ──────────────────────────────────────── */
-input::placeholder, textarea::placeholder { color: #505050; }
+input::placeholder, textarea::placeholder { color: var(--muted2); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
-
-/* ── CARDS ───────────────────────────────────────── */
-.card {
-  background: linear-gradient(145deg, #141414 0%, #1E1E1E 100%);
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: var(--shadow-md);
+input:focus, textarea:focus, select:focus {
+  border-color: var(--green) !important;
+  outline: none;
 }
+input, textarea, select { transition: border-color 0.15s ease; }
 
-/* ── SHIMMER SKELETON ────────────────────────────── */
+/* ── SHIMMER ─────────────────────────────────────── */
 .shimmer {
-  background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+  background: linear-gradient(90deg, #242830 25%, #2E3340 50%, #242830 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
 }
 
-/* ── RING ENTRANCE ───────────────────────────────── */
-.ring-enter {
-  animation: ringPop 0.5s var(--spring) both;
-}
-
-/* ── ANIMATION UTILITY ───────────────────────────── */
-@keyframes barFillAni { from { width: 0 !important; } }
-.bar-ani { animation: barFillAni 0.95s var(--ease) both; }
-
-/* ── INPUT FOCUS ─────────────────────────────────── */
-input:focus, textarea:focus, select:focus {
-  border-color: var(--orange) !important;
-  outline: none;
-}
-input, textarea, select {
-  transition: border-color 0.15s ease;
-}
+/* ── RING ────────────────────────────────────────── */
+.ring-enter { animation: ringPop 0.4s var(--ease) both; }

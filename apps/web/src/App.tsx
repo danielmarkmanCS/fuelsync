@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from './store/authStore';
+import { useAppStore } from './store/appStore';
 import { getProfile, createProfile, updateProfile } from './api/auth';
 import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
@@ -15,45 +16,55 @@ import HomeScreen from './screens/HomeScreen';
 import FoodScreen from './screens/FoodScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
+import SupplementsScreen from './screens/SupplementsScreen';
 
-type Tab = 'home' | 'food' | 'history' | 'profile';
-const NAV_H = 68;
+type Tab = 'home' | 'food' | 'history' | 'supplements' | 'profile';
+const NAV_H = 64;
 
-const ORANGE = '#FF8000';
-const YELLOW = '#F5C518';
-const TEXT   = '#F0F0F0';
-const MUTED2 = '#505050';
+const GREEN = '#6CBB3C';
+const TEXT  = '#FFFFFF';
+const MUTED = '#8B909A';
 
-function HomeIcon({ active }: { active: boolean }) {
+function DiaryIcon({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" />
-      <path d="M9 21V13h6v8" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeWidth="2.5" />
     </svg>
   );
 }
 
-function FuelIcon({ active }: { active: boolean }) {
+function LogIcon({ active }: { active: boolean }) {
   return (
-    <svg width="20" height="22" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M13 2L4.09 12.76A1 1 0 005 14.5h6L10 22l9.91-10.76A1 1 0 0019 9.5H13.5L13 2z"
-        opacity={active ? 1 : 0.5} />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
     </svg>
   );
 }
 
-function HistoryIcon({ active }: { active: boolean }) {
+function TrendsIcon({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="12 7 12 12 15.5 14" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+    </svg>
+  );
+}
+
+function PillIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7" />
+      <circle cx="17" cy="17" r="5" />
+      <path d="M14.5 19.5l5-5" />
     </svg>
   );
 }
 
 function ProfileIcon({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </svg>
@@ -61,15 +72,16 @@ function ProfileIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',    label: 'TODAY',   Icon: HomeIcon },
-  { id: 'food',    label: 'LOG',     Icon: FuelIcon },
-  { id: 'history', label: 'HISTORY', Icon: HistoryIcon },
-  { id: 'profile', label: 'ME',      Icon: ProfileIcon },
+  { id: 'home',        label: 'DIARY',   Icon: DiaryIcon },
+  { id: 'food',        label: 'SEARCH',  Icon: LogIcon },
+  { id: 'history',     label: 'TRENDS',  Icon: TrendsIcon },
+  { id: 'supplements', label: 'SUPPS',   Icon: PillIcon },
+  { id: 'profile',     label: 'PROFILE', Icon: ProfileIcon },
 ];
 
 export default function App() {
   const { user, pinVerified, setUser, setPinVerified } = useAuthStore();
-  const [activeTab,        setActiveTab]        = useState<Tab>('home');
+  const { activeTab, setActiveTab } = useAppStore();
   const profileIncomplete = !!user && (!user.weightKg || !user.heightCm || !user.age);
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
@@ -329,14 +341,15 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#0A0A0A', overflow: 'hidden',
+      background: '#1A1C22', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
         {(activeTab === 'home' && profileIncomplete)     && <ProfileSetupScreen />}
-        {activeTab === 'food'    && <FoodScreen />}
-        {activeTab === 'history' && <HistoryScreen />}
-        {activeTab === 'profile' && <ProfileSetupScreen />}
+        {activeTab === 'food'        && <FoodScreen />}
+        {activeTab === 'history'     && <HistoryScreen />}
+        {activeTab === 'supplements' && <SupplementsScreen />}
+        {activeTab === 'profile'     && <ProfileSetupScreen />}
       </div>
 
       {/* Daily weight check-in modal */}
@@ -347,63 +360,59 @@ export default function App() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px',
         }}>
           <div style={{
-            background: '#141414', borderRadius: 24, padding: '28px 24px',
+            background: '#242830', borderRadius: 20, padding: '28px 24px',
             width: '100%', maxWidth: 340, textAlign: 'center',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            border: '1px solid #2E3340',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
           }}>
-            <div style={{ fontSize: 28, marginBottom: 4 }}>⚖️</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#F0F0F0', marginBottom: 6 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF', marginBottom: 6 }}>
               Morning Check-In
             </div>
-            <div style={{ fontSize: 12, color: '#6878A0', marginBottom: 24, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: '#8B909A', marginBottom: 24, lineHeight: 1.6 }}>
               Log today's weight to keep BMR and targets accurate.
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <button
                 onClick={() => setWeightInput(w => String(Math.max(20, parseFloat(w || '0') - 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: '#1E1E1E', border: '1px solid #333', color: '#F0F0F0', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 10, background: '#2E3340', border: '1px solid #3A4050', color: '#FFFFFF', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >−</button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
-                  type="number"
-                  value={weightInput}
+                  type="number" value={weightInput}
                   onChange={e => setWeightInput(e.target.value)}
-                  step="0.1"
-                  min="20"
-                  max="300"
+                  step="0.1" min="20" max="300"
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '12px 36px 12px 12px',
-                    borderRadius: 12, border: '1.5px solid #FF8000',
-                    background: '#0A0A0A', color: '#F0F0F0',
-                    fontSize: 22, fontWeight: 800, textAlign: 'center',
+                    borderRadius: 12, border: '1.5px solid #6CBB3C',
+                    background: '#1A1C22', color: '#FFFFFF',
+                    fontSize: 22, fontWeight: 700, textAlign: 'center',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                 />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#6878A0', fontSize: 12, fontWeight: 700 }}>kg</span>
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#8B909A', fontSize: 12, fontWeight: 600 }}>kg</span>
               </div>
               <button
                 onClick={() => setWeightInput(w => String(Math.min(300, parseFloat(w || '0') + 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: '#1E1E1E', border: '1px solid #333', color: '#FF8000', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 10, background: '#2E3340', border: '1px solid #3A4050', color: '#6CBB3C', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >+</button>
             </div>
 
             <button
-              onClick={() => handleWeightLog(false)}
-              disabled={weightSaving}
+              onClick={() => handleWeightLog(false)} disabled={weightSaving}
               style={{
-                width: '100%', padding: '14px 0', borderRadius: 14,
-                background: weightSaving ? '#333' : '#FF8000', border: 'none',
-                color: '#000', fontSize: 15, fontWeight: 800, cursor: weightSaving ? 'not-allowed' : 'pointer',
+                width: '100%', padding: '13px 0', borderRadius: 12,
+                background: weightSaving ? '#2E3340' : '#6CBB3C', border: 'none',
+                color: weightSaving ? '#8B909A' : '#000', fontSize: 15, fontWeight: 700, cursor: 'pointer',
                 marginBottom: 10,
               }}
             >
-              {weightSaving ? 'Saving…' : 'Log Weight →'}
+              {weightSaving ? 'Saving…' : 'Log Weight'}
             </button>
             <button
               onClick={() => handleWeightLog(true)}
-              style={{ background: 'none', border: 'none', color: '#505050', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: '#8B909A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             >
               Skip today
             </button>
@@ -413,11 +422,8 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: 'rgba(14,14,14,0.97)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        boxShadow: '0 -2px 20px rgba(0,0,0,0.60)',
+        background: '#1E2028',
+        borderTop: '1px solid #2E3340',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
@@ -426,40 +432,21 @@ export default function App() {
           const active = activeTab === id;
           return (
             <button key={id} onClick={() => setActiveTab(id)} className="nrc-press" style={{
-              flex: 1, position: 'relative', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 4,
-              background: 'none', border: 'none', cursor: 'pointer',
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0',
             }}>
-              {active && (
-                <>
-                  <div style={{
-                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 36, height: 3, background: `linear-gradient(90deg, ${ORANGE}, ${YELLOW})`,
-                    borderRadius: '0 0 3px 3px',
-                    boxShadow: `0 2px 10px rgba(255,128,0,0.55)`,
-                  }} />
-                  <div style={{
-                    position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
-                    width: 40, height: 40, borderRadius: '50%',
-                    background: 'rgba(255,128,0,0.07)', pointerEvents: 'none',
-                  }} />
-                </>
-              )}
               <div style={{
-                color: active ? ORANGE : MUTED2,
-                transition: 'color 0.22s, transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
-                transform: active ? 'scale(1.1)' : 'scale(1)',
-                filter: active ? `drop-shadow(0 0 6px rgba(255,128,0,0.50))` : 'none',
-                position: 'relative', zIndex: 1,
+                color: active ? GREEN : MUTED,
+                transition: 'color 0.18s ease',
               }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: active ? 800 : 600, letterSpacing: 1.2,
-                color: active ? ORANGE : MUTED2, transition: 'all 0.22s',
-                position: 'relative', zIndex: 1,
+                fontSize: 9, fontWeight: active ? 700 : 500, letterSpacing: 0.8,
+                color: active ? GREEN : MUTED, transition: 'all 0.18s ease',
               }}>
-                {label.toUpperCase()}
+                {label}
               </span>
             </button>
           );

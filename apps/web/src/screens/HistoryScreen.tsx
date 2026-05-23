@@ -3,20 +3,20 @@ import { getAllLogs, addLog, unremoveLog, clearPullCache, type FoodLog, type Ing
 import { playFoodLogSound } from '../utils/sounds';
 import { useNutrition } from '../hooks/useNutrition';
 
-const BG      = '#0A0A0A';
-const SURF    = '#141414';
-const SURF2   = '#1E1E1E';
-const EDGE    = 'rgba(255,255,255,0.08)';
-const TEXT    = '#F0F0F0';
-const MUTED   = '#707070';
-const MUTED2  = '#3A3A3A';
-const ORANGE  = '#FF8000';
-const YELLOW  = '#F5C518';
-const GREEN   = '#22C55E';
-const RED     = '#EF4444';
-const BLUE    = '#FF8000';  // alias — orange in McLaren
-const FAT_CLR = '#AAAAAA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
+const BG      = '#1A1C22';
+const SURF    = '#242830';
+const SURF2   = '#2A2F3A';
+const EDGE    = '#2E3340';
+const TEXT    = '#FFFFFF';
+const MUTED   = '#8B909A';
+const MUTED2  = '#4A5060';
+const GREEN   = '#6CBB3C';
+const ORANGE  = '#6CBB3C';
+const YELLOW  = '#F5A623';
+const PROT    = '#E8634E';
+const RED     = '#E8634E';
+const FAT_CLR = '#4A90D9';
+const CARD_SHADOW = '0 2px 12px rgba(0,0,0,0.5)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -527,7 +527,7 @@ export default function HistoryScreen() {
                         const fP  = 100 - pP - cP;
                         return (
                           <>
-                            <MacroChip label="Pro" value={day.totalProtein} color={BLUE}   pct={pP} />
+                            <MacroChip label="Pro" value={day.totalProtein} color={PROT}   pct={pP} />
                             <MacroChip label="Crb" value={day.totalCarbs}   color={YELLOW}   pct={cP} />
                             <MacroChip label="Fat" value={day.totalFat}     color={FAT_CLR} pct={fP} />
                           </>
@@ -560,7 +560,7 @@ export default function HistoryScreen() {
                                   {Math.round(Number(item.calories))}
                                 </div>
                                 <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 2 }}>
-                                  <span style={{ fontSize: 9, color: ORANGE,  fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
+                                  <span style={{ fontSize: 9, color: PROT,    fontWeight: 700 }}>P{Math.round(Number(item.protein))}</span>
                                   <span style={{ fontSize: 9, color: YELLOW,  fontWeight: 700 }}>C{Math.round(Number(item.carbs))}</span>
                                   <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(Number(item.fat))}</span>
                                 </div>
@@ -603,7 +603,7 @@ export default function HistoryScreen() {
                                       </div>
                                       <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
                                       <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
-                                        <span style={{ fontSize: 9, color: ORANGE,  fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                                        <span style={{ fontSize: 9, color: PROT,    fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
                                         <span style={{ fontSize: 9, color: YELLOW,  fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
                                         <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                                       </div>
@@ -702,7 +702,7 @@ export default function HistoryScreen() {
                             {hasIngs ? ` · ${entry.latestLog.ingredients!.length} items` : ''}
                           </div>
                           <div style={{ display: 'flex', gap: 5, marginTop: 5 }}>
-                            <span style={{ fontSize: 9, color: ORANGE,  fontWeight: 700, background: `${ORANGE}10`, borderRadius: 5, padding: '1px 5px' }}>P{entry.protein}g</span>
+                            <span style={{ fontSize: 9, color: PROT,    fontWeight: 700, background: `${PROT}10`,   borderRadius: 5, padding: '1px 5px' }}>P{entry.protein}g</span>
                             <span style={{ fontSize: 9, color: YELLOW,  fontWeight: 700, background: `${YELLOW}10`,  borderRadius: 5, padding: '1px 5px' }}>C{entry.carbs}g</span>
                             <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700, background: `${FAT_CLR}10`, borderRadius: 5, padding: '1px 5px' }}>F{entry.fat}g</span>
                           </div>
@@ -752,7 +752,7 @@ export default function HistoryScreen() {
                                 </div>
                                 <div style={{ fontSize: 13, fontWeight: 800, color: ORANGE, flexShrink: 0 }}>{Math.round(ing.calories)}</div>
                                 <div style={{ flexShrink: 0, display: 'flex', gap: 4 }}>
-                                  <span style={{ fontSize: 9, color: ORANGE,  fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
+                                  <span style={{ fontSize: 9, color: PROT,    fontWeight: 700 }}>P{Math.round(ing.protein)}</span>
                                   <span style={{ fontSize: 9, color: YELLOW,  fontWeight: 700 }}>C{Math.round(ing.carbs)}</span>
                                   <span style={{ fontSize: 9, color: FAT_CLR, fontWeight: 700 }}>F{Math.round(ing.fat)}</span>
                                 </div>
