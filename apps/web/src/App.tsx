@@ -256,6 +256,21 @@ export default function App() {
             activityLevel: (u.activityLevel as 'moderate') ?? 'moderate',
             dailyGoal: u.dailyGoal ?? 2000,
           });
+        } else {
+          // Merge D1 stats into existing local profile if local is missing them
+          const needsMerge = (!local.weightKg || !local.heightCm || !local.age) &&
+            (u.weightKg || u.heightCm || u.age);
+          if (needsMerge) {
+            local = await updateProfile({
+              displayName: local.displayName || u.displayName,
+              weightKg: local.weightKg || (u.weightKg ?? 0),
+              heightCm: local.heightCm || (u.heightCm ?? 0),
+              age: local.age || (u.age ?? 0),
+              gender: (local.gender || (u.gender as 'male' | 'female')) ?? 'male',
+              activityLevel: ((local.activityLevel || u.activityLevel) as LocalProfile['activityLevel']) ?? 'moderate',
+              dailyGoal: local.dailyGoal || (u.dailyGoal ?? 2000),
+            });
+          }
         }
         setUser(local);
         setPinVerified(true);
