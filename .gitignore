@@ -1,7 +1,76 @@
+# ── Dependencies ──────────────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
+
+# ── Build output ──────────────────────────────────────────────────
 dist/
+build/
+out/
+.output/
+*.tsbuildinfo
+
+# ── Environment & secrets ─────────────────────────────────────────
 .env
 .env.*
-*.tsbuildinfo
-.secrets
+.env.local
+.env.*.local
+**/.secrets
+**/*.secret
+**/secrets.json
+**/secrets.toml
+config.local.*
+
+# ── Private keys & certificates ───────────────────────────────────
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.cer
+*.crt
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+
+# ── Android ───────────────────────────────────────────────────────
 apps/web/android/app/google-services.json
+*.jks
+*.keystore
+
+# ── iOS ───────────────────────────────────────────────────────────
+*.mobileprovision
+*.provisionprofile
+GoogleService-Info.plist
+
+# ── Firebase / Google ─────────────────────────────────────────────
+google-services.json
+GoogleService-Info.plist
+
+# ── Cloudflare Workers ────────────────────────────────────────────
+.wrangler/
+wrangler.env.toml
+
+# ── OS artifacts ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor/IDE ────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Misc ──────────────────────────────────────────────────────────
+*.tgz
+*.tar.gz
+.cache/
+.temp/
+.tmp/
