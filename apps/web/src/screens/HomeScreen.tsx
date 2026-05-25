@@ -9,6 +9,8 @@ import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
+import { db } from '../lib/db';
+import type { Supplement, SupplementLog } from '../lib/db';
 
 // ── Cronometer palette ─────────────────────────────────────────────
 const BG    = '#1A1C22';
@@ -162,6 +164,133 @@ const TRAINING_TYPES: { type: TrainingType; label: string; icon: string; color: 
   { type: 'cardio',   label: 'Cardio',   icon: '🏃', color: CARB      },
   { type: 'hybrid',   label: 'Hybrid',   icon: '⚡', color: GREEN     },
 ];
+
+// ── Supplement checklist block ────────────────────────────────────
+function SupplementBlock() {
+  const { setActiveTab } = useAppStore();
+  const today = new Date().toISOString().split('T')[0];
+  const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [logs,        setLogs]        = useState<SupplementLog[]>([]);
+
+  const load = useCallback(async () => {
+    const [supp, log] = await Promise.all([
+      db.supplements.where('active').equals(1).toArray(),
+      db.supplement_logs.where('date').equals(today).toArray(),
+    ]);
+    setSupplements(supp);
+    setLogs(log);
+  }, [today]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (supplements.length === 0) return null;
+
+  const isTaken    = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
+  const takenTime  = (id: number) => {
+    const l = logs.find(l => l.supplement_id === id && l.taken);
+    return l ? new Date(l.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
+  };
+
+  const toggleTaken = async (supp: Supplement) => {
+    const id       = supp.id!;
+    const existing = logs.find(l => l.supplement_id === id);
+    if (existing) {
+      await db.supplement_logs.update(existing.id!, { taken: !existing.taken, logged_at: new Date().toISOString() });
+    } else {
+      await db.supplement_logs.add({ supplement_id: id, date: today, taken: true, logged_at: new Date().toISOString() });
+    }
+    load();
+  };
+
+  const takenCount = supplements.filter(s => isTaken(s.id!)).length;
+  const allDone    = takenCount === supplements.length;
+
+  return (
+    <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px 7px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <span style={{ fontSize: 14 }}>💊</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+            Supplements
+          </span>
+          <span style={{
+            fontSize: 10, fontWeight: 700,
+            color: allDone ? GREEN : MUTED,
+            background: `${allDone ? GREEN : MUTED}18`,
+            borderRadius: 20, padding: '1px 7px',
+          }}>
+            {takenCount}/{supplements.length}
+          </span>
+        </div>
+        <button onClick={() => setActiveTab('supplements')} style={{
+          background: 'none', border: 'none', color: `${MUTED}90`,
+          fontSize: 10, fontWeight: 700, cursor: 'pointer', padding: 0, letterSpacing: 0.3,
+        }}>Manage →</button>
+      </div>
+
+      {/* Thin progress bar */}
+      <div style={{ height: 2, background: EDGE, margin: '0 12px 3px' }}>
+        <div style={{
+          height: '100%', borderRadius: 1,
+          background: allDone ? GREEN : `${GREEN}70`,
+          width: `${supplements.length ? (takenCount / supplements.length) * 100 : 0}%`,
+          transition: 'width 0.35s ease',
+        }} />
+      </div>
+
+      {/* Rows */}
+      <div style={{ padding: '3px 0' }}>
+        {supplements.map((s, i) => {
+          const taken = isTaken(s.id!);
+          const time  = takenTime(s.id!);
+          return (
+            <div key={s.id} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px',
+              borderBottom: i < supplements.length - 1 ? `1px solid ${EDGE}20` : 'none',
+            }}>
+
+              {/* Checkbox */}
+              <button onClick={() => toggleTaken(s)} className="nrc-press" style={{
+                width: 18, height: 18, borderRadius: 4, flexShrink: 0, cursor: 'pointer',
+                border: `1.5px solid ${taken ? GREEN : EDGE}`,
+                background: taken ? GREEN : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+              }}>
+                {taken && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <polyline points="2,5 4.5,7.5 8,2.5" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Name */}
+              <span style={{
+                flex: 1, fontSize: 11, fontWeight: 600,
+                color: taken ? `${MUTED}70` : TEXT,
+                textDecoration: taken ? 'line-through' : 'none',
+                transition: 'all 0.2s',
+              }}>
+                {s.name}
+              </span>
+
+              {/* Dose */}
+              <span style={{ fontSize: 9, color: MUTED, flexShrink: 0 }}>
+                {s.dose} {s.unit}
+              </span>
+
+              {/* Time taken or default timing */}
+              <span style={{ fontSize: 9, flexShrink: 0, minWidth: 34, textAlign: 'right', color: taken ? GREEN : `${MUTED}50` }}>
+                {taken && time ? time : s.timing !== 'anytime' ? s.timing.replace('-', '‑') : ''}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ── Compact food diary summary card ───────────────────────────────
 const MEAL_META: Record<string, { icon: string; color: string; short: string }> = {
@@ -357,6 +486,11 @@ export default function HomeScreen() {
           <WeatherBanner weather={weather} alert={environmentAlert ?? { level: 'none', message: '' }} />
         </div>
       )}
+
+      {/* Supplements checklist */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <SupplementBlock />
+      </div>
 
       {/* Calorie card */}
       <div style={{ margin: '12px 16px 0', background: SURF, borderRadius: 16, border: `1px solid ${EDGE}` }}>

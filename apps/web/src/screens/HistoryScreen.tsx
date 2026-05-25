@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, clearPullCache, type FoodLog, type Ingredient } from '../api/localFood';
 import { playFoodLogSound } from '../utils/sounds';
 import { useNutrition } from '../hooks/useNutrition';
+import { db } from '../lib/db';
 
 const BG      = '#1A1C22';
 const SURF    = '#242830';
@@ -317,13 +318,28 @@ export default function HistoryScreen() {
   const [foodSearch,   setFoodSearch]   = useState('');
   const relogRef = useRef<Set<string>>(new Set());
 
+  // Supplement data: { date → { taken, total } }
+  const [suppByDate,  setSuppByDate]  = useState<Map<string, { taken: number; total: number }>>(new Map());
+  const [suppTotal,   setSuppTotal]   = useState(0);
+
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true);
-    getAllLogs()
-      .then((logs) => {
+    Promise.all([
+      getAllLogs(),
+      db.supplements.where('active').equals(1).count(),
+      db.supplement_logs.toArray(),
+    ])
+      .then(([logs, total, suppLogs]) => {
         const sorted = [...logs].sort((a, b) => b.logged_at.localeCompare(a.logged_at));
         setAllLogs(sorted);
         setDays(groupByDate(logs));
+        setSuppTotal(total);
+        const byDate = new Map<string, { taken: number; total: number }>();
+        for (const l of suppLogs) {
+          if (!byDate.has(l.date)) byDate.set(l.date, { taken: 0, total });
+          if (l.taken) byDate.get(l.date)!.taken++;
+        }
+        setSuppByDate(byDate);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -397,7 +413,7 @@ export default function HistoryScreen() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginBottom: 4, textTransform: 'uppercase' }}>
-              History
+              My Way
             </div>
             <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: ORANGE }}>
               Your Journey
@@ -531,6 +547,25 @@ export default function HistoryScreen() {
                             <MacroChip label="Crb" value={day.totalCarbs}   color={YELLOW}   pct={cP} />
                             <MacroChip label="Fat" value={day.totalFat}     color={FAT_CLR} pct={fP} />
                           </>
+                        );
+                      })()}
+                      {/* Supplement badge */}
+                      {suppTotal > 0 && (() => {
+                        const sd = suppByDate.get(day.date);
+                        const taken = sd?.taken ?? 0;
+                        const allDone = taken === suppTotal;
+                        return (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', gap: 3,
+                            background: `${allDone ? GREEN : MUTED}15`,
+                            border: `1px solid ${allDone ? GREEN : MUTED}30`,
+                            borderRadius: 8, padding: '4px 7px',
+                          }}>
+                            <span style={{ fontSize: 10 }}>💊</span>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: allDone ? GREEN : MUTED }}>
+                              {taken}/{suppTotal}
+                            </span>
+                          </div>
                         );
                       })()}
                       <div style={{ marginLeft: 'auto', color: MUTED, fontSize: 18, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.22s' }}>›</div>

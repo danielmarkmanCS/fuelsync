@@ -72,9 +72,9 @@ function ProfileIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',        label: 'DIARY',   Icon: DiaryIcon },
-  { id: 'food',        label: 'SEARCH',  Icon: LogIcon },
-  { id: 'history',     label: 'TRENDS',  Icon: TrendsIcon },
+  { id: 'home',        label: 'HOME',    Icon: DiaryIcon },
+  { id: 'food',        label: 'DIARY',   Icon: LogIcon },
+  { id: 'history',     label: 'MY WAY',  Icon: TrendsIcon },
   { id: 'supplements', label: 'SUPPS',   Icon: PillIcon },
   { id: 'profile',     label: 'PROFILE', Icon: ProfileIcon },
 ];

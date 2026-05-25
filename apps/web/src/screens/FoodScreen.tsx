@@ -15,6 +15,7 @@ import { getRecipes, saveRecipe, deleteRecipe } from '../lib/recipes';
 import type { Recipe, RecipeIngredient } from '../lib/recipes';
 import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
+import { db } from '../lib/db';
 
 const BG      = '#1A1C22';
 const SURF    = '#242830';
@@ -208,6 +209,16 @@ export default function FoodScreen() {
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const isToday = selectedDate === todayStr;
+
+  // Supplement status for today
+  const [suppTotal, setSuppTotal] = useState(0);
+  const [suppTaken, setSuppTaken] = useState(0);
+  useEffect(() => {
+    db.supplements.where('active').equals(1).count().then(setSuppTotal).catch(() => {});
+    db.supplement_logs.where('date').equals(todayStr).toArray().then(logs => {
+      setSuppTaken(logs.filter(l => l.taken).length);
+    }).catch(() => {});
+  }, [todayStr]);
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
@@ -971,6 +982,29 @@ export default function FoodScreen() {
           }}>
             {copyingYesterday ? 'Copying…' : '↩ Copy Yesterday\'s Meals'}
           </button>
+        </div>
+      )}
+
+      {/* ── SUPPLEMENT STATUS ── */}
+      {isToday && suppTotal > 0 && (
+        <div style={{ padding: '8px 22px 0' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 12px', borderRadius: 10,
+            background: SURF, border: `1px solid ${EDGE}`,
+          }}>
+            <span style={{ fontSize: 14 }}>💊</span>
+            <span style={{
+              fontSize: 10, fontWeight: 700,
+              color: suppTaken === suppTotal ? GREEN : MUTED,
+              flex: 1,
+            }}>
+              {suppTaken}/{suppTotal} supplements taken today
+            </span>
+            {suppTaken === suppTotal && (
+              <span style={{ fontSize: 9, fontWeight: 800, color: GREEN, letterSpacing: 0.5 }}>ALL DONE ✓</span>
+            )}
+          </div>
         </div>
       )}
 

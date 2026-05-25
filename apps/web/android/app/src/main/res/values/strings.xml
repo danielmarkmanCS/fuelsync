@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FuelSync</string>
+    <string name="title_activity_main">FuelSync</string>
+    <string name="package_name">com.danielmarkman.fuelsync</string>
+    <string name="custom_url_scheme">com.danielmarkman.fuelsync</string>
+</resources>
