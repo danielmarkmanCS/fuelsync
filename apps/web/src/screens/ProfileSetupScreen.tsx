@@ -9,19 +9,19 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
 
-const BG      = '#1A1C22';
-const SURF    = '#242830';
-const SURF2   = '#2A2F3A';
-const EDGE    = '#2E3340';
+const BG      = '#050505';
+const SURF    = '#111111';
+const SURF2   = '#161616';
+const EDGE    = '#2A2A2A';
 const TEXT    = '#FFFFFF';
-const MUTED   = '#8B909A';
-const GREEN   = '#6CBB3C';
-const ORANGE  = '#6CBB3C';
-const YELLOW  = '#F5A623';
-const PROT    = '#E8634E';
-const RED     = '#E8634E';
-const FAT_CLR = '#4A90D9';
-const CARD_SHADOW = '0 2px 12px rgba(0,0,0,0.5)';
+const MUTED   = '#A0A0A0';
+const GREEN   = '#DFFF00';
+const ORANGE  = '#FF6B35';
+const YELLOW  = '#DFFF00';
+const PROT    = '#FF6B35';
+const RED     = '#FF4444';
+const FAT_CLR = '#A78BFA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.7)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },

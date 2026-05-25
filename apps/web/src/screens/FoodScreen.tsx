@@ -17,20 +17,20 @@ import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
 import { db } from '../lib/db';
 
-const BG      = '#1A1C22';
-const SURF    = '#242830';
-const SURF2   = '#2A2F3A';
-const EDGE    = '#2E3340';
+const BG      = '#050505';
+const SURF    = '#111111';
+const SURF2   = '#161616';
+const EDGE    = '#2A2A2A';
 const TEXT    = '#FFFFFF';
-const MUTED   = '#8B909A';
-const MUTED2  = '#4A5060';
-const GREEN   = '#6CBB3C';
-const ORANGE  = '#6CBB3C';
-const YELLOW  = '#F5A623';
-const PROT    = '#E8634E';
-const RED     = '#E8634E';
-const FAT_CLR = '#4A90D9';
-const CARD_SHADOW = '0 2px 12px rgba(0,0,0,0.5)';
+const MUTED   = '#A0A0A0';
+const MUTED2  = '#444444';
+const GREEN   = '#DFFF00';
+const ORANGE  = '#FF6B35';
+const YELLOW  = '#DFFF00';
+const PROT    = '#FF6B35';
+const RED     = '#FF4444';
+const FAT_CLR = '#A78BFA';
+const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.7)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -40,7 +40,7 @@ const MEAL_LABEL: Record<MealType, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: '#6CBB3C', pre_workout: '#F5A623', lunch: '#4A90D9', post_workout: '#4A90D9', dinner: '#8B909A', snack: '#E8634E', other: '#4A5060',
+  breakfast: '#DFFF00', pre_workout: '#FF6B35', lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;

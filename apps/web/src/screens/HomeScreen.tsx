@@ -12,18 +12,20 @@ import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
-// ── Premium Design System ──────────────────────────────────────────
-const BG    = '#0B0F19';   // deep navy
-const CARD  = '#1F2937';   // card surface
-const CARD2 = '#263347';   // nested / secondary
-const EDGE  = '#2A3A52';   // borders
-const LIME  = '#CCFF00';   // electric lime accent
+// ── Volt / Lando design system ─────────────────────────────────────
+const BG    = '#050505';
+const CARD  = '#111111';
+const CARD2 = '#161616';
+const EDGE  = '#2A2A2A';
+const VOLT  = '#DFFF00';
 const TEXT  = '#FFFFFF';
-const MUTED = '#9CA3AF';
-const PROT  = '#F87171';   // warm red
-const CARB  = '#60A5FA';   // sky blue
-const FAT   = '#A78BFA';   // soft purple
-const RED   = '#EF4444';
+const MUTED = '#A0A0A0';
+const PROT  = '#FF6B35';
+const CARB  = '#38BDF8';
+const FAT   = '#A78BFA';
+const RED   = '#FF4444';
+// alias so sub-components that use LIME still work
+const LIME  = VOLT;
 
 const MEAL_ORDER = ['breakfast','pre_workout','lunch','post_workout','dinner','snack','other'] as const;
 const MEAL_LABEL: Record<string, string> = {

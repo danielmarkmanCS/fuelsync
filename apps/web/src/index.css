@@ -1,37 +1,37 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Cronometer surfaces ── */
-  --bg:     #1A1C22;
-  --surf:   #242830;
-  --surf2:  #2A2F3A;
-  --edge:   #2E3340;
-  --edge2:  #3A4050;
+  /* ── Lando / Volt palette ── */
+  --bg:     #050505;
+  --surf:   #111111;
+  --surf2:  #161616;
+  --edge:   #2A2A2A;
+  --edge2:  #333333;
 
   /* ── Shadows ── */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
-  --shadow-md: 0 2px 12px rgba(0,0,0,0.5);
-  --shadow-lg: 0 4px 24px rgba(0,0,0,0.6);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.6);
+  --shadow-md: 0 2px 12px rgba(0,0,0,0.7);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.8);
 
   /* ── Typography ── */
-  --text:  #FFFFFF;
-  --muted: #8B909A;
-  --muted2: #4A5060;
+  --text:   #FFFFFF;
+  --muted:  #A0A0A0;
+  --muted2: #444444;
 
-  /* ── Cronometer brand ── */
-  --green:   #6CBB3C;
-  --green2:  #559930;
+  /* ── Volt accent ── */
+  --green:  #DFFF00;
+  --green2: #C8E800;
 
-  /* ── Macro palette (Cronometer) ── */
-  --prot:  #E8634E;
-  --carb:  #F5A623;
-  --fat:   #4A90D9;
+  /* ── Macro palette ── */
+  --prot:   #FF6B35;
+  --carb:   #38BDF8;
+  --fat:    #A78BFA;
 
   /* ── Semantic ── */
-  --red:    #E8634E;
-  --orange: #F5A623;
-  --blue:   #4A90D9;
-  --yellow: #F5D060;
+  --red:    #FF4444;
+  --orange: #FF6B35;
+  --blue:   #38BDF8;
+  --yellow: #DFFF00;
 
   /* ── Easing ── */
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -47,10 +47,13 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color-scheme: dark;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0);
+  background-size: 32px 32px;
 }
 
 button, input, select, textarea { font-family: inherit; }
@@ -66,13 +69,13 @@ button, input, select, textarea { font-family: inherit; }
   color: var(--muted);
 }
 .nrc-label { font-weight: 700; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
-.nrc-hero  { font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
-.hero      { font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
-.display-num { font-weight: 700; }
+.nrc-hero  { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; letter-spacing: -1px; line-height: 1; color: var(--text); }
+.hero      { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; letter-spacing: -1px; line-height: 1; color: var(--text); }
+.display-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; }
 
 /* ── ENTRANCE ANIMATIONS ─────────────────────────── */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
@@ -81,46 +84,50 @@ button, input, select, textarea { font-family: inherit; }
 }
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.55; transform: scale(0.93); }
+  50%       { opacity: 0.4; transform: scale(0.88); }
 }
 @keyframes shimmer {
   0%   { background-position: -400px 0; }
   100% { background-position: 400px 0; }
 }
 @keyframes ringPop {
-  0%   { transform: scale(0.95); opacity: 0; }
+  0%   { transform: scale(0.92); opacity: 0; }
   100% { transform: scale(1);    opacity: 1; }
 }
 @keyframes barFillAni { from { width: 0 !important; } }
+@keyframes voltPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(223,255,0,0); }
+  50%       { box-shadow: 0 0 0 6px rgba(223,255,0,0.08); }
+}
 
-.a  { animation: slideUp 0.36s var(--ease) both; }
+.a  { animation: slideUp 0.3s var(--ease) both; }
 .a1 { animation-delay:   0ms; }
-.a2 { animation-delay:  50ms; }
-.a3 { animation-delay: 100ms; }
-.a4 { animation-delay: 150ms; }
-.a5 { animation-delay: 200ms; }
-.a6 { animation-delay: 250ms; }
+.a2 { animation-delay:  40ms; }
+.a3 { animation-delay:  80ms; }
+.a4 { animation-delay: 120ms; }
+.a5 { animation-delay: 160ms; }
+.a6 { animation-delay: 200ms; }
 
-.nrc-a  { animation: slideUp 0.36s var(--ease) both; }
+.nrc-a  { animation: slideUp 0.3s var(--ease) both; }
 .nrc-a1 { animation-delay:   0ms; }
-.nrc-a2 { animation-delay:  50ms; }
-.nrc-a3 { animation-delay: 100ms; }
-.nrc-a4 { animation-delay: 150ms; }
-.nrc-a5 { animation-delay: 200ms; }
-.nrc-a6 { animation-delay: 250ms; }
+.nrc-a2 { animation-delay:  40ms; }
+.nrc-a3 { animation-delay:  80ms; }
+.nrc-a4 { animation-delay: 120ms; }
+.nrc-a5 { animation-delay: 160ms; }
+.nrc-a6 { animation-delay: 200ms; }
 
 /* ── PRESS ────────────────────────────────────────── */
 .nrc-press, .press {
-  transition: transform 0.12s var(--ease), opacity 0.12s ease;
+  transition: transform 0.1s var(--ease), opacity 0.1s ease;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
-.nrc-press:active, .press:active { transform: scale(0.97) !important; opacity: 0.85; }
+.nrc-press:active, .press:active { transform: scale(0.96) !important; opacity: 0.8; }
 
 /* ── CARD ─────────────────────────────────────────── */
 .card {
   background: var(--surf);
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid var(--edge);
 }
 .card-lift {
@@ -130,7 +137,7 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ── BARS ─────────────────────────────────────────── */
 .bar-track {
-  height: 6px;
+  height: 5px;
   background: var(--edge);
   border-radius: 3px;
   overflow: hidden;
@@ -142,7 +149,7 @@ button, input, select, textarea { font-family: inherit; }
 }
 .bar-ani { animation: barFillAni 0.8s var(--ease) both; }
 
-.volt-bar-track { height: 6px; background: rgba(108,187,60,0.15); border-radius: 3px; overflow: hidden; }
+.volt-bar-track { height: 5px; background: rgba(223,255,0,0.1); border-radius: 3px; overflow: hidden; }
 .volt-bar-fill  { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.6s var(--ease); }
 
 /* ── INPUTS ──────────────────────────────────────── */
@@ -158,7 +165,7 @@ input, textarea, select { transition: border-color 0.15s ease; }
 
 /* ── SHIMMER ─────────────────────────────────────── */
 .shimmer {
-  background: linear-gradient(90deg, #242830 25%, #2E3340 50%, #242830 75%);
+  background: linear-gradient(90deg, #111111 25%, #222222 50%, #111111 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
 }

@@ -21,9 +21,9 @@ import SupplementsScreen from './screens/SupplementsScreen';
 type Tab = 'home' | 'food' | 'history' | 'supplements' | 'profile';
 const NAV_H = 64;
 
-const GREEN = '#6CBB3C';
+const VOLT  = '#DFFF00';
 const TEXT  = '#FFFFFF';
-const MUTED = '#8B909A';
+const MUTED = '#A0A0A0';
 
 function DiaryIcon({ active }: { active: boolean }) {
   return (
@@ -239,32 +239,31 @@ export default function App() {
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #0A0A0A 0%, #CC5500 50%, #FF8000 100%)',
+        background: '#050505',
+        backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0)',
+        backgroundSize: '32px 32px',
         gap: 0, position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', top: '10%', right: '5%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,128,0,0.18)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '15%', left: '5%', width: 150, height: 150, borderRadius: '50%', background: 'rgba(245,197,24,0.12)', pointerEvents: 'none' }} />
+        {/* volt glow orb */}
+        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(223,255,0,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1, color: '#FFFFFF' }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: '#FFFFFF' }}>
             FUEL
           </div>
-          <div style={{
-            fontSize: 64, fontWeight: 900, letterSpacing: -5, lineHeight: 1,
-            background: 'linear-gradient(135deg, #FF8000, #F5C518)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: '#DFFF00' }}>
             SYNC
           </div>
-          <div style={{ marginTop: 36, display: 'flex', gap: 7 }}>
+          <div style={{ marginTop: 40, display: 'flex', gap: 6 }}>
             {[0, 1, 2].map((i) => (
               <div key={i} style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: i === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.25)',
-                animation: `pulse 1.3s ${i * 0.22}s infinite ease-in-out`,
+                width: 5, height: 5, borderRadius: '50%',
+                background: '#DFFF00',
+                opacity: i === 0 ? 1 : 0.3,
+                animation: `pulse 1.2s ${i * 0.2}s infinite ease-in-out`,
               }} />
             ))}
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 10, letterSpacing: 5, marginTop: 22, fontWeight: 700, textTransform: 'uppercase' }}>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, letterSpacing: 5, marginTop: 20, fontWeight: 700, textTransform: 'uppercase' }}>
             {stravaConnecting ? 'Syncing with Strava' : 'Loading'}
           </div>
         </div>
@@ -341,7 +340,10 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#1A1C22', overflow: 'hidden',
+      background: '#050505',
+      backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0)',
+      backgroundSize: '32px 32px',
+      overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
@@ -360,23 +362,23 @@ export default function App() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px',
         }}>
           <div style={{
-            background: '#242830', borderRadius: 20, padding: '28px 24px',
+            background: '#111111', borderRadius: 20, padding: '28px 24px',
             width: '100%', maxWidth: 340, textAlign: 'center',
-            border: '1px solid #2E3340',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+            border: '1px solid #2A2A2A',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
           }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF', marginBottom: 6 }}>
-              Morning Check-In
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: '#FFFFFF', marginBottom: 6, letterSpacing: 0.5 }}>
+              MORNING CHECK-IN
             </div>
-            <div style={{ fontSize: 12, color: '#8B909A', marginBottom: 24, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 24, lineHeight: 1.6 }}>
               Log today's weight to keep BMR and targets accurate.
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <button
                 onClick={() => setWeightInput(w => String(Math.max(20, parseFloat(w || '0') - 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: '#2E3340', border: '1px solid #3A4050', color: '#FFFFFF', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 10, background: '#161616', border: '1px solid #2A2A2A', color: '#FFFFFF', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >−</button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
@@ -385,17 +387,17 @@ export default function App() {
                   step="0.1" min="20" max="300"
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '12px 36px 12px 12px',
-                    borderRadius: 12, border: '1.5px solid #6CBB3C',
-                    background: '#1A1C22', color: '#FFFFFF',
+                    borderRadius: 12, border: '1.5px solid #DFFF00',
+                    background: '#050505', color: '#FFFFFF',
                     fontSize: 22, fontWeight: 700, textAlign: 'center',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                 />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#8B909A', fontSize: 12, fontWeight: 600 }}>kg</span>
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#A0A0A0', fontSize: 12, fontWeight: 600 }}>kg</span>
               </div>
               <button
                 onClick={() => setWeightInput(w => String(Math.min(300, parseFloat(w || '0') + 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: '#2E3340', border: '1px solid #3A4050', color: '#6CBB3C', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 10, background: '#161616', border: '1px solid #2A2A2A', color: '#DFFF00', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >+</button>
             </div>
 
@@ -403,16 +405,16 @@ export default function App() {
               onClick={() => handleWeightLog(false)} disabled={weightSaving}
               style={{
                 width: '100%', padding: '13px 0', borderRadius: 12,
-                background: weightSaving ? '#2E3340' : '#6CBB3C', border: 'none',
-                color: weightSaving ? '#8B909A' : '#000', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                marginBottom: 10,
+                background: weightSaving ? '#2A2A2A' : '#DFFF00', border: 'none',
+                color: weightSaving ? '#A0A0A0' : '#000', fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1,
               }}
             >
-              {weightSaving ? 'Saving…' : 'Log Weight'}
+              {weightSaving ? 'SAVING…' : 'LOG WEIGHT'}
             </button>
             <button
               onClick={() => handleWeightLog(true)}
-              style={{ background: 'none', border: 'none', color: '#8B909A', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: '#A0A0A0', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             >
               Skip today
             </button>
@@ -422,8 +424,8 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: '#1E2028',
-        borderTop: '1px solid #2E3340',
+        background: '#080808',
+        borderTop: '1px solid #2A2A2A',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
@@ -435,16 +437,21 @@ export default function App() {
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: 3,
               background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0',
+              position: 'relative',
             }}>
-              <div style={{
-                color: active ? GREEN : MUTED,
-                transition: 'color 0.18s ease',
-              }}>
+              {active && (
+                <div style={{
+                  position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                  width: 32, height: 2, background: '#DFFF00', borderRadius: '0 0 2px 2px',
+                }} />
+              )}
+              <div style={{ color: active ? VOLT : MUTED, transition: 'color 0.18s ease' }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: active ? 700 : 500, letterSpacing: 0.8,
-                color: active ? GREEN : MUTED, transition: 'all 0.18s ease',
+                fontSize: 9, fontWeight: active ? 800 : 500, letterSpacing: 1,
+                fontFamily: "'Barlow Condensed', sans-serif",
+                color: active ? VOLT : MUTED, transition: 'all 0.18s ease',
               }}>
                 {label}
               </span>

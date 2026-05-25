@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
-const BG    = '#1A1C22';
-const SURF  = '#242830';
-const EDGE  = '#2E3340';
-const GREEN = '#6CBB3C';
+const BG    = '#050505';
+const SURF  = '#111111';
+const EDGE  = '#2A2A2A';
+const GREEN = '#DFFF00';
 const TEXT  = '#FFFFFF';
-const MUTED = '#8B909A';
-const RED   = '#E8634E';
+const MUTED = '#A0A0A0';
+const RED   = '#FF4444';
 
 const TIMINGS: Supplement['timing'][] = ['morning', 'pre-workout', 'post-workout', 'evening', 'anytime'];
 const TIMING_LABEL: Record<Supplement['timing'], string> = {
@@ -228,10 +228,11 @@ export default function SupplementsScreen() {
                 {TIMINGS.map(t => (
                   <button key={t} onClick={() => setTiming(t)} style={{
                     padding: '8px 14px', borderRadius: 20,
-                    background: timing === t ? GREEN : BG,
+                    background: timing === t ? GREEN : SURF,
                     border: `1.5px solid ${timing === t ? GREEN : EDGE}`,
                     color: timing === t ? '#000' : MUTED,
                     fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'all 0.15s ease',
                   }}>{TIMING_LABEL[t]}</button>
                 ))}
               </div>
