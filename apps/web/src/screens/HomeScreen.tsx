@@ -8,7 +8,7 @@ import StravaCard from '../components/StravaCard';
 import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
-import { getCustomTargets } from '../lib/customTargets';
+import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 
 // ── Cronometer palette ─────────────────────────────────────────────
 const BG    = '#1A1C22';
@@ -282,7 +282,7 @@ function FoodDiaryCube({ logs, byMeal, onAddFood }: {
 export default function HomeScreen() {
   const { user } = useAuthStore();
   const { setActiveTab } = useAppStore();
-  const { todayLog, targets: rawTargets, weeklyLoad, weather, environmentAlert } = useNutritionStore();
+  const { todayLog, weeklyLoad, weather, environmentAlert } = useNutritionStore();
   const { logDay, setActivityModifier } = useNutrition();
 
   const [logs,        setLogs]        = useState<FoodLog[]>([]);
@@ -301,21 +301,8 @@ export default function HomeScreen() {
 
   const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
 
-  // Effective targets (with goal mode adjustment)
-  const customTargets = getCustomTargets();
-  const goalMode = (() => {
-    try { return (localStorage.getItem('fs_goal_mode_v1') ?? 'maintain') as 'lose' | 'maintain' | 'gain'; }
-    catch { return 'maintain' as const; }
-  })();
-  const goalAdj: Record<'lose' | 'maintain' | 'gain', number> = { lose: -500, maintain: 0, gain: 300 };
-  const targets = customTargets.enabled && rawTargets
-    ? { ...rawTargets, calories: customTargets.calories, proteinG: customTargets.proteinG, carbsG: customTargets.carbsG, fatG: customTargets.fatG }
-    : rawTargets ? (() => {
-        const adjCal = Math.max(1200, rawTargets.calories + goalAdj[goalMode]);
-        const scale  = adjCal / rawTargets.calories;
-        return { ...rawTargets, calories: adjCal, proteinG: Math.round(rawTargets.proteinG * scale), carbsG: Math.round(rawTargets.carbsG * scale), fatG: Math.round(rawTargets.fatG * scale) };
-      })()
-    : rawTargets;
+  // Effective targets — shared hook applies goal-mode + custom overrides (same as FoodScreen)
+  const targets = useEffectiveTargets();
 
   // Group logs by meal
   const byMeal = MEAL_ORDER.reduce<Record<string, FoodLog[]>>((acc, m) => { acc[m] = []; return acc; }, {});
@@ -398,21 +385,36 @@ export default function HomeScreen() {
           })}
         </div>
 
-        {/* Activity modifier */}
+        {/* Non-exercise activity (NEAT) modifier */}
         {todayLog && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-            {(['low', 'normal', 'high'] as const).map(m => {
-              const sel = (activityModifier ?? 'normal') === m || (!activityModifier && m === 'normal');
-              return (
-                <button key={m} onClick={() => setActivityModifier(m === 'normal' ? undefined : m)} style={{
-                  flex: 1, padding: '6px', borderRadius: 8,
-                  border: `1px solid ${sel ? GREEN : EDGE}`,
-                  background: sel ? `${GREEN}15` : 'transparent',
-                  color: sel ? GREEN : MUTED, fontSize: 11, fontWeight: sel ? 700 : 500,
-                  cursor: 'pointer', textTransform: 'capitalize',
-                }}>{m}</button>
-              );
-            })}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 3 }}>
+              Daily Activity Level
+            </div>
+            <div style={{ fontSize: 10, color: `${MUTED}80`, marginBottom: 7, lineHeight: 1.4 }}>
+              Non-workout movement — steps, job, errands. Affects your daily calories.
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {([
+                { val: 'low',    label: 'Low',    desc: 'Desk job · mostly sitting' },
+                { val: 'normal', label: 'Normal', desc: 'Some walking · light day'  },
+                { val: 'high',   label: 'High',   desc: 'On feet all day · lots of steps' },
+              ] as const).map(({ val, label, desc }) => {
+                const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
+                return (
+                  <button key={val} onClick={() => setActivityModifier(val === 'normal' ? undefined : val)} style={{
+                    flex: 1, padding: '7px 4px', borderRadius: 9,
+                    border: `1px solid ${sel ? GREEN : EDGE}`,
+                    background: sel ? `${GREEN}15` : 'transparent',
+                    cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  }}>
+                    <span style={{ fontSize: 11, fontWeight: sel ? 800 : 600, color: sel ? GREEN : MUTED }}>{label}</span>
+                    <span style={{ fontSize: 8, color: sel ? `${GREEN}AA` : `${MUTED}60`, textAlign: 'center', lineHeight: 1.3 }}>{desc}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

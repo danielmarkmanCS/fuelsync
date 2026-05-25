@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
+import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { useAppStore } from '../store/appStore';
 import { playFoodLogSound } from '../utils/sounds';
 import { searchFood, lookupBarcode } from '../api/openFoodFacts';
@@ -201,7 +202,8 @@ function dateLabel(date: string): string {
 }
 
 export default function FoodScreen() {
-  const { targets, weather } = useNutrition();
+  const { weather } = useNutrition();
+  const targets = useEffectiveTargets(); // synced with HomeScreen (goal-mode + custom targets applied)
   const { pendingMealType, setPendingMealType } = useAppStore();
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayStr);
