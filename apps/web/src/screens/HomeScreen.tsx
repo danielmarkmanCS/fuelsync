@@ -208,10 +208,30 @@ function SupplementBlock() {
     </div>
   );
 
-  const isTaken   = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
-  const takenTime = (id: number) => {
+  const isTaken    = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
+
+  const timePeriod = (id: number): 'M' | 'A' | 'E' | null => {
     const l = logs.find(l => l.supplement_id === id && l.taken);
-    return l ? new Date(l.logged_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
+    if (!l) return null;
+    const h = new Date(l.logged_at).getHours();
+    return h < 12 ? 'M' : h < 17 ? 'A' : 'E';
+  };
+
+  const logAtPeriod = async (supp: Supplement, period: 'M' | 'A' | 'E') => {
+    const hour     = period === 'M' ? 8 : period === 'A' ? 13 : 19;
+    const logTime  = new Date(); logTime.setHours(hour, 0, 0, 0);
+    const id       = supp.id!;
+    const existing = logs.find(l => l.supplement_id === id);
+    if (existing) {
+      const cur = timePeriod(id);
+      await db.supplement_logs.update(existing.id!, {
+        taken: !(cur === period && existing.taken),
+        logged_at: logTime.toISOString(),
+      });
+    } else {
+      await db.supplement_logs.add({ supplement_id: id, date: today, taken: true, logged_at: logTime.toISOString() });
+    }
+    load();
   };
 
   const toggleTaken = async (supp: Supplement) => {
@@ -270,7 +290,6 @@ function SupplementBlock() {
       <div style={{ padding: '5px 0 10px' }}>
         {supplements.map((s, i) => {
           const taken = isTaken(s.id!);
-          const time  = takenTime(s.id!);
           return (
             <div key={s.id} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '7px 16px',
@@ -303,13 +322,29 @@ function SupplementBlock() {
                 {s.name}
               </span>
               <span style={{ fontSize: 10, color: `${MUTED}80`, flexShrink: 0 }}>{s.dose} {s.unit}</span>
-              <span style={{
-                fontSize: 10, flexShrink: 0, minWidth: 36, textAlign: 'right',
-                color: taken ? LIME : `${MUTED}40`,
-                fontWeight: taken ? 600 : 400,
-              }}>
-                {taken && time ? time : s.timing !== 'anytime' ? s.timing.replace('-', '‑') : ''}
-              </span>
+              {/* M / A / E day-period checkboxes */}
+              <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                {(['M', 'A', 'E'] as const).map(p => {
+                  const active = taken && timePeriod(s.id!) === p;
+                  return (
+                    <button
+                      key={p}
+                      onClick={e => { e.stopPropagation(); logAtPeriod(s, p); }}
+                      className="nrc-press"
+                      style={{
+                        width: 22, height: 20, borderRadius: 4, flexShrink: 0, padding: 0,
+                        border: `1px solid ${active ? LIME : EDGE}`,
+                        background: active ? `${LIME}18` : 'transparent',
+                        color: active ? LIME : `${MUTED}30`,
+                        fontSize: 9, fontWeight: 800, letterSpacing: 0.3,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.15s ease',
+                        boxShadow: active ? `0 0 5px ${LIME}40` : 'none',
+                      }}
+                    >{p}</button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
