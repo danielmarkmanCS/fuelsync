@@ -221,20 +221,53 @@ export default function SupplementsScreen() {
               </div>
             </div>
 
-            {/* Timing */}
+            {/* Timing — checkbox list */}
             <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>Timing</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {TIMINGS.map(t => (
-                  <button key={t} onClick={() => setTiming(t)} style={{
-                    padding: '8px 14px', borderRadius: 20,
-                    background: timing === t ? GREEN : SURF,
-                    border: `1.5px solid ${timing === t ? GREEN : EDGE}`,
-                    color: timing === t ? '#000' : MUTED,
-                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                    transition: 'all 0.15s ease',
-                  }}>{TIMING_LABEL[t]}</button>
-                ))}
+              <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+                Time of Day
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {TIMINGS.map(t => {
+                  const sel = timing === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setTiming(t)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '11px 14px', borderRadius: 10,
+                        border: `1px solid ${sel ? GREEN : EDGE}`,
+                        background: sel ? `${GREEN}12` : BG,
+                        cursor: 'pointer', textAlign: 'left', width: '100%',
+                        transition: 'all 0.15s ease',
+                        boxShadow: sel ? `0 0 0 1px ${GREEN}30` : 'none',
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <div style={{
+                        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                        border: `2px solid ${sel ? GREEN : EDGE}`,
+                        background: sel ? GREEN : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.15s ease',
+                      }}>
+                        {sel && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <polyline points="2,5 4.5,7.5 8,2.5" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: 13, fontWeight: sel ? 700 : 500,
+                        color: sel ? GREEN : TEXT,
+                        transition: 'color 0.15s ease',
+                        fontFamily: 'inherit',
+                      }}>
+                        {TIMING_LABEL[t]}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
