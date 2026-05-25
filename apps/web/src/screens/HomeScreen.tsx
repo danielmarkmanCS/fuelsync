@@ -183,7 +183,19 @@ function SupplementBlock() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (supplements.length === 0) return null;
+  if (supplements.length === 0) return (
+    <div style={{
+      background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`,
+      padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8,
+    }}>
+      <span style={{ fontSize: 14 }}>💊</span>
+      <span style={{ fontSize: 10, color: `${MUTED}80`, flex: 1 }}>No supplements set up yet</span>
+      <button onClick={() => setActiveTab('supplements')} style={{
+        background: 'none', border: `1px solid ${EDGE}`, borderRadius: 6,
+        color: MUTED, fontSize: 10, fontWeight: 700, cursor: 'pointer', padding: '3px 8px',
+      }}>Set up →</button>
+    </div>
+  );
 
   const isTaken    = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
   const takenTime  = (id: number) => {

@@ -28,6 +28,7 @@ export default function SupplementsScreen() {
   const [unit,        setUnit]        = useState('mg');
   const [timing,      setTiming]      = useState<Supplement['timing']>('morning');
   const [saving,      setSaving]      = useState(false);
+  const [saveError,   setSaveError]   = useState('');
   const [editId,      setEditId]      = useState<number | null>(null);
 
   const load = useCallback(async () => {
@@ -56,7 +57,7 @@ export default function SupplementsScreen() {
 
   const handleSave = async () => {
     if (!name.trim() || !dose.trim()) return;
-    setSaving(true);
+    setSaving(true); setSaveError('');
     try {
       if (editId != null) {
         await db.supplements.update(editId, { name: name.trim(), dose: dose.trim(), unit, timing });
@@ -65,6 +66,9 @@ export default function SupplementsScreen() {
       }
       setAdding(false); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning');
       load();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save — try closing other tabs and retry.');
+      console.error('[Supplements] save failed:', e);
     } finally { setSaving(false); }
   };
 
@@ -233,6 +237,11 @@ export default function SupplementsScreen() {
               </div>
             </div>
 
+            {saveError && (
+              <div style={{ color: RED, fontSize: 12, fontWeight: 600, marginBottom: 10, padding: '8px 10px', background: `${RED}15`, borderRadius: 8 }}>
+                ⚠️ {saveError}
+              </div>
+            )}
             <button
               onClick={handleSave} disabled={saving || !name.trim() || !dose.trim()}
               style={{
