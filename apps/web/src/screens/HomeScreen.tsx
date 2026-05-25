@@ -487,11 +487,6 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* Supplements checklist */}
-      <div style={{ padding: '12px 16px 0' }}>
-        <SupplementBlock />
-      </div>
-
       {/* Calorie card */}
       <div style={{ margin: '12px 16px 0', background: SURF, borderRadius: 16, border: `1px solid ${EDGE}` }}>
         <CalRing cal={consumed.calories} target={targets?.calories ?? 0} />
@@ -556,6 +551,11 @@ export default function HomeScreen() {
       {/* Food diary — compact JSON-style cube */}
       <div style={{ margin: '12px 16px 0' }}>
         <FoodDiaryCube logs={logs} byMeal={byMeal} onAddFood={handleAddFood} />
+      </div>
+
+      {/* Supplements checklist — right below food diary */}
+      <div style={{ margin: '8px 16px 0' }}>
+        <SupplementBlock />
       </div>
 
       {/* Strava */}
