@@ -5,9 +5,9 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { useAppStore } from '../store/appStore';
 import WeatherBanner from '../components/WeatherBanner';
 import StravaCard from '../components/StravaCard';
-import { getLogs, deleteLog } from '../api/localFood';
+import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
-import type { MacroTargets, TrainingType, LoggedRun } from '@shared/types';
+import type { MacroTargets, TrainingType } from '@shared/types';
 import { getCustomTargets } from '../lib/customTargets';
 
 // ── Cronometer palette ─────────────────────────────────────────────
@@ -163,98 +163,117 @@ const TRAINING_TYPES: { type: TrainingType; label: string; icon: string; color: 
   { type: 'hybrid',   label: 'Hybrid',   icon: '⚡', color: GREEN     },
 ];
 
-// ── Food item row ──────────────────────────────────────────────────
-function FoodRow({ item, onDelete }: { item: FoodLog; onDelete: () => void }) {
-  const [confirm, setConfirm] = useState(false);
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', padding: '10px 16px', gap: 10,
-      borderBottom: `1px solid ${EDGE}`,
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {item.food_name}
-        </div>
-        {item.weight_grams && (
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{item.weight_grams}g</div>
-        )}
-      </div>
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{Math.round(item.calories)}</div>
-        <div style={{ fontSize: 10, color: MUTED }}>kcal</div>
-      </div>
-      {confirm ? (
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button onClick={onDelete} style={{ padding: '4px 8px', borderRadius: 6, background: RED, border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Del</button>
-          <button onClick={() => setConfirm(false)} style={{ padding: '4px 8px', borderRadius: 6, background: EDGE, border: 'none', color: MUTED, fontSize: 11, cursor: 'pointer' }}>✕</button>
-        </div>
-      ) : (
-        <button onClick={() => setConfirm(true)} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: 16, padding: '0 4px', flexShrink: 0, lineHeight: 1 }}>⋯</button>
-      )}
-    </div>
-  );
-}
+// ── Compact food diary summary card ───────────────────────────────
+const MEAL_META: Record<string, { icon: string; color: string; short: string }> = {
+  breakfast:    { icon: '🌅', color: CARB,  short: 'Breakfast'    },
+  pre_workout:  { icon: '⚡', color: GREEN, short: 'Pre-WO'       },
+  lunch:        { icon: '🥗', color: FAT,   short: 'Lunch'        },
+  post_workout: { icon: '💪', color: GREEN, short: 'Post-WO'      },
+  dinner:       { icon: '🍽', color: PROT,  short: 'Dinner'       },
+  snack:        { icon: '🍎', color: MUTED, short: 'Snacks'       },
+  other:        { icon: '📦', color: MUTED, short: 'Other'        },
+};
 
-// ── Meal section ──────────────────────────────────────────────────
-function MealSection({
-  mealKey, logs, onAddFood, onLogsChanged,
-}: {
-  mealKey: string;
+function FoodDiaryCube({ logs, byMeal, onAddFood }: {
   logs: FoodLog[];
-  onAddFood: (meal: string) => void;
-  onLogsChanged: () => void;
+  byMeal: Record<string, FoodLog[]>;
+  onAddFood: () => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
-  const total = logs.reduce((s, l) => s + +l.calories, 0);
-
-  const handleDelete = useCallback(async (log: FoodLog) => {
-    if (log.id) { await deleteLog(log.id); onLogsChanged(); }
-  }, [onLogsChanged]);
+  const totalCals  = logs.reduce((s, l) => s + +l.calories, 0);
+  const totalProt  = logs.reduce((s, l) => s + +l.protein, 0);
+  const totalCarbs = logs.reduce((s, l) => s + +l.carbs, 0);
+  const totalFat   = logs.reduce((s, l) => s + +l.fat, 0);
 
   return (
-    <div style={{ background: SURF, borderRadius: 14, marginBottom: 10, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
-      {/* Section header */}
-      <div
-        onClick={() => setExpanded(e => !e)}
-        style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}
-      >
-        <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 1 }}>
-            {MEAL_LABEL[mealKey] ?? mealKey}
+    <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+
+      {/* Compact header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 1.5, flexShrink: 0 }}>
+            Food Diary
           </span>
-          {logs.length > 0 && (
-            <span style={{ fontSize: 12, color: MUTED, marginLeft: 8 }}>
-              {Math.round(total)} kcal
-            </span>
+          {totalCals > 0 && (
+            <>
+              <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, background: `${GREEN}18`, borderRadius: 20, padding: '1px 7px', flexShrink: 0 }}>
+                {Math.round(totalCals)} kcal
+              </span>
+              <span style={{ fontSize: 9, color: `${MUTED}90`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                P{Math.round(totalProt)}g · C{Math.round(totalCarbs)}g · F{Math.round(totalFat)}g
+              </span>
+            </>
           )}
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); onAddFood(mealKey); }}
-          style={{
-            width: 28, height: 28, borderRadius: 8, background: `${GREEN}20`,
-            border: `1px solid ${GREEN}50`, color: GREEN,
-            fontSize: 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}
-        >+</button>
-        <div style={{ color: MUTED, fontSize: 12, marginLeft: 8, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</div>
       </div>
 
-      {/* Food items */}
-      {expanded && logs.length > 0 && (
-        <div>
-          {logs.map(l => (
-            <FoodRow key={l.id ?? l.food_name} item={l} onDelete={() => handleDelete(l)} />
-          ))}
-        </div>
-      )}
+      {/* Divider */}
+      <div style={{ height: 1, background: EDGE }} />
 
-      {/* Empty state */}
-      {expanded && logs.length === 0 && (
-        <div style={{ padding: '8px 16px 14px', fontSize: 12, color: MUTED, fontStyle: 'italic' }}>
-          No foods logged yet
-        </div>
-      )}
+      {/* Compact meal rows */}
+      <div style={{ padding: '3px 0' }}>
+        {MEAL_ORDER.map((meal, i) => {
+          const items   = byMeal[meal] ?? [];
+          const mealCal = items.reduce((s, l) => s + +l.calories, 0);
+          const meta    = MEAL_META[meal];
+          const hasFood = items.length > 0;
+          const isLast  = i === MEAL_ORDER.length - 1;
+
+          return (
+            <div
+              key={meal}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '5px 12px',
+                borderBottom: isLast ? 'none' : `1px solid ${EDGE}20`,
+              }}
+            >
+              {/* Emoji */}
+              <span style={{ fontSize: 12, flexShrink: 0, width: 16, textAlign: 'center' }}>{meta.icon}</span>
+
+              {/* Meal label */}
+              <span style={{
+                fontSize: 10, fontWeight: 700, flexShrink: 0, width: 56,
+                color: hasFood ? meta.color : `${MUTED}70`,
+              }}>
+                {meta.short}
+              </span>
+
+              {/* Food names — paragraph style */}
+              <span style={{
+                flex: 1, fontSize: 10, minWidth: 0,
+                color: hasFood ? `${MUTED}CC` : `${MUTED}35`,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {hasFood ? items.map(l => l.food_name).join(', ') : '—'}
+              </span>
+
+              {/* Kcal — only when has food */}
+              {hasFood && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: meta.color, flexShrink: 0 }}>
+                  {Math.round(mealCal)}
+                </span>
+              )}
+
+              {/* + button */}
+              <button
+                onClick={onAddFood}
+                className="nrc-press"
+                style={{
+                  width: 20, height: 20, borderRadius: 5, flexShrink: 0,
+                  background: 'transparent', border: `1px solid ${EDGE}`,
+                  color: MUTED, fontSize: 14, lineHeight: 1,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 0, transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = GREEN; (e.currentTarget as HTMLButtonElement).style.color = GREEN; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = EDGE; (e.currentTarget as HTMLButtonElement).style.color = MUTED; }}
+              >
+                +
+              </button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -262,7 +281,7 @@ function MealSection({
 // ── Main screen ───────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user } = useAuthStore();
-  const { setActiveTab, setPendingMealType } = useAppStore();
+  const { setActiveTab } = useAppStore();
   const { todayLog, targets: rawTargets, weeklyLoad, weather, environmentAlert } = useNutritionStore();
   const { logDay, setActivityModifier } = useNutrition();
 
@@ -306,10 +325,9 @@ export default function HomeScreen() {
     else byMeal['other'].push(l);
   });
 
-  const handleAddFood = useCallback((meal: string) => {
-    setPendingMealType(meal);
+  const handleAddFood = useCallback(() => {
     setActiveTab('food');
-  }, [setActiveTab, setPendingMealType]);
+  }, [setActiveTab]);
 
   const handleSelectType = (type: TrainingType) => {
     const r = logDay(type);
@@ -346,10 +364,10 @@ export default function HomeScreen() {
         )}
       </div>
 
-      {/* Weather */}
-      {weather && environmentAlert && (
+      {/* Weather — always show when data available */}
+      {weather && (
         <div style={{ padding: '12px 16px 0' }}>
-          <WeatherBanner weather={weather} alert={environmentAlert} />
+          <WeatherBanner weather={weather} alert={environmentAlert ?? { level: 'none', message: '' }} />
         </div>
       )}
 
@@ -399,20 +417,9 @@ export default function HomeScreen() {
         )}
       </div>
 
-      {/* Meal diary */}
+      {/* Food diary — compact JSON-style cube */}
       <div style={{ margin: '12px 16px 0' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
-          Food Diary
-        </div>
-        {MEAL_ORDER.map(meal => (
-          <MealSection
-            key={meal}
-            mealKey={meal}
-            logs={byMeal[meal] ?? []}
-            onAddFood={handleAddFood}
-            onLogsChanged={reloadLogs}
-          />
-        ))}
+        <FoodDiaryCube logs={logs} byMeal={byMeal} onAddFood={handleAddFood} />
       </div>
 
       {/* Strava */}
