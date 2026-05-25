@@ -173,11 +173,11 @@ function SupplementBlock() {
   const [logs,        setLogs]        = useState<SupplementLog[]>([]);
 
   const load = useCallback(async () => {
-    const [supp, log] = await Promise.all([
-      db.supplements.where('active').equals(1).toArray(),
+    const [all, log] = await Promise.all([
+      db.supplements.toArray(),                                      // filter in JS — avoids boolean/int mismatch in IndexedDB
       db.supplement_logs.where('date').equals(today).toArray(),
     ]);
-    setSupplements(supp);
+    setSupplements(all.filter(s => s.active !== false));
     setLogs(log);
   }, [today]);
 

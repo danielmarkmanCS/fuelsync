@@ -214,7 +214,7 @@ export default function FoodScreen() {
   const [suppTotal, setSuppTotal] = useState(0);
   const [suppTaken, setSuppTaken] = useState(0);
   useEffect(() => {
-    db.supplements.where('active').equals(1).count().then(setSuppTotal).catch(() => {});
+    db.supplements.toArray().then(all => setSuppTotal(all.filter(s => s.active !== false).length)).catch(() => {});
     db.supplement_logs.where('date').equals(todayStr).toArray().then(logs => {
       setSuppTaken(logs.filter(l => l.taken).length);
     }).catch(() => {});

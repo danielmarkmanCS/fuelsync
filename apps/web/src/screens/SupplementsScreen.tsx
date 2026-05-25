@@ -31,11 +31,11 @@ export default function SupplementsScreen() {
   const [editId,      setEditId]      = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    const [supp, log] = await Promise.all([
-      db.supplements.where('active').equals(1).toArray(),
+    const [all, log] = await Promise.all([
+      db.supplements.toArray(),
       db.supplement_logs.where('date').equals(today).toArray(),
     ]);
-    setSupplements(supp);
+    setSupplements(all.filter(s => s.active !== false));
     setLogs(log);
   }, [today]);
 

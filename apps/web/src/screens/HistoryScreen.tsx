@@ -326,7 +326,7 @@ export default function HistoryScreen() {
     if (!silent) setLoading(true);
     Promise.all([
       getAllLogs(),
-      db.supplements.where('active').equals(1).count(),
+      db.supplements.toArray().then(all => all.filter(s => s.active !== false).length),
       db.supplement_logs.toArray(),
     ])
       .then(([logs, total, suppLogs]) => {
