@@ -899,7 +899,7 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* ── Food Diary (compact scrollable) ── */}
+      {/* ── Food Diary ── */}
       <div style={{ margin: '8px 14px 0' }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -919,9 +919,6 @@ export default function HomeScreen() {
           border: '1px solid var(--edge)',
           borderRadius: 8,
           overflow: 'hidden',
-          /* Fixed height — scrollable inside so the page doesn't stretch */
-          maxHeight: 320,
-          overflowY: 'auto',
         }}>
           {MEAL_ORDER.map((meal) => {
             const items        = byMeal[meal] ?? [];
