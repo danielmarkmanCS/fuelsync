@@ -438,6 +438,21 @@ function SupplementBlock() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── All hooks must be called before any early return ──────────────────
+  const isTaken    = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
+  const takenCountEarly = supplements.filter(s => isTaken(s.id!)).length;
+  const allDoneEarly    = supplements.length > 0 && takenCountEarly === supplements.length;
+
+  // Show congrats once per calendar day when all supplements are marked
+  useEffect(() => {
+    if (!allDoneEarly) return;
+    const key = `fs_supp_congrats_${today}`;
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, '1');
+      setShowCongrats(true);
+    }
+  }, [allDoneEarly, today]);
+
   if (supplements.length === 0) return (
     <div style={{
       background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
@@ -461,7 +476,6 @@ function SupplementBlock() {
     </div>
   );
 
-  const isTaken    = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
   const timePeriod = (id: number): 'M' | 'A' | 'E' | null => {
     const l = logs.find(l => l.supplement_id === id && l.taken);
     if (!l) return null;
@@ -497,18 +511,8 @@ function SupplementBlock() {
     load();
   };
 
-  const takenCount = supplements.filter(s => isTaken(s.id!)).length;
-  const allDone    = supplements.length > 0 && takenCount === supplements.length;
-
-  // Show congrats once per calendar day when all supplements are marked
-  useEffect(() => {
-    if (!allDone) return;
-    const key = `fs_supp_congrats_${today}`;
-    if (!localStorage.getItem(key)) {
-      localStorage.setItem(key, '1');
-      setShowCongrats(true);
-    }
-  }, [allDone, today]);
+  const takenCount = takenCountEarly;
+  const allDone    = allDoneEarly;
 
   return (
     <>
