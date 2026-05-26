@@ -12,7 +12,8 @@ const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
 const GREEN      = '#22C55E';   // carbs
-const ORANGE     = 'var(--accent)';  // was orange — now uses system accent (blue)
+const ORANGE     = 'var(--accent)';  // CSS var — use only for direct color props, NOT hex-suffix template literals
+const ORANGE_HEX = '#2F81F7';        // hex equivalent — use in template literals with opacity suffix
 const ORANGE_MUT = 'var(--accent-muted)';
 const YELLOW     = '#22C55E';   // carbs (alias)
 const PROT    = '#38BDF8';   // protein — blue
@@ -126,7 +127,7 @@ function StreakMilestone({ streak }: { streak: number }) {
   const milestones = [
     { min: 30, label: 'ELITE ATHLETE', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
     { min: 14, label: 'COMMITTED',     color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
-    { min: 7,  label: 'ON FIRE',       color: ORANGE,    msg: '7 day streak — a perfect week of fuel tracking.' },
+    { min: 7,  label: 'ON FIRE',       color: ORANGE_HEX, msg: '7 day streak — a perfect week of fuel tracking.' },
     { min: 3,  label: 'BUILDING',      color: YELLOW,     msg: '3 day streak — momentum is everything. Keep going.' },
   ];
   const m = milestones.find((x) => streak >= x.min)!;
@@ -263,16 +264,16 @@ function StatsRow({ streak, totalDays, avgCal, goalCal }: { streak: number; tota
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
       {[
-        { label: 'Day Streak', value: streak, unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE, highlight: streak >= 3 },
-        { label: 'Days Logged', value: totalDays, unit: 'total', color: YELLOW, highlight: false },
-        { label: 'Avg Daily', value: goalPct, unit: `% of goal`, color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE, highlight: goalPct >= 85 && goalPct <= 115 },
-      ].map(({ label, value, unit, color, highlight }) => (
+        { label: 'Day Streak',  value: streak,   unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE, colorHex: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : ORANGE_HEX, highlight: streak >= 3 },
+        { label: 'Days Logged', value: totalDays, unit: 'total',      color: YELLOW, colorHex: YELLOW, highlight: false },
+        { label: 'Avg Daily',   value: goalPct,   unit: '% of goal',  color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE, colorHex: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE_HEX, highlight: goalPct >= 85 && goalPct <= 115 },
+      ].map(({ label, value, unit, color, colorHex, highlight }) => (
         <div key={label} style={{
-          background: highlight ? `${color}08` : SURF,
+          background: highlight ? `${colorHex}12` : SURF,
           borderRadius: 8, padding: '14px 12px',
-          border: `1px solid ${highlight ? color + '25' : EDGE}`,
+          border: `1px solid ${highlight ? colorHex + '30' : EDGE}`,
           borderTop: `3px solid ${color}`,
-          boxShadow: highlight ? `0 4px 16px ${color}14` : CARD_SHADOW,
+          boxShadow: highlight ? `0 4px 16px ${colorHex}18` : CARD_SHADOW,
           textAlign: 'center',
         }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: color, textTransform: 'uppercase', marginBottom: 6 }}>
@@ -486,16 +487,17 @@ export default function HistoryScreen() {
 
             {/* Day cards */}
             {days.map((day) => {
-              const isOpen   = expanded === day.date;
-              const pct      = Math.min(100, Math.round((day.totalCal / goalCal) * 100));
-              const barColor = pct >= 110 ? RED : pct >= 85 ? GREEN : ORANGE;
-              const perf     = pct >= 85 && pct <= 110 ? 'ON TARGET' : pct > 110 ? 'OVER' : 'UNDER';
-              const perfCol  = pct >= 85 && pct <= 110 ? GREEN : pct > 110 ? RED : ORANGE;
+              const isOpen      = expanded === day.date;
+              const pct         = Math.min(100, Math.round((day.totalCal / goalCal) * 100));
+              const barColor    = pct >= 110 ? RED : pct >= 85 ? GREEN : ORANGE;       // direct color prop
+              const barColorHex = pct >= 110 ? RED : pct >= 85 ? GREEN : ORANGE_HEX;  // hex — for template-literal opacity suffixes
+              const perf        = pct >= 85 && pct <= 110 ? 'ON TARGET' : pct > 110 ? 'OVER' : 'UNDER';
+              const perfCol     = pct >= 85 && pct <= 110 ? GREEN : pct > 110 ? RED : ORANGE;
 
               return (
                 <div key={day.date} className="card-lift" style={{
-                  background: `linear-gradient(135deg, ${barColor}18 0%, ${SURF} 50%)`,
-                  borderRadius: 8, border: `1px solid ${barColor}18`,
+                  background: `linear-gradient(135deg, ${barColorHex}18 0%, var(--surf) 50%)`,
+                  borderRadius: 8, border: `1px solid ${barColorHex}20`,
                   marginBottom: 12, overflow: 'hidden', boxShadow: CARD_SHADOW,
                   borderLeft: `3px solid ${barColor}`,
                 }}>

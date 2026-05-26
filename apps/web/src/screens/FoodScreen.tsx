@@ -30,8 +30,7 @@ const YELLOW     = '#22C55E';   // carbs (alias)
 const PROT       = '#38BDF8';   // protein — blue
 const RED        = '#EF4444';
 const FAT_CLR    = '#F59E0B';   // fat — amber
-const CAL_CLR    = '#8ab0fc';   // periwinkle blue for calorie numbers throughout diary
-const SURF_DIARY = 'var(--surf-diary)'; // light mode = #8ab0fc, dark = var(--surf)
+const CAL_CLR    = 'var(--accent)'; // blue calorie numbers, adapts to dark/light mode
 const CARD_SHADOW = 'var(--shadow-md)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
@@ -862,7 +861,7 @@ export default function FoodScreen() {
       {/* ── CALORIE + MACROS ── */}
       <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
         <div style={{
-          background: SURF_DIARY, borderRadius: 8, border: `1px solid ${EDGE}`,
+          background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`,
           padding: '20px 20px 18px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW,
         }}>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,189,208,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -870,21 +869,24 @@ export default function FoodScreen() {
             Calories Consumed
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 12 }}>
-            <div style={{
-              fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
-              color: calPct >= 100 ? RED : CAL_CLR,
-              transition: 'color 0.4s',
-            }}>
-              {Math.round(consumed.calories).toLocaleString()}
-            </div>
-            {targets && (
-              <div style={{ paddingBottom: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: MUTED }}>
-                  / {Math.round(targets.calories).toLocaleString()}
-                </div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>kcal</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, lineHeight: 1 }}>
+              <div style={{
+                fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
+                color: calPct >= 100 ? RED : CAL_CLR,
+                transition: 'color 0.4s',
+              }}>
+                {Math.round(consumed.calories).toLocaleString()}
               </div>
-            )}
+              {targets && (
+                <div style={{ paddingBottom: 8 }}>
+                  <span style={{ fontSize: 20, fontWeight: 300, color: MUTED }}>/</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: MUTED, marginLeft: 4 }}>
+                    {Math.round(targets.calories).toLocaleString()}
+                  </span>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 2 }}>kcal</div>
+                </div>
+              )}
+            </div>
             {calPct >= 85 && calPct < 100 && (
               <div style={{
                 marginLeft: 'auto', paddingBottom: 8,
@@ -1040,7 +1042,7 @@ export default function FoodScreen() {
           return (
             <div key={meal} style={{
               marginBottom: 14,
-              background: SURF_DIARY, borderRadius: 8,
+              background: SURF, borderRadius: 8,
               border: `1px solid ${EDGE}`, padding: '12px 14px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mealTarget > 0 ? 6 : 10 }}>
@@ -1050,15 +1052,14 @@ export default function FoodScreen() {
                     {MEAL_LABEL[meal as MealType] ?? 'Other'}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
+                  {Math.round(mealTotal)}
                   {mealTarget > 0 && (
-                    <div style={{ fontSize: 10, fontWeight: 700, color: mealOver ? RED : MUTED }}>
-                      / {mealTarget} kcal
-                    </div>
+                    <span style={{ fontWeight: 500, color: mealOver ? RED : MUTED, fontSize: 10 }}>
+                      {' '}/ {mealTarget}
+                    </span>
                   )}
-                  <div style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
-                    {Math.round(mealTotal)} kcal
-                  </div>
+                  <span style={{ fontWeight: 400, color: MUTED, fontSize: 9, marginLeft: 2 }}>kcal</span>
                 </div>
               </div>
               {mealTarget > 0 && (

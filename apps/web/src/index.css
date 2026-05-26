@@ -30,9 +30,6 @@
   --red:    #EF4444;
   --green:  #22C55E;
 
-  /* ── Diary card surface (dark: same as surf; light: blue tint) ── */
-  --surf-diary: var(--surf);
-
   /* ── Geometry ── */
   --r-xs: 4px;
   --r-sm: 6px;
@@ -60,7 +57,6 @@ body[data-theme="light"] {
   --accent:       #0066EE;
   --accent2:      #0055CC;
   --accent-muted: rgba(0,102,238,0.09);
-  --surf-diary:   #8ab0fc;
   color-scheme: light;
   background-color: var(--bg);
 }

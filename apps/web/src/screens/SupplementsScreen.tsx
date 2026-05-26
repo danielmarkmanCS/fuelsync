@@ -30,6 +30,7 @@ export default function SupplementsScreen() {
   const [saving,      setSaving]      = useState(false);
   const [saveError,   setSaveError]   = useState('');
   const [editId,      setEditId]      = useState<number | null>(null);
+  const [showCongrats, setShowCongrats] = useState(false);
 
   const load = useCallback(async () => {
     const [all, log] = await Promise.all([
@@ -84,6 +85,17 @@ export default function SupplementsScreen() {
   };
 
   const takenCount = supplements.filter(s => isTaken(s.id!)).length;
+  const allDone    = supplements.length > 0 && takenCount === supplements.length;
+
+  // Show congrats once per calendar day when all supplements are marked
+  useEffect(() => {
+    if (!allDone) return;
+    const key = `fs_supp_congrats_${today}`;
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, '1');
+      setShowCongrats(true);
+    }
+  }, [allDone, today]);
 
   return (
     <div style={{ minHeight: '100%', background: BG, padding: '16px 16px 32px' }}>
@@ -146,7 +158,7 @@ export default function SupplementsScreen() {
 
                   {/* Info */}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: taken ? MUTED : TEXT, textDecoration: taken ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: taken ? MUTED : TEXT, transition: 'color 0.2s' }}>
                       {s.name}
                     </div>
                     <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>
@@ -287,6 +299,40 @@ export default function SupplementsScreen() {
                 fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >{saving ? 'Saving…' : editId != null ? 'Save Changes' : 'Add Supplement'}</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Congrats overlay — all supplements taken for the day ── */}
+      {showCongrats && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 400,
+          background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0 24px',
+        }} onClick={() => setShowCongrats(false)}>
+          <div style={{
+            background: SURF, borderRadius: 8, padding: '32px 28px',
+            border: `1px solid ${ACCENT}`,
+            textAlign: 'center', maxWidth: 340, width: '100%',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
+            <div style={{ fontSize: 19, fontWeight: 900, color: TEXT, letterSpacing: -0.5, marginBottom: 8 }}>
+              All Done!
+            </div>
+            <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.65, marginBottom: 24 }}>
+              Every supplement logged today. Consistency compounds — you're building the habits that separate good athletes from elite ones.
+            </div>
+            <button
+              onClick={() => setShowCongrats(false)}
+              style={{
+                width: '100%', padding: '13px', borderRadius: 8,
+                background: ACCENT, border: 'none',
+                color: '#fff', fontSize: 14, fontWeight: 800,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >Let's Go 💪</button>
           </div>
         </div>
       )}

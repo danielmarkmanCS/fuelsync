@@ -7,15 +7,15 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 
 const STRAVA = '#FC4C02';
-const SURF   = '#141414';
-const SURF2  = '#1E1E1E';
-const EDGE   = 'rgba(255,255,255,0.08)';
-const TEXT   = '#F0F0F0';
-const MUTED  = '#707070';
+const SURF   = 'var(--surf)';
+const SURF2  = 'var(--surf2)';
+const EDGE   = 'var(--edge)';
+const TEXT   = 'var(--text)';
+const MUTED  = 'var(--muted)';
 const GREEN  = '#22C55E';
-const BLUE   = '#FF8000';
+const BLUE   = '#2F81F7';   // run pace blue
 const RED    = '#EF4444';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)';
+const CARD_SHADOW = 'var(--shadow-md)';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -212,7 +212,7 @@ export default function StravaCard() {
   };
 
   if (loading) return (
-    <div style={{ background: SURF, borderRadius: 14, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW }}>
+    <div style={{ background: SURF, borderRadius: 8, padding: '14px 16px', border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW }}>
       <div style={{ color: MUTED, fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Strava</div>
       <div style={{ color: MUTED, fontSize: 12 }}>Loading…</div>
     </div>
@@ -220,7 +220,7 @@ export default function StravaCard() {
 
   if (notConnected) return (
     <div style={{
-      background: SURF, borderRadius: 14,
+      background: SURF, borderRadius: 8,
       border: `1px solid ${EDGE}`,
       borderLeft: `3px solid ${STRAVA}`,
       overflow: 'hidden',
@@ -262,7 +262,7 @@ export default function StravaCard() {
 
   return (
     <div style={{
-      background: SURF, borderRadius: 14,
+      background: SURF, borderRadius: 8,
       border: `1px solid ${EDGE}`,
       borderTop: `3px solid ${STRAVA}`,
       overflow: 'hidden',

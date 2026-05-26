@@ -320,7 +320,7 @@ function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: Macr
   );
 }
 
-// ── Meal section — compact paragraph style ────────────────────────────
+// ── Meal section — paragraph style with colorful macros ──────────────
 function MealSection({
   meal, items, onAddFood,
 }: {
@@ -330,13 +330,16 @@ function MealSection({
 }) {
   const meta    = MEAL_META[meal] ?? { label: meal, short: meal };
   const mealCal = items.reduce((s, l) => s + +l.calories, 0);
+  const mealP   = items.reduce((s, l) => s + +l.protein,  0);
+  const mealC   = items.reduce((s, l) => s + +l.carbs,    0);
+  const mealF   = items.reduce((s, l) => s + +l.fat,      0);
 
   return (
     <div style={{ paddingBottom: 2 }}>
-      {/* Header row: icon + name + kcal + inline Add button */}
+      {/* Header row: icon + name + kcal + Add button */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6,
-        paddingBottom: items.length > 0 ? 4 : 0,
+        paddingBottom: items.length > 0 ? 5 : 0,
       }}>
         <MealIcon meal={meal} />
         <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', flex: 1 }}>
@@ -365,29 +368,44 @@ function MealSection({
         </button>
       </div>
 
-      {/* Food items — compact text list */}
+      {/* Food items — paragraph style, colorful macros */}
       {items.map((item, i) => (
         <div key={item.id ?? i} style={{
-          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-          paddingLeft: 20, paddingBottom: 3,
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          paddingLeft: 20, paddingBottom: 5, gap: 8,
         }}>
-          <span style={{
-            fontSize: 12, color: 'var(--text)', fontWeight: 400, flex: 1, minWidth: 0,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            opacity: 0.85,
-          }}>
-            {item.food_name}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 12, color: 'var(--text)', fontWeight: 500,
+              lineHeight: 1.35, wordBreak: 'break-word',
+            }}>
+              {item.food_name}
+            </div>
             {(+item.protein > 0 || +item.carbs > 0) && (
-              <span style={{ fontSize: 10, color: 'var(--muted2)', marginLeft: 5, fontWeight: 400 }}>
-                P{Math.round(+item.protein)} C{Math.round(+item.carbs)} F{Math.round(+item.fat)}g
-              </span>
+              <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: PROT }}>P{Math.round(+item.protein)}g</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: CARB }}>C{Math.round(+item.carbs)}g</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: FAT }}>F{Math.round(+item.fat)}g</span>
+              </div>
             )}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginLeft: 8, flexShrink: 0 }}>
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', flexShrink: 0, paddingTop: 1 }}>
             {Math.round(+item.calories)}
           </span>
         </div>
       ))}
+
+      {/* Meal macro total row */}
+      {items.length > 0 && (
+        <div style={{
+          display: 'flex', gap: 8, paddingLeft: 20, paddingTop: 4,
+          borderTop: '1px solid var(--edge)', marginTop: 1,
+        }}>
+          <span style={{ fontSize: 9, fontWeight: 800, color: PROT, opacity: 0.75 }}>P{Math.round(mealP)}g</span>
+          <span style={{ fontSize: 9, fontWeight: 800, color: CARB, opacity: 0.75 }}>C{Math.round(mealC)}g</span>
+          <span style={{ fontSize: 9, fontWeight: 800, color: FAT,  opacity: 0.75 }}>F{Math.round(mealF)}g</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -405,8 +423,9 @@ function SupplementBlock() {
   const { setActiveTab } = useAppStore();
   const today  = new Date().toISOString().split('T')[0];
 
-  const [supplements, setSupplements] = useState<Supplement[]>([]);
-  const [logs,        setLogs]        = useState<SupplementLog[]>([]);
+  const [supplements,  setSupplements]  = useState<Supplement[]>([]);
+  const [logs,         setLogs]         = useState<SupplementLog[]>([]);
+  const [showCongrats, setShowCongrats] = useState(false);
 
   const load = useCallback(async () => {
     const [all, log] = await Promise.all([
@@ -479,9 +498,20 @@ function SupplementBlock() {
   };
 
   const takenCount = supplements.filter(s => isTaken(s.id!)).length;
-  const allDone    = takenCount === supplements.length;
+  const allDone    = supplements.length > 0 && takenCount === supplements.length;
+
+  // Show congrats once per calendar day when all supplements are marked
+  useEffect(() => {
+    if (!allDone) return;
+    const key = `fs_supp_congrats_${today}`;
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, '1');
+      setShowCongrats(true);
+    }
+  }, [allDone, today]);
 
   return (
+    <>
     <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 8px' }}>
@@ -547,8 +577,7 @@ function SupplementBlock() {
               <span style={{
                 flex: 1, fontSize: 13, fontWeight: 600,
                 color: taken ? 'var(--muted)' : 'var(--text)',
-                textDecoration: taken ? 'line-through' : 'none',
-                transition: 'all 0.2s ease',
+                transition: 'color 0.2s ease',
               }}>
                 {s.name}
               </span>
@@ -579,6 +608,41 @@ function SupplementBlock() {
         })}
       </div>
     </div>
+
+    {/* ── Congrats overlay ── */}
+    {showCongrats && (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 400,
+        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 24px',
+      }} onClick={() => setShowCongrats(false)}>
+        <div style={{
+          background: 'var(--surf)', borderRadius: 8, padding: '32px 28px',
+          border: '1px solid var(--accent)',
+          textAlign: 'center', maxWidth: 340, width: '100%',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+        }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
+          <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, marginBottom: 8 }}>
+            All Done!
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.65, marginBottom: 24 }}>
+            Every supplement logged today. Consistency compounds — you're building the habits that separate good athletes from elite ones.
+          </div>
+          <button
+            onClick={() => setShowCongrats(false)}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 8,
+              background: 'var(--accent)', border: 'none',
+              color: '#fff', fontSize: 14, fontWeight: 800,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >Let's Go 💪</button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -757,7 +821,7 @@ export default function HomeScreen() {
           Food Diary
         </div>
         <div style={{
-          background: 'var(--surf-diary)',
+          background: 'var(--surf)',
           border: '1px solid var(--edge)',
           borderRadius: 8,
           overflow: 'hidden',
