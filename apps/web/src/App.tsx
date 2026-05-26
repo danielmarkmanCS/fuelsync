@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from './store/authStore';
 import { useAppStore } from './store/appStore';
+import { useThemeStore } from './store/themeStore';
 import { getProfile, createProfile, updateProfile } from './api/auth';
 import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
@@ -17,8 +18,9 @@ import FoodScreen from './screens/FoodScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import SupplementsScreen from './screens/SupplementsScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
-type Tab = 'home' | 'food' | 'history' | 'supplements' | 'profile';
+type Tab = 'home' | 'food' | 'history' | 'supplements' | 'profile' | 'settings';
 const NAV_H = 64;
 
 const VOLT  = '#DFFF00';
@@ -71,18 +73,35 @@ function ProfileIcon({ active }: { active: boolean }) {
   );
 }
 
+function GearIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+    </svg>
+  );
+}
+
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
   { id: 'home',        label: 'HOME',    Icon: DiaryIcon },
   { id: 'food',        label: 'DIARY',   Icon: LogIcon },
-  { id: 'history',     label: 'MY WAY',  Icon: TrendsIcon },
+  { id: 'history',     label: 'TRENDS',  Icon: TrendsIcon },
   { id: 'supplements', label: 'SUPPS',   Icon: PillIcon },
   { id: 'profile',     label: 'PROFILE', Icon: ProfileIcon },
+  { id: 'settings',    label: 'SETTINGS', Icon: GearIcon },
 ];
 
 export default function App() {
   const { user, pinVerified, setUser, setPinVerified } = useAuthStore();
   const { activeTab, setActiveTab } = useAppStore();
+  const { isDark } = useThemeStore();
   const profileIncomplete = !!user && (!user.weightKg || !user.heightCm || !user.age);
+
+  // Apply data-theme to body for CSS variable switching
+  useEffect(() => {
+    document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+  }, [isDark]);
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
   const [stravaConnecting, setStravaConnecting] = useState(false);
@@ -340,8 +359,10 @@ export default function App() {
     <div style={{
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
-      background: '#050505',
-      backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0)',
+      background: 'var(--bg)',
+      backgroundImage: isDark
+        ? 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0)'
+        : 'none',
       backgroundSize: '32px 32px',
       overflow: 'hidden',
     }}>
@@ -352,33 +373,35 @@ export default function App() {
         {activeTab === 'history'     && <HistoryScreen />}
         {activeTab === 'supplements' && <SupplementsScreen />}
         {activeTab === 'profile'     && <ProfileSetupScreen />}
+        {activeTab === 'settings'    && <SettingsScreen />}
       </div>
 
       {/* Daily weight check-in modal */}
       {showWeightCheckIn && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          background: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px',
         }}>
           <div style={{
-            background: '#111111', borderRadius: 20, padding: '28px 24px',
+            background: 'var(--surf)', borderRadius: 20, padding: '28px 24px',
             width: '100%', maxWidth: 340, textAlign: 'center',
-            border: '1px solid #2A2A2A',
+            border: '1px solid var(--edge)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
           }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: '#FFFFFF', marginBottom: 6, letterSpacing: 0.5 }}>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: 0.5 }}>
               MORNING CHECK-IN
             </div>
-            <div style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 24, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.6 }}>
               Log today's weight to keep BMR and targets accurate.
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <button
                 onClick={() => setWeightInput(w => String(Math.max(20, parseFloat(w || '0') - 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: '#161616', border: '1px solid #2A2A2A', color: '#FFFFFF', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--text)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >−</button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
@@ -387,17 +410,17 @@ export default function App() {
                   step="0.1" min="20" max="300"
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '12px 36px 12px 12px',
-                    borderRadius: 12, border: '1.5px solid #DFFF00',
-                    background: '#050505', color: '#FFFFFF',
+                    borderRadius: 12, border: '1.5px solid var(--accent)',
+                    background: 'var(--bg)', color: 'var(--text)',
                     fontSize: 22, fontWeight: 700, textAlign: 'center',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                 />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#A0A0A0', fontSize: 12, fontWeight: 600 }}>kg</span>
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 12, fontWeight: 600 }}>kg</span>
               </div>
               <button
                 onClick={() => setWeightInput(w => String(Math.min(300, parseFloat(w || '0') + 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: '#161616', border: '1px solid #2A2A2A', color: '#DFFF00', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--accent)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >+</button>
             </div>
 
@@ -405,8 +428,9 @@ export default function App() {
               onClick={() => handleWeightLog(false)} disabled={weightSaving}
               style={{
                 width: '100%', padding: '13px 0', borderRadius: 12,
-                background: weightSaving ? '#2A2A2A' : '#DFFF00', border: 'none',
-                color: weightSaving ? '#A0A0A0' : '#000', fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                background: weightSaving ? 'var(--edge)' : 'var(--accent)', border: 'none',
+                color: weightSaving ? 'var(--muted)' : isDark ? '#000' : '#fff',
+                fontSize: 15, fontWeight: 800, cursor: 'pointer',
                 marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1,
               }}
             >
@@ -414,7 +438,7 @@ export default function App() {
             </button>
             <button
               onClick={() => handleWeightLog(true)}
-              style={{ background: 'none', border: 'none', color: '#A0A0A0', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
             >
               Skip today
             </button>
@@ -424,34 +448,36 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: '#080808',
-        borderTop: '1px solid #2A2A2A',
+        background: isDark ? '#080808' : 'var(--surf)',
+        borderTop: '1px solid var(--edge)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
       }}>
         {TABS.map(({ id, label, Icon }) => {
           const active = activeTab === id;
+          const accentColor = isDark ? VOLT : '#0066EE';
+          const mutedColor  = isDark ? MUTED : '#999999';
           return (
-            <button key={id} onClick={() => setActiveTab(id)} className="nrc-press" style={{
+            <button key={id} onClick={() => setActiveTab(id as Tab)} className="nrc-press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 3,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0',
-              position: 'relative',
+              alignItems: 'center', justifyContent: 'center', gap: 2,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
+              position: 'relative', minWidth: 0,
             }}>
               {active && (
                 <div style={{
                   position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: 32, height: 2, background: '#DFFF00', borderRadius: '0 0 2px 2px',
+                  width: 28, height: 2, background: accentColor, borderRadius: '0 0 2px 2px',
                 }} />
               )}
-              <div style={{ color: active ? VOLT : MUTED, transition: 'color 0.18s ease' }}>
+              <div style={{ color: active ? accentColor : mutedColor, transition: 'color 0.18s ease' }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: active ? 800 : 500, letterSpacing: 1,
+                fontSize: 8, fontWeight: active ? 800 : 500, letterSpacing: 0.5,
                 fontFamily: "'Barlow Condensed', sans-serif",
-                color: active ? VOLT : MUTED, transition: 'all 0.18s ease',
+                color: active ? accentColor : mutedColor, transition: 'all 0.18s ease',
               }}>
                 {label}
               </span>

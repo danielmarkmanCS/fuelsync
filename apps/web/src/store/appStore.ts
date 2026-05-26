@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 
+export type AppTab = 'home' | 'food' | 'history' | 'supplements' | 'profile' | 'settings';
+
 interface AppStore {
-  activeTab: 'home' | 'food' | 'history' | 'supplements' | 'profile';
+  activeTab: AppTab;
   pendingMealType: string | null;
-  setActiveTab: (tab: AppStore['activeTab']) => void;
+  setActiveTab: (tab: AppTab) => void;
   setPendingMealType: (meal: string | null) => void;
 }
 
