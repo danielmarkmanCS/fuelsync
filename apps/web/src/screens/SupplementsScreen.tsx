@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
-const BG    = '#050505';
-const SURF  = '#111111';
-const EDGE  = '#2A2A2A';
-const GREEN = '#DFFF00';
-const TEXT  = '#FFFFFF';
-const MUTED = '#A0A0A0';
-const RED   = '#FF4444';
+const BG      = 'var(--bg)';
+const SURF    = 'var(--surf)';
+const EDGE    = 'var(--edge)';
+const ACCENT  = 'var(--accent)';
+const TEXT    = 'var(--text)';
+const MUTED   = 'var(--muted)';
+const RED     = '#FF4444';
 
 const TIMINGS: Supplement['timing'][] = ['morning', 'pre-workout', 'post-workout', 'evening', 'anytime'];
 const TIMING_LABEL: Record<Supplement['timing'], string> = {
@@ -98,8 +98,8 @@ export default function SupplementsScreen() {
         <button
           onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
           style={{
-            background: GREEN, border: 'none', borderRadius: 10, padding: '8px 14px',
-            color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            background: ACCENT, border: 'none', borderRadius: 6, padding: '8px 14px',
+            color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
           }}
         >+ Add</button>
       </div>
@@ -109,7 +109,7 @@ export default function SupplementsScreen() {
         <div style={{ marginBottom: 20 }}>
           <div style={{ height: 4, background: EDGE, borderRadius: 2, overflow: 'hidden' }}>
             <div style={{
-              height: '100%', background: GREEN, borderRadius: 2,
+              height: '100%', background: ACCENT, borderRadius: 2,
               width: `${supplements.length ? (takenCount / supplements.length) * 100 : 0}%`,
               transition: 'width 0.3s ease',
             }} />
@@ -123,7 +123,7 @@ export default function SupplementsScreen() {
           <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
             {TIMING_LABEL[t]}
           </div>
-          <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+          <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
             {supplements.filter(s => s.timing === t).map((s, i, arr) => {
               const taken = isTaken(s.id!);
               return (
@@ -136,12 +136,12 @@ export default function SupplementsScreen() {
                     onClick={() => toggleTaken(s)}
                     style={{
                       width: 24, height: 24, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-                      border: `2px solid ${taken ? GREEN : EDGE}`,
-                      background: taken ? GREEN : 'transparent',
+                      border: `2px solid ${taken ? ACCENT : EDGE}`,
+                      background: taken ? ACCENT : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
-                    {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </button>
 
                   {/* Info */}
@@ -168,7 +168,10 @@ export default function SupplementsScreen() {
 
       {supplements.length === 0 && !adding && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: MUTED }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>💊</div>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12, opacity: 0.5 }}>
+            <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7"/>
+            <circle cx="17" cy="17" r="5"/><path d="M14.5 19.5l5-5"/>
+          </svg>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>No supplements yet</div>
           <div style={{ fontSize: 12 }}>Tap + Add to track your daily supplements</div>
         </div>
@@ -182,7 +185,7 @@ export default function SupplementsScreen() {
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }} onClick={e => { if (e.target === e.currentTarget) { setAdding(false); setEditId(null); } }}>
           <div style={{
-            background: SURF, borderRadius: '20px 20px 0 0', padding: '24px 20px 40px',
+            background: SURF, borderRadius: '8px 8px 0 0', padding: '24px 20px 40px',
             width: '100%', maxWidth: 480, border: `1px solid ${EDGE}`,
           }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, marginBottom: 20 }}>
@@ -195,7 +198,7 @@ export default function SupplementsScreen() {
               <input
                 value={name} onChange={e => setName(e.target.value)}
                 placeholder="e.g. Creatine, Vitamin D…"
-                style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: 10, border: `1.5px solid ${name ? GREEN : EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none' }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: 8, border: `1.5px solid ${name ? ACCENT : EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none' }}
               />
             </div>
 
@@ -207,14 +210,14 @@ export default function SupplementsScreen() {
                   value={dose} onChange={e => setDose(e.target.value)}
                   placeholder="5"
                   type="number" min="0"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: 10, border: `1.5px solid ${dose ? GREEN : EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none' }}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: 8, border: `1.5px solid ${dose ? ACCENT : EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none' }}
                 />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Unit</div>
                 <select
                   value={unit} onChange={e => setUnit(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: 10, border: `1.5px solid ${EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                  style={{ width: '100%', padding: '12px', borderRadius: 8, border: `1.5px solid ${EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
                 >
                   {COMMON_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
@@ -235,31 +238,30 @@ export default function SupplementsScreen() {
                       onClick={() => setTiming(t)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '11px 14px', borderRadius: 10,
-                        border: `1px solid ${sel ? GREEN : EDGE}`,
-                        background: sel ? `${GREEN}12` : BG,
+                        padding: '10px 12px', borderRadius: 8,
+                        border: `1px solid ${sel ? ACCENT : EDGE}`,
+                        background: sel ? 'var(--accent-muted)' : BG,
                         cursor: 'pointer', textAlign: 'left', width: '100%',
                         transition: 'all 0.15s ease',
-                        boxShadow: sel ? `0 0 0 1px ${GREEN}30` : 'none',
                       }}
                     >
                       {/* Checkbox */}
                       <div style={{
                         width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                        border: `2px solid ${sel ? GREEN : EDGE}`,
-                        background: sel ? GREEN : 'transparent',
+                        border: `2px solid ${sel ? ACCENT : EDGE}`,
+                        background: sel ? ACCENT : 'transparent',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.15s ease',
                       }}>
                         {sel && (
                           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                            <polyline points="2,5 4.5,7.5 8,2.5" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <polyline points="2,5 4.5,7.5 8,2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
                       </div>
                       <span style={{
                         fontSize: 13, fontWeight: sel ? 700 : 500,
-                        color: sel ? GREEN : TEXT,
+                        color: sel ? ACCENT : TEXT,
                         transition: 'color 0.15s ease',
                         fontFamily: 'inherit',
                       }}>
@@ -279,9 +281,9 @@ export default function SupplementsScreen() {
             <button
               onClick={handleSave} disabled={saving || !name.trim() || !dose.trim()}
               style={{
-                width: '100%', padding: '14px', borderRadius: 12,
-                background: (!name.trim() || !dose.trim()) ? EDGE : GREEN,
-                border: 'none', color: (!name.trim() || !dose.trim()) ? MUTED : '#000',
+                width: '100%', padding: '14px', borderRadius: 8,
+                background: (!name.trim() || !dose.trim()) ? EDGE : ACCENT,
+                border: 'none', color: (!name.trim() || !dose.trim()) ? MUTED : '#fff',
                 fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >{saving ? 'Saving…' : editId != null ? 'Save Changes' : 'Add Supplement'}</button>

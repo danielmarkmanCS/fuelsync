@@ -23,10 +23,6 @@ import SettingsScreen from './screens/SettingsScreen';
 type Tab = 'home' | 'food' | 'history' | 'supplements' | 'profile' | 'settings';
 const NAV_H = 64;
 
-const VOLT  = '#DFFF00';
-const TEXT  = '#FFFFFF';
-const MUTED = '#A0A0A0';
-
 function DiaryIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -83,11 +79,11 @@ function GearIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',        label: 'HOME',    Icon: DiaryIcon },
-  { id: 'food',        label: 'DIARY',   Icon: LogIcon },
-  { id: 'history',     label: 'TRENDS',  Icon: TrendsIcon },
-  { id: 'supplements', label: 'SUPPS',   Icon: PillIcon },
-  { id: 'profile',     label: 'PROFILE', Icon: ProfileIcon },
+  { id: 'home',        label: 'HOME',     Icon: DiaryIcon },
+  { id: 'food',        label: 'DIARY',    Icon: LogIcon },
+  { id: 'history',     label: 'TRENDS',   Icon: TrendsIcon },
+  { id: 'supplements', label: 'SUPPS',    Icon: PillIcon },
+  { id: 'profile',     label: 'PROFILE',  Icon: ProfileIcon },
   { id: 'settings',    label: 'SETTINGS', Icon: GearIcon },
 ];
 
@@ -183,9 +179,10 @@ export default function App() {
     })();
   }, []);
 
-  // Daily weight check-in — once per day after user is ready
+  // Daily weight check-in — once per day, only after 08:00
   useEffect(() => {
     if (!user || !pinVerified || booting || weightChecked.current) return;
+    if (new Date().getHours() < 8) return;   // don't nag before morning
     weightChecked.current = true;
     const today = new Date().toISOString().split('T')[0];
     db.weight_logs.where('date').equals(today).count().then((count) => {
@@ -258,31 +255,27 @@ export default function App() {
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: '#050505',
-        backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0)',
-        backgroundSize: '32px 32px',
+        background: 'var(--bg)',
         gap: 0, position: 'relative', overflow: 'hidden',
       }}>
-        {/* volt glow orb */}
-        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(223,255,0,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: '#FFFFFF' }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--text)' }}>
             FUEL
           </div>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: '#DFFF00' }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--accent)' }}>
             SYNC
           </div>
           <div style={{ marginTop: 40, display: 'flex', gap: 6 }}>
             {[0, 1, 2].map((i) => (
               <div key={i} style={{
                 width: 5, height: 5, borderRadius: '50%',
-                background: '#DFFF00',
+                background: 'var(--accent)',
                 opacity: i === 0 ? 1 : 0.3,
                 animation: `pulse 1.2s ${i * 0.2}s infinite ease-in-out`,
               }} />
             ))}
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, letterSpacing: 5, marginTop: 20, fontWeight: 700, textTransform: 'uppercase' }}>
+          <div style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: 5, marginTop: 20, fontWeight: 700, textTransform: 'uppercase' }}>
             {stravaConnecting ? 'Syncing with Strava' : 'Loading'}
           </div>
         </div>
@@ -360,10 +353,6 @@ export default function App() {
       position: 'relative', height: '100dvh',
       maxWidth: 480, margin: '0 auto',
       background: 'var(--bg)',
-      backgroundImage: isDark
-        ? 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.025) 1px, transparent 0)'
-        : 'none',
-      backgroundSize: '32px 32px',
       overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
@@ -385,23 +374,21 @@ export default function App() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px',
         }}>
           <div style={{
-            background: 'var(--surf)', borderRadius: 20, padding: '28px 24px',
+            background: 'var(--surf)', borderRadius: 8, padding: '24px 20px',
             width: '100%', maxWidth: 340, textAlign: 'center',
             border: '1px solid var(--edge)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
           }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>⚖️</div>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 6, letterSpacing: 0.5 }}>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: 0.5 }}>
               MORNING CHECK-IN
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.6 }}>
               Log today's weight to keep BMR and targets accurate.
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <button
                 onClick={() => setWeightInput(w => String(Math.max(20, parseFloat(w || '0') - 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--text)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--text)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >−</button>
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
@@ -410,7 +397,7 @@ export default function App() {
                   step="0.1" min="20" max="300"
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '12px 36px 12px 12px',
-                    borderRadius: 12, border: '1.5px solid var(--accent)',
+                    borderRadius: 8, border: '1.5px solid var(--accent)',
                     background: 'var(--bg)', color: 'var(--text)',
                     fontSize: 22, fontWeight: 700, textAlign: 'center',
                     outline: 'none', fontFamily: 'inherit',
@@ -420,16 +407,16 @@ export default function App() {
               </div>
               <button
                 onClick={() => setWeightInput(w => String(Math.min(300, parseFloat(w || '0') + 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--accent)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--accent)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
               >+</button>
             </div>
 
             <button
               onClick={() => handleWeightLog(false)} disabled={weightSaving}
               style={{
-                width: '100%', padding: '13px 0', borderRadius: 12,
+                width: '100%', padding: '13px 0', borderRadius: 8,
                 background: weightSaving ? 'var(--edge)' : 'var(--accent)', border: 'none',
-                color: weightSaving ? 'var(--muted)' : isDark ? '#000' : '#fff',
+                color: weightSaving ? 'var(--muted)' : '#fff',
                 fontSize: 15, fontWeight: 800, cursor: 'pointer',
                 marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1,
               }}
@@ -448,7 +435,7 @@ export default function App() {
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
-        background: isDark ? '#080808' : 'var(--surf)',
+        background: 'var(--surf)',
         borderTop: '1px solid var(--edge)',
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -456,8 +443,6 @@ export default function App() {
       }}>
         {TABS.map(({ id, label, Icon }) => {
           const active = activeTab === id;
-          const accentColor = isDark ? VOLT : '#0066EE';
-          const mutedColor  = isDark ? MUTED : '#999999';
           return (
             <button key={id} onClick={() => setActiveTab(id as Tab)} className="nrc-press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
@@ -468,16 +453,16 @@ export default function App() {
               {active && (
                 <div style={{
                   position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: 28, height: 2, background: accentColor, borderRadius: '0 0 2px 2px',
+                  width: 28, height: 2, background: 'var(--accent)', borderRadius: '0 0 2px 2px',
                 }} />
               )}
-              <div style={{ color: active ? accentColor : mutedColor, transition: 'color 0.18s ease' }}>
+              <div style={{ color: active ? 'var(--accent)' : 'var(--muted)', transition: 'color 0.18s ease' }}>
                 <Icon active={active} />
               </div>
               <span style={{
                 fontSize: 8, fontWeight: active ? 800 : 500, letterSpacing: 0.5,
                 fontFamily: "'Barlow Condensed', sans-serif",
-                color: active ? accentColor : mutedColor, transition: 'all 0.18s ease',
+                color: active ? 'var(--accent)' : 'var(--muted)', transition: 'all 0.18s ease',
               }}>
                 {label}
               </span>

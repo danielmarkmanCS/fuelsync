@@ -8,20 +8,22 @@ import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
+import { useThemeStore } from '../store/themeStore';
 
-const BG      = '#050505';
-const SURF    = '#111111';
-const SURF2   = '#161616';
-const EDGE    = '#2A2A2A';
-const TEXT    = '#FFFFFF';
-const MUTED   = '#A0A0A0';
-const GREEN   = '#DFFF00';
-const ORANGE  = '#FF6B35';
-const YELLOW  = '#DFFF00';
-const PROT    = '#FF6B35';
+const BG      = 'var(--bg)';
+const SURF    = 'var(--surf)';
+const SURF2   = 'var(--surf2)';
+const EDGE    = 'var(--edge)';
+const TEXT    = 'var(--text)';
+const MUTED   = 'var(--muted)';
+const GREEN      = '#22C55E';   // success green
+const ORANGE     = 'var(--accent)';  // system accent (blue)
+const ORANGE_MUT = 'var(--accent-muted)';
+const YELLOW     = 'var(--accent)';  // weight today highlight
+const PROT       = '#38BDF8';   // protein — blue
 const RED     = '#FF4444';
-const FAT_CLR = '#A78BFA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.7)';
+const FAT_CLR = '#F59E0B';  // fat — amber
+const CARD_SHADOW = 'var(--shadow-md)';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',    desc: 'Desk job, little or no exercise',   mult: 1.2,   icon: '🪑' },
@@ -50,13 +52,14 @@ function getBMILabel(bmi: number): { label: string; color: string } {
 
 const inp: React.CSSProperties = {
   width: '100%', background: SURF2, border: `1px solid ${EDGE}`,
-  borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
+  borderRadius: 8, color: TEXT, fontSize: 15, padding: '14px 15px',
   outline: 'none', boxSizing: 'border-box',
   fontFamily: 'inherit', fontWeight: 700,
 };
 
 
 export default function ProfileSetupScreen() {
+  const { isDark } = useThemeStore();
   const { user, setUser, logout } = useAuthStore();
   const name    = user?.displayName || 'ATHLETE';
   const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
@@ -70,8 +73,6 @@ export default function ProfileSetupScreen() {
   const [saving,        setSaving]        = useState(false);
   const [saved,         setSaved]         = useState(false);
   const [error,         setError]         = useState('');
-  const [syncing,       setSyncing]       = useState(false);
-  const [syncDone,      setSyncDone]      = useState<string | null>(null);
 
   // Weight log
   const [weightLogs,      setWeightLogs]      = useState<WeightLog[]>([]);
@@ -150,49 +151,52 @@ export default function ProfileSetupScreen() {
     finally { setSaving(false); }
   };
 
-  const handlePushAllToCloud = async () => {
-    setSyncing(true); setSyncDone(null);
-    try {
-      const rows = await db.food_logs.toArray();
-      let pushed = 0;
-      for (const row of rows) {
-        const id = row.sync_id ?? String(row.id!);
-        await syncAddLog({
-          id, food_name: row.food_name, calories: row.calories,
-          protein: row.protein, carbs: row.carbs, fat: row.fat,
-          weight_grams: row.weight_grams, meal_type: row.meal_type,
-          image_url: row.image_url, ingredients: row.ingredients,
-          logged_at: row.logged_at,
-          date: row.date ?? row.logged_at?.split('T')[0] ?? null,
-          fiber_g: row.fiber_g ?? null, cholesterol_mg: row.cholesterol_mg ?? null,
-          sodium_mg: row.sodium_mg ?? null, vitamin_c_mg: row.vitamin_c_mg ?? null,
-          vitamin_d_mcg: row.vitamin_d_mcg ?? null, calcium_mg: row.calcium_mg ?? null,
-          iron_mg: row.iron_mg ?? null,
-        });
-        if (!row.sync_id) await db.food_logs.update(row.id!, { sync_id: id });
-        pushed++;
-      }
-      setSyncDone(`${pushed} log${pushed === 1 ? '' : 's'} pushed to cloud`);
-      setTimeout(() => setSyncDone(null), 4000);
-    } catch { setSyncDone('Sync failed — check connection'); }
-    finally { setSyncing(false); }
-  };
+  // Auto-sync food logs to cloud every 2 hours (background, silent)
+  useEffect(() => {
+    if (!getSyncToken()) return;
+    const runSync = async () => {
+      try {
+        const rows = await db.food_logs.toArray();
+        for (const row of rows) {
+          const id = row.sync_id ?? String(row.id!);
+          await syncAddLog({
+            id, food_name: row.food_name, calories: row.calories,
+            protein: row.protein, carbs: row.carbs, fat: row.fat,
+            weight_grams: row.weight_grams, meal_type: row.meal_type,
+            image_url: row.image_url, ingredients: row.ingredients,
+            logged_at: row.logged_at,
+            date: row.date ?? row.logged_at?.split('T')[0] ?? null,
+            fiber_g: row.fiber_g ?? null, cholesterol_mg: row.cholesterol_mg ?? null,
+            sodium_mg: row.sodium_mg ?? null, vitamin_c_mg: row.vitamin_c_mg ?? null,
+            vitamin_d_mcg: row.vitamin_d_mcg ?? null, calcium_mg: row.calcium_mg ?? null,
+            iron_mg: row.iron_mg ?? null,
+          }).catch(() => {});
+          if (!row.sync_id) await db.food_logs.update(row.id!, { sync_id: id }).catch(() => {});
+        }
+      } catch { /* silent */ }
+    };
+    runSync();
+    const interval = setInterval(runSync, 2 * 60 * 60 * 1000); // every 2 hours
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(145deg, #0A0A0A 0%, #1A0900 40%, #FF8000 100%)',
+        background: isDark
+          ? 'linear-gradient(145deg, #0D1117 0%, #0E1E3A 60%, #1A3A6E 100%)'
+          : 'linear-gradient(145deg, #0055CC 0%, #0066EE 60%, #3388FF 100%)',
         padding: '44px 22px 32px', position: 'relative', overflow: 'hidden',
       }}>
-        <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,128,0,0.12)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(245,197,24,0.08)' }} />
+        <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(47,129,247,0.12)' }} />
+        <div className="orb2" style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(47,129,247,0.07)' }} />
 
         <div className="nrc-a nrc-a1" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Avatar */}
           <div style={{
-            width: 60, height: 60, borderRadius: 20,
+            width: 60, height: 60, borderRadius: 8,
             background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
@@ -251,7 +255,7 @@ export default function ProfileSetupScreen() {
             ].map(({ label, value, unit, color, desc }) => (
               <div key={label} style={{
                 background: `linear-gradient(160deg, ${color}20 0%, ${SURF} 60%)`,
-                borderRadius: 16, padding: '14px 12px',
+                borderRadius: 8, padding: '14px 12px',
                 border: `1px solid ${color}18`, borderTop: `3px solid ${color}`,
                 boxShadow: CARD_SHADOW, textAlign: 'center',
               }}>
@@ -271,8 +275,8 @@ export default function ProfileSetupScreen() {
           {/* TDEE context bar */}
           {tdee && (
             <div style={{
-              background: `${ORANGE}06`, borderRadius: 14, padding: '13px 16px',
-              border: `1px solid ${ORANGE}15`, borderLeft: `3px solid ${ORANGE}`,
+              background: ORANGE_MUT, borderRadius: 8, padding: '13px 16px',
+              border: '1px solid var(--accent)', borderLeft: '3px solid var(--accent)',
               marginBottom: 0,
             }}>
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: ORANGE, textTransform: 'uppercase', marginBottom: 4 }}>
@@ -297,7 +301,7 @@ export default function ProfileSetupScreen() {
               { label: 'Age',    value: `${user!.age}`,      unit: 'YR', color: GREEN  },
             ].map(({ label, value, unit, color }) => (
               <div key={label} style={{
-                background: SURF, borderRadius: 16, padding: '16px 12px',
+                background: SURF, borderRadius: 8, padding: '16px 12px',
                 border: `1px solid ${EDGE}`, borderTop: `3px solid ${color}`,
                 boxShadow: CARD_SHADOW, textAlign: 'center',
               }}>
@@ -336,13 +340,13 @@ export default function ProfileSetupScreen() {
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
           {(['male', 'female'] as const).map((g) => (
             <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
-              flex: 1, padding: 15, borderRadius: 12, cursor: 'pointer',
-              border: `1px solid ${gender === g ? ORANGE : EDGE}`,
-              borderTop: gender === g ? `3px solid ${ORANGE}` : `1px solid ${EDGE}`,
-              background: gender === g ? `${ORANGE}08` : SURF2,
+              flex: 1, padding: 15, borderRadius: 8, cursor: 'pointer',
+              border: `1px solid ${gender === g ? 'var(--accent)' : EDGE}`,
+              borderTop: gender === g ? '3px solid var(--accent)' : `1px solid ${EDGE}`,
+              background: gender === g ? ORANGE_MUT : SURF2,
               color: gender === g ? ORANGE : MUTED,
               fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
-              boxShadow: gender === g ? `0 4px 16px ${ORANGE}14` : 'none',
+              // no glow
             }}>
               {g.charAt(0).toUpperCase() + g.slice(1)}
             </button>
@@ -358,12 +362,12 @@ export default function ProfileSetupScreen() {
             const active = activityLevel === value;
             return (
               <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
-                textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
-                background: active ? `${ORANGE}07` : SURF2,
-                border: `1px solid ${active ? ORANGE : EDGE}`,
-                borderLeft: active ? `3px solid ${ORANGE}` : `1px solid ${EDGE}`,
+                textAlign: 'left', padding: '14px 16px', borderRadius: 8, cursor: 'pointer',
+                background: active ? ORANGE_MUT : SURF2,
+                border: `1px solid ${active ? 'var(--accent)' : EDGE}`,
+                borderLeft: active ? '3px solid var(--accent)' : `1px solid ${EDGE}`,
                 transition: 'all 0.2s',
-                boxShadow: active ? `0 4px 16px ${ORANGE}12` : 'none',
+                // no glow
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
                 <div>
@@ -387,7 +391,7 @@ export default function ProfileSetupScreen() {
           Weight Log
         </div>
         <div style={{
-          background: SURF, borderRadius: 18, border: `1px solid ${EDGE}`,
+          background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`,
           padding: '16px 16px 14px', marginBottom: 28, boxShadow: CARD_SHADOW,
         }}>
           {/* Log today */}
@@ -405,9 +409,9 @@ export default function ProfileSetupScreen() {
               disabled={savingWeight || !todayWeightInput.trim()}
               className="nrc-press"
               style={{
-                background: savingWeight || !todayWeightInput.trim() ? SURF2 : `${ORANGE}12`,
-                border: `1px solid ${savingWeight || !todayWeightInput.trim() ? EDGE : ORANGE + '40'}`,
-                borderRadius: 12, color: savingWeight || !todayWeightInput.trim() ? MUTED : ORANGE,
+                background: savingWeight || !todayWeightInput.trim() ? SURF2 : ORANGE_MUT,
+                border: `1px solid ${savingWeight || !todayWeightInput.trim() ? EDGE : 'var(--accent)'}`,
+                borderRadius: 8, color: savingWeight || !todayWeightInput.trim() ? MUTED : ORANGE,
                 fontWeight: 800, fontSize: 13, cursor: 'pointer', padding: '0 18px',
                 flexShrink: 0, whiteSpace: 'nowrap',
               }}
@@ -416,56 +420,15 @@ export default function ProfileSetupScreen() {
             </button>
           </div>
 
-          {/* Chart + history */}
+          {/* Weight history — last 7 entries */}
           {weightLogs.length > 0 && (() => {
-            const reversed = [...weightLogs].reverse();
-            const min = Math.min(...reversed.map((l) => l.weightKg)) - 1;
-            const max = Math.max(...reversed.map((l) => l.weightKg)) + 1;
-            const range = max - min || 1;
-            const CHART_H = 64;
             const today = new Date().toISOString().split('T')[0];
+            const min = Math.min(...weightLogs.map((l) => l.weightKg));
+            const max = Math.max(...weightLogs.map((l) => l.weightKg));
+            const range = max - min || 1;
 
             return (
               <>
-                {/* Mini sparkline */}
-                <div style={{ position: 'relative', height: CHART_H, marginBottom: 12 }}>
-                  <svg width="100%" height={CHART_H} style={{ overflow: 'visible' }}>
-                    <defs>
-                      <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={YELLOW} stopOpacity="0.3" />
-                        <stop offset="100%" stopColor={YELLOW} stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    {reversed.length > 1 && (() => {
-                      const pts = reversed.map((l, i) => {
-                        const x = (i / (reversed.length - 1)) * 100;
-                        const y = CHART_H - ((l.weightKg - min) / range) * CHART_H;
-                        return `${x}%,${y}`;
-                      });
-                      const area = `M ${pts[0]} ` + pts.slice(1).map((p) => `L ${p}`).join(' ') + ` L 100%,${CHART_H} L 0%,${CHART_H} Z`;
-                      const line = `M ${pts[0]} ` + pts.slice(1).map((p) => `L ${p}`).join(' ');
-                      return (
-                        <>
-                          <path d={area} fill="url(#weightGrad)" />
-                          <path d={line} fill="none" stroke={YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          {reversed.map((l, i) => {
-                            const x = `${(i / (reversed.length - 1)) * 100}%`;
-                            const y = CHART_H - ((l.weightKg - min) / range) * CHART_H;
-                            const isToday2 = l.date === today;
-                            return (
-                              <circle key={i} cx={x} cy={y} r={isToday2 ? 4 : 2.5}
-                                fill={isToday2 ? YELLOW : SURF}
-                                stroke={YELLOW} strokeWidth={isToday2 ? 2 : 1.5}
-                              />
-                            );
-                          })}
-                        </>
-                      );
-                    })()}
-                  </svg>
-                </div>
-
-                {/* Last 7 entries */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {weightLogs.slice(0, 7).map((log, i) => {
                     const prev = weightLogs[i + 1];
@@ -480,7 +443,7 @@ export default function ProfileSetupScreen() {
                           <div style={{
                             height: '100%',
                             width: `${((log.weightKg - min) / range) * 100}%`,
-                            background: log.date === today ? YELLOW : `${YELLOW}70`,
+                            background: log.date === today ? 'var(--accent)' : 'var(--accent-muted)',
                             borderRadius: 2,
                             transition: 'width 0.4s ease',
                           }} />
@@ -510,8 +473,8 @@ export default function ProfileSetupScreen() {
 
         {/* Goal Mode */}
         <div style={{
-          background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
-          borderRadius: 18, padding: '18px 18px', marginBottom: 20,
+          background: SURF,
+          borderRadius: 8, padding: '18px 18px', marginBottom: 20,
           border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
         }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
@@ -524,7 +487,7 @@ export default function ProfileSetupScreen() {
               ['gain',     'Gain Muscle',   YELLOW,  '+300 kcal/day'],
             ] as const).map(([mode, label, color, sub]) => (
               <button key={mode} onClick={() => handleSetGoalMode(mode)} style={{
-                flex: 1, padding: '12px 6px', borderRadius: 12,
+                flex: 1, padding: '12px 6px', borderRadius: 8,
                 border: `1px solid ${goalMode === mode ? color + '60' : EDGE}`,
                 background: goalMode === mode ? `${color}14` : SURF2,
                 color: goalMode === mode ? color : MUTED,
@@ -552,8 +515,8 @@ export default function ProfileSetupScreen() {
 
         {/* Custom Targets */}
         <div style={{
-          background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
-          borderRadius: 18, padding: '18px 18px', marginBottom: 20,
+          background: SURF,
+          borderRadius: 8, padding: '18px 18px', marginBottom: 20,
           border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -565,7 +528,7 @@ export default function ProfileSetupScreen() {
               style={{
                 background: customTargets.enabled ? `${GREEN}18` : SURF2,
                 border: `1px solid ${customTargets.enabled ? GREEN + '40' : EDGE}`,
-                borderRadius: 20, padding: '5px 14px',
+                borderRadius: 8, padding: '5px 14px',
                 color: customTargets.enabled ? GREEN : MUTED,
                 fontWeight: 800, fontSize: 11, cursor: 'pointer', letterSpacing: 0.5,
               }}
@@ -604,7 +567,7 @@ export default function ProfileSetupScreen() {
         {error && (
           <div style={{
             color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px',
-            background: 'rgba(239,51,64,0.06)', borderRadius: 12, fontWeight: 700,
+            background: 'rgba(239,51,64,0.06)', borderRadius: 8, fontWeight: 700,
             border: '1px solid rgba(239,51,64,0.18)',
           }}>
             {error}
@@ -612,12 +575,11 @@ export default function ProfileSetupScreen() {
         )}
 
         <button onClick={handleSave} disabled={saving} className="nrc-press" style={{
-          width: '100%', padding: '17px 0', borderRadius: 16, marginBottom: 14,
-          background: saved ? `${GREEN}12` : saving ? SURF2 : `linear-gradient(135deg, ${ORANGE} 0%, ${YELLOW} 100%)`,
-          color: saved ? GREEN : saving ? MUTED : '#fff',
+          width: '100%', padding: '17px 0', borderRadius: 8, marginBottom: 14,
+          background: saved ? 'var(--accent-muted)' : saving ? SURF2 : 'var(--accent)',
+          color: saved ? 'var(--accent)' : saving ? MUTED : '#fff',
           fontWeight: 900, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer',
-          border: saved ? `1px solid ${GREEN}35` : '1px solid transparent',
-          boxShadow: (!saved && !saving) ? `0 4px 16px ${ORANGE}35, 0 8px 32px ${ORANGE}20, inset 0 1px 0 rgba(255,255,255,0.18)` : 'none',
+          border: saved ? '1px solid var(--accent)' : '1px solid transparent',
           transition: 'all 0.25s',
           letterSpacing: 0.5,
         }}>
@@ -626,35 +588,20 @@ export default function ProfileSetupScreen() {
 
         {/* Account Section */}
         <div style={{
-          background: `linear-gradient(160deg, ${SURF} 0%, ${SURF2} 100%)`,
-          borderRadius: 18, padding: '18px 18px',
+          background: SURF,
+          borderRadius: 8, padding: '18px 18px',
           border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
         }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
             Account
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {getSyncToken() && (
-              <>
-                <button onClick={handlePushAllToCloud} disabled={syncing} className="nrc-press" style={{
-                  width: '100%', padding: 14, borderRadius: 12,
-                  border: `1px solid ${syncDone && !syncDone.includes('failed') ? GREEN + '35' : EDGE}`,
-                  background: syncDone && !syncDone.includes('failed') ? `${GREEN}08` : SURF2,
-                  color: syncDone && !syncDone.includes('failed') ? GREEN : ORANGE,
-                  fontWeight: 700, fontSize: 13, cursor: syncing ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                }}>
-                  {syncing ? 'Pushing to cloud…' : syncDone ?? '↑ Push all logs to cloud'}
-                </button>
-
-              </>
-            )}
             <button onClick={async () => {
               if (!window.confirm('Sign out? Your local data stays on this device.')) return;
               clearSyncToken();
               logout();
             }} className="nrc-press" style={{
-              width: '100%', padding: 14, borderRadius: 12,
+              width: '100%', padding: 14, borderRadius: 8,
               border: `1px solid ${EDGE}`, background: SURF2, color: MUTED,
               fontWeight: 700, fontSize: 13, cursor: 'pointer',
             }}>

@@ -4,20 +4,21 @@ import { playFoodLogSound } from '../utils/sounds';
 import { useNutrition } from '../hooks/useNutrition';
 import { db } from '../lib/db';
 
-const BG      = '#050505';
-const SURF    = '#111111';
-const SURF2   = '#161616';
-const EDGE    = '#2A2A2A';
-const TEXT    = '#FFFFFF';
-const MUTED   = '#A0A0A0';
-const MUTED2  = '#444444';
-const GREEN   = '#DFFF00';
-const ORANGE  = '#FF6B35';
-const YELLOW  = '#DFFF00';
-const PROT    = '#FF6B35';
-const RED     = '#FF4444';
-const FAT_CLR = '#A78BFA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.7)';
+const BG      = 'var(--bg)';
+const SURF    = 'var(--surf)';
+const SURF2   = 'var(--surf2)';
+const EDGE    = 'var(--edge)';
+const TEXT    = 'var(--text)';
+const MUTED   = 'var(--muted)';
+const MUTED2  = 'var(--muted2)';
+const GREEN      = '#22C55E';   // carbs
+const ORANGE     = 'var(--accent)';  // was orange — now uses system accent (blue)
+const ORANGE_MUT = 'var(--accent-muted)';
+const YELLOW     = '#22C55E';   // carbs (alias)
+const PROT    = '#38BDF8';   // protein — blue
+const RED     = '#EF4444';
+const FAT_CLR = '#F59E0B';   // fat — amber
+const CARD_SHADOW = 'var(--shadow-md)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -133,11 +134,11 @@ function StreakMilestone({ streak }: { streak: number }) {
     <div className="milestone-in" style={{
       background: `linear-gradient(135deg, ${m.color}18, ${m.color}06)`,
       border: `1px solid ${m.color}40`,
-      borderRadius: 20, padding: '18px 20px', marginBottom: 16,
+      borderRadius: 8, padding: '18px 20px', marginBottom: 16,
       display: 'flex', alignItems: 'center', gap: 16,
       boxShadow: `0 4px 24px ${m.color}18`,
     }}>
-      <div style={{ width: 52, height: 52, borderRadius: 14, background: `${m.color}20`, border: `2px solid ${m.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ width: 52, height: 52, borderRadius: 8, background: `${m.color}20`, border: `2px solid ${m.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: m.color, letterSpacing: -1 }}>{streak}</div>
       </div>
       <div>
@@ -170,7 +171,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
 
   return (
     <div style={{
-      background: SURF, borderRadius: 20, padding: '18px 16px 14px',
+      background: SURF, borderRadius: 8, padding: '18px 16px 14px',
       border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -195,7 +196,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
           position: 'absolute',
           top: CHART_H - (goalCal / maxCal) * CHART_H,
           left: 0, right: 0, height: 1,
-          borderTop: `1.5px dashed ${ORANGE}60`,
+          borderTop: '1.5px dashed var(--accent)',
           zIndex: 1, pointerEvents: 'none',
         }} />
 
@@ -239,7 +240,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-        <div style={{ width: 16, height: 0, borderTop: `2px dashed ${ORANGE}70` }} />
+        <div style={{ width: 16, height: 0, borderTop: '2px dashed var(--accent)' }} />
         <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
           Goal {goalCal.toLocaleString()} kcal
         </div>
@@ -268,7 +269,7 @@ function StatsRow({ streak, totalDays, avgCal, goalCal }: { streak: number; tota
       ].map(({ label, value, unit, color, highlight }) => (
         <div key={label} style={{
           background: highlight ? `${color}08` : SURF,
-          borderRadius: 16, padding: '14px 12px',
+          borderRadius: 8, padding: '14px 12px',
           border: `1px solid ${highlight ? color + '25' : EDGE}`,
           borderTop: `3px solid ${color}`,
           boxShadow: highlight ? `0 4px 16px ${color}14` : CARD_SHADOW,
@@ -406,9 +407,9 @@ export default function HistoryScreen() {
 
       {/* ── HEADER ── */}
       <div style={{
-        background: 'linear-gradient(180deg, #1A1A1A 0%, #0A0A0A 100%)',
+        background: 'var(--surf)',
         padding: '32px 16px 0', position: 'relative', overflow: 'hidden',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid var(--edge)',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
           <div>
@@ -421,8 +422,8 @@ export default function HistoryScreen() {
           </div>
           {streak >= 2 && (
             <div style={{
-              background: `${ORANGE}20`, border: `1px solid ${ORANGE}40`,
-              borderRadius: 20, padding: '4px 12px',
+              background: ORANGE_MUT, border: '1px solid var(--accent)',
+              borderRadius: 8, padding: '4px 12px',
               fontSize: 11, fontWeight: 800, color: ORANGE,
             }}>
               {streak} day streak
@@ -494,7 +495,7 @@ export default function HistoryScreen() {
               return (
                 <div key={day.date} className="card-lift" style={{
                   background: `linear-gradient(135deg, ${barColor}18 0%, ${SURF} 50%)`,
-                  borderRadius: 20, border: `1px solid ${barColor}18`,
+                  borderRadius: 8, border: `1px solid ${barColor}18`,
                   marginBottom: 12, overflow: 'hidden', boxShadow: CARD_SHADOW,
                   borderLeft: `3px solid ${barColor}`,
                 }}>
@@ -573,7 +574,7 @@ export default function HistoryScreen() {
                   </button>
 
                   {isOpen && (
-                    <div style={{ borderTop: `1px solid ${EDGE}`, background: `${ORANGE}02` }}>
+                    <div style={{ borderTop: `1px solid ${EDGE}`, background: 'transparent' }}>
                       {day.items.filter((i) => !i.removed).map((item, idx, arr) => {
                         const hasIngs    = item.ingredients && item.ingredients.length > 1;
                         const isFoodOpen = expandedFood === item.id;
@@ -603,8 +604,8 @@ export default function HistoryScreen() {
                               {hasIngs && (
                                 <button onClick={() => setExpandedFood(isFoodOpen ? null : item.id)} style={{
                                   width: 26, height: 26, borderRadius: 8,
-                                  border: `1px solid ${isFoodOpen ? ORANGE : EDGE}`,
-                                  background: isFoodOpen ? `${ORANGE}10` : SURF2,
+                                  border: `1px solid ${isFoodOpen ? 'var(--accent)' : EDGE}`,
+                                  background: isFoodOpen ? ORANGE_MUT : SURF2,
                                   color: isFoodOpen ? ORANGE : MUTED,
                                   fontWeight: 700, fontSize: 10, cursor: 'pointer', flexShrink: 0,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -679,7 +680,7 @@ export default function HistoryScreen() {
                 placeholder={`Search ${foodDir.length} foods…`}
                 style={{
                   width: '100%', background: SURF, border: `1px solid ${EDGE}`,
-                  borderRadius: 14, color: TEXT, fontSize: 14, fontWeight: 600,
+                  borderRadius: 8, color: TEXT, fontSize: 14, fontWeight: 600,
                   padding: '12px 40px 12px 16px', outline: 'none',
                   fontFamily: 'inherit', boxSizing: 'border-box',
                 }}
@@ -706,7 +707,7 @@ export default function HistoryScreen() {
                 </div>
               </div>
             ) : (
-              <div style={{ background: SURF, borderRadius: 20, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
+              <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
                 {filteredDir.map((entry, idx) => {
                   const logDate = entry.lastLogged.slice(0, 10);
                   const timeStr = new Date(entry.lastLogged).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -724,7 +725,7 @@ export default function HistoryScreen() {
                             {entry.count > 1 && (
                               <div style={{
                                 fontSize: 9, fontWeight: 800, color: ORANGE,
-                                background: `${ORANGE}12`, border: `1px solid ${ORANGE}25`,
+                                background: ORANGE_MUT, border: '1px solid var(--accent)',
                                 borderRadius: 10, padding: '2px 7px', flexShrink: 0, letterSpacing: 0.3,
                               }}>
                                 ×{entry.count}
@@ -751,8 +752,8 @@ export default function HistoryScreen() {
                         {hasIngs && (
                           <button onClick={() => setExpandedFood(isFoodOpen ? null : logId)} style={{
                             width: 28, height: 28, borderRadius: 8,
-                            border: `1px solid ${isFoodOpen ? ORANGE : EDGE}`,
-                            background: isFoodOpen ? `${ORANGE}10` : SURF2,
+                            border: `1px solid ${isFoodOpen ? 'var(--accent)' : EDGE}`,
+                            background: isFoodOpen ? ORANGE_MUT : SURF2,
                             color: isFoodOpen ? ORANGE : MUTED,
                             fontWeight: 700, fontSize: 11, cursor: 'pointer', flexShrink: 0,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -764,8 +765,8 @@ export default function HistoryScreen() {
                           title="Add to today's fuel"
                           style={{
                             width: 32, height: 32, borderRadius: 10,
-                            border: `1px solid ${relogged === logId ? GREEN : ORANGE + '40'}`,
-                            background: relogged === logId ? `${GREEN}15` : `${ORANGE}10`,
+                            border: `1px solid ${relogged === logId ? GREEN : 'var(--accent)'}`,
+                            background: relogged === logId ? `${GREEN}15` : ORANGE_MUT,
                             color: relogged === logId ? GREEN : ORANGE,
                             fontWeight: 900, fontSize: 16, cursor: relogged === logId ? 'default' : 'pointer',
                             flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',

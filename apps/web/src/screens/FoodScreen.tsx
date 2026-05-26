@@ -17,20 +17,20 @@ import { getMealCalTargets, setMealCalTargets } from '../lib/mealCalTargets';
 import type { MealCalTargets } from '../lib/mealCalTargets';
 import { db } from '../lib/db';
 
-const BG      = '#050505';
-const SURF    = '#111111';
-const SURF2   = '#161616';
-const EDGE    = '#2A2A2A';
-const TEXT    = '#FFFFFF';
-const MUTED   = '#A0A0A0';
-const MUTED2  = '#444444';
-const GREEN   = '#DFFF00';
+const BG      = 'var(--bg)';
+const SURF    = 'var(--surf)';
+const SURF2   = 'var(--surf2)';
+const EDGE    = 'var(--edge)';
+const TEXT    = 'var(--text)';
+const MUTED   = 'var(--muted)';
+const MUTED2  = 'var(--muted2)';
+const GREEN   = '#22C55E';   // carbs
 const ORANGE  = '#FF6B35';
-const YELLOW  = '#DFFF00';
-const PROT    = '#FF6B35';
-const RED     = '#FF4444';
-const FAT_CLR = '#A78BFA';
-const CARD_SHADOW = '0 2px 16px rgba(0,0,0,0.7)';
+const YELLOW  = '#22C55E';   // carbs (alias)
+const PROT    = '#38BDF8';   // protein — blue
+const RED     = '#EF4444';
+const FAT_CLR = '#F59E0B';   // fat — amber
+const CARD_SHADOW = 'var(--shadow-md)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -40,7 +40,7 @@ const MEAL_LABEL: Record<MealType, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: '#DFFF00', pre_workout: '#FF6B35', lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
+  breakfast: 'var(--accent)', pre_workout: '#FF6B35', lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
@@ -842,7 +842,7 @@ export default function FoodScreen() {
               ) : (
                 <button onClick={() => setSelectedDate(todayStr)} style={{
                   marginTop: 7, background: 'rgba(255,255,255,0.18)', border: 'none',
-                  borderRadius: 20, color: '#fff', fontSize: 10, fontWeight: 700,
+                  borderRadius: 8, color: '#fff', fontSize: 10, fontWeight: 700,
                   padding: '5px 14px', cursor: 'pointer', letterSpacing: 1,
                 }}>← Back to Today</button>
               )}
@@ -862,7 +862,7 @@ export default function FoodScreen() {
       {/* ── CALORIE + MACROS ── */}
       <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
         <div style={{
-          background: SURF, borderRadius: 22, border: `1px solid ${EDGE}`,
+          background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`,
           padding: '20px 20px 18px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW,
         }}>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,189,208,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -889,7 +889,7 @@ export default function FoodScreen() {
               <div style={{
                 marginLeft: 'auto', paddingBottom: 8,
                 background: `${GREEN}10`, border: `1px solid ${GREEN}25`,
-                borderRadius: 20, padding: '4px 12px',
+                borderRadius: 8, padding: '4px 12px',
                 fontSize: 10, fontWeight: 800, color: GREEN, letterSpacing: 0.5,
               }}>
                 ON TRACK
@@ -973,7 +973,7 @@ export default function FoodScreen() {
       {isToday && logs.length === 0 && (
         <div style={{ padding: '12px 22px 0' }}>
           <button onClick={handleCopyYesterday} disabled={copyingYesterday} style={{
-            width: '100%', padding: '12px 0', borderRadius: 14,
+            width: '100%', padding: '12px 0', borderRadius: 8,
             background: copyingYesterday ? SURF2 : `${ORANGE}08`,
             border: `1px solid ${ORANGE}22`,
             color: copyingYesterday ? MUTED : ORANGE,
@@ -1076,7 +1076,7 @@ export default function FoodScreen() {
       {/* ── MEAL TARGET EDITOR ── */}
       {isToday && editingMealTargets && (
         <div style={{ padding: '0 22px 16px' }}>
-          <div style={{ background: SURF, borderRadius: 16, padding: '16px 16px', border: `1px solid ${EDGE}` }}>
+          <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px', border: `1px solid ${EDGE}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>Meal Calorie Targets</div>
               <button onClick={() => setEditingMealTargets(false)} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: 18 }}>×</button>
@@ -1221,7 +1221,7 @@ export default function FoodScreen() {
                         No recipes yet — build one with the "New Recipe" tab.
                       </div>
                     ) : recipes.map((recipe) => (
-                      <div key={recipe.id} style={{ background: SURF2, borderRadius: 14, padding: '14px 14px', marginBottom: 10, border: `1px solid ${EDGE}` }}>
+                      <div key={recipe.id} style={{ background: SURF2, borderRadius: 8, padding: '14px 14px', marginBottom: 10, border: `1px solid ${EDGE}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                           <div>
                             <div style={{ fontWeight: 800, fontSize: 14, color: TEXT }}>{recipe.name}</div>
@@ -1398,7 +1398,7 @@ export default function FoodScreen() {
 
                   {/* Search results */}
                   {searchQuery && searchResults.length > 0 && (
-                    <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', marginBottom: 16 }}>
                       <div style={{ padding: '10px 14px 6px', fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>
                         {searchResults.length} results · Open Food Facts
                       </div>
@@ -1458,7 +1458,7 @@ export default function FoodScreen() {
                                 </div>
                               );
                               return (
-                                <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+                                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
                                   {templates.map((t, i) => (
                                     <div key={t.id} style={{
                                       display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
@@ -1499,7 +1499,7 @@ export default function FoodScreen() {
                               </div>
                             );
                             return (
-                              <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+                              <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
                                 {list.map((food, i) => {
                                   const isFav = favoriteStates[food.food_name] ?? isFavorite(food.food_name);
                                   return (
@@ -1564,9 +1564,9 @@ export default function FoodScreen() {
                   )}
                   {scanActive && (
                     <div style={{ position: 'relative', marginBottom: 16 }}>
-                      <video ref={videoRef} playsInline muted style={{ width: '100%', borderRadius: 14, display: 'block', background: '#000' }} />
+                      <video ref={videoRef} playsInline muted style={{ width: '100%', borderRadius: 8, display: 'block', background: '#000' }} />
                       <div style={{
-                        position: 'absolute', inset: 0, borderRadius: 14,
+                        position: 'absolute', inset: 0, borderRadius: 8,
                         border: `2px solid ${ORANGE}`, pointerEvents: 'none',
                         boxShadow: `inset 0 0 0 2000px rgba(0,0,0,0.3)`,
                       }}>
@@ -1636,7 +1636,7 @@ export default function FoodScreen() {
                 <>
                   <label style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    gap: 16, padding: '40px 20px', borderRadius: 20,
+                    gap: 16, padding: '40px 20px', borderRadius: 8,
                     border: `2px dashed ${aiLoading ? EDGE : ORANGE}`,
                     background: aiLoading ? SURF2 : `${ORANGE}05`,
                     cursor: aiLoading ? 'not-allowed' : 'pointer',
@@ -1718,7 +1718,7 @@ export default function FoodScreen() {
               {mode === 'suggest' && suggestResult && (
                 <>
                   {/* Meal header */}
-                  <div style={{ background: SURF2, borderRadius: 14, padding: '14px 16px', marginBottom: 16, border: `1px solid ${EDGE}` }}>
+                  <div style={{ background: SURF2, borderRadius: 8, padding: '14px 16px', marginBottom: 16, border: `1px solid ${EDGE}` }}>
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>
                       {CTX_LABEL[suggestCtx]} · {suggestSize === 'big' ? 'Full Meal' : 'Light'}{weather ? ` · ${Math.round(weather.tempC)}°C` : ''}
                     </div>
@@ -1741,7 +1741,7 @@ export default function FoodScreen() {
 
                   {/* Ingredient list */}
                   {suggestResult.ingredients && suggestResult.ingredients.length > 0 && (
-                    <div style={{ background: SURF, borderRadius: 14, border: `1px solid ${EDGE}`, overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', marginBottom: 16 }}>
                       <div style={{ padding: '12px 16px 0', fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Ingredients</div>
                       {suggestResult.ingredients.map((item, i) => (
                         <div key={i} style={{
@@ -1770,7 +1770,7 @@ export default function FoodScreen() {
 
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => setSuggestResult(null)} className="nrc-press" style={{
-                      flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`,
+                      flex: 1, padding: 15, borderRadius: 8, border: `1px solid ${EDGE}`,
                       background: 'none', color: MUTED, fontWeight: 700, fontSize: 14,
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}>← Back</button>
@@ -1856,7 +1856,7 @@ export default function FoodScreen() {
                   {formError && <ErrBox msg={formError} />}
 
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                    <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 14, border: `1px solid ${EDGE}`, background: 'none', color: MUTED, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                    <button onClick={closeSheet} className="nrc-press" style={{ flex: 1, padding: 15, borderRadius: 8, border: `1px solid ${EDGE}`, background: 'none', color: MUTED, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
                     <button onClick={handleAdd} disabled={submitting} className="nrc-press" style={bigBtn(submitting, ORANGE, 2)}>
                       {submitting ? '···' : editingId ? 'save →' : 'log it →'}
                     </button>
@@ -2054,7 +2054,7 @@ function MealChips({ form, setForm }: { form: Form; setForm: React.Dispatch<Reac
     <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }}>
       {MEAL_TYPES.map((m) => (
         <button key={m} onClick={() => setForm((f) => ({ ...f, meal: m }))} className="nrc-press" style={{
-          flexShrink: 0, padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
+          flexShrink: 0, padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
           background: form.meal === m ? ORANGE : SURF2,
           border: `1px solid ${form.meal === m ? ORANGE : EDGE}`,
           color: form.meal === m ? '#fff' : MUTED, fontWeight: 700, fontSize: 11,
@@ -2076,7 +2076,7 @@ function ErrBox({ msg }: { msg: string }) {
 function bigBtn(disabled: boolean, color: string, flex?: number): React.CSSProperties {
   return {
     ...(flex ? { flex } : { width: '100%' }),
-    padding: '15px 0', borderRadius: 14, border: 'none',
+    padding: '15px 0', borderRadius: 8, border: 'none',
     background: disabled ? SURF2 : color,
     color: disabled ? MUTED : '#fff',
     fontWeight: 800, fontSize: 15, cursor: disabled ? 'not-allowed' : 'pointer',

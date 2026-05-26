@@ -13,23 +13,104 @@ import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
-// ── Static macro palette (same across themes) ────────────────────────
-const PROT = '#FF6B35';
-const CARB = '#38BDF8';
-const FAT  = '#A78BFA';
-const RED  = '#FF4444';
+// ── Macro palette: Protein=blue, Carbs=green, Fat=amber ──────────────
+const PROT = '#38BDF8';
+const CARB = '#22C55E';
+const FAT  = '#F59E0B';
+const RED  = '#EF4444';
 
 const MEAL_ORDER = ['breakfast','pre_workout','lunch','post_workout','dinner','snack','other'] as const;
 
-const MEAL_META: Record<string, { icon: string; label: string; short: string }> = {
-  breakfast:    { icon: '🌅', label: 'Breakfast',   short: 'Breakfast'  },
-  pre_workout:  { icon: '⚡', label: 'Pre-Workout', short: 'Pre-WO'     },
-  lunch:        { icon: '🥗', label: 'Lunch',        short: 'Lunch'      },
-  post_workout: { icon: '💪', label: 'Post-Workout', short: 'Post-WO'   },
-  dinner:       { icon: '🍽', label: 'Dinner',       short: 'Dinner'    },
-  snack:        { icon: '🍎', label: 'Snacks',       short: 'Snacks'    },
-  other:        { icon: '📦', label: 'Other',        short: 'Other'     },
+const MEAL_META: Record<string, { label: string; short: string }> = {
+  breakfast:    { label: 'Breakfast',    short: 'Breakfast' },
+  pre_workout:  { label: 'Pre-Workout',  short: 'Pre-WO'    },
+  lunch:        { label: 'Lunch',        short: 'Lunch'     },
+  post_workout: { label: 'Post-Workout', short: 'Post-WO'   },
+  dinner:       { label: 'Dinner',       short: 'Dinner'    },
+  snack:        { label: 'Snacks',       short: 'Snacks'    },
+  other:        { label: 'Other',        short: 'Other'     },
 };
+
+// ── Meal icons — flat SVGs, no emojis ────────────────────────────────
+function MealIcon({ meal }: { meal: string }) {
+  const p = {
+    width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none',
+    stroke: 'var(--accent)', strokeWidth: 1.8,
+    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
+  };
+  switch (meal) {
+    case 'breakfast':
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      );
+    case 'pre_workout':
+      return (
+        <svg {...p}>
+          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      );
+    case 'lunch':
+    case 'dinner':
+      return (
+        <svg {...p}>
+          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/>
+          <path d="M7 2v20"/>
+          <path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
+        </svg>
+      );
+    case 'post_workout':
+      return (
+        <svg {...p}>
+          <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/>
+          <circle cx="5" cy="12" r="2"/>
+          <circle cx="19" cy="12" r="2"/>
+        </svg>
+      );
+    case 'snack':
+      return (
+        <svg {...p}>
+          <path d="M12 2a7 7 0 017 7c0 3-1.5 5.5-4 6.8V19a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3.2C6.5 14.5 5 12 5 9a7 7 0 017-7z"/>
+        </svg>
+      );
+    default:
+      return (
+        <svg {...p}>
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+      );
+  }
+}
+
+// ── Training icons — flat SVGs, no emojis ────────────────────────────
+function TrainingIcon({ type, size = 20 }: { type: TrainingType; size?: number }) {
+  const p = {
+    width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+    stroke: 'currentColor', strokeWidth: 1.8,
+    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
+  };
+  switch (type) {
+    case 'rest':
+      return <svg {...p}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>;
+    case 'strength':
+      return (
+        <svg {...p}>
+          <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/>
+          <circle cx="5" cy="12" r="2"/>
+          <circle cx="19" cy="12" r="2"/>
+        </svg>
+      );
+    case 'cardio':
+      return <svg {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+    case 'hybrid':
+      return <svg {...p}><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+    default:
+      return <svg {...p}><circle cx="12" cy="12" r="10"/></svg>;
+  }
+}
 
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
 
@@ -63,17 +144,15 @@ function useCountUp(to: number, ms = 500): number {
 
 // ── Calorie Dashboard — MFP equation + ring ──────────────────────────
 function CalDashboard({
-  consumed, targets, isDark,
-}: { consumed: MacroTargets; targets: MacroTargets | null; isDark: boolean }) {
-  const ACCENT = isDark ? '#DFFF00' : '#0066EE';
-
+  consumed, targets,
+}: { consumed: MacroTargets; targets: MacroTargets | null }) {
   const goal      = targets?.calories ?? 0;
   const food      = Math.round(consumed.calories);
   const exercise  = 0;
   const remaining = goal > 0 ? goal - food + exercise : null;
   const over      = remaining !== null && remaining < 0;
   const pct       = goal > 0 ? Math.min((food / goal) * 100, 100) : 0;
-  const ringColor = over ? RED : ACCENT;
+  const ringColor = over ? RED : 'var(--accent)';
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -88,8 +167,8 @@ function CalDashboard({
 
   return (
     <div style={{
-      background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)',
-      padding: '20px 20px 18px',
+      background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
+      padding: '18px 18px 16px',
     }}>
       {/* ── Equation row ── */}
       <div style={{
@@ -97,7 +176,7 @@ function CalDashboard({
         gridTemplateColumns: '1fr 18px 1fr 18px 1fr 18px 1fr',
         alignItems: 'flex-end',
         gap: 0,
-        marginBottom: 20,
+        marginBottom: 18,
       }}>
         {/* Goal */}
         <div style={{ textAlign: 'center' }}>
@@ -137,21 +216,18 @@ function CalDashboard({
 
         {/* Remaining */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1, color: over ? RED : ringColor }}>
+          <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1, color: over ? RED : 'var(--accent)' }}>
             {remaining !== null ? Math.abs(remaining).toLocaleString() : '—'}
           </div>
-          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4, color: over ? RED : ringColor, opacity: 0.7 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4, color: over ? RED : 'var(--accent)', opacity: 0.7 }}>
             {over ? 'Over' : 'Left'}
           </div>
         </div>
       </div>
 
       {/* ── Ring centered ── */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
-        <div style={{
-          position: 'relative',
-          filter: `drop-shadow(0 0 16px ${ringColor}${isDark ? '50' : '30'})`,
-        }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+        <div style={{ position: 'relative' }}>
           <svg width="136" height="136" style={{ transform: 'rotate(-90deg)' }}>
             <circle cx="68" cy="68" r={R} fill="none" stroke="var(--edge)" strokeWidth="10" />
             <circle
@@ -178,13 +254,12 @@ function CalDashboard({
       </div>
 
       {/* ── Progress bar ── */}
-      <div style={{ height: 6, background: 'var(--edge)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ height: 4, background: 'var(--edge)', borderRadius: 2, overflow: 'hidden' }}>
         <div style={{
-          height: '100%', borderRadius: 3,
-          background: over ? RED : ringColor,
+          height: '100%', borderRadius: 2,
+          background: over ? RED : 'var(--accent)',
           width: `${pct}%`,
           transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-          boxShadow: pct > 5 ? `0 0 8px ${ringColor}45` : 'none',
         }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
@@ -216,9 +291,9 @@ function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: Macr
         return (
           <div key={label} style={{
             background: 'var(--surf)', border: '1px solid var(--edge)',
-            borderRadius: 12, padding: '12px 12px 10px',
+            borderRadius: 8, padding: '10px 10px 8px',
           }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 5 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>
               {label}
             </div>
             <div style={{ fontSize: 16, fontWeight: 900, color: over ? RED : 'var(--text)', letterSpacing: -0.3, lineHeight: 1 }}>
@@ -230,7 +305,7 @@ function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: Macr
                 of {Math.round(target)}g
               </div>
             )}
-            <div style={{ height: 3, background: 'var(--edge)', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+            <div style={{ height: 3, background: 'var(--edge)', borderRadius: 2, overflow: 'hidden', marginTop: 7 }}>
               <div style={{
                 height: '100%', borderRadius: 2,
                 background: c,
@@ -245,108 +320,89 @@ function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: Macr
   );
 }
 
-// ── Individual meal section card ───────────────────────────────────────
+// ── Meal section — compact paragraph style ────────────────────────────
 function MealSection({
-  meal, items, onAddFood, isDark,
+  meal, items, onAddFood,
 }: {
   meal: string;
   items: FoodLog[];
   onAddFood: (meal: string) => void;
-  isDark: boolean;
 }) {
-  const ACCENT      = isDark ? '#DFFF00' : '#0066EE';
-  const ACCENT_BG   = isDark ? 'rgba(223,255,0,0.07)' : 'rgba(0,102,238,0.07)';
-  const ACCENT_BORDER = isDark ? 'rgba(223,255,0,0.3)' : 'rgba(0,102,238,0.3)';
-  const meta        = MEAL_META[meal] ?? { icon: '📦', label: meal, short: meal };
-  const mealCal     = items.reduce((s, l) => s + +l.calories, 0);
+  const meta    = MEAL_META[meal] ?? { label: meal, short: meal };
+  const mealCal = items.reduce((s, l) => s + +l.calories, 0);
 
   return (
-    <div style={{
-      background: 'var(--surf)', borderRadius: 12, border: '1px solid var(--edge)',
-      overflow: 'hidden',
-    }}>
-      {/* Header */}
+    <div style={{ paddingBottom: 2 }}>
+      {/* Header row: icon + name + kcal + inline Add button */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px',
-        borderBottom: items.length > 0 ? '1px solid var(--edge)' : 'none',
+        display: 'flex', alignItems: 'center', gap: 6,
+        paddingBottom: items.length > 0 ? 4 : 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 16 }}>{meta.icon}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: 0.2 }}>
-            {meta.label}
-          </span>
-        </div>
+        <MealIcon meal={meal} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', flex: 1 }}>
+          {meta.label}
+        </span>
         {mealCal > 0 && (
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', marginRight: 4 }}>
             {Math.round(mealCal)} kcal
           </span>
         )}
-      </div>
-
-      {/* Food items */}
-      {items.map((item, i) => (
-        <div key={item.id ?? i} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '9px 16px',
-          borderBottom: '1px solid var(--edge)',
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: 13, color: 'var(--text)', fontWeight: 500,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>
-              {item.food_name}
-            </div>
-            {(+item.protein > 0 || +item.carbs > 0 || +item.fat > 0) && (
-              <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
-                P{Math.round(+item.protein)}·C{Math.round(+item.carbs)}·F{Math.round(+item.fat)}g
-                {item.weight_grams ? ` · ${item.weight_grams}g` : ''}
-              </div>
-            )}
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginLeft: 12, flexShrink: 0 }}>
-            {Math.round(+item.calories)}
-          </span>
-        </div>
-      ))}
-
-      {/* Add food button */}
-      <div style={{ padding: '10px 12px' }}>
         <button
           onClick={() => onAddFood(meal)}
           className="nrc-press"
           style={{
-            width: '100%', padding: '9px 0',
-            background: ACCENT_BG,
-            border: `1.5px solid ${ACCENT_BORDER}`,
-            borderRadius: 8,
-            color: ACCENT,
-            fontSize: 12, fontWeight: 800,
-            cursor: 'pointer', letterSpacing: 1.2, textTransform: 'uppercase',
-            transition: 'all 0.18s ease',
-            fontFamily: "'Barlow Condensed', sans-serif",
+            background: 'var(--accent-muted)',
+            border: '1px solid var(--accent)',
+            borderRadius: 4,
+            color: 'var(--accent)',
+            fontSize: 10, fontWeight: 700,
+            cursor: 'pointer', padding: '3px 8px',
+            letterSpacing: 0.3, whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
-          + Add Food
+          + Add
         </button>
       </div>
+
+      {/* Food items — compact text list */}
+      {items.map((item, i) => (
+        <div key={item.id ?? i} style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          paddingLeft: 20, paddingBottom: 3,
+        }}>
+          <span style={{
+            fontSize: 12, color: 'var(--text)', fontWeight: 400, flex: 1, minWidth: 0,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            opacity: 0.85,
+          }}>
+            {item.food_name}
+            {(+item.protein > 0 || +item.carbs > 0) && (
+              <span style={{ fontSize: 10, color: 'var(--muted2)', marginLeft: 5, fontWeight: 400 }}>
+                P{Math.round(+item.protein)} C{Math.round(+item.carbs)} F{Math.round(+item.fat)}g
+              </span>
+            )}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', marginLeft: 8, flexShrink: 0 }}>
+            {Math.round(+item.calories)}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
 
 // ── Training type definitions ──────────────────────────────────────────
-const TRAINING_TYPES: { type: TrainingType; label: string; icon: string; color: string }[] = [
-  { type: 'rest',     label: 'Rest',     icon: '🛌', color: '#A0A0A0' },
-  { type: 'strength', label: 'Strength', icon: '💪', color: PROT      },
-  { type: 'cardio',   label: 'Cardio',   icon: '🏃', color: CARB      },
-  { type: 'hybrid',   label: 'Hybrid',   icon: '⚡', color: '#DFFF00' },
+const TRAINING_TYPES: { type: TrainingType; label: string; color: string; isAccent?: boolean }[] = [
+  { type: 'rest',     label: 'Rest',     color: '#8B949E'           },
+  { type: 'strength', label: 'Strength', color: PROT                },
+  { type: 'cardio',   label: 'Cardio',   color: CARB                },
+  { type: 'hybrid',   label: 'Hybrid',   color: '#8B949E', isAccent: true },
 ];
 
 // ── Supplement checklist ───────────────────────────────────────────────
-function SupplementBlock({ isDark }: { isDark: boolean }) {
+function SupplementBlock() {
   const { setActiveTab } = useAppStore();
-  const ACCENT = isDark ? '#DFFF00' : '#0066EE';
   const today  = new Date().toISOString().split('T')[0];
 
   const [supplements, setSupplements] = useState<Supplement[]>([]);
@@ -365,21 +421,24 @@ function SupplementBlock({ isDark }: { isDark: boolean }) {
 
   if (supplements.length === 0) return (
     <div style={{
-      background: 'var(--surf)', borderRadius: 12, border: '1px solid var(--edge)',
+      background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
       padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10,
     }}>
-      <span style={{ fontSize: 18 }}>💊</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7"/>
+        <circle cx="17" cy="17" r="5"/><path d="M14.5 19.5l5-5"/>
+      </svg>
       <span style={{ fontSize: 12, color: 'var(--muted)', flex: 1 }}>No supplements set up yet</span>
       <button
         onClick={() => setActiveTab('supplements')}
         style={{
-          background: isDark ? 'rgba(223,255,0,0.1)' : 'rgba(0,102,238,0.1)',
-          border: `1px solid ${ACCENT}50`,
-          borderRadius: 8,
-          color: ACCENT, fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: '5px 12px',
+          background: 'var(--accent-muted)',
+          border: '1px solid var(--accent)',
+          borderRadius: 6,
+          color: 'var(--accent)', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: '5px 12px',
           transition: 'all 0.2s ease',
         }}
-      >Set up →</button>
+      >Set up</button>
     </div>
   );
 
@@ -423,20 +482,21 @@ function SupplementBlock({ isDark }: { isDark: boolean }) {
   const allDone    = takenCount === supplements.length;
 
   return (
-    <div style={{ background: 'var(--surf)', borderRadius: 12, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 15 }}>💊</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7"/>
+            <circle cx="17" cy="17" r="5"/><path d="M14.5 19.5l5-5"/>
+          </svg>
           <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
             Supplements
           </span>
           <span style={{
-            fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '2px 9px',
-            color: allDone ? ACCENT : 'var(--muted)',
-            background: allDone
-              ? (isDark ? 'rgba(223,255,0,0.15)' : 'rgba(0,102,238,0.1)')
-              : 'var(--edge)',
+            fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '1px 7px',
+            color: allDone ? 'var(--accent)' : 'var(--muted)',
+            background: allDone ? 'var(--accent-muted)' : 'var(--edge)',
           }}>
             {takenCount}/{supplements.length}
           </span>
@@ -444,43 +504,43 @@ function SupplementBlock({ isDark }: { isDark: boolean }) {
         <button
           onClick={() => setActiveTab('supplements')}
           style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-        >Manage →</button>
+        >Manage</button>
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: 2, background: 'var(--edge)', margin: '0 16px 4px', borderRadius: 1, overflow: 'hidden' }}>
+      <div style={{ height: 2, background: 'var(--edge)', margin: '0 14px 4px', borderRadius: 1, overflow: 'hidden' }}>
         <div style={{
           height: '100%', borderRadius: 1,
-          background: allDone ? ACCENT : `${ACCENT}60`,
+          background: allDone ? 'var(--accent)' : 'var(--accent)',
           width: `${supplements.length ? (takenCount / supplements.length) * 100 : 0}%`,
+          opacity: allDone ? 1 : 0.4,
           transition: 'width 0.35s ease',
         }} />
       </div>
 
       {/* Rows */}
-      <div style={{ padding: '5px 0 10px' }}>
+      <div style={{ padding: '5px 0 8px' }}>
         {supplements.map((s, i) => {
           const taken = isTaken(s.id!);
           return (
             <div key={s.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '7px 16px',
+              display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px',
               borderBottom: i < supplements.length - 1 ? '1px solid var(--edge)' : 'none',
             }}>
               <button
                 onClick={() => toggleTaken(s)}
                 className="nrc-press"
                 style={{
-                  width: 20, height: 20, borderRadius: 5, flexShrink: 0, cursor: 'pointer', padding: 0,
-                  border: `2px solid ${taken ? ACCENT : 'var(--edge)'}`,
-                  background: taken ? ACCENT : 'transparent',
+                  width: 20, height: 20, borderRadius: 4, flexShrink: 0, cursor: 'pointer', padding: 0,
+                  border: `2px solid ${taken ? 'var(--accent)' : 'var(--edge)'}`,
+                  background: taken ? 'var(--accent)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s ease',
-                  boxShadow: taken ? `0 0 7px ${ACCENT}55` : 'none',
                 }}
               >
                 {taken && (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <polyline points="2,5 4.5,7.5 8,2.5" stroke={isDark ? '#000' : '#fff'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points="2,5 4.5,7.5 8,2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
               </button>
@@ -503,9 +563,9 @@ function SupplementBlock({ isDark }: { isDark: boolean }) {
                       className="nrc-press"
                       style={{
                         width: 22, height: 20, borderRadius: 4, flexShrink: 0, padding: 0,
-                        border: `1px solid ${active ? ACCENT : 'var(--edge)'}`,
-                        background: active ? (isDark ? 'rgba(223,255,0,0.15)' : 'rgba(0,102,238,0.1)') : 'transparent',
-                        color: active ? ACCENT : 'var(--muted)',
+                        border: `1px solid ${active ? 'var(--accent)' : 'var(--edge)'}`,
+                        background: active ? 'var(--accent-muted)' : 'transparent',
+                        color: active ? 'var(--accent)' : 'var(--muted)',
                         fontSize: 9, fontWeight: 800, letterSpacing: 0.3,
                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.15s ease',
@@ -529,9 +589,6 @@ export default function HomeScreen() {
   const { todayLog, weeklyLoad, weather, environmentAlert } = useNutritionStore();
   const { logDay, setActivityModifier }   = useNutrition();
   const { isDark }                        = useThemeStore();
-
-  const ACCENT        = isDark ? '#DFFF00' : '#0066EE';
-  const ACCENT_BORDER = isDark ? 'rgba(223,255,0,0.3)' : 'rgba(0,102,238,0.3)';
 
   const todayStr = new Date().toISOString().split('T')[0];
   const [viewDate, setViewDate] = useState(todayStr);
@@ -599,7 +656,7 @@ export default function HomeScreen() {
       {/* ── Top bar: Date nav + settings icon ── */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '18px 16px 12px',
+        padding: '14px 14px 10px',
         borderBottom: '1px solid var(--edge)',
         background: 'var(--surf)',
       }}>
@@ -608,7 +665,7 @@ export default function HomeScreen() {
           onClick={goToPrev}
           className="nrc-press"
           style={{
-            width: 36, height: 36, borderRadius: 10, display: 'flex',
+            width: 34, height: 34, borderRadius: 6, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
             background: 'var(--surf2)', border: '1px solid var(--edge)',
             cursor: 'pointer', flexShrink: 0,
@@ -627,10 +684,10 @@ export default function HomeScreen() {
           {todayLog?.trainingType && isToday && (
             <div style={{
               display: 'inline-block', marginTop: 4,
-              padding: '2px 10px', borderRadius: 20,
-              background: isDark ? 'rgba(223,255,0,0.1)' : 'rgba(0,102,238,0.1)',
-              border: `1px solid ${ACCENT_BORDER}`,
-              fontSize: 10, fontWeight: 700, color: ACCENT,
+              padding: '2px 10px', borderRadius: 4,
+              background: 'var(--accent-muted)',
+              border: '1px solid var(--accent)',
+              fontSize: 10, fontWeight: 700, color: 'var(--accent)',
               textTransform: 'uppercase', letterSpacing: 1.5,
             }}>
               {todayLog.trainingType}
@@ -639,13 +696,13 @@ export default function HomeScreen() {
         </div>
 
         {/* Next day / Settings */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           <button
             onClick={goToNext}
             className="nrc-press"
             disabled={isToday}
             style={{
-              width: 36, height: 36, borderRadius: 10, display: 'flex',
+              width: 34, height: 34, borderRadius: 6, display: 'flex',
               alignItems: 'center', justifyContent: 'center',
               background: 'var(--surf2)', border: '1px solid var(--edge)',
               cursor: isToday ? 'default' : 'pointer',
@@ -660,7 +717,7 @@ export default function HomeScreen() {
             onClick={() => setActiveTab('settings')}
             className="nrc-press"
             style={{
-              width: 36, height: 36, borderRadius: 10, display: 'flex',
+              width: 34, height: 34, borderRadius: 6, display: 'flex',
               alignItems: 'center', justifyContent: 'center',
               background: 'var(--surf2)', border: '1px solid var(--edge)',
               cursor: 'pointer',
@@ -676,42 +733,53 @@ export default function HomeScreen() {
 
       {/* ── Weather ── */}
       {weather && isToday && (
-        <div style={{ padding: '12px 16px 0' }}>
+        <div style={{ padding: '10px 14px 0' }}>
           <WeatherBanner weather={weather} alert={environmentAlert ?? { level: 'none', message: '' }} />
         </div>
       )}
 
       {/* ── Calorie dashboard ── */}
-      <div style={{ margin: '12px 16px 0' }}>
-        <CalDashboard consumed={consumed} targets={targets} isDark={isDark} />
+      <div style={{ margin: '10px 14px 0' }}>
+        <CalDashboard consumed={consumed} targets={targets} />
       </div>
 
       {/* ── Macro row ── */}
-      <div style={{ margin: '10px 16px 0' }}>
+      <div style={{ margin: '8px 14px 0' }}>
         <MacroRow consumed={consumed} targets={targets} />
       </div>
 
       {/* ── Meal sections (MFP style) ── */}
-      <div style={{ margin: '16px 16px 0' }}>
+      <div style={{ margin: '10px 14px 0' }}>
         <div style={{
           fontSize: 10, fontWeight: 700, color: 'var(--muted)',
-          textTransform: 'uppercase', letterSpacing: 2, marginBottom: 10, paddingLeft: 2,
+          textTransform: 'uppercase', letterSpacing: 2, marginBottom: 7, paddingLeft: 2,
         }}>
           Food Diary
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {MEAL_ORDER.map(meal => {
-            const items = byMeal[meal] ?? [];
-            // Hide empty 'other' section if no logs
+        <div style={{
+          background: 'var(--surf)',
+          border: '1px solid var(--edge)',
+          borderRadius: 8,
+          overflow: 'hidden',
+        }}>
+          {MEAL_ORDER.map((meal) => {
+            const items     = byMeal[meal] ?? [];
+            const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
+            const visIdx    = visibleMeals.indexOf(meal);
             if (meal === 'other' && items.length === 0) return null;
             return (
-              <MealSection
-                key={meal}
-                meal={meal}
-                items={items}
-                onAddFood={handleAddFood}
-                isDark={isDark}
-              />
+              <div key={meal}>
+                {visIdx > 0 && (
+                  <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
+                )}
+                <div style={{ padding: '10px 12px' }}>
+                  <MealSection
+                    meal={meal}
+                    items={items}
+                    onAddFood={handleAddFood}
+                  />
+                </div>
+              </div>
             );
           })}
         </div>
@@ -720,35 +788,35 @@ export default function HomeScreen() {
       {/* ── Training selector (today only) ── */}
       {isToday && (
         <div style={{
-          margin: '16px 16px 0', background: 'var(--surf)',
-          borderRadius: 12, border: '1px solid var(--edge)', padding: '16px 16px 18px',
+          margin: '14px 14px 0', background: 'var(--surf)',
+          borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
             Today's Training
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {TRAINING_TYPES.map(({ type, label, icon, color }) => {
-              const active      = todayLog?.trainingType === type;
-              const activeColor = type === 'hybrid' ? (isDark ? '#DFFF00' : '#0066EE') : color;
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+            {TRAINING_TYPES.map(({ type, label, color, isAccent }) => {
+              const active       = todayLog?.trainingType === type;
+              const displayColor = isAccent ? 'var(--accent)' : color;
               return (
                 <button
                   key={type}
                   onClick={() => handleSelectType(type)}
                   className="nrc-press"
                   style={{
-                    padding: '13px 4px', borderRadius: 12,
-                    border: `1.5px solid ${active ? activeColor : 'var(--edge)'}`,
+                    padding: '11px 4px', borderRadius: 8,
+                    border: `1.5px solid ${active ? displayColor : 'var(--edge)'}`,
                     background: active
-                      ? `${activeColor}18`
+                      ? (isAccent ? 'var(--accent-muted)' : `${color}18`)
                       : 'var(--surf2)',
                     cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                    transition: 'all 0.2s ease',
-                    boxShadow: active ? `0 0 14px ${activeColor}28` : 'none',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    transition: 'border-color 0.2s ease, background 0.2s ease',
+                    color: active ? displayColor : 'var(--muted)',
                   }}
                 >
-                  <div style={{ fontSize: 22 }}>{icon}</div>
-                  <div style={{ fontSize: 10, fontWeight: active ? 800 : 600, color: active ? activeColor : 'var(--muted)', letterSpacing: 0.3 }}>
+                  <TrainingIcon type={type} size={18} />
+                  <div style={{ fontSize: 10, fontWeight: active ? 800 : 600, letterSpacing: 0.3 }}>
                     {label}
                   </div>
                 </button>
@@ -758,18 +826,18 @@ export default function HomeScreen() {
 
           {/* NEAT / Activity modifier */}
           {todayLog && (
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
                 Daily Activity Level
               </div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10, lineHeight: 1.5, opacity: 0.7 }}>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5, opacity: 0.7 }}>
                 Non-workout movement — steps, job, errands.
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
                 {([
-                  { val: 'low',    label: 'Low',    desc: 'Desk · sitting'     },
-                  { val: 'normal', label: 'Normal', desc: 'Some walking'       },
-                  { val: 'high',   label: 'High',   desc: 'On feet all day'    },
+                  { val: 'low',    label: 'Low',    desc: 'Desk · sitting'   },
+                  { val: 'normal', label: 'Normal', desc: 'Some walking'     },
+                  { val: 'high',   label: 'High',   desc: 'On feet all day'  },
                 ] as const).map(({ val, label, desc }) => {
                   const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
                   return (
@@ -777,21 +845,18 @@ export default function HomeScreen() {
                       key={val}
                       onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
                       style={{
-                        flex: 1, padding: '10px 4px', borderRadius: 10,
-                        border: `1.5px solid ${sel ? ACCENT : 'var(--edge)'}`,
-                        background: sel
-                          ? (isDark ? 'rgba(223,255,0,0.1)' : 'rgba(0,102,238,0.1)')
-                          : 'transparent',
+                        flex: 1, padding: '9px 4px', borderRadius: 8,
+                        border: `1.5px solid ${sel ? 'var(--accent)' : 'var(--edge)'}`,
+                        background: sel ? 'var(--accent-muted)' : 'transparent',
                         cursor: 'pointer',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                         transition: 'all 0.2s ease',
-                        boxShadow: sel ? `0 0 10px ${ACCENT}20` : 'none',
                       }}
                     >
-                      <span style={{ fontSize: 12, fontWeight: sel ? 800 : 600, color: sel ? ACCENT : 'var(--muted)' }}>
+                      <span style={{ fontSize: 12, fontWeight: sel ? 800 : 600, color: sel ? 'var(--accent)' : 'var(--muted)' }}>
                         {label}
                       </span>
-                      <span style={{ fontSize: 9, color: sel ? ACCENT : 'var(--muted)', textAlign: 'center', lineHeight: 1.4, opacity: sel ? 0.85 : 0.5 }}>
+                      <span style={{ fontSize: 9, color: sel ? 'var(--accent)' : 'var(--muted)', textAlign: 'center', lineHeight: 1.4, opacity: sel ? 0.85 : 0.5 }}>
                         {desc}
                       </span>
                     </button>
@@ -805,14 +870,14 @@ export default function HomeScreen() {
 
       {/* ── Supplements (today only) ── */}
       {isToday && (
-        <div style={{ margin: '10px 16px 0' }}>
-          <SupplementBlock isDark={isDark} />
+        <div style={{ margin: '8px 14px 0' }}>
+          <SupplementBlock />
         </div>
       )}
 
       {/* ── Strava ── */}
       {user && isToday && (
-        <div style={{ margin: '10px 16px 0' }}>
+        <div style={{ margin: '8px 14px 0' }}>
           <StravaCard />
         </div>
       )}
@@ -820,15 +885,15 @@ export default function HomeScreen() {
       {/* ── Weekly load ── */}
       {isToday && (loggedRuns.length > 0 || weeklyLoad.totalStrengthSets > 0) && (
         <div style={{
-          margin: '12px 16px 0', background: 'var(--surf)',
-          borderRadius: 12, border: '1px solid var(--edge)', padding: '16px 16px 18px',
+          margin: '10px 14px 0', background: 'var(--surf)',
+          borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
             Weekly Load
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             {weeklyLoad.totalRunKm > 0 && (
-              <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 12, padding: '12px 14px', border: '1px solid var(--edge)' }}>
+              <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--edge)' }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: CARB, letterSpacing: -0.5 }}>
                   {weeklyLoad.totalRunKm.toFixed(1)}
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginLeft: 3 }}>km</span>
@@ -837,7 +902,7 @@ export default function HomeScreen() {
               </div>
             )}
             {weeklyLoad.totalStrengthSets > 0 && (
-              <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 12, padding: '12px 14px', border: '1px solid var(--edge)' }}>
+              <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--edge)' }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: PROT, letterSpacing: -0.5 }}>
                   {weeklyLoad.totalStrengthSets}
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginLeft: 3 }}>sessions</span>
@@ -845,9 +910,9 @@ export default function HomeScreen() {
                 <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3, fontWeight: 500 }}>Strength</div>
               </div>
             )}
-            <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 12, padding: '12px 14px', border: '1px solid var(--edge)' }}>
+            <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--edge)' }}>
               <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5,
-                color: weeklyLoad.recoveryScore >= 60 ? (isDark ? '#DFFF00' : '#0066EE')
+                color: weeklyLoad.recoveryScore >= 60 ? 'var(--accent)'
                      : weeklyLoad.recoveryScore >= 35 ? CARB : RED }}>
                 {weeklyLoad.recoveryScore}
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginLeft: 3 }}>%</span>
@@ -861,21 +926,22 @@ export default function HomeScreen() {
       {/* ── Past day notice ── */}
       {!isToday && (
         <div style={{
-          margin: '16px 16px 0', padding: '12px 16px',
-          background: isDark ? 'rgba(223,255,0,0.05)' : 'rgba(0,102,238,0.05)',
-          border: `1px solid ${ACCENT_BORDER}`,
-          borderRadius: 10, textAlign: 'center',
+          margin: '14px 14px 0', padding: '12px 14px',
+          background: 'var(--accent-muted)',
+          border: '1px solid var(--accent)',
+          borderRadius: 8, textAlign: 'center',
+          opacity: 0.9,
         }}>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            Viewing past diary entry · Training & supplements shown for today only
+            Viewing past diary entry · Training &amp; supplements shown for today only
           </div>
           <button
             onClick={() => setViewDate(todayStr)}
             style={{
               marginTop: 8, background: 'none', border: 'none',
-              color: ACCENT, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
             }}
-          >Back to Today →</button>
+          >Back to Today</button>
         </div>
       )}
 
