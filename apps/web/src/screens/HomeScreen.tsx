@@ -178,25 +178,25 @@ function CalDashboard({
         gap: 0,
         marginBottom: 18,
       }}>
-        {/* Goal */}
+        {/* Eaten (Food) — shown first */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
+            {displayFood.toLocaleString()}
+          </div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
+            Eaten
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', fontSize: 16, fontWeight: 300, color: 'var(--muted)', paddingBottom: 14 }}>of</div>
+
+        {/* Goal (Target) — shown second */}
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
             {goal > 0 ? goal.toLocaleString() : '—'}
           </div>
           <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
             Goal
-          </div>
-        </div>
-
-        <div style={{ textAlign: 'center', fontSize: 16, fontWeight: 300, color: 'var(--muted)', paddingBottom: 14 }}>−</div>
-
-        {/* Food */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
-            {displayFood.toLocaleString()}
-          </div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
-            Food
           </div>
         </div>
 
@@ -757,7 +757,7 @@ export default function HomeScreen() {
           Food Diary
         </div>
         <div style={{
-          background: 'var(--surf)',
+          background: 'var(--surf-diary)',
           border: '1px solid var(--edge)',
           borderRadius: 8,
           overflow: 'hidden',

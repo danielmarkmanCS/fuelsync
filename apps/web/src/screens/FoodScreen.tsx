@@ -24,12 +24,14 @@ const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
-const GREEN   = '#22C55E';   // carbs
-const ORANGE  = '#FF6B35';
-const YELLOW  = '#22C55E';   // carbs (alias)
-const PROT    = '#38BDF8';   // protein — blue
-const RED     = '#EF4444';
-const FAT_CLR = '#F59E0B';   // fat — amber
+const GREEN      = '#22C55E';   // carbs
+const ORANGE     = '#2F81F7';   // accent blue (hex so template-literal opacity suffixes work)
+const YELLOW     = '#22C55E';   // carbs (alias)
+const PROT       = '#38BDF8';   // protein — blue
+const RED        = '#EF4444';
+const FAT_CLR    = '#F59E0B';   // fat — amber
+const CAL_CLR    = '#8ab0fc';   // periwinkle blue for calorie numbers throughout diary
+const SURF_DIARY = 'var(--surf-diary)'; // light mode = #8ab0fc, dark = var(--surf)
 const CARD_SHADOW = 'var(--shadow-md)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
@@ -40,7 +42,7 @@ const MEAL_LABEL: Record<MealType, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: 'var(--accent)', pre_workout: '#FF6B35', lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
+  breakfast: ORANGE, pre_workout: ORANGE, lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
@@ -140,7 +142,7 @@ function IngredientBreakdown({ ingredients, onEdit }: { ingredients: IngredientI
               <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{item.amount}</div>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: ORANGE }}>{Math.round(item.calories)}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: CAL_CLR }}>{Math.round(item.calories)}</div>
               <div style={{ fontSize: 9, color: MUTED, letterSpacing: 0.5 }}>kcal</div>
             </div>
             <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexShrink: 0 }}>
@@ -821,38 +823,36 @@ export default function FoodScreen() {
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{
-        background: BG,
+        background: 'var(--surf)',
         padding: '32px 16px 16px', position: 'relative', overflow: 'hidden',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid var(--edge)',
       }}>
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 10, textTransform: 'uppercase' }}>Fuel Log</div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'var(--muted)', marginBottom: 10, textTransform: 'uppercase' }}>Fuel Log</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button onClick={() => setSelectedDate((d) => offsetDate(d, -1))} style={{
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-              borderRadius: 12, color: '#fff', fontSize: 20, width: 40, height: 40,
+              background: 'var(--surf2)', border: '1px solid var(--edge)',
+              borderRadius: 8, color: 'var(--text)', fontSize: 20, width: 40, height: 40,
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>‹</button>
             <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
-              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: '#FFFFFF', lineHeight: 1.1 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: 'var(--text)', lineHeight: 1.1 }}>
                 {dateLabel(selectedDate).toUpperCase()}
               </div>
               {isToday ? (
-                <div style={{ marginTop: 5, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>{nowTime}</div>
+                <div style={{ marginTop: 5, fontSize: 12, fontWeight: 700, color: 'var(--muted)', letterSpacing: 1 }}>{nowTime}</div>
               ) : (
                 <button onClick={() => setSelectedDate(todayStr)} style={{
-                  marginTop: 7, background: 'rgba(255,255,255,0.18)', border: 'none',
-                  borderRadius: 8, color: '#fff', fontSize: 10, fontWeight: 700,
+                  marginTop: 7, background: 'var(--accent-muted)', border: '1px solid var(--accent)',
+                  borderRadius: 8, color: 'var(--accent)', fontSize: 10, fontWeight: 700,
                   padding: '5px 14px', cursor: 'pointer', letterSpacing: 1,
                 }}>← Back to Today</button>
               )}
             </div>
             <button onClick={() => { if (!isToday) setSelectedDate((d) => offsetDate(d, 1)); }} style={{
-              background: isToday ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.25)',
-              borderRadius: 12, color: isToday ? 'rgba(255,255,255,0.25)' : '#fff',
-              fontSize: 20, width: 40, height: 40,
-              cursor: isToday ? 'default' : 'pointer',
+              background: 'var(--surf2)', border: '1px solid var(--edge)',
+              borderRadius: 8, color: 'var(--text)', fontSize: 20, width: 40, height: 40,
+              cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.35 : 1,
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>›</button>
           </div>
@@ -862,7 +862,7 @@ export default function FoodScreen() {
       {/* ── CALORIE + MACROS ── */}
       <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
         <div style={{
-          background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`,
+          background: SURF_DIARY, borderRadius: 8, border: `1px solid ${EDGE}`,
           padding: '20px 20px 18px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW,
         }}>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,189,208,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -872,7 +872,7 @@ export default function FoodScreen() {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 12 }}>
             <div style={{
               fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
-              color: calPct >= 100 ? RED : calPct >= 85 ? GREEN : ORANGE,
+              color: calPct >= 100 ? RED : CAL_CLR,
               transition: 'color 0.4s',
             }}>
               {Math.round(consumed.calories).toLocaleString()}
@@ -1038,7 +1038,11 @@ export default function FoodScreen() {
           const mealPct = mealTarget > 0 ? Math.min(mealTotal / mealTarget, 1) : 0;
           const mealOver = mealTarget > 0 && mealTotal > mealTarget;
           return (
-            <div key={meal} style={{ marginBottom: 26 }}>
+            <div key={meal} style={{
+              marginBottom: 14,
+              background: SURF_DIARY, borderRadius: 8,
+              border: `1px solid ${EDGE}`, padding: '12px 14px',
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mealTarget > 0 ? 6 : 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: MEAL_COLOR[meal] ?? MUTED, flexShrink: 0 }} />
@@ -1052,7 +1056,7 @@ export default function FoodScreen() {
                       / {mealTarget} kcal
                     </div>
                   )}
-                  <div style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : ORANGE }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
                     {Math.round(mealTotal)} kcal
                   </div>
                 </div>
@@ -1904,7 +1908,7 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
             {entry.food_name}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ background: `${ORANGE}15`,   border: `1px solid ${ORANGE}30`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: ORANGE,  fontWeight: 700 }}>
+            <span style={{ background: `${PROT}15`,   border: `1px solid ${PROT}30`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: PROT,  fontWeight: 700 }}>
               P {Math.round(Number(entry.protein))}g
             </span>
             <span style={{ background: `${YELLOW}15`,   border: `1px solid ${YELLOW}30`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: YELLOW,  fontWeight: 700 }}>
@@ -1926,7 +1930,7 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: ORANGE, letterSpacing: -2, lineHeight: 1 }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: CAL_CLR, letterSpacing: -2, lineHeight: 1 }}>
             {Math.round(Number(entry.calories))}
           </div>
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>KCAL</div>
