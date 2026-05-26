@@ -816,47 +816,10 @@ export default function HomeScreen() {
         <MacroRow consumed={consumed} targets={targets} />
       </div>
 
-      {/* ── Meal sections (MFP style) ── */}
-      <div style={{ margin: '10px 14px 0' }}>
-        <div style={{
-          fontSize: 10, fontWeight: 700, color: 'var(--muted)',
-          textTransform: 'uppercase', letterSpacing: 2, marginBottom: 7, paddingLeft: 2,
-        }}>
-          Food Diary
-        </div>
-        <div style={{
-          background: 'var(--surf)',
-          border: '1px solid var(--edge)',
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}>
-          {MEAL_ORDER.map((meal) => {
-            const items     = byMeal[meal] ?? [];
-            const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
-            const visIdx    = visibleMeals.indexOf(meal);
-            if (meal === 'other' && items.length === 0) return null;
-            return (
-              <div key={meal}>
-                {visIdx > 0 && (
-                  <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
-                )}
-                <div style={{ padding: '10px 12px' }}>
-                  <MealSection
-                    meal={meal}
-                    items={items}
-                    onAddFood={handleAddFood}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* ── Training selector (today only) ── */}
       {isToday && (
         <div style={{
-          margin: '14px 14px 0', background: 'var(--surf)',
+          margin: '10px 14px 0', background: 'var(--surf)',
           borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
         }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
@@ -935,6 +898,53 @@ export default function HomeScreen() {
           )}
         </div>
       )}
+
+      {/* ── Food Diary (compact scrollable) ── */}
+      <div style={{ margin: '8px 14px 0' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 6, paddingLeft: 2,
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
+            Food Diary
+          </span>
+          {logs.length > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>
+              {logs.length} item{logs.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <div style={{
+          background: 'var(--surf)',
+          border: '1px solid var(--edge)',
+          borderRadius: 8,
+          overflow: 'hidden',
+          /* Fixed height — scrollable inside so the page doesn't stretch */
+          maxHeight: 320,
+          overflowY: 'auto',
+        }}>
+          {MEAL_ORDER.map((meal) => {
+            const items        = byMeal[meal] ?? [];
+            const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
+            const visIdx       = visibleMeals.indexOf(meal);
+            if (meal === 'other' && items.length === 0) return null;
+            return (
+              <div key={meal}>
+                {visIdx > 0 && (
+                  <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
+                )}
+                <div style={{ padding: '9px 12px 8px' }}>
+                  <MealSection
+                    meal={meal}
+                    items={items}
+                    onAddFood={handleAddFood}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* ── Supplements (today only) ── */}
       {isToday && (
