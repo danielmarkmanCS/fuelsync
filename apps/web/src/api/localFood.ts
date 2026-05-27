@@ -141,20 +141,25 @@ interface D1FoodLog {
   iron_mg?: number | null;
 }
 
-async function upsertD1Logs(d1logs: unknown[]) {
+async function upsertD1Logs(d1logs: unknown[], isFullSync = false) {
+  // Track every D1 id that is NOT a tombstone (i.e. still active on server)
+  const d1ActiveIds = new Set<string>();
+
   for (const raw of d1logs) {
     const log = raw as D1FoodLog;
     if (!log.id) continue;
 
     const bySyncId = await db.food_logs.where('sync_id').equals(log.id).first();
 
-    // Propagate deletions from other devices
+    // ── Tombstone: deleted on another device ─────────────────────────────
     if (log.deleted_at) {
       if (bySyncId?.id != null && !bySyncId.removed) {
         await db.food_logs.update(bySyncId.id, { removed: true });
       }
-      continue;
+      continue;   // don't add to d1ActiveIds — it's deleted
     }
+
+    d1ActiveIds.add(log.id);
 
     // Already synced by sync_id?
     if (bySyncId) continue;
@@ -193,6 +198,24 @@ async function upsertD1Logs(d1logs: unknown[]) {
       iron_mg:        log.iron_mg        ?? null,
     });
   }
+
+  // ── Reconciliation (full-sync only) ────────────────────────────────────
+  // Any local synced log whose sync_id is absent from D1's active set was
+  // deleted on another device. Mark it removed here too.
+  // Exception: logs still sitting in the sync_queue haven't hit D1 yet —
+  // don't mark those removed.
+  if (isFullSync && d1ActiveIds.size > 0) {
+    const queueItems = await db.sync_queue.where('operation').equals('add').toArray();
+    const queuedIds = new Set<string>(
+      queueItems.map(q => { try { return JSON.parse(q.payload).id as string; } catch { return ''; } }).filter(Boolean)
+    );
+    const syncedLocal = await db.food_logs.filter(r => !!r.sync_id && !r.removed).toArray();
+    for (const local of syncedLocal) {
+      if (!d1ActiveIds.has(local.sync_id!) && !queuedIds.has(local.sync_id!)) {
+        await db.food_logs.update(local.id!, { removed: true });
+      }
+    }
+  }
 }
 
 // Per-key pull cache and in-flight dedup
@@ -204,7 +227,7 @@ export function clearPullCache() {
   pullCache.clear();
 }
 
-function pullWithKey(key: string, fetcher: () => Promise<unknown[]>): Promise<void> {
+function pullWithKey(key: string, fetcher: () => Promise<unknown[]>, fullSync = false): Promise<void> {
   if (!getSyncToken()) return Promise.resolve();
   const now = Date.now();
   if ((pullCache.get(key) ?? 0) + PULL_TTL > now) return Promise.resolve();
@@ -214,7 +237,7 @@ function pullWithKey(key: string, fetcher: () => Promise<unknown[]>): Promise<vo
     pullCache.set(key, now);
     try {
       const logs = await fetcher();
-      await upsertD1Logs(logs);
+      await upsertD1Logs(logs, fullSync);
     } catch {
       pullCache.delete(key);
     } finally {
@@ -238,7 +261,7 @@ export async function getLogs(date: string): Promise<FoodLog[]> {
 }
 
 export async function getAllLogs(): Promise<FoodLog[]> {
-  await withTimeout(pullWithKey('all', fetchAllLogs), 10000);
+  await withTimeout(pullWithKey('all', fetchAllLogs, true), 10000);
   const rows = await db.food_logs.orderBy('logged_at').reverse().toArray();
   return rows.map(toFoodLog);
 }

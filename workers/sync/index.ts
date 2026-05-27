@@ -176,8 +176,11 @@ export default {
 
         let rows;
         if (all) {
+          // Include soft-deleted rows so clients can propagate deletions across devices.
+          // Rows with deleted_at set are tombstones — the client marks them removed locally
+          // and skips inserting them on new devices.
           rows = await env.DB.prepare(
-            'SELECT * FROM food_logs WHERE user_id = ? AND deleted_at IS NULL ORDER BY logged_at DESC'
+            'SELECT * FROM food_logs WHERE user_id = ? ORDER BY logged_at DESC'
           ).bind(userId).all();
         } else if (date) {
           rows = await env.DB.prepare(
