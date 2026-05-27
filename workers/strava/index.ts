@@ -27,8 +27,14 @@ function err(msg: string, status = 400, origin = '*'): Response {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('Origin') ?? '*';
-    const allowed = env.APP_URL ?? 'https://foodaniel.danielmms.site';
-    const allowedOrigin = origin === allowed || origin.startsWith('http://localhost') || origin === 'capacitor://localhost' || origin === 'https://localhost' ? origin : allowed;
+    const isAllowed = (o: string) =>
+      o.startsWith('http://localhost') ||
+      o === 'capacitor://localhost' ||
+      o === 'https://localhost' ||
+      o === 'https://danielmarkmancs.github.io' ||
+      o === 'https://foodaniel.danielmms.site' ||
+      o === (env.APP_URL ?? '');
+    const allowedOrigin = isAllowed(origin) ? origin : (env.APP_URL ?? '*');
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: cors(allowedOrigin) });
