@@ -1031,7 +1031,11 @@ export default function HistoryScreen() {
                 const avgProt  = Math.round(days.reduce((s, d) => s + d.totalProtein, 0) / days.length);
                 const avgCarb  = Math.round(days.reduce((s, d) => s + d.totalCarbs, 0) / days.length);
                 const avgFat   = Math.round(days.reduce((s, d) => s + d.totalFat, 0) / days.length);
-                const types    = [...new Set(allLogs.filter(l => !l.removed).map(() => '').filter(Boolean))].join(', ') || 'mixed';
+                // Build training types from weeklyLoad sessions
+                const typeSet = new Set<string>();
+                (weeklyLoad?.strengthSessions ?? []).forEach(ss => typeSet.add(ss.label ?? 'Strength'));
+                if ((weeklyLoad?.totalRunKm ?? 0) > 0) typeSet.add('Cardio');
+                const types = typeSet.size > 0 ? [...typeSet] : ['mixed'];
                 const s = await getWeeklySummary({
                   days: days.length, avgCalories: avgCals, avgProtein: avgProt,
                   avgCarbs: avgCarb, avgFat: avgFat,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache } from '../api/localFood';
+import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache, patchLogImage } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
@@ -829,7 +829,7 @@ export default function FoodScreen() {
     })();
     try {
       if (editingId !== null) await deleteLog(editingId);
-      await addLog({
+      const newLog = await addLog({
         food_name: form.name.trim(), calories: parseFloat(form.calories),
         protein: parseFloat(form.protein), carbs: parseFloat(form.carbs), fat: parseFloat(form.fat),
         weight_grams: w && !isNaN(w) ? w : undefined, meal_type: form.meal,
@@ -848,6 +848,10 @@ export default function FoodScreen() {
           weight_grams: w && !isNaN(w) ? w : null,
           meal_type:    form.meal,
         });
+        // Auto-fetch food photo in background if no image yet
+        if (!estimate?.imageUrl && newLog?.id) {
+          patchLogImage(newLog.id, form.name.trim()).then(fetchLogs).catch(() => {});
+        }
       }
       fetchLogs(); closeSheet();
     } catch (e: unknown) { setFormError(e instanceof Error ? e.message : 'Failed to save'); }

@@ -256,6 +256,18 @@ export default function App() {
     return () => window.removeEventListener('online', handleOnline);
   }, [user]);
 
+  // Auto-sync every 2 hours in the background (food logs, weight, supplements)
+  useEffect(() => {
+    if (!user) return;
+    const runAutoSync = () => {
+      if (!getSyncToken()) return;
+      drainSyncQueue().catch(() => {});
+    };
+    const interval = setInterval(runAutoSync, 2 * 60 * 60 * 1000); // 2 hours
+    runAutoSync(); // run once on mount too
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Handle fuelsync:// deep links (Strava OAuth callback on Android)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;

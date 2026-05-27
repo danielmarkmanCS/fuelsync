@@ -415,10 +415,24 @@ export function getWeeklySummary(payload: {
   avgFat: number;
   targetCalories: number;
   targetProtein: number;
-  trainingTypes: string;
+  trainingTypes: string[];
   totalRunKm: number;
   totalStrengthSessions: number;
   streak: number;
 }): Promise<WeeklySummary> {
   return workerPost<WeeklySummary>('ai', '/weekly-summary', payload);
+}
+
+// Fetch a Wikipedia food thumbnail in the background, then patch the local log
+export async function patchLogImage(syncId: string, foodName: string): Promise<void> {
+  try {
+    const AI_BASE = (import.meta.env.VITE_AI_WORKER_URL as string) ?? '';
+    const res = await fetch(`${AI_BASE}/image?name=${encodeURIComponent(foodName)}`);
+    if (!res.ok) return;
+    const data = await res.json() as { imageUrl?: string | null };
+    if (data.imageUrl) {
+      const row = await db.food_logs.where('sync_id').equals(syncId).first();
+      if (row?.id != null) await db.food_logs.update(row.id, { image_url: data.imageUrl });
+    }
+  } catch { /* silent */ }
 }

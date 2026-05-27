@@ -181,23 +181,14 @@ export default function SupplementsScreen() {
             {takenCount}/{supplements.length} taken today
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={handleSync} disabled={syncing}
-            title="Sync supplements with cloud"
-            style={{
-              background: 'none', border: `1px solid ${syncing ? EDGE : ACCENT}`, borderRadius: 6, padding: '8px 10px',
-              color: syncing ? MUTED : ACCENT, fontSize: 13, fontWeight: 700, cursor: syncing ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', gap: 5,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {syncing && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}>
               <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
             </svg>
-            {syncing ? '…' : 'Sync'}
-          </button>
+          )}
           <button
             onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
             style={{

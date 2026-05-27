@@ -685,7 +685,7 @@ function SupplementBlock() {
 export default function HomeScreen() {
   const { user }                          = useAuthStore();
   const { setActiveTab, setPendingMealType } = useAppStore();
-  const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete, removeStrengthSession } = useNutritionStore();
+  const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete, removeStrengthSession, startNewWeek } = useNutritionStore();
   const { logDay, setActivityModifier }   = useNutrition();
   const { isDark }                        = useThemeStore();
 
@@ -1081,13 +1081,6 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* ── Strava (today only) ── */}
-      {user && isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <StravaCard />
-        </div>
-      )}
-
       {/* ── Readiness + Weekly load ── */}
       {isToday && (() => {
         const rec  = weeklyLoad.recoveryScore ?? 70;
@@ -1109,8 +1102,21 @@ export default function HomeScreen() {
             margin: '8px 14px 0', background: 'var(--surf)',
             borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 14px',
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 10 }}>
-              Readiness &amp; Weekly Load
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
+                Readiness &amp; Weekly Load
+              </div>
+              {hasLoad && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Reset all weekly load data (runs + strength sessions)?')) {
+                      const monday = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().split('T')[0]; })();
+                      startNewWeek(monday);
+                    }
+                  }}
+                  style={{ fontSize: 10, fontWeight: 700, color: RED, background: 'none', border: `1px solid ${RED}40`, borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+                >Reset Week</button>
+              )}
             </div>
             {/* Readiness bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -1227,6 +1233,20 @@ export default function HomeScreen() {
         );
       })()}
 
+      {/* ── Strava (today only) ── */}
+      {user && isToday && (
+        <div style={{ margin: '8px 14px 0' }}>
+          <StravaCard />
+        </div>
+      )}
+
+      {/* ── Supplements (today only) ── */}
+      {isToday && (
+        <div style={{ margin: '8px 14px 0' }}>
+          <SupplementBlock />
+        </div>
+      )}
+
       {/* ── Food Diary ── */}
       <div style={{ margin: '8px 14px 0' }}>
         <div style={{
@@ -1301,13 +1321,6 @@ export default function HomeScreen() {
           </div>
         )}
       </div>
-
-      {/* ── Supplements (today only) ── */}
-      {isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <SupplementBlock />
-        </div>
-      )}
 
       {/* ── Past day notice ── */}
       {!isToday && (
