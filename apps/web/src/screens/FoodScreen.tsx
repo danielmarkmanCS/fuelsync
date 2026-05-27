@@ -39,6 +39,10 @@ const MEAL_LABEL: Record<MealType, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
   lunch: 'Lunch', post_workout: 'Post-Workout', dinner: 'Dinner', snack: 'Snack',
 };
+const MEAL_SHORT: Record<string, string> = {
+  breakfast: 'Bfast', pre_workout: 'Pre-WO', lunch: 'Lunch',
+  post_workout: 'Post-WO', dinner: 'Dinner', snack: 'Snack', other: 'Other',
+};
 
 const MEAL_COLOR: Record<string, string> = {
   breakfast: ORANGE, pre_workout: ORANGE, lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
@@ -285,11 +289,16 @@ export default function FoodScreen() {
 
   // Meal calorie targets
   const [mealCalTargets,     setMealCalTargetsState] = useState<MealCalTargets>(getMealCalTargets);
-  const [editingMealTargets, setEditingMealTargets]  = useState(false);
+  const [editingMealTargets, setEditingMealTargets]  = useState<boolean>(false);
 
   // Undo deleted meal
   const [undoEntry, setUndoEntry] = useState<FoodLog | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Collapsible meal sections — track which meals are collapsed
+  const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set());
+  const toggleMealCollapse = (meal: string) =>
+    setCollapsedMeals((prev) => { const n = new Set(prev); if (n.has(meal)) n.delete(meal); else n.add(meal); return n; });
 
   const [nowTime, setNowTime] = useState(() => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
   useEffect(() => {
@@ -1010,8 +1019,73 @@ export default function FoodScreen() {
         </div>
       )}
 
+      {/* ── MEAL CALORIE TARGETS (always visible at top of log) ── */}
+      {isToday && (
+        <div style={{ padding: '12px 22px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>Meal Targets</div>
+            <button onClick={() => setEditingMealTargets(v => !v)} style={{
+              background: 'none', border: 'none', color: editingMealTargets ? ORANGE : MUTED,
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0, letterSpacing: 0.5,
+            }}>⚙ {editingMealTargets ? 'Done' : 'Edit'}</button>
+          </div>
+
+          {editingMealTargets ? (
+            <div style={{ background: SURF, borderRadius: 8, padding: '14px 14px', border: `1px solid ${EDGE}`, marginBottom: 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {(Object.keys(mealCalTargets) as (keyof MealCalTargets)[]).map((k) => (
+                  <div key={k}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase' }}>{MEAL_LABEL[k as MealType] ?? k}</div>
+                    <input type="number" value={mealCalTargets[k]} min={0}
+                      onChange={(e) => setMealCalTargetsState((prev) => ({ ...prev, [k]: parseInt(e.target.value) || 0 }))}
+                      style={{ ...inp, padding: '8px 10px', fontSize: 14, width: '100%', boxSizing: 'border-box' as const }} />
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => handleSaveMealCalTargets(mealCalTargets)} style={{
+                marginTop: 12, width: '100%', padding: '10px 0', borderRadius: 8, border: 'none',
+                background: ORANGE, color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Save Targets</button>
+            </div>
+          ) : (
+            /* Compact horizontal scroll — one pill per meal with kcal progress */
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' as const }}>
+              {MEAL_TYPES.map((m) => {
+                const entries = logs.filter((l) => l.meal_type === m);
+                const consumed_m = entries.reduce((s, e) => s + Number(e.calories), 0);
+                const target_m = mealCalTargets[m as keyof MealCalTargets] ?? 0;
+                const pct = target_m > 0 ? Math.min(consumed_m / target_m, 1) : 0;
+                const over = target_m > 0 && consumed_m > target_m;
+                const hasData = consumed_m > 0 || target_m > 0;
+                if (!hasData) return null;
+                return (
+                  <div key={m} style={{
+                    flexShrink: 0, padding: '8px 12px', borderRadius: 8,
+                    background: SURF, border: `1px solid ${over ? RED + '40' : EDGE}`,
+                    minWidth: 90,
+                  }}>
+                    <div style={{ fontSize: 8, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+                      {MEAL_SHORT[m] ?? m}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: over ? RED : CAL_CLR, letterSpacing: -0.5, lineHeight: 1 }}>
+                      {Math.round(consumed_m)}
+                      {target_m > 0 && <span style={{ fontSize: 9, fontWeight: 500, color: MUTED }}>/{target_m}</span>}
+                    </div>
+                    {target_m > 0 && (
+                      <div style={{ marginTop: 5, height: 3, background: EDGE, borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct * 100}%`, background: over ? RED : GREEN, borderRadius: 2 }} />
+                      </div>
+                    )}
+                  </div>
+                );
+              }).filter(Boolean)}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── FOOD LOG ── */}
-      <div className="nrc-a nrc-a3" style={{ padding: '24px 22px 100px' }}>
+      <div className="nrc-a nrc-a3" style={{ padding: '16px 22px 100px' }}>
         {byMeal.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px' }}>
             {/* Plate illustration */}
@@ -1035,83 +1109,59 @@ export default function FoodScreen() {
             </div>
           </div>
         ) : byMeal.map(({ meal, entries }) => {
-          const mealTotal = entries.reduce((s, e) => s + Number(e.calories), 0);
+          const mealTotal  = entries.reduce((s, e) => s + Number(e.calories), 0);
           const mealTarget = mealCalTargets[meal as keyof MealCalTargets] ?? 0;
-          const mealPct = mealTarget > 0 ? Math.min(mealTotal / mealTarget, 1) : 0;
-          const mealOver = mealTarget > 0 && mealTotal > mealTarget;
+          const mealPct    = mealTarget > 0 ? Math.min(mealTotal / mealTarget, 1) : 0;
+          const mealOver   = mealTarget > 0 && mealTotal > mealTarget;
+          const collapsed  = collapsedMeals.has(meal);
           return (
-            <div key={meal} style={{
-              marginBottom: 14,
-              background: SURF, borderRadius: 8,
-              border: `1px solid ${EDGE}`, padding: '12px 14px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: mealTarget > 0 ? 6 : 10 }}>
+            <div key={meal} style={{ marginBottom: 10, background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+              {/* Collapsible meal header */}
+              <button onClick={() => toggleMealCollapse(meal)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer',
+                borderBottom: collapsed ? 'none' : `1px solid ${EDGE}`,
+              }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: MEAL_COLOR[meal] ?? MUTED, flexShrink: 0 }} />
-                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>
                     {MEAL_LABEL[meal as MealType] ?? 'Other'}
-                  </div>
+                  </span>
+                  <span style={{ fontSize: 9, color: MUTED }}>({entries.length})</span>
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
-                  {Math.round(mealTotal)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
+                    {Math.round(mealTotal)}
+                    {mealTarget > 0 && <span style={{ fontWeight: 500, color: mealOver ? RED : MUTED, fontSize: 10 }}> / {mealTarget}</span>}
+                    <span style={{ fontWeight: 400, color: MUTED, fontSize: 9, marginLeft: 2 }}>kcal</span>
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={MUTED} strokeWidth="2" strokeLinecap="round"
+                    style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>
+                    <polyline points="2,4 6,8 10,4"/>
+                  </svg>
+                </div>
+              </button>
+              {!collapsed && (
+                <div style={{ padding: '10px 12px 12px' }}>
                   {mealTarget > 0 && (
-                    <span style={{ fontWeight: 500, color: mealOver ? RED : MUTED, fontSize: 10 }}>
-                      {' '}/ {mealTarget}
-                    </span>
+                    <div style={{ height: 2, background: EDGE, borderRadius: 2, marginBottom: 10, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${mealPct * 100}%`, background: mealOver ? RED : GREEN, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                    </div>
                   )}
-                  <span style={{ fontWeight: 400, color: MUTED, fontSize: 9, marginLeft: 2 }}>kcal</span>
-                </div>
-              </div>
-              {mealTarget > 0 && (
-                <div style={{ height: 2, background: EDGE, borderRadius: 2, marginBottom: 10, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${mealPct * 100}%`, background: mealOver ? RED : GREEN, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                  {entries.map((entry) => (
+                    <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete}
+                      onReLog={!isToday ? handleReLog : undefined}
+                      reLogLabel={!isToday ? 'Log today' : undefined}
+                    />
+                  ))}
                 </div>
               )}
-              {entries.map((entry) => (
-                <FoodCard key={entry.id} entry={entry} onEdit={openEdit} onDelete={handleDelete}
-                  onReLog={!isToday ? handleReLog : undefined}
-                  reLogLabel={!isToday ? 'Log today' : undefined}
-                />
-              ))}
             </div>
           );
         })}
       </div>
 
-      {/* ── MEAL TARGET EDITOR ── */}
-      {isToday && editingMealTargets && (
-        <div style={{ padding: '0 22px 16px' }}>
-          <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px', border: `1px solid ${EDGE}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>Meal Calorie Targets</div>
-              <button onClick={() => setEditingMealTargets(false)} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: 18 }}>×</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {(Object.keys(mealCalTargets) as (keyof MealCalTargets)[]).map((k) => (
-                <div key={k}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase' }}>{MEAL_LABEL[k as MealType] ?? k}</div>
-                  <input type="number" value={mealCalTargets[k]} min={0}
-                    onChange={(e) => setMealCalTargetsState((prev) => ({ ...prev, [k]: parseInt(e.target.value) || 0 }))}
-                    style={{ ...inp, padding: '8px 10px', fontSize: 14 }} />
-                </div>
-              ))}
-            </div>
-            <button onClick={() => handleSaveMealCalTargets(mealCalTargets)} style={{
-              marginTop: 12, width: '100%', padding: '11px 0', borderRadius: 12, border: 'none',
-              background: `linear-gradient(135deg, ${ORANGE} 0%, ${YELLOW} 100%)`,
-              color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-            }}>Save Targets</button>
-          </div>
-        </div>
-      )}
-      {isToday && !editingMealTargets && logs.length > 0 && (
-        <div style={{ padding: '0 22px 8px', textAlign: 'right' }}>
-          <button onClick={() => setEditingMealTargets(true)} style={{
-            background: 'none', border: 'none', color: MUTED, fontSize: 11,
-            fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
-          }}>⚙ Meal targets</button>
-        </div>
-      )}
+      {/* meal target editor now lives at top — removed from here */}
 
       {/* ── FAB ── */}
       {isToday && (
@@ -1119,12 +1169,15 @@ export default function FoodScreen() {
           onClick={() => { setOpen(true); setMode('ai'); }}
           className="nrc-press fab-pulse"
           style={{
-            position: 'fixed', bottom: 84, right: 'max(20px, calc(50vw - 220px))',
+            position: 'fixed',
+            bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
+            right: 'max(20px, calc(50vw - 220px))',
             width: 60, height: 60, borderRadius: 30,
             background: `linear-gradient(135deg, ${YELLOW} 0%, ${ORANGE} 100%)`,
             border: 'none', cursor: 'pointer',
             color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: `0 4px 20px ${ORANGE}50, 0 1px 4px rgba(0,0,0,0.15)`,
+            zIndex: 90,
           }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

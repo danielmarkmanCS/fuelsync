@@ -358,7 +358,10 @@ export function estimateByDescription(description: string): Promise<AIEstimate> 
 }
 
 export function suggestMeal(context: string, size: 'big' | 'small'): Promise<AIEstimate> {
-  return workerPost<AIEstimate>('ai', '/suggest', { context, size });
+  // Route through /describe so this works with any backend version (no /suggest endpoint needed)
+  const sizeWord = size === 'big' ? 'full' : 'light';
+  const description = `Suggest a complete ${sizeWord} meal suitable for ${context}. Include all ingredients and realistic macros for someone tracking nutrition.`;
+  return workerPost<AIEstimate>('ai', '/describe', { description });
 }
 
 export function estimateSteps(description: string): Promise<{ steps: number; label: 'low' | 'normal' | 'high' }> {

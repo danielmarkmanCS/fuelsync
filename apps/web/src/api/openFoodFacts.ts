@@ -91,15 +91,36 @@ function parseUSDA(f: USDAFood): OFFProduct | null {
   };
 }
 
-// ── Public: food search (USDA) ────────────────────────────────────────────────
+// ── AbortSignal.timeout compat (older Android WebView doesn't support it) ──────
+function timeoutSignal(ms: number): AbortSignal {
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), ms);
+  return ctrl.signal;
+}
+
+// ── Public: food search (USDA + OFF fallback) ─────────────────────────────────
 export async function searchFood(query: string): Promise<OFFProduct[]> {
-  const url = `${USDA_BASE}/foods/search?query=${encodeURIComponent(query)}&api_key=${USDA_KEY}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)&pageSize=20&nutrients=1003,1004,1005,1008,1079,1253,1093,1162,1114,1087,1089`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  if (!res.ok) return [];
-  const data = await res.json() as { foods?: USDAFood[] };
-  return ((data.foods ?? []) as USDAFood[])
-    .map(parseUSDA)
-    .filter(Boolean) as OFFProduct[];
+  // Try USDA first
+  try {
+    const url = `${USDA_BASE}/foods/search?query=${encodeURIComponent(query)}&api_key=${USDA_KEY}&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)&pageSize=20&nutrients=1003,1004,1005,1008,1079,1253,1093,1162,1114,1087,1089`;
+    const res = await fetch(url, { signal: timeoutSignal(9000) });
+    if (res.ok) {
+      const data = await res.json() as { foods?: USDAFood[] };
+      const results = ((data.foods ?? []) as USDAFood[]).map(parseUSDA).filter(Boolean) as OFFProduct[];
+      if (results.length > 0) return results;
+    }
+  } catch { /* fall through to OFF */ }
+
+  // Fallback: Open Food Facts text search
+  try {
+    const url = `${OFF_BASE}/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=20`;
+    const res = await fetch(url, { signal: timeoutSignal(9000) });
+    if (!res.ok) return [];
+    const data = await res.json() as { products?: Record<string, unknown>[] };
+    return ((data.products ?? []) as Record<string, unknown>[])
+      .map((p) => parseOFF(p))
+      .filter(Boolean) as OFFProduct[];
+  } catch { return []; }
 }
 
 // ── Public: barcode lookup (Open Food Facts) ──────────────────────────────────
@@ -136,7 +157,7 @@ function parseOFF(raw: Record<string, unknown>, barcode?: string): OFFProduct | 
 
 export async function lookupBarcode(barcode: string): Promise<OFFProduct | null> {
   const url = `${OFF_BASE}/api/v0/product/${encodeURIComponent(barcode)}.json`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  const res = await fetch(url, { signal: timeoutSignal(8000) });
   if (!res.ok) return null;
   const data = await res.json() as { status: number; product?: Record<string, unknown> };
   if (data.status !== 1 || !data.product) return null;
