@@ -43,7 +43,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../../shared'),
-      '@mobile': path.resolve(__dirname, '../mobile/src'),
     },
   },
 });

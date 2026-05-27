@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNutritionStore } from '../store/nutritionStore';
 import { useAuthStore } from '../store/authStore';
-import { fetchWeather, evaluateEnvironment } from '@mobile/services/weatherService';
-import { computeMacros, checkLegFatigueGate } from '@mobile/services/nutritionEngine';
+import { fetchWeather, evaluateEnvironment } from '../services/weatherService';
+import { computeMacros, checkLegFatigueGate } from '../services/nutritionEngine';
 import { fetchTrainingState, saveTrainingState, getSyncToken } from '../api/syncClient';
 import { drainSyncQueue, clearPullCache } from '../api/localFood';
 import type { DailyLog, TrainingType, UserProfile, WeatherConditions, EnvironmentAlert, WeeklyLoad } from '@shared/types';

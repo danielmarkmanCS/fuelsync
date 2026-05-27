@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { DailyLog, MacroTargets, WeeklyLoad, WeatherConditions, EnvironmentAlert } from '@shared/types';
-import { updateWeeklyLoad } from '@mobile/services/nutritionEngine';
+import { updateWeeklyLoad } from '../services/nutritionEngine';
 
 interface NutritionState {
   todayLog: DailyLog | null;
