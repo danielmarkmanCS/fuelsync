@@ -134,28 +134,24 @@ export default function App() {
                 dailyGoal: syncUser.daily_goal ?? 2000,
               });
             } else {
-              // Fill in missing local values from D1
+              // D1 is the source of truth for profile — always apply cloud data to local.
+              // This prevents stale local data from overwriting a newer profile on another device.
               const d1HasStats = syncUser.weight_kg || syncUser.height_cm || syncUser.age;
-              if (d1HasStats && (!local.weightKg || !local.heightCm || !local.age)) {
+              if (d1HasStats) {
                 local = await updateProfile({
-                  displayName: local.displayName || syncUser.display_name || undefined,
-                  weightKg: local.weightKg || (syncUser.weight_kg ?? 0),
-                  heightCm: local.heightCm || (syncUser.height_cm ?? 0),
-                  age: local.age || (syncUser.age ?? 0),
-                  gender: (local.gender || syncUser.gender as 'male' | 'female') ?? 'male',
-                  activityLevel: ((local.activityLevel || syncUser.activity_level) as LocalProfile['activityLevel']) ?? 'moderate',
-                  dailyGoal: local.dailyGoal || (syncUser.daily_goal ?? 2000),
+                  // Cloud wins for numeric stats; fall back to existing local if cloud has null
+                  displayName: syncUser.display_name || local.displayName || undefined,
+                  weightKg:      syncUser.weight_kg      ?? local.weightKg      ?? undefined,
+                  heightCm:      syncUser.height_cm      ?? local.heightCm      ?? undefined,
+                  age:           syncUser.age            ?? local.age            ?? undefined,
+                  gender:        ((syncUser.gender as 'male' | 'female') ?? local.gender) ?? 'male',
+                  activityLevel: ((syncUser.activity_level || local.activityLevel) as LocalProfile['activityLevel']) ?? 'moderate',
+                  dailyGoal:     syncUser.daily_goal     ?? local.dailyGoal,
                 });
               }
-            }
-            // Push local stats to D1 so other devices stay current
-            if (local.weightKg || local.heightCm) {
-              syncProfile({
-                display_name: local.displayName, weight_kg: local.weightKg ?? undefined,
-                height_cm: local.heightCm ?? undefined, age: local.age ?? undefined,
-                gender: local.gender ?? undefined, activity_level: local.activityLevel,
-                daily_goal: local.dailyGoal,
-              }).catch(() => {});
+              // ⚠️ Do NOT push local → D1 here. Pushing on every boot would overwrite
+              // a newer profile saved on another device with this device's stale data.
+              // Profile is only pushed to D1 when the user explicitly saves in ProfileSetupScreen.
             }
             // Pull weight logs from D1 and merge into local DB
             try {
@@ -349,18 +345,17 @@ export default function App() {
             dailyGoal: u.dailyGoal ?? 2000,
           });
         } else {
-          // Merge D1 stats into existing local profile if local is missing them
-          const needsMerge = (!local.weightKg || !local.heightCm || !local.age) &&
-            (u.weightKg || u.heightCm || u.age);
-          if (needsMerge) {
+          // D1 wins for profile on sign-in — apply cloud data to local.
+          const d1HasStats = u.weightKg || u.heightCm || u.age;
+          if (d1HasStats) {
             local = await updateProfile({
-              displayName: local.displayName || u.displayName,
-              weightKg: local.weightKg || (u.weightKg ?? 0),
-              heightCm: local.heightCm || (u.heightCm ?? 0),
-              age: local.age || (u.age ?? 0),
-              gender: (local.gender || (u.gender as 'male' | 'female')) ?? 'male',
-              activityLevel: ((local.activityLevel || u.activityLevel) as LocalProfile['activityLevel']) ?? 'moderate',
-              dailyGoal: local.dailyGoal || (u.dailyGoal ?? 2000),
+              displayName: u.displayName || local.displayName,
+              weightKg:      u.weightKg      ?? local.weightKg      ?? undefined,
+              heightCm:      u.heightCm      ?? local.heightCm      ?? undefined,
+              age:           u.age           ?? local.age            ?? undefined,
+              gender:        ((u.gender as 'male' | 'female') ?? local.gender) ?? 'male',
+              activityLevel: ((u.activityLevel || local.activityLevel) as LocalProfile['activityLevel']) ?? 'moderate',
+              dailyGoal:     u.dailyGoal     ?? local.dailyGoal,
             });
           }
         }
