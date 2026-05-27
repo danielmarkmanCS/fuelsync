@@ -734,6 +734,7 @@ export default function HomeScreen() {
   }, [setActiveTab, setPendingMealType]);
 
   const handleSelectType = (type: TrainingType) => {
+    if (!isToday) return; // safety: never mutate today's log while viewing a past day
     const r = logDay(type);
     if (r.blocked && !window.confirm('Heavy run load this week. Cardio today risks injury.\n\nLog anyway?')) return;
     if (r.blocked) logDay(type, undefined, undefined, true);
@@ -895,13 +896,14 @@ export default function HomeScreen() {
       )}
 
       {/* ── Calorie dashboard ── */}
+      {/* For past days: targets = null (no goal — we don't store historical targets) */}
       <div style={{ margin: '10px 14px 0' }}>
-        <CalDashboard consumed={consumed} targets={targets} />
+        <CalDashboard consumed={consumed} targets={isToday ? targets : null} />
       </div>
 
       {/* ── Macro row ── */}
       <div style={{ margin: '8px 14px 0' }}>
-        <MacroRow consumed={consumed} targets={targets} />
+        <MacroRow consumed={consumed} targets={isToday ? targets : null} />
       </div>
 
       {/* ── Training selector (today only) ── */}
