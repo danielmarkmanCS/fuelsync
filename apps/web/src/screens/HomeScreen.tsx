@@ -13,16 +13,6 @@ import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
-// ── Water tracker helpers ─────────────────────────────────────────────
-const WATER_GOAL = 8; // glasses
-function getWaterKey(date: string) { return `fs_water_${date}`; }
-function loadWater(date: string): number {
-  try { return parseInt(localStorage.getItem(getWaterKey(date)) ?? '0', 10) || 0; } catch { return 0; }
-}
-function saveWater(date: string, n: number) {
-  try { localStorage.setItem(getWaterKey(date), String(Math.max(0, Math.min(WATER_GOAL + 4, n)))); } catch {}
-}
-
 // ── Macro palette: Protein=blue, Carbs=green, Fat=amber ──────────────
 const PROT = '#38BDF8';
 const CARB = '#22C55E';
@@ -117,95 +107,17 @@ function TrainingIcon({ type, size = 20 }: { type: TrainingType; size?: number }
       return <svg {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
     case 'hybrid':
       return <svg {...p}><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+    case 'hiit':
+      return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+    case 'cycling':
+      return <svg {...p}><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h3"/></svg>;
+    case 'yoga':
+      return <svg {...p}><circle cx="12" cy="4" r="1"/><path d="M4 15s2-6 8-6 8 6 8 6"/><path d="M9 15l-2 6M15 15l2 6M9 15l3-4 3 4"/></svg>;
+    case 'walk':
+      return <svg {...p}><circle cx="12" cy="4" r="1"/><path d="M9 20l1-5-2-3 4-8"/><path d="M13 7l3 2 2 5"/><path d="M7 20h4M15 13l2 7"/></svg>;
     default:
       return <svg {...p}><circle cx="12" cy="12" r="10"/></svg>;
   }
-}
-
-// ── Water Tracker component ───────────────────────────────────────────
-function WaterTracker({ date }: { date: string }) {
-  const [glasses, setGlasses] = useState(() => loadWater(date));
-
-  useEffect(() => { setGlasses(loadWater(date)); }, [date]);
-
-  const set = (n: number) => {
-    const clamped = Math.max(0, Math.min(WATER_GOAL + 4, n));
-    setGlasses(clamped);
-    saveWater(date, clamped);
-  };
-
-  const pct  = Math.min(glasses / WATER_GOAL, 1);
-  const done = glasses >= WATER_GOAL;
-
-  return (
-    <div style={{
-      background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
-      padding: '12px 14px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" style={{ display:'none' }}/>
-            <path d="M12 2 C8 8 5 12 5 15 a7 7 0 0 0 14 0 c0-3-3-7-7-13z"/>
-          </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-            Hydration
-          </span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '1px 7px',
-            color: done ? '#38BDF8' : 'var(--muted)',
-            background: done ? 'rgba(56,189,248,0.12)' : 'var(--edge)',
-          }}>
-            {glasses}/{WATER_GOAL}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <button onClick={() => set(glasses - 1)} className="nrc-press" style={{
-            width: 28, height: 28, borderRadius: 6, border: '1px solid var(--edge)',
-            background: 'var(--surf2)', color: 'var(--muted)', fontSize: 16, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>−</button>
-          <button onClick={() => set(glasses + 1)} className="nrc-press" style={{
-            width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(56,189,248,0.4)',
-            background: 'rgba(56,189,248,0.08)', color: '#38BDF8', fontSize: 16, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700,
-          }}>+</button>
-        </div>
-      </div>
-
-      {/* Drop icons */}
-      <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
-        {Array.from({ length: WATER_GOAL }, (_, i) => {
-          const filled = i < glasses;
-          return (
-            <button key={i} onClick={() => set(filled && glasses === i + 1 ? i : i + 1)}
-              className="nrc-press"
-              style={{ flex: 1, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
-                background: filled ? '#38BDF8' : 'var(--edge)',
-                opacity: filled ? 1 : 0.35,
-                transition: 'background 0.18s ease, opacity 0.18s ease',
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 2, background: 'var(--edge)', borderRadius: 1, overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', borderRadius: 1,
-          background: done ? '#38BDF8' : '#38BDF880',
-          width: `${pct * 100}%`,
-          transition: 'width 0.35s ease',
-        }} />
-      </div>
-      {done && (
-        <div style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, textAlign: 'center', marginTop: 5 }}>
-          💧 Hydration goal hit!
-        </div>
-      )}
-    </div>
-  );
 }
 
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
@@ -773,7 +685,7 @@ function SupplementBlock() {
 export default function HomeScreen() {
   const { user }                          = useAuthStore();
   const { setActiveTab, setPendingMealType } = useAppStore();
-  const { todayLog, weeklyLoad, weather, environmentAlert } = useNutritionStore();
+  const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete } = useNutritionStore();
   const { logDay, setActivityModifier }   = useNutrition();
   const { isDark }                        = useThemeStore();
 
@@ -785,6 +697,9 @@ export default function HomeScreen() {
   const [consumed, setConsumed] = useState<MacroTargets>(emptyMacros());
   const [logTick,  setLogTick]  = useState(0);
   const [expandedTraining, setExpandedTraining] = useState<TrainingType | null>(null);
+  const [workoutKm,       setWorkoutKm]       = useState('');
+  const [workoutSets,     setWorkoutSets]     = useState('');
+  const [workoutLogged,   setWorkoutLogged]   = useState(false);
 
   const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
 
@@ -1021,26 +936,90 @@ export default function HomeScreen() {
             })}
           </div>
 
-          {/* Training description tooltip */}
+          {/* Training description + workout log form */}
           {expandedTraining && (() => {
             const t = TRAINING_TYPES.find(x => x.type === expandedTraining);
             if (!t) return null;
             const displayColor = t.isAccent ? 'var(--accent)' : t.color;
+            const isCardioType = ['cardio','hiit','cycling','walk'].includes(expandedTraining);
+            const isStrength   = ['strength','hybrid'].includes(expandedTraining);
+            const hasWorkoutLog = isCardioType || isStrength;
+            const inp: React.CSSProperties = {
+              flex: 1, padding: '8px 10px', borderRadius: 8,
+              border: `1px solid ${displayColor}50`, background: 'var(--surf)',
+              color: 'var(--text)', fontSize: 14, fontWeight: 700, outline: 'none',
+              minWidth: 0,
+            };
             return (
               <div style={{
-                marginTop: 10, padding: '10px 12px', borderRadius: 8,
-                background: `${t.isAccent ? 'var(--accent-muted)' : t.color + '14'}`,
+                marginTop: 10, padding: '12px 12px', borderRadius: 8,
+                background: `${t.isAccent ? 'var(--accent-muted)' : t.color + '10'}`,
                 border: `1px solid ${displayColor}40`,
-                display: 'flex', alignItems: 'flex-start', gap: 10,
               }}>
-                <TrainingIcon type={expandedTraining} size={16} />
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: displayColor, marginBottom: 2 }}>{t.label} Day</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>{t.desc}</div>
-                  <div style={{ fontSize: 10, color: displayColor, marginTop: 4, fontWeight: 700, opacity: 0.85 }}>→ {t.macroTip}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: hasWorkoutLog ? 12 : 0 }}>
+                  <TrainingIcon type={expandedTraining} size={16} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: displayColor, marginBottom: 2 }}>{t.label} Day</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>{t.desc}</div>
+                    <div style={{ fontSize: 10, color: displayColor, marginTop: 3, fontWeight: 700, opacity: 0.85 }}>→ {t.macroTip}</div>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); setExpandedTraining(null); setWorkoutLogged(false); setWorkoutKm(''); setWorkoutSets(''); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>×</button>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setExpandedTraining(null); }}
-                  style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>×</button>
+
+                {/* Workout logging form */}
+                {hasWorkoutLog && !workoutLogged && (
+                  <div>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Log Today's Workout
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {isCardioType && (
+                        <input
+                          type="number" inputMode="decimal" placeholder="km" value={workoutKm}
+                          onChange={(e) => setWorkoutKm(e.target.value)}
+                          style={{ ...inp, width: 80 }}
+                        />
+                      )}
+                      {isStrength && (
+                        <input
+                          type="number" inputMode="numeric" placeholder="sets" value={workoutSets}
+                          onChange={(e) => setWorkoutSets(e.target.value)}
+                          style={{ ...inp, width: 80 }}
+                        />
+                      )}
+                      <button
+                        onClick={() => {
+                          const km   = parseFloat(workoutKm)   || 0;
+                          const sets = parseInt(workoutSets) || 0;
+                          if (isCardioType && km > 0) {
+                            addRunKm(km, `${t.label} · ${km}km`, 'manual');
+                          }
+                          if (isStrength && sets > 0) {
+                            logWorkoutComplete(0, sets);
+                          }
+                          if (km > 0 || sets > 0) {
+                            setWorkoutLogged(true);
+                            setWorkoutKm(''); setWorkoutSets('');
+                          }
+                        }}
+                        style={{
+                          flex: 1, padding: '9px 12px', borderRadius: 8,
+                          border: 'none', background: displayColor,
+                          color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                        }}
+                      >
+                        Log ✓
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {workoutLogged && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${displayColor}18` }}>
+                    <span style={{ fontSize: 16 }}>✅</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: displayColor }}>Workout logged!</span>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -1162,13 +1141,6 @@ export default function HomeScreen() {
         )}
       </div>
 
-      {/* ── Water Tracker (today only) ── */}
-      {isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <WaterTracker date={todayStr} />
-        </div>
-      )}
-
       {/* ── Supplements (today only) ── */}
       {isToday && (
         <div style={{ margin: '8px 14px 0' }}>
@@ -1229,7 +1201,7 @@ export default function HomeScreen() {
             </div>
             {/* Weekly load stats */}
             {hasLoad && (
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: loggedRuns.length > 0 ? 12 : 0 }}>
                 {weeklyLoad.totalRunKm > 0 && (
                   <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
                     <div style={{ fontSize: 20, fontWeight: 900, color: CARB, letterSpacing: -0.5 }}>
@@ -1251,6 +1223,43 @@ export default function HomeScreen() {
                     {fat}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>pts</span>
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Leg fatigue</div>
+                </div>
+              </div>
+            )}
+            {/* Individual logged runs / sessions */}
+            {loggedRuns.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--edge)', paddingTop: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                  This week's sessions
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {loggedRuns.map((run, i) => {
+                    const isStrava = run.source === 'strava';
+                    const pace = run.paceMinPerKm
+                      ? `${Math.floor(run.paceMinPerKm)}:${String(Math.round((run.paceMinPerKm % 1) * 60)).padStart(2,'0')}/km`
+                      : null;
+                    return (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 10px', borderRadius: 8, background: 'var(--surf2)',
+                        border: `1px solid ${isStrava ? '#FC4C0230' : CARB + '30'}`,
+                        borderLeft: `3px solid ${isStrava ? '#FC4C02' : CARB}`,
+                      }}>
+                        <div style={{ fontSize: 16, lineHeight: 1 }}>{isStrava ? '🟠' : '🏃'}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {run.name}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>
+                            {isStrava ? 'Strava' : 'Manual'}{pace ? ` · ${pace}` : ''}{run.durationMin ? ` · ${Math.round(run.durationMin)}min` : ''}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: CARB, letterSpacing: -0.5, flexShrink: 0 }}>
+                          {run.km}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)' }}> km</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
