@@ -81,6 +81,13 @@ export interface LoggedRun {
   paceMinPerKm?: number;   // pace as decimal minutes (e.g. 5.5 = 5:30/km)
 }
 
+export interface LoggedStrengthSession {
+  id: string;        // UUID for deletion
+  date: string;      // ISO date (YYYY-MM-DD)
+  label: string;     // e.g. "Strength" / "Hybrid"
+  sets: number;      // number of sessions logged this day (always 1 per log)
+}
+
 export interface WeeklyLoad {
   weekStart: string; // ISO date Monday
   totalRunKm: number;
@@ -88,6 +95,7 @@ export interface WeeklyLoad {
   legFatigueScore: number; // 0-100, blocks high-intensity runs when high
   recoveryScore: number;   // 0-100
   loggedRuns: LoggedRun[];
+  strengthSessions: LoggedStrengthSession[]; // individual sessions for per-day display + delete
 }
 
 export interface NearbyVenue {

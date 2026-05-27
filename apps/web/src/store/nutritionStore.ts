@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { DailyLog, MacroTargets, WeeklyLoad, WeatherConditions, EnvironmentAlert } from '@shared/types';
+import type { DailyLog, MacroTargets, WeeklyLoad, WeatherConditions, EnvironmentAlert, LoggedStrengthSession } from '@shared/types';
 import { updateWeeklyLoad } from '../services/nutritionEngine';
 
 interface NutritionState {
@@ -14,13 +14,13 @@ interface NutritionState {
   setTodayLog: (log: DailyLog) => void;
   setActivityModifier: (modifier: DailyLog['dailyActivityModifier']) => void;
   setWeather: (weather: WeatherConditions, alert: EnvironmentAlert) => void;
-  logWorkoutComplete: (km?: number, sets?: number) => void;
+  logWorkoutComplete: (km?: number, sets?: number, label?: string) => void;
   addRunKm: (km: number, name?: string, source?: 'strava' | 'manual', durationMin?: number, paceMinPerKm?: number) => void;
   removeRunKm: (km: number, name?: string) => void;
   renameRun: (idx: number, newName: string) => void;
   resetWeeklyRuns: () => void;
-  addStrengthSession: () => void;
-  removeStrengthSession: () => void;
+  addStrengthSession: (label?: string) => void;
+  removeStrengthSession: (id?: string) => void;
   startNewWeek: (monday: string) => void;
   setWeeklyLoad: (weeklyLoad: WeeklyLoad) => void;
   resetDay: () => void;
@@ -34,6 +34,7 @@ const defaultWeeklyLoad = (): WeeklyLoad => ({
   legFatigueScore: 0,
   recoveryScore: 80,
   loggedRuns: [],
+  strengthSessions: [],
 });
 
 export const useNutritionStore = create<NutritionState>()(
@@ -83,12 +84,17 @@ export const useNutritionStore = create<NutritionState>()(
         }});
       },
 
-      logWorkoutComplete: (km = 0, sets = 0) => {
+      logWorkoutComplete: (km = 0, sets = 0, label = 'Strength') => {
         const { todayLog, weeklyLoad } = get();
         if (!todayLog) return;
         const updated = updateWeeklyLoad(weeklyLoad, todayLog, { addKm: km, addSets: sets });
         if (km > 0) {
           updated.loggedRuns = [...(updated.loggedRuns ?? []), { km, name: 'Manual Run', source: 'manual' }];
+        }
+        if (sets > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const session: LoggedStrengthSession = { id: crypto.randomUUID(), date: today, label, sets };
+          updated.strengthSessions = [...(updated.strengthSessions ?? []), session];
         }
         set({ weeklyLoad: updated });
       },
@@ -105,14 +111,33 @@ export const useNutritionStore = create<NutritionState>()(
         set({ weeklyLoad: { ...weeklyLoad, totalRunKm: 0, loggedRuns: [] } });
       },
 
-      addStrengthSession: () => {
+      addStrengthSession: (label = 'Strength') => {
         const { weeklyLoad } = get();
-        set({ weeklyLoad: { ...weeklyLoad, totalStrengthSets: weeklyLoad.totalStrengthSets + 1 } });
+        const today = new Date().toISOString().split('T')[0];
+        const session: LoggedStrengthSession = { id: crypto.randomUUID(), date: today, label, sets: 1 };
+        set({ weeklyLoad: {
+          ...weeklyLoad,
+          totalStrengthSets: weeklyLoad.totalStrengthSets + 1,
+          strengthSessions: [...(weeklyLoad.strengthSessions ?? []), session],
+          recoveryScore: Math.max(0, (weeklyLoad.recoveryScore ?? 80) - 10),
+        }});
       },
 
-      removeStrengthSession: () => {
+      removeStrengthSession: (id) => {
         const { weeklyLoad } = get();
-        set({ weeklyLoad: { ...weeklyLoad, totalStrengthSets: Math.max(0, weeklyLoad.totalStrengthSets - 1) } });
+        if (id) {
+          // remove by id
+          const sessions = (weeklyLoad.strengthSessions ?? []).filter(s => s.id !== id);
+          set({ weeklyLoad: {
+            ...weeklyLoad,
+            totalStrengthSets: Math.max(0, weeklyLoad.totalStrengthSets - 1),
+            strengthSessions: sessions,
+            recoveryScore: Math.min(100, (weeklyLoad.recoveryScore ?? 80) + 10),
+          }});
+        } else {
+          // legacy: just decrement count
+          set({ weeklyLoad: { ...weeklyLoad, totalStrengthSets: Math.max(0, weeklyLoad.totalStrengthSets - 1) } });
+        }
       },
 
       startNewWeek: (monday) => set({ weeklyLoad: {
@@ -122,6 +147,7 @@ export const useNutritionStore = create<NutritionState>()(
         legFatigueScore: 0,
         recoveryScore: 80,
         loggedRuns: [],
+        strengthSessions: [],
       }}),
 
       setWeeklyLoad: (weeklyLoad) => set({ weeklyLoad }),

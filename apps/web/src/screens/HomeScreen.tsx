@@ -685,7 +685,7 @@ function SupplementBlock() {
 export default function HomeScreen() {
   const { user }                          = useAuthStore();
   const { setActiveTab, setPendingMealType } = useAppStore();
-  const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete } = useNutritionStore();
+  const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete, removeStrengthSession } = useNutritionStore();
   const { logDay, setActivityModifier }   = useNutrition();
   const { isDark }                        = useThemeStore();
 
@@ -741,8 +741,9 @@ export default function HomeScreen() {
     // Auto-log 1 session immediately for strength-type days (once per day)
     // Cardio types wait for the user to enter km in the expanded form
     const isStrengthDay = type === 'strength' || type === 'hybrid';
+    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
     if (isStrengthDay && !todayLog?.actualWorkoutLogged) {
-      logWorkoutComplete(0, 1);
+      logWorkoutComplete(0, 1, typeLabel);
       setWorkoutLogged(true);
     }
     // Reset logged state when switching to a cardio type
@@ -752,8 +753,9 @@ export default function HomeScreen() {
     }
   };
 
-  const activityModifier = todayLog?.dailyActivityModifier ?? null;
-  const loggedRuns       = weeklyLoad.loggedRuns ?? [];
+  const activityModifier    = todayLog?.dailyActivityModifier ?? null;
+  const loggedRuns          = weeklyLoad.loggedRuns ?? [];
+  const strengthSessions    = weeklyLoad.strengthSessions ?? [];
 
   // Date navigation helpers
   const goToPrev = () => {
@@ -1009,7 +1011,7 @@ export default function HomeScreen() {
                             addRunKm(km, `${t.label} · ${km}km`, 'manual');
                           }
                           if (isStrength && sets > 0) {
-                            logWorkoutComplete(0, sets);
+                            logWorkoutComplete(0, sets, t.label);
                           }
                           if (km > 0 || sets > 0) {
                             setWorkoutLogged(true);
@@ -1131,7 +1133,7 @@ export default function HomeScreen() {
             </div>
             {/* Weekly load stats */}
             {hasLoad && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: loggedRuns.length > 0 ? 12 : 0 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: (loggedRuns.length > 0 || strengthSessions.length > 0) ? 12 : 0 }}>
                 {weeklyLoad.totalRunKm > 0 && (
                   <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
                     <div style={{ fontSize: 20, fontWeight: 900, color: CARB, letterSpacing: -0.5 }}>
@@ -1143,9 +1145,9 @@ export default function HomeScreen() {
                 {weeklyLoad.totalStrengthSets > 0 && (
                   <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
                     <div style={{ fontSize: 20, fontWeight: 900, color: PROT, letterSpacing: -0.5 }}>
-                      {weeklyLoad.totalStrengthSets}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>×</span>
+                      {weeklyLoad.totalStrengthSets}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>sessions</span>
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Strength sessions</div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Strength this week</div>
                   </div>
                 )}
                 <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
@@ -1156,13 +1158,41 @@ export default function HomeScreen() {
                 </div>
               </div>
             )}
-            {/* Individual logged runs / sessions */}
-            {loggedRuns.length > 0 && (
+            {/* Individual logged sessions — runs + strength, sorted by date */}
+            {(loggedRuns.length > 0 || strengthSessions.length > 0) && (
               <div style={{ borderTop: '1px solid var(--edge)', paddingTop: 10 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                   This week's sessions
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {/* Strength sessions */}
+                  {strengthSessions.map((s) => {
+                    const dayLabel = (() => {
+                      const today = new Date().toISOString().split('T')[0];
+                      if (s.date === today) return 'Today';
+                      const d = new Date(s.date + 'T12:00:00');
+                      return d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+                    })();
+                    return (
+                      <div key={s.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 10px', borderRadius: 8, background: 'var(--surf2)',
+                        border: `1px solid ${PROT}30`, borderLeft: `3px solid ${PROT}`,
+                      }}>
+                        <div style={{ fontSize: 16, lineHeight: 1 }}>🏋️</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{s.label}</div>
+                          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>{dayLabel} · 1 session</div>
+                        </div>
+                        <button
+                          onClick={() => removeStrengthSession(s.id)}
+                          style={{ background: 'none', border: 'none', color: RED, fontSize: 16, cursor: 'pointer', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
+                          title="Remove session"
+                        >×</button>
+                      </div>
+                    );
+                  })}
+                  {/* Run sessions */}
                   {loggedRuns.map((run, i) => {
                     const isStrava = run.source === 'strava';
                     const pace = run.paceMinPerKm

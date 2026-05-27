@@ -103,9 +103,10 @@ export default function App() {
   useEffect(() => {
     const a = ACCENT_COLORS[accentKey];
     const v = isDark ? a.dark : a.light;
-    document.documentElement.style.setProperty('--accent',       v);
-    document.documentElement.style.setProperty('--accent2',      v);
-    document.documentElement.style.setProperty('--accent-muted', a.muted);
+    // Set on body (not documentElement) so it overrides the body[data-theme="light"] CSS rule
+    document.body.style.setProperty('--accent',       v);
+    document.body.style.setProperty('--accent2',      v);
+    document.body.style.setProperty('--accent-muted', a.muted);
   }, [accentKey, isDark]);
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
