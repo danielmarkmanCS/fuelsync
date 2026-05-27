@@ -400,3 +400,25 @@ export async function analyzeByImage(file: File): Promise<AIEstimate> {
   });
   return workerPost<AIEstimate>('ai', '/analyze', { base64, mimeType: file.type });
 }
+
+export interface WeeklySummary {
+  well:  string;
+  watch: string;
+  focus: string;
+}
+
+export function getWeeklySummary(payload: {
+  days: number;
+  avgCalories: number;
+  avgProtein: number;
+  avgCarbs: number;
+  avgFat: number;
+  targetCalories: number;
+  targetProtein: number;
+  trainingTypes: string;
+  totalRunKm: number;
+  totalStrengthSessions: number;
+  streak: number;
+}): Promise<WeeklySummary> {
+  return workerPost<WeeklySummary>('ai', '/weekly-summary', payload);
+}

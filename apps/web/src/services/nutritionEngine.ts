@@ -43,7 +43,7 @@ const MACRO_RATIOS: Record<TrainingType, MacroRatio> = {
     protein: 0.30,
     carbs: 0.20,
     fat: 0.50,
-    caloricAdjustment: 0.85, // slight deficit on rest days
+    caloricAdjustment: 0.85,
     rationale:
       'Rest day: High fat as primary fuel, moderate protein for ongoing repair, low carb to deplete remaining glycogen and enhance fat adaptation.',
   },
@@ -51,7 +51,7 @@ const MACRO_RATIOS: Record<TrainingType, MacroRatio> = {
     protein: 0.38,
     carbs: 0.35,
     fat: 0.27,
-    caloricAdjustment: 1.05, // slight surplus to support muscle protein synthesis
+    caloricAdjustment: 1.05,
     rationale:
       'Strength day: High protein to maximise MPS, moderate carbs timed around the workout window, moderate fat to maintain hormone balance.',
   },
@@ -59,7 +59,7 @@ const MACRO_RATIOS: Record<TrainingType, MacroRatio> = {
     protein: 0.25,
     carbs: 0.55,
     fat: 0.20,
-    caloricAdjustment: 1.10, // elevated for glycogen replenishment
+    caloricAdjustment: 1.10,
     rationale:
       'Cardio day: High carbs to saturate glycogen stores, moderate protein, low fat to accelerate gastric emptying pre-run.',
   },
@@ -70,6 +70,38 @@ const MACRO_RATIOS: Record<TrainingType, MacroRatio> = {
     caloricAdjustment: 1.08,
     rationale:
       'Hybrid day: Balanced macros favouring carbs slightly — supports both aerobic performance and recovery from strength work.',
+  },
+  hiit: {
+    protein: 0.30,
+    carbs: 0.50,
+    fat: 0.20,
+    caloricAdjustment: 1.12,
+    rationale:
+      'HIIT day: High intensity demands rapid glycogen replenishment — elevated carbs post-session, solid protein for muscle repair, minimal fat to maximise energy availability.',
+  },
+  cycling: {
+    protein: 0.25,
+    carbs: 0.52,
+    fat: 0.23,
+    caloricAdjustment: 1.10,
+    rationale:
+      'Cycling day: Sustained aerobic work burns primarily carbs — high carb intake to preserve glycogen, moderate protein for leg muscle support, moderate fat for sustained endurance fuel.',
+  },
+  yoga: {
+    protein: 0.30,
+    carbs: 0.30,
+    fat: 0.40,
+    caloricAdjustment: 0.90,
+    rationale:
+      'Yoga day: Low-intensity movement supports recovery — moderate protein for tissue repair, balanced fat for hormonal support, low-moderate carbs as glycogen demands are minimal.',
+  },
+  walk: {
+    protein: 0.28,
+    carbs: 0.30,
+    fat: 0.42,
+    caloricAdjustment: 0.92,
+    rationale:
+      'Walk day: Light aerobic activity — slightly above rest calories to support fat oxidation and active recovery. Low carb, moderate protein, higher fat for sustained low-intensity fuel.',
   },
 };
 
@@ -113,7 +145,7 @@ export function checkLegFatigueGate(
   load: WeeklyLoad,
   log: DailyLog,
 ): { blocked: boolean; message?: string } {
-  if (log.trainingType !== 'cardio') return { blocked: false };
+  if (log.trainingType !== 'cardio' && log.trainingType !== 'hiit' && log.trainingType !== 'cycling') return { blocked: false };
   if (load.legFatigueScore >= 70) {
     return {
       blocked: true,
@@ -191,9 +223,12 @@ export function updateWeeklyLoad(
 
   // Leg fatigue increases with runs and leg-dominant strength sets, decays on rest
   let legDelta = 0;
-  if (log.trainingType === 'cardio') legDelta = Math.min(20, addKm * 1.5);
+  if (log.trainingType === 'cardio')   legDelta = Math.min(20, addKm * 1.5);
+  if (log.trainingType === 'cycling')  legDelta = Math.min(15, addKm * 0.8);
+  if (log.trainingType === 'hiit')     legDelta = 12;
   if (log.trainingType === 'strength') legDelta = addSets * 1.2;
-  if (log.trainingType === 'rest') legDelta = -15; // natural decay
+  if (log.trainingType === 'rest' || log.trainingType === 'yoga') legDelta = -15; // recovery decay
+  if (log.trainingType === 'walk')     legDelta = -8; // light recovery
 
   // Recovery score: improves on rest/low intensity, drops on high volume
   const intensityImpact = { low: 10, moderate: -5, high: -15 }[log.intensity];

@@ -287,6 +287,10 @@ export default function FoodScreen() {
   const [loggingRecipeServings, setLoggingRecipeServings] = useState('1');
   const recipeSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Voice input
+  const [isListening,  setIsListening]  = useState(false);
+  const recognitionRef = useRef<{ stop: () => void } | null>(null);
+
   // Meal calorie targets
   const [mealCalTargets,     setMealCalTargetsState] = useState<MealCalTargets>(getMealCalTargets);
   const [editingMealTargets, setEditingMealTargets]  = useState<boolean>(false);
@@ -739,6 +743,38 @@ export default function FoodScreen() {
       setMode('manual');
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'AI failed'); }
     finally { setAiLoading(false); }
+  };
+
+  const handleVoiceInput = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    const SR = win.SpeechRecognition ?? win.webkitSpeechRecognition;
+    if (!SR) { setAiError('Voice input not supported in this browser.'); return; }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition: any = new SR();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      const transcript: string = e.results[0][0].transcript;
+      setAiQuery((prev) => prev ? `${prev} ${transcript}` : transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend   = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   const handleWeightAI = async () => {
@@ -1677,10 +1713,42 @@ export default function FoodScreen() {
                   <div style={{ fontSize: 12, color: MUTED, marginBottom: 12, lineHeight: 1.6 }}>
                     Describe anything — single or multi-ingredient: "2 eggs, yogurt, grapes"
                   </div>
-                  <textarea autoFocus value={aiQuery}
-                    onChange={(e) => { setAiQuery(e.target.value); setAiError(''); }}
-                    placeholder="What did you eat?" rows={3}
-                    style={{ ...inp, width: '100%', resize: 'none', marginBottom: 12, lineHeight: 1.6 }} />
+                  <div style={{ position: 'relative', marginBottom: 12 }}>
+                    <textarea autoFocus value={aiQuery}
+                      onChange={(e) => { setAiQuery(e.target.value); setAiError(''); }}
+                      placeholder="What did you eat?" rows={3}
+                      style={{ ...inp, width: '100%', resize: 'none', lineHeight: 1.6, paddingRight: 44 }} />
+                    {/* Mic button */}
+                    <button
+                      onClick={handleVoiceInput}
+                      title={isListening ? 'Stop listening' : 'Speak your meal'}
+                      style={{
+                        position: 'absolute', right: 8, top: 8,
+                        width: 32, height: 32, borderRadius: 8,
+                        border: `1.5px solid ${isListening ? '#EF4444' : 'var(--edge)'}`,
+                        background: isListening ? '#EF444420' : 'var(--surf2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', transition: 'all 0.2s ease',
+                        animation: isListening ? 'pulse 1s infinite' : 'none',
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke={isListening ? '#EF4444' : 'var(--muted)'}
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {isListening && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
+                      padding: '8px 12px', borderRadius: 8, background: '#EF444412', border: '1px solid #EF444440' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444', animation: 'pulse 1s infinite' }} />
+                      <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 700 }}>Listening… speak your meal</span>
+                    </div>
+                  )}
                   <MealChips form={form} setForm={setForm} />
                   {aiError && <ErrBox msg={aiError} />}
                   <button onClick={handleAISmart} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, ORANGE)}>

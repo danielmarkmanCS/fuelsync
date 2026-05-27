@@ -15,8 +15,7 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../../shared/*"],
-      "@mobile/*": ["../mobile/src/*"]
+      "@shared/*": ["../../shared/*"]
     }
   },
   "include": ["src"]

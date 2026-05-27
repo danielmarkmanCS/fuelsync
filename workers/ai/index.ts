@@ -141,6 +141,28 @@ Respond ONLY with valid JSON (no other text): {"steps":number,"label":"low"|"nor
         return json(parseJSON(text), 200, allowedOrigin);
       }
 
+      if (url.pathname.endsWith('/weekly-summary')) {
+        const { days, avgCalories, avgProtein, avgCarbs, avgFat, targetCalories, targetProtein, trainingTypes, totalRunKm, totalStrengthSessions, streak } = body;
+        const prompt = `You are a sports nutritionist coach. Analyze this athlete's past 7 days and write a short, motivating, data-driven weekly summary.
+
+DATA:
+- Logged days: ${days}/7 (streak: ${streak} days)
+- Avg daily: ${avgCalories} kcal | P ${avgProtein}g | C ${avgCarbs}g | F ${avgFat}g
+- Targets: ${targetCalories} kcal | Protein ${targetProtein}g
+- Training: ${trainingTypes} (run: ${totalRunKm}km, strength: ${totalStrengthSessions} sessions)
+
+Write 3 short sections (2-3 sentences each):
+1. "What went well" — celebrate real wins from the data
+2. "What to watch" — one or two honest gaps (under-eating protein? skipped days?)
+3. "This week's focus" — one concrete, actionable recommendation
+
+Keep it coach-like, direct, no fluff. No markdown. No bullet points. Just plain text paragraphs.
+
+Respond ONLY with valid JSON: {"well":"string","watch":"string","focus":"string"}`;
+        const text = await gemini(apiKeys, prompt, 512);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
       return err('Not found', 404, allowedOrigin);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'AI request failed';

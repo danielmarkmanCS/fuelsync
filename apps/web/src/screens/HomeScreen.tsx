@@ -523,6 +523,18 @@ const TRAINING_TYPES: {
   { type: 'hybrid',   label: 'Hybrid',   color: '#8B949E', isAccent: true,
     desc: 'Mixed training — balanced macros',
     macroTip: 'Balanced protein · carb · fat split' },
+  { type: 'hiit',     label: 'HIIT',     color: '#EF4444',
+    desc: 'Max intensity intervals — high carbs + protein',
+    macroTip: 'High carb · high protein · low fat' },
+  { type: 'cycling',  label: 'Cycling',  color: '#F97316',
+    desc: 'Sustained aerobic work — carb-forward',
+    macroTip: 'High carb · moderate protein · moderate fat' },
+  { type: 'yoga',     label: 'Yoga',     color: '#A78BFA',
+    desc: 'Mobility + mindfulness — active recovery',
+    macroTip: 'Moderate fat · balanced protein · low carb' },
+  { type: 'walk',     label: 'Walk',     color: '#34D399',
+    desc: 'Light movement — fat-burning zone',
+    macroTip: 'High fat · low carb · moderate protein' },
 ];
 
 // ── Supplement checklist ───────────────────────────────────────────────
@@ -1171,46 +1183,80 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* ── Weekly load ── */}
-      {isToday && (loggedRuns.length > 0 || weeklyLoad.totalStrengthSets > 0) && (
-        <div style={{
-          margin: '10px 14px 0', background: 'var(--surf)',
-          borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
-            Weekly Load
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {weeklyLoad.totalRunKm > 0 && (
-              <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--edge)' }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: CARB, letterSpacing: -0.5 }}>
-                  {weeklyLoad.totalRunKm.toFixed(1)}
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginLeft: 3 }}>km</span>
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3, fontWeight: 500 }}>Total runs</div>
-              </div>
-            )}
-            {weeklyLoad.totalStrengthSets > 0 && (
-              <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--edge)' }}>
-                <div style={{ fontSize: 22, fontWeight: 900, color: PROT, letterSpacing: -0.5 }}>
-                  {weeklyLoad.totalStrengthSets}
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginLeft: 3 }}>sessions</span>
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3, fontWeight: 500 }}>Strength</div>
-              </div>
-            )}
-            <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--edge)' }}>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5,
-                color: weeklyLoad.recoveryScore >= 60 ? 'var(--accent)'
-                     : weeklyLoad.recoveryScore >= 35 ? CARB : RED }}>
-                {weeklyLoad.recoveryScore}
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginLeft: 3 }}>%</span>
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 3, fontWeight: 500 }}>Recovery</div>
+      {/* ── Readiness + Weekly load ── */}
+      {isToday && (() => {
+        const rec  = weeklyLoad.recoveryScore ?? 70;
+        const fat  = weeklyLoad.legFatigueScore ?? 0;
+        // Readiness = recovery strong + low fatigue
+        const readiness = Math.round(Math.max(0, Math.min(100, rec * 0.6 + (100 - fat) * 0.4)));
+        const rColor = readiness >= 70 ? 'var(--accent)' : readiness >= 40 ? CARB : RED;
+        const rLabel = readiness >= 80 ? 'PEAK' : readiness >= 60 ? 'GOOD' : readiness >= 40 ? 'MODERATE' : 'LOW';
+        const rTip   = readiness >= 80
+          ? 'Body is primed — push hard today.'
+          : readiness >= 60
+          ? 'Good readiness — train at planned intensity.'
+          : readiness >= 40
+          ? 'Moderate fatigue — consider lowering intensity.'
+          : 'Recovery needed — rest or yoga recommended.';
+        const fatColor = fat < 40 ? 'var(--accent)' : fat < 70 ? CARB : RED;
+        const hasLoad = weeklyLoad.totalRunKm > 0 || weeklyLoad.totalStrengthSets > 0;
+        return (
+          <div style={{
+            margin: '10px 14px 0', background: 'var(--surf)',
+            borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 14px',
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 10 }}>
+              Readiness
             </div>
+            {/* Readiness bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ height: 6, borderRadius: 3, background: 'var(--surf2)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${readiness}%`, background: rColor, borderRadius: 3, transition: 'width 0.5s ease' }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: rColor, letterSpacing: -0.5, minWidth: 40 }}>
+                {readiness}<span style={{ fontSize: 9, fontWeight: 700 }}>%</span>
+              </div>
+              <div style={{
+                padding: '2px 8px', borderRadius: 4, background: `${rColor === 'var(--accent)' ? 'var(--accent-muted)' : rColor + '18'}`,
+                border: `1px solid ${rColor}40`,
+                fontSize: 9, fontWeight: 900, color: rColor, letterSpacing: 1.5,
+              }}>{rLabel}</div>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: hasLoad ? 12 : 0, lineHeight: 1.5 }}>
+              {rTip}
+            </div>
+            {/* Weekly load stats */}
+            {hasLoad && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {weeklyLoad.totalRunKm > 0 && (
+                  <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: CARB, letterSpacing: -0.5 }}>
+                      {weeklyLoad.totalRunKm.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>km</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Run this week</div>
+                  </div>
+                )}
+                {weeklyLoad.totalStrengthSets > 0 && (
+                  <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: PROT, letterSpacing: -0.5 }}>
+                      {weeklyLoad.totalStrengthSets}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>×</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Strength sessions</div>
+                  </div>
+                )}
+                <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: fatColor, letterSpacing: -0.5 }}>
+                    {fat}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>pts</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Leg fatigue</div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Past day notice ── */}
       {!isToday && (

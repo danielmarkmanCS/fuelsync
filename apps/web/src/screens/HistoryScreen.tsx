@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAllLogs, addLog, unremoveLog, clearPullCache, type FoodLog, type Ingredient } from '../api/localFood';
+import { getAllLogs, addLog, unremoveLog, clearPullCache, getWeeklySummary, type FoodLog, type Ingredient, type WeeklySummary } from '../api/localFood';
 import { playFoodLogSound } from '../utils/sounds';
 import { useNutrition } from '../hooks/useNutrition';
+import { useNutritionStore } from '../store/nutritionStore';
 import { useThemeStore } from '../store/themeStore';
 import { db } from '../lib/db';
 
@@ -423,11 +424,214 @@ function MacroChip({ label, value, color, pct }: { label: string; value: number;
   );
 }
 
-type Tab = 'days' | 'foods';
+// ── Body Composition Estimator ─────────────────────────────────────────
+function BodyCompositionCard({ weightEntries, days }: { weightEntries: WeightEntry[]; days: DaySummary[] }) {
+  if (weightEntries.length < 2) return null;
+
+  const first = weightEntries[0];
+  const last  = weightEntries[weightEntries.length - 1];
+  const wDiff = parseFloat((last.weightKg - first.weightKg).toFixed(1));
+
+  // Estimate caloric surplus/deficit from food logs
+  // If we have no target data, skip body comp
+  const avgCal = days.length > 0 ? days.reduce((s, d) => s + d.totalCal, 0) / days.length : 0;
+
+  // 3500 kcal ≈ 1 lb fat ≈ 0.45 kg fat (rough heuristic)
+  const daysBetween = Math.max(1, (new Date(last.date).getTime() - new Date(first.date).getTime()) / 86400000);
+  const wDiffSign = wDiff > 0 ? '+' : '';
+
+  // Simple body comp estimate: assume ~75% of weight change is fat, 25% is muscle/water on surplus
+  // On deficit: ~85% fat, 15% lean mass (varies enormously but gives a number to work with)
+  const isSurplus = wDiff >= 0;
+  const fatPct    = isSurplus ? 0.75 : 0.85;
+  const leanPct   = 1 - fatPct;
+  const fatKg     = parseFloat((Math.abs(wDiff) * fatPct * (isSurplus ? 1 : -1)).toFixed(1));
+  const leanKg    = parseFloat((Math.abs(wDiff) * leanPct * (isSurplus ? 1 : -1)).toFixed(1));
+
+  const cardColor = wDiff > 0 ? ORANGE_HEX : wDiff < 0 ? GREEN : 'var(--muted)';
+
+  return (
+    <div style={{
+      background: SURF, borderRadius: 12, border: `1px solid ${EDGE}`, padding: '16px 16px', marginBottom: 14,
+    }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        Body Composition Estimate
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+        <div style={{ flex: 1, background: SURF2, borderRadius: 10, padding: '12px 12px', border: `1px solid ${EDGE}` }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: cardColor, letterSpacing: -1 }}>
+            {wDiffSign}{wDiff} <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>kg</span>
+          </div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 500, marginTop: 3 }}>Total weight change</div>
+          <div style={{ fontSize: 9, color: MUTED, opacity: 0.6, marginTop: 2 }}>
+            over {Math.round(daysBetween)} days
+          </div>
+        </div>
+        <div style={{ flex: 1, background: SURF2, borderRadius: 10, padding: '12px 12px', border: `1px solid ${EDGE}` }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: fatKg < 0 ? GREEN : ORANGE_HEX, letterSpacing: -1 }}>
+            {fatKg > 0 ? '+' : ''}{fatKg} <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>kg</span>
+          </div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 500, marginTop: 3 }}>Est. fat mass</div>
+          <div style={{ fontSize: 9, color: MUTED, opacity: 0.6, marginTop: 2 }}>~{Math.round(fatPct * 100)}% of Δ</div>
+        </div>
+        <div style={{ flex: 1, background: SURF2, borderRadius: 10, padding: '12px 12px', border: `1px solid ${EDGE}` }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: leanKg > 0 ? PROT : MUTED, letterSpacing: -1 }}>
+            {leanKg > 0 ? '+' : ''}{leanKg} <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>kg</span>
+          </div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 500, marginTop: 3 }}>Est. lean mass</div>
+          <div style={{ fontSize: 9, color: MUTED, opacity: 0.6, marginTop: 2 }}>~{Math.round(leanPct * 100)}% of Δ</div>
+        </div>
+      </div>
+      {avgCal > 0 && (
+        <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.6, padding: '8px 10px', background: SURF2, borderRadius: 8 }}>
+          📊 Avg {Math.round(avgCal)} kcal/day over this period.
+          {' '}{isSurplus ? 'Caloric surplus — body gained mass. High protein intake limits fat gain.' : 'Caloric deficit — body lost mass. Protein intake is key to preserving lean muscle.'}
+        </div>
+      )}
+      <div style={{ fontSize: 9, color: MUTED, marginTop: 8, opacity: 0.5, lineHeight: 1.5 }}>
+        ⚠ Estimates based on weight change only. Real composition requires DEXA or caliper measurement.
+      </div>
+    </div>
+  );
+}
+
+// ── AI Coach Tab ─────────────────────────────────────────────────────────
+import type { WeeklyLoad } from '@shared/types';
+import type { MacroTargets } from '@shared/types';
+
+function CoachTab({
+  days, weightEntries, targets, streak, weeklyLoad,
+  summary, loading, error, onGenerate,
+}: {
+  days: DaySummary[];
+  weightEntries: WeightEntry[];
+  targets: MacroTargets | null;
+  streak: number;
+  weeklyLoad: WeeklyLoad;
+  summary: WeeklySummary | null;
+  loading: boolean;
+  error: string;
+  onGenerate: () => void;
+}) {
+  const sectionStyle = (color: string): React.CSSProperties => ({
+    background: SURF2, borderRadius: 10, padding: '14px 14px',
+    border: `1px solid ${color}30`, borderLeft: `3px solid ${color}`,
+    marginBottom: 10,
+  });
+
+  return (
+    <div>
+      {/* Body Composition */}
+      <BodyCompositionCard weightEntries={weightEntries} days={days} />
+
+      {/* Weekly AI Summary */}
+      <div style={{
+        background: SURF, borderRadius: 12, border: `1px solid ${EDGE}`, padding: '16px 16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 3 }}>
+              AI Coach
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: TEXT, letterSpacing: -0.5 }}>
+              Weekly Debrief
+            </div>
+          </div>
+          <div style={{
+            padding: '4px 10px', borderRadius: 6,
+            background: `${ORANGE_HEX}18`, border: `1px solid ${ORANGE_HEX}40`,
+            fontSize: 10, fontWeight: 800, color: ORANGE_HEX,
+          }}>
+            {days.length}/7 days
+          </div>
+        </div>
+
+        {/* Quick stats */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {[
+            { label: 'Streak', value: `${streak}d`, color: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : MUTED },
+            { label: 'Avg Cal', value: days.length > 0 ? `${Math.round(days.reduce((s, d) => s + d.totalCal, 0) / days.length)}` : '—', color: ORANGE_HEX },
+            { label: 'Run km', value: `${(weeklyLoad?.totalRunKm ?? 0).toFixed(1)}`, color: GREEN },
+            { label: 'Lifts', value: `${weeklyLoad?.totalStrengthSets ?? 0}`, color: PROT },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ flex: 1, background: SURF2, borderRadius: 8, padding: '8px 6px', border: `1px solid ${EDGE}`, textAlign: 'center' }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color, letterSpacing: -0.5 }}>{value}</div>
+              <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginTop: 2 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {days.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: MUTED, fontSize: 13, fontWeight: 700 }}>
+            Log at least 1 day to generate a weekly debrief.
+          </div>
+        ) : summary ? (
+          <div>
+            <div style={sectionStyle(GREEN)}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: GREEN, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+                ✅ What went well
+              </div>
+              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{summary.well}</div>
+            </div>
+            <div style={sectionStyle(ORANGE_HEX)}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: ORANGE_HEX, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+                ⚠️ What to watch
+              </div>
+              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{summary.watch}</div>
+            </div>
+            <div style={sectionStyle(PROT)}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: PROT, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+                🎯 This week's focus
+              </div>
+              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{summary.focus}</div>
+            </div>
+            <button
+              onClick={onGenerate}
+              style={{
+                width: '100%', padding: '10px', marginTop: 4, borderRadius: 8,
+                border: `1px solid ${EDGE}`, background: SURF2,
+                color: MUTED, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              }}
+            >Regenerate</button>
+          </div>
+        ) : error ? (
+          <div style={{ padding: '12px', borderRadius: 8, background: '#EF444415', border: '1px solid #EF444440', color: '#EF4444', fontSize: 12, marginBottom: 12 }}>
+            {error}
+          </div>
+        ) : null}
+
+        {!summary && !loading && (
+          <button
+            onClick={onGenerate}
+            disabled={days.length === 0}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 10,
+              border: 'none', background: days.length === 0 ? SURF2 : ORANGE_HEX,
+              color: days.length === 0 ? MUTED : '#fff', fontSize: 14, fontWeight: 900,
+              cursor: days.length === 0 ? 'default' : 'pointer', letterSpacing: 0.5,
+            }}
+          >
+            Generate Weekly Debrief →
+          </button>
+        )}
+
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0' }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${ORANGE_HEX}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+            <div style={{ fontSize: 13, color: MUTED, fontWeight: 700 }}>Analysing your week…</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type Tab = 'days' | 'foods' | 'coach';
 
 export default function HistoryScreen() {
   const { targets } = useNutrition();
   const { units } = useThemeStore();
+  const { weeklyLoad } = useNutritionStore();
   const [tab,          setTab]          = useState<Tab>('days');
   const [days,         setDays]         = useState<DaySummary[]>([]);
   const [allLogs,      setAllLogs]      = useState<FoodLog[]>([]);
@@ -439,6 +643,10 @@ export default function HistoryScreen() {
   const [reloggedIng,  setReloggedIng]  = useState<string | null>(null);
   const [foodSearch,   setFoodSearch]   = useState('');
   const relogRef = useRef<Set<string>>(new Set());
+  // Coach tab
+  const [coachSummary,    setCoachSummary]    = useState<WeeklySummary | null>(null);
+  const [coachLoading,    setCoachLoading]    = useState(false);
+  const [coachError,      setCoachError]      = useState('');
 
   // Supplement data: { date → { taken, total } }
   const [suppByDate,  setSuppByDate]  = useState<Map<string, { taken: number; total: number }>>(new Map());
@@ -563,7 +771,7 @@ export default function HistoryScreen() {
 
         {/* Tab bar */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${EDGE}` }}>
-          {(['days', 'foods'] as Tab[]).map((t) => (
+          {(['days', 'foods', 'coach'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)} style={{
               flex: 1, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase',
@@ -571,7 +779,7 @@ export default function HistoryScreen() {
               borderBottom: tab === t ? `3px solid ${ORANGE}` : '3px solid transparent',
               marginBottom: -1, transition: 'all 0.15s',
             }}>
-              {t === 'days' ? 'Days' : 'Foods'}
+              {t === 'days' ? 'Days' : t === 'foods' ? 'Foods' : '🧠 Coach'}
             </button>
           ))}
         </div>
@@ -804,6 +1012,41 @@ export default function HistoryScreen() {
               );
             })}
           </>
+        ) : tab === 'coach' ? (
+          /* ── COACH TAB — AI weekly summary + body composition ── */
+          <CoachTab
+            days={days}
+            weightEntries={weightEntries}
+            targets={targets}
+            streak={streak}
+            weeklyLoad={weeklyLoad}
+            summary={coachSummary}
+            loading={coachLoading}
+            error={coachError}
+            onGenerate={async () => {
+              if (days.length === 0) return;
+              setCoachLoading(true); setCoachError(''); setCoachSummary(null);
+              try {
+                const avgCals  = Math.round(days.reduce((s, d) => s + d.totalCal, 0) / days.length);
+                const avgProt  = Math.round(days.reduce((s, d) => s + d.totalProtein, 0) / days.length);
+                const avgCarb  = Math.round(days.reduce((s, d) => s + d.totalCarbs, 0) / days.length);
+                const avgFat   = Math.round(days.reduce((s, d) => s + d.totalFat, 0) / days.length);
+                const types    = [...new Set(allLogs.filter(l => !l.removed).map(() => '').filter(Boolean))].join(', ') || 'mixed';
+                const s = await getWeeklySummary({
+                  days: days.length, avgCalories: avgCals, avgProtein: avgProt,
+                  avgCarbs: avgCarb, avgFat: avgFat,
+                  targetCalories: targets?.calories ?? 2200,
+                  targetProtein: targets?.proteinG ?? 170,
+                  trainingTypes: types,
+                  totalRunKm: weeklyLoad?.totalRunKm ?? 0,
+                  totalStrengthSessions: weeklyLoad?.totalStrengthSets ?? 0,
+                  streak,
+                });
+                setCoachSummary(s);
+              } catch (e: unknown) { setCoachError(e instanceof Error ? e.message : 'AI request failed'); }
+              finally { setCoachLoading(false); }
+            }}
+          />
         ) : (
           /* ── FOODS TAB — deduplicated food directory ── */
           <>

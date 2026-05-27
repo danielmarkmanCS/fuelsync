@@ -1,4 +1,4 @@
-export type TrainingType = 'rest' | 'strength' | 'cardio' | 'hybrid';
+export type TrainingType = 'rest' | 'strength' | 'cardio' | 'hybrid' | 'hiit' | 'cycling' | 'yoga' | 'walk';
 
 export type IntensityLevel = 'low' | 'moderate' | 'high';
 
