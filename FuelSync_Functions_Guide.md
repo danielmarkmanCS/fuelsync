@@ -1,5 +1,5 @@
 # FuelSync — Complete Functions & Backend Guide
-### For Presentation Use — Daniel Markman
+### Daniel Markman · Updated 2026-05-26
 
 ---
 
@@ -35,8 +35,10 @@ This file defines the structure of the local database using **Dexie.js** (a wrap
 
 **`weight_logs` table** — body weight history over time
 
+**Supplements** — managed by `SupplementsScreen.tsx`. Supplements and their log state are stored locally (IndexedDB or localStorage). Each supplement has a day-period: M (Morning), A (Afternoon), E (Evening). Tapping marks it as taken for that day. When all supplements are taken, a one-time daily congrats popup appears (key: `fs_supp_congrats_YYYY-MM-DD`).
+
 ### The Database Class (FuelSyncDB)
-This is the main database class. It defines 3 versions of the schema — each version is a migration, meaning the database structure can be upgraded without losing data. Version 1 = launch, Version 2 = added sync_id, Version 3 = added weight logs.
+This is the main database class. It defines versioned schemas — each version is a migration, meaning the database structure can be upgraded without losing data. Later versions added `sync_id` (UUID for cross-device dedup), `weight_logs`, micronutrient fields, and soft-delete flags.
 
 ---
 
@@ -482,6 +484,30 @@ This React hook connects all the nutrition logic to the UI. Any screen that need
 | `refreshWeather` | useNutrition.ts | Fetch weather + training alert |
 | `getMacroBreakdown` | useNutrition.ts | Full macro calculation details |
 | `setActivityModifier` | useNutrition.ts | Adjust calorie needs for activity |
+
+---
+
+---
+
+## PART 12 — UI DESIGN NOTES
+
+### Theme System
+The app has **Dark** (default, GitHub-inspired slate) and **Light** (MFP Classic) themes.
+- Toggle via `themeStore.ts` — persisted to `localStorage` key `fs_theme`
+- Applied as `body[data-theme="light"]` which overrides all CSS custom properties
+- All components use `var(--bg)`, `var(--surf)`, `var(--text)`, `var(--accent)` etc.
+- Macro colors are fixed regardless of theme: Protein=`#38BDF8` (blue), Carbs=`#22C55E` (green), Fat=`#F59E0B` (amber)
+
+### HomeScreen Food Diary
+- Items displayed paragraph-style (no inner scrollable container — avoids scroll capture on mobile)
+- Colorful macro chips per logged item (P=blue, C=green, F=amber)
+- Each meal section shows a totals row at the bottom
+- "+ ADD FOOD" pre-selects the meal type when switching to the Diary tab
+
+### Supplement Block (on HomeScreen)
+- Shows M/A/E day-period checkboxes for each supplement
+- One-time daily congrats popup when all are checked (`fs_supp_congrats_YYYY-MM-DD`)
+- **Hooks rule:** All `useEffect` and `useState` calls must be declared BEFORE the `supplements.length === 0` early return — React requires hook call order to be identical on every render
 
 ---
 

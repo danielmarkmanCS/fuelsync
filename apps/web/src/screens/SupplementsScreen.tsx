@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
+import { getSyncToken, syncSupplement, deleteSyncSupplement, syncSupplementLog } from '../api/syncClient';
 
 const BG      = 'var(--bg)';
 const SURF    = 'var(--surf)';
@@ -48,10 +49,19 @@ export default function SupplementsScreen() {
   const toggleTaken = async (supp: Supplement) => {
     const id = supp.id!;
     const existing = logs.find(l => l.supplement_id === id);
+    const now = new Date().toISOString();
     if (existing) {
-      await db.supplement_logs.update(existing.id!, { taken: !existing.taken, logged_at: new Date().toISOString() });
+      const newTaken = !existing.taken;
+      await db.supplement_logs.update(existing.id!, { taken: newTaken, logged_at: now });
+      if (getSyncToken() && supp.sync_id && existing.sync_id) {
+        syncSupplementLog({ id: existing.sync_id, supplement_id: supp.sync_id, date: today, taken: newTaken, logged_at: now }).catch(() => {});
+      }
     } else {
-      await db.supplement_logs.add({ supplement_id: id, date: today, taken: true, logged_at: new Date().toISOString() });
+      const syncId = crypto.randomUUID();
+      await db.supplement_logs.add({ sync_id: syncId, supplement_id: id, date: today, taken: true, logged_at: now });
+      if (getSyncToken() && supp.sync_id) {
+        syncSupplementLog({ id: syncId, supplement_id: supp.sync_id, date: today, taken: true, logged_at: now }).catch(() => {});
+      }
     }
     load();
   };
@@ -61,9 +71,18 @@ export default function SupplementsScreen() {
     setSaving(true); setSaveError('');
     try {
       if (editId != null) {
-        await db.supplements.update(editId, { name: name.trim(), dose: dose.trim(), unit, timing });
+        const existing = await db.supplements.get(editId);
+        const syncId = existing?.sync_id ?? crypto.randomUUID();
+        await db.supplements.update(editId, { name: name.trim(), dose: dose.trim(), unit, timing, sync_id: syncId });
+        if (getSyncToken()) {
+          syncSupplement({ id: syncId, name: name.trim(), dose: dose.trim(), unit, timing, active: true }).catch(() => {});
+        }
       } else {
-        await db.supplements.add({ name: name.trim(), dose: dose.trim(), unit, timing, active: true });
+        const syncId = crypto.randomUUID();
+        await db.supplements.add({ sync_id: syncId, name: name.trim(), dose: dose.trim(), unit, timing, active: true });
+        if (getSyncToken()) {
+          syncSupplement({ id: syncId, name: name.trim(), dose: dose.trim(), unit, timing, active: true }).catch(() => {});
+        }
       }
       setAdding(false); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning');
       load();
@@ -75,7 +94,11 @@ export default function SupplementsScreen() {
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Remove this supplement?')) return;
+    const supp = await db.supplements.get(id);
     await db.supplements.update(id, { active: false });
+    if (supp?.sync_id && getSyncToken()) {
+      deleteSyncSupplement(supp.sync_id).catch(() => {});
+    }
     load();
   };
 

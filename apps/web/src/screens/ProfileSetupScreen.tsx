@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile, clearProfile } from '../api/auth';
-import { clearSyncToken, getSyncToken, syncProfile, syncAddLog } from '../api/syncClient';
+import { clearSyncToken, getSyncToken, syncProfile, syncAddLog, googleSignIn, setSyncToken } from '../api/syncClient';
 import { db } from '../lib/db';
 import type { WeightLog } from '../lib/db';
 import { clearPin } from '../lib/pin';
@@ -9,6 +9,11 @@ import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets } from '../lib/customTargets';
 import type { CustomTargets } from '../lib/customTargets';
 import { useThemeStore } from '../store/themeStore';
+import { Capacitor } from '@capacitor/core';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
+const IS_NATIVE = Capacitor.isNativePlatform();
 
 const BG      = 'var(--bg)';
 const SURF    = 'var(--surf)';
@@ -73,6 +78,9 @@ export default function ProfileSetupScreen() {
   const [saving,        setSaving]        = useState(false);
   const [saved,         setSaved]         = useState(false);
   const [error,         setError]         = useState('');
+  const [googleConnecting, setGoogleConnecting] = useState(false);
+  const [googleConnected,  setGoogleConnected]  = useState(!!getSyncToken());
+  const [googleError,      setGoogleError]      = useState('');
 
   // Weight log
   const [weightLogs,      setWeightLogs]      = useState<WeightLog[]>([]);
@@ -136,6 +144,35 @@ export default function ProfileSetupScreen() {
   const tdee = bmr ? Math.round(bmr * mult) : null;
   const bmi  = hasStats ? calcBMI(w, h) : null;
   const bmiInfo = bmi ? getBMILabel(bmi) : null;
+
+  const handleGoogleConnect = async () => {
+    setGoogleConnecting(true); setGoogleError('');
+    try {
+      let idToken = '';
+      if (IS_NATIVE) {
+        await GoogleAuth.initialize({ clientId: CLIENT_ID, scopes: ['profile', 'email'], grantOfflineAccess: true });
+        const googleUser = await GoogleAuth.signIn();
+        idToken = googleUser?.authentication?.idToken ?? '';
+        if (!idToken) throw new Error('No ID token');
+      } else {
+        throw new Error('Use the web sign-in button');
+      }
+      const { token: t } = await googleSignIn(idToken);
+      setSyncToken(t);
+      setGoogleConnected(true);
+      // Push current local profile to cloud
+      if (user) {
+        syncProfile({
+          display_name: user.displayName, weight_kg: user.weightKg ?? undefined,
+          height_cm: user.heightCm ?? undefined, age: user.age ?? undefined,
+          gender: user.gender ?? undefined, activity_level: user.activityLevel,
+          daily_goal: user.dailyGoal,
+        }).catch(() => {});
+      }
+    } catch (e: unknown) {
+      setGoogleError(e instanceof Error ? e.message : 'Connection failed');
+    } finally { setGoogleConnecting(false); }
+  };
 
   const handleSave = async () => {
     if (isNaN(w) || w < 30 || w > 300)  { setError('Valid weight: 30–300 kg.'); return; }
@@ -596,6 +633,44 @@ export default function ProfileSetupScreen() {
             Account
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Google Cloud Sync */}
+            {googleConnected ? (
+              <div style={{
+                padding: '12px 14px', borderRadius: 8, background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.25)', display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span style={{ fontSize: 18 }}>☁️</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>Google Sync Active</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>Profile, training & supplements sync to your Google account</div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <button
+                  onClick={handleGoogleConnect}
+                  disabled={googleConnecting}
+                  className="nrc-press"
+                  style={{
+                    width: '100%', padding: 14, borderRadius: 8,
+                    border: '1px solid rgba(66,133,244,0.4)',
+                    background: 'rgba(66,133,244,0.08)',
+                    color: '#4285F4', fontWeight: 700, fontSize: 13,
+                    cursor: googleConnecting ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}>
+                  <span style={{ fontSize: 16 }}>🔗</span>
+                  {googleConnecting ? 'Connecting…' : 'Connect Google Account'}
+                </button>
+                <div style={{ fontSize: 10, color: MUTED, textAlign: 'center', marginTop: 6 }}>
+                  Saves profile, training & supplements to your Google account
+                </div>
+                {googleError ? (
+                  <div style={{ fontSize: 11, color: RED, textAlign: 'center', marginTop: 4 }}>{googleError}</div>
+                ) : null}
+              </div>
+            )}
+
             <button onClick={async () => {
               if (!window.confirm('Sign out? Your local data stays on this device.')) return;
               clearSyncToken();

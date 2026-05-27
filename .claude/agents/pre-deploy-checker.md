@@ -15,6 +15,13 @@ model: haiku
 2. **TODO / FIXME** — חפש בכל קבצי .ts .tsx .js
 3. **TypeScript errors** — הרץ: cd /mnt/data/FuelSync && npx tsc --noEmit 2>&1 | head -30
 4. **קובץ .env חשוף** — וודא שאין .env ב-git staging
+5. **hex-opacity template literals** — חפש תבניות כמו `${VAR}08` או `${VAR}12` (עלולות לייצר CSS לא תקין אם VAR הוא var(--...) ולא hex)
+6. **hooks לפני early return** — בדוק שאין useEffect/useState אחרי return מוקדם בקומפוננטות
+
+**deploy targets:**
+- GitHub Pages: `git push origin master` → GitHub Action
+- Docker: `cd /mnt/data/projects/mmswebsite && docker compose build foodaniel && docker compose up -d foodaniel`
+  - לאחר Docker deploy: עדכן nginx.conf compat redirects עם hash חדש של bundle
 
 פורמט דיווח:
 ✅ תקין — [שם בדיקה]

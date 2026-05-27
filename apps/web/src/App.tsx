@@ -6,9 +6,10 @@ import { getProfile, createProfile, updateProfile } from './api/auth';
 import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
-import { getSyncToken, getMe, syncProfile } from './api/syncClient';
+import { getSyncToken, getMe, syncProfile, syncWeightLog, fetchWeightLogs, fetchSupplements, fetchSupplementLogs, syncSupplement, syncSupplementLog } from './api/syncClient';
 import { clearPullCache, drainSyncQueue } from './api/localFood';
 import { db } from './lib/db';
+import type { Supplement } from './lib/db';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import GoogleAuthScreen from './screens/GoogleAuthScreen';
@@ -148,6 +149,48 @@ export default function App() {
                 daily_goal: local.dailyGoal,
               }).catch(() => {});
             }
+            // Pull weight logs from D1 and merge into local DB
+            try {
+              const remoteWeights = await fetchWeightLogs() as Array<{ id: string; weight_kg: number; date: string; logged_at: string }>;
+              for (const rw of remoteWeights) {
+                const existing = await db.weight_logs.where('date').equals(rw.date).first();
+                if (!existing) {
+                  await db.weight_logs.add({ sync_id: rw.id, date: rw.date, weightKg: rw.weight_kg, logged_at: rw.logged_at });
+                }
+              }
+            } catch { /* ignore – offline or D1 unavailable */ }
+            // Sync supplements: push any local ones without sync_id, then pull from D1
+            try {
+              type RemoteSupp = { id: string; name: string; dose: string; unit: string; timing: string; active: boolean; deleted_at: string | null };
+              // Push local supplements that haven't been synced yet
+              const localSupps = await db.supplements.toArray();
+              for (const ls of localSupps.filter(s => !s.sync_id && s.active !== false)) {
+                const syncId = crypto.randomUUID();
+                await db.supplements.update(ls.id!, { sync_id: syncId });
+                syncSupplement({ id: syncId, name: ls.name, dose: ls.dose, unit: ls.unit, timing: ls.timing, active: true }).catch(() => {});
+              }
+              // Pull remote supplements and merge
+              const remoteSupps = await fetchSupplements() as RemoteSupp[];
+              for (const rs of remoteSupps) {
+                if (rs.deleted_at) continue;
+                const existing = await db.supplements.where('sync_id').equals(rs.id).first();
+                if (!existing) {
+                  await db.supplements.add({ sync_id: rs.id, name: rs.name, dose: rs.dose, unit: rs.unit, timing: rs.timing as Supplement['timing'], active: !!rs.active });
+                }
+              }
+              // Pull today's supplement logs
+              const today = new Date().toISOString().split('T')[0];
+              type RemoteSuppLog = { id: string; supplement_id: string; date: string; taken: boolean; logged_at: string };
+              const remoteLogs = await fetchSupplementLogs(today) as RemoteSuppLog[];
+              for (const rl of remoteLogs) {
+                const localSupp = await db.supplements.where('sync_id').equals(rl.supplement_id).first();
+                if (!localSupp?.id) continue;
+                const existingLog = await db.supplement_logs.where('supplement_id').equals(localSupp.id).and(l => l.date === rl.date).first();
+                if (!existingLog) {
+                  await db.supplement_logs.add({ sync_id: rl.id, supplement_id: localSupp.id, date: rl.date, taken: rl.taken, logged_at: rl.logged_at });
+                }
+              }
+            } catch { /* ignore – offline or D1 unavailable */ }
             // Restore Strava connection from D1 if tokens present
             if (syncUser.strava_access_token) {
               connectStrava({
@@ -338,11 +381,15 @@ export default function App() {
     setWeightSaving(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      await db.weight_logs.add({ date: today, weightKg: kg || 0, logged_at: new Date().toISOString() });
+      const syncId = crypto.randomUUID();
+      await db.weight_logs.add({ sync_id: syncId, date: today, weightKg: kg || 0, logged_at: new Date().toISOString() });
       if (!skip && kg) {
         const updated = await updateProfile({ weightKg: kg });
         setUser(updated);
         syncProfile({ weight_kg: kg }).catch(() => {});
+        if (getSyncToken()) {
+          syncWeightLog({ id: syncId, weight_kg: kg, date: today, logged_at: new Date().toISOString() }).catch(() => {});
+        }
       }
     } catch { /* ignore */ }
     finally { setWeightSaving(false); setShowWeightCheckIn(false); }
@@ -355,7 +402,7 @@ export default function App() {
       background: 'var(--bg)',
       overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', inset: 0, bottom: NAV_H, overflowY: 'auto' }}>
+      <div style={{ position: 'absolute', top: 'env(safe-area-inset-top, 0px)', left: 0, right: 0, bottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
         {(activeTab === 'home' && profileIncomplete)     && <ProfileSetupScreen />}
         {activeTab === 'food'        && <FoodScreen />}
@@ -434,10 +481,12 @@ export default function App() {
       )}
 
       <nav style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: NAV_H,
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`,
         background: 'var(--surf)',
         borderTop: '1px solid var(--edge)',
         display: 'flex',
+        alignItems: 'flex-start',  /* buttons align to top of nav, not affected by bottom padding */
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
       }}>

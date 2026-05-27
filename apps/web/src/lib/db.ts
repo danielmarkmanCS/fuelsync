@@ -52,6 +52,7 @@ export interface LocalFoodLog {
 
 export interface WeightLog {
   id?: number;
+  sync_id?: string;   // UUID for D1 sync
   date: string;       // YYYY-MM-DD
   weightKg: number;
   logged_at: string;  // ISO timestamp
@@ -67,6 +68,7 @@ export interface SyncQueueItem {
 
 export interface Supplement {
   id?: number;
+  sync_id?: string;   // UUID for D1 sync
   name: string;
   dose: string;
   unit: string;
@@ -76,6 +78,7 @@ export interface Supplement {
 
 export interface SupplementLog {
   id?: number;
+  sync_id?: string;   // UUID for D1 sync
   supplement_id: number;
   date: string;       // YYYY-MM-DD
   taken: boolean;
@@ -123,6 +126,11 @@ class FuelSyncDB extends Dexie {
     this.version(5).stores({
       supplements:     '++id, active',
       supplement_logs: '++id, supplement_id, date',
+    });
+    this.version(6).stores({
+      supplements:     '++id, active, sync_id',
+      supplement_logs: '++id, supplement_id, date, sync_id',
+      weight_logs:     '++id, date, sync_id',
     });
   }
 }

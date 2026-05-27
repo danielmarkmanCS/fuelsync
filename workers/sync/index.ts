@@ -234,6 +234,92 @@ export default {
         return json({ ok: true }, 200, ao);
       }
 
+      // ── GET /weight-logs ──────────────────────────────────────────────────
+      if (path === '/weight-logs' && request.method === 'GET') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const rows = await env.DB.prepare(
+          'SELECT * FROM weight_logs WHERE user_id = ? ORDER BY date DESC'
+        ).bind(userId).all();
+        return json(rows.results ?? [], 200, ao);
+      }
+
+      // ── POST /weight-logs ─────────────────────────────────────────────────
+      if (path === '/weight-logs' && request.method === 'POST') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const body = await request.json() as Record<string, unknown>;
+        if (!body.id || !body.weight_kg || !body.date) return err('id, weight_kg, date required', 400, ao);
+        await env.DB.prepare(`
+          INSERT INTO weight_logs (id, user_id, weight_kg, date, logged_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(id, user_id) DO UPDATE SET weight_kg=excluded.weight_kg, date=excluded.date
+        `).bind(body.id, userId, body.weight_kg, body.date, body.logged_at ?? new Date().toISOString()).run();
+        return json({ ok: true }, 200, ao);
+      }
+
+      // ── GET /supplements ──────────────────────────────────────────────────
+      if (path === '/supplements' && request.method === 'GET') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const rows = await env.DB.prepare(
+          'SELECT * FROM supplements WHERE user_id = ? AND deleted_at IS NULL'
+        ).bind(userId).all();
+        return json(rows.results ?? [], 200, ao);
+      }
+
+      // ── POST /supplements ─────────────────────────────────────────────────
+      if (path === '/supplements' && request.method === 'POST') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const body = await request.json() as Record<string, unknown>;
+        if (!body.id || !body.name) return err('id, name required', 400, ao);
+        await env.DB.prepare(`
+          INSERT INTO supplements (id, user_id, name, dose, unit, timing, active)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id, user_id) DO UPDATE SET
+            name=excluded.name, dose=excluded.dose, unit=excluded.unit,
+            timing=excluded.timing, active=excluded.active, deleted_at=NULL
+        `).bind(body.id, userId, body.name, body.dose ?? '', body.unit ?? '', body.timing ?? 'anytime', body.active ? 1 : 0).run();
+        return json({ ok: true }, 200, ao);
+      }
+
+      // ── DELETE /supplements/:id ───────────────────────────────────────────
+      if (path.startsWith('/supplements/') && request.method === 'DELETE') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const id = path.slice('/supplements/'.length);
+        await env.DB.prepare(
+          `UPDATE supplements SET deleted_at = datetime('now') WHERE id = ? AND user_id = ?`
+        ).bind(id, userId).run();
+        return json({ ok: true }, 200, ao);
+      }
+
+      // ── GET /supplement-logs?date=YYYY-MM-DD ─────────────────────────────
+      if (path === '/supplement-logs' && request.method === 'GET') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const date = url.searchParams.get('date');
+        const rows = date
+          ? await env.DB.prepare('SELECT * FROM supplement_logs WHERE user_id = ? AND date = ?').bind(userId, date).all()
+          : await env.DB.prepare('SELECT * FROM supplement_logs WHERE user_id = ?').bind(userId).all();
+        return json(rows.results ?? [], 200, ao);
+      }
+
+      // ── POST /supplement-logs ─────────────────────────────────────────────
+      if (path === '/supplement-logs' && request.method === 'POST') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+        const body = await request.json() as Record<string, unknown>;
+        if (!body.id || !body.supplement_id || !body.date) return err('id, supplement_id, date required', 400, ao);
+        await env.DB.prepare(`
+          INSERT INTO supplement_logs (id, user_id, supplement_id, date, taken, logged_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id, user_id) DO UPDATE SET taken=excluded.taken
+        `).bind(body.id, userId, body.supplement_id, body.date, body.taken ? 1 : 0, body.logged_at ?? new Date().toISOString()).run();
+        return json({ ok: true }, 200, ao);
+      }
+
       // ── DELETE /account ───────────────────────────────────────────────────
       if (path === '/account' && request.method === 'DELETE') {
         const userId = await authenticate(request, env);

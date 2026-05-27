@@ -100,6 +100,58 @@ export async function fetchAllLogs(): Promise<unknown[]> {
   return res.json();
 }
 
+// ── Weight logs ──────────────────────────────────────────────────────────────
+
+export async function syncWeightLog(log: { id: string; weight_kg: number; date: string; logged_at: string }): Promise<void> {
+  if (!getSyncToken()) return;
+  await fetch(`${SYNC_URL}/weight-logs`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(log),
+  });
+}
+
+export async function fetchWeightLogs(): Promise<unknown[]> {
+  if (!getSyncToken()) return [];
+  const res = await fetch(`${SYNC_URL}/weight-logs`, { headers: authHeaders() });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+// ── Supplements ───────────────────────────────────────────────────────────────
+
+export async function syncSupplement(s: { id: string; name: string; dose: string; unit: string; timing: string; active: boolean }): Promise<void> {
+  if (!getSyncToken()) return;
+  await fetch(`${SYNC_URL}/supplements`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(s),
+  });
+}
+
+export async function deleteSyncSupplement(id: string): Promise<void> {
+  if (!getSyncToken()) return;
+  await fetch(`${SYNC_URL}/supplements/${id}`, { method: 'DELETE', headers: authHeaders() });
+}
+
+export async function fetchSupplements(): Promise<unknown[]> {
+  if (!getSyncToken()) return [];
+  const res = await fetch(`${SYNC_URL}/supplements`, { headers: authHeaders() });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function syncSupplementLog(log: { id: string; supplement_id: string; date: string; taken: boolean; logged_at: string }): Promise<void> {
+  if (!getSyncToken()) return;
+  await fetch(`${SYNC_URL}/supplement-logs`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(log),
+  });
+}
+
+export async function fetchSupplementLogs(date?: string): Promise<unknown[]> {
+  if (!getSyncToken()) return [];
+  const url = date ? `${SYNC_URL}/supplement-logs?date=${date}` : `${SYNC_URL}/supplement-logs`;
+  const res = await fetch(url, { headers: authHeaders() });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export async function deleteAccount(): Promise<void> {
   if (!getSyncToken()) return;
   await fetch(`${SYNC_URL}/account`, { method: 'DELETE', headers: authHeaders() });
