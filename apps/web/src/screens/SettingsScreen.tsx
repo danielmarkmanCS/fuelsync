@@ -1,4 +1,4 @@
-import { useThemeStore } from '../store/themeStore';
+import { useThemeStore, ACCENT_COLORS, type AccentKey } from '../store/themeStore';
 import { useAppStore } from '../store/appStore';
 
 // ── Section label ────────────────────────────────────────────────────
@@ -138,9 +138,40 @@ const ChevronIcon = () => (
   </svg>
 );
 
+// ── Accent color swatch ──────────────────────────────────────────────
+function AccentSwatch({ accentKey, current, onSelect, isDark }: {
+  accentKey: AccentKey; current: AccentKey; onSelect: (k: AccentKey) => void; isDark: boolean;
+}) {
+  const a      = ACCENT_COLORS[accentKey];
+  const color  = isDark ? a.dark : a.light;
+  const active = accentKey === current;
+  return (
+    <button
+      onClick={() => onSelect(accentKey)}
+      aria-label={a.label}
+      style={{
+        width: 40, height: 40, borderRadius: 12, border: 'none',
+        background: active ? color : `${color}30`,
+        cursor: 'pointer', padding: 0, position: 'relative',
+        boxShadow: active ? `0 0 0 3px var(--surf), 0 0 0 5px ${color}` : `0 0 0 1.5px ${color}30`,
+        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+        transform: active ? 'scale(1.12)' : 'scale(1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {active && (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"
+          strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 // ── Main screen ──────────────────────────────────────────────────────
 export default function SettingsScreen() {
-  const { isDark, toggleTheme } = useThemeStore();
+  const { isDark, toggleTheme, accentKey, setAccent, units, setUnits } = useThemeStore();
   const { setActiveTab } = useAppStore();
 
   return (
@@ -170,18 +201,59 @@ export default function SettingsScreen() {
             right={<ToggleSwitch on={isDark} onToggle={toggleTheme} />}
             borderBottom={true}
           />
-          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-              Active accent
+          {/* Accent color picker */}
+          <div style={{ padding: '14px 16px 16px', borderBottom: '1px solid var(--edge)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Accent Color</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                  {ACCENT_COLORS[accentKey].label} · {isDark ? ACCENT_COLORS[accentKey].dark : ACCENT_COLORS[accentKey].light}
+                </div>
+              </div>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--accent)', flexShrink: 0 }} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--accent)', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                {isDark ? 'MFP Blue #2F81F7' : 'MFP Blue #0066EE'}
-              </span>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-start' }}>
+              {(Object.keys(ACCENT_COLORS) as AccentKey[]).map((k) => (
+                <AccentSwatch key={k} accentKey={k} current={accentKey} onSelect={setAccent} isDark={isDark} />
+              ))}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--muted2)', lineHeight: 1.5 }}>
-              Accent automatically adapts to your selected theme.
+            <div style={{ display: 'flex', gap: 10, marginTop: 6, paddingLeft: 2 }}>
+              {(Object.keys(ACCENT_COLORS) as AccentKey[]).map((k) => (
+                <div key={k} style={{ width: 40, fontSize: 8, fontWeight: 700, textAlign: 'center', color: k === accentKey ? 'var(--accent)' : 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {ACCENT_COLORS[k].label}
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Units toggle */}
+          <div style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ flexShrink: 0, width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3h7v7H3zM3 14h7v7H3zM14 3h7v7h-7zM17 17h-3v3M17 17v3M20 17v3"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Units</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                {units === 'metric' ? 'Metric — kg, cm' : 'Imperial — lbs, ft'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', background: 'var(--surf2)', borderRadius: 8, padding: 3, gap: 2, border: '1px solid var(--edge)' }}>
+              {(['metric', 'imperial'] as const).map((u) => (
+                <button
+                  key={u}
+                  onClick={() => setUnits(u)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: units === u ? 'var(--accent)' : 'transparent',
+                    color: units === u ? '#fff' : 'var(--muted)',
+                    fontSize: 12, fontWeight: 700, transition: 'all 0.18s',
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  {u === 'metric' ? 'kg' : 'lbs'}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -242,29 +314,6 @@ export default function SettingsScreen() {
             description="All data stored on-device. No tracking."
             borderBottom={false}
           />
-        </div>
-      </div>
-
-      {/* ── Theme preview card ── */}
-      <div style={{ margin: '0 14px' }}>
-        <SectionLabel>Color Palette</SectionLabel>
-        <div style={{
-          background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
-          padding: '16px', display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['var(--bg)', 'var(--surf)', 'var(--surf2)', 'var(--edge)'] as const).map((c, i) => (
-              <div key={i} style={{ flex: 1, height: 32, borderRadius: 6, background: c, border: '1px solid var(--edge)' }} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {(['var(--accent)', '#FF6B35', '#38BDF8', '#A78BFA'] as const).map((c, i) => (
-              <div key={i} style={{ flex: 1, height: 32, borderRadius: 6, background: c }} />
-            ))}
-          </div>
-          <div style={{ fontSize: 10, color: 'var(--muted2)', textAlign: 'center' }}>
-            Surfaces (top) · Accent &amp; macro colors (bottom)
-          </div>
         </div>
       </div>
 

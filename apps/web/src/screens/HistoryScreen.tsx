@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllLogs, addLog, unremoveLog, clearPullCache, type FoodLog, type Ingredient } from '../api/localFood';
 import { playFoodLogSound } from '../utils/sounds';
 import { useNutrition } from '../hooks/useNutrition';
+import { useThemeStore } from '../store/themeStore';
 import { db } from '../lib/db';
 
 const BG      = 'var(--bg)';
@@ -150,6 +151,123 @@ function StreakMilestone({ streak }: { streak: number }) {
           {m.msg}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── WEIGHT TREND CHART ────────────────────────────────────────────
+interface WeightEntry { date: string; weightKg: number; }
+function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metric' | 'imperial' }) {
+  if (entries.length < 2) return null;
+  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date)).slice(-30);
+  const vals   = sorted.map(e => units === 'imperial' ? e.weightKg * 2.20462 : e.weightKg);
+  const min    = Math.min(...vals) - 1;
+  const max    = Math.max(...vals) + 1;
+  const range  = max - min || 1;
+  const W = 280, H = 80, PAD = 12;
+  const xs = sorted.map((_, i) => PAD + (i / (sorted.length - 1)) * (W - PAD * 2));
+  const ys = vals.map(v => H - PAD - ((v - min) / range) * (H - PAD * 2));
+  const polyline = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+  const fillPath = `M${xs[0]},${H} ` + xs.map((x, i) => `L${x},${ys[i]}`).join(' ') + ` L${xs[xs.length-1]},${H} Z`;
+  const latest   = vals[vals.length - 1];
+  const first    = vals[0];
+  const delta    = latest - first;
+  const unitLabel = units === 'imperial' ? 'lb' : 'kg';
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px 14px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
+            Weight Trend
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 24, fontWeight: 900, color: TEXT, letterSpacing: -1, lineHeight: 1 }}>
+              {latest.toFixed(1)}
+            </span>
+            <span style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>{unitLabel}</span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 14, fontWeight: 900, color: delta <= 0 ? GREEN : RED, letterSpacing: -0.5 }}>
+            {delta > 0 ? '+' : ''}{delta.toFixed(1)} {unitLabel}
+          </div>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
+            vs {sorted.length} days ago
+          </div>
+        </div>
+      </div>
+
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible', display: 'block' }}>
+        <defs>
+          <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={ORANGE_HEX} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={ORANGE_HEX} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={fillPath} fill="url(#wg)" />
+        <polyline points={polyline} fill="none" stroke={ORANGE_HEX} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Latest dot */}
+        <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="4" fill={ORANGE_HEX} />
+      </svg>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+        <span style={{ fontSize: 9, color: MUTED }}>{sorted[0].date}</span>
+        <span style={{ fontSize: 9, color: MUTED }}>{sorted[sorted.length-1].date}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── 7-DAY MACRO AVERAGES ──────────────────────────────────────────
+function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calories: number; proteinG: number; carbsG: number; fatG: number } | null }) {
+  const today = new Date();
+  const week  = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    return d.toISOString().split('T')[0];
+  });
+  const dayMap = new Map(days.map(d => [d.date, d]));
+  const logged = week.map(d => dayMap.get(d)).filter(Boolean) as DaySummary[];
+  if (logged.length === 0) return null;
+
+  const avg = (key: 'totalProtein' | 'totalCarbs' | 'totalFat') =>
+    Math.round(logged.reduce((s, d) => s + d[key], 0) / logged.length);
+
+  const macros = [
+    { label: 'Protein', key: 'totalProtein' as const, color: PROT,    target: targets?.proteinG ?? 0 },
+    { label: 'Carbs',   key: 'totalCarbs'   as const, color: YELLOW,  target: targets?.carbsG   ?? 0 },
+    { label: 'Fat',     key: 'totalFat'     as const, color: FAT_CLR, target: targets?.fatG     ?? 0 },
+  ];
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+        7-Day Macro Avg · {logged.length} days
+      </div>
+      {macros.map(({ label, key, color, target }) => {
+        const val = avg(key);
+        const pct = target > 0 ? Math.min((val / target) * 100, 130) : 0;
+        const over = val > target && target > 0;
+        return (
+          <div key={label} style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: over ? RED : color }}>{label}</span>
+              <div style={{ fontSize: 11, color: MUTED }}>
+                <span style={{ fontWeight: 800, color: over ? RED : TEXT }}>{val}g</span>
+                {target > 0 && <span style={{ marginLeft: 4 }}>/ {target}g target</span>}
+              </div>
+            </div>
+            <div style={{ height: 6, background: SURF2, borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', width: `${pct}%`, borderRadius: 4,
+                background: over ? RED : color,
+                transition: 'width 0.6s ease',
+                opacity: over ? 1 : 0.85,
+              }} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -309,9 +427,11 @@ type Tab = 'days' | 'foods';
 
 export default function HistoryScreen() {
   const { targets } = useNutrition();
+  const { units } = useThemeStore();
   const [tab,          setTab]          = useState<Tab>('days');
   const [days,         setDays]         = useState<DaySummary[]>([]);
   const [allLogs,      setAllLogs]      = useState<FoodLog[]>([]);
+  const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [expanded,     setExpanded]     = useState<string | null>(null);
   const [relogged,     setRelogged]     = useState<string | null>(null);
@@ -330,12 +450,14 @@ export default function HistoryScreen() {
       getAllLogs(),
       db.supplements.toArray().then(all => all.filter(s => s.active !== false).length),
       db.supplement_logs.toArray(),
+      db.weight_logs.orderBy('date').toArray(),
     ])
-      .then(([logs, total, suppLogs]) => {
+      .then(([logs, total, suppLogs, wLogs]) => {
         const sorted = [...logs].sort((a, b) => b.logged_at.localeCompare(a.logged_at));
         setAllLogs(sorted);
         setDays(groupByDate(logs));
         setSuppTotal(total);
+        setWeightEntries(wLogs.map(w => ({ date: w.date, weightKg: w.weightKg })));
         const byDate = new Map<string, { taken: number; total: number }>();
         for (const l of suppLogs) {
           if (!byDate.has(l.date)) byDate.set(l.date, { taken: 0, total });
@@ -477,9 +599,20 @@ export default function HistoryScreen() {
             {/* Weekly chart */}
             {days.length > 0 && <WeeklyChart days={days} goalCal={goalCal} />}
 
+            {/* Weight trend chart */}
+            {weightEntries.length >= 2 && <WeightChart entries={weightEntries} units={units} />}
+
             {/* Stats summary */}
             {totalDays > 0 && (
               <StatsRow streak={streak} totalDays={totalDays} avgCal={avgCal} goalCal={goalCal} />
+            )}
+
+            {/* 7-day macro averages */}
+            {days.length > 0 && (
+              <MacroAverages
+                days={days}
+                targets={targets ? { calories: targets.calories, proteinG: targets.proteinG, carbsG: targets.carbsG, fatG: targets.fatG } : null}
+              />
             )}
 
             {/* Streak milestone */}

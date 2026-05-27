@@ -13,6 +13,16 @@ import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
+// ── Water tracker helpers ─────────────────────────────────────────────
+const WATER_GOAL = 8; // glasses
+function getWaterKey(date: string) { return `fs_water_${date}`; }
+function loadWater(date: string): number {
+  try { return parseInt(localStorage.getItem(getWaterKey(date)) ?? '0', 10) || 0; } catch { return 0; }
+}
+function saveWater(date: string, n: number) {
+  try { localStorage.setItem(getWaterKey(date), String(Math.max(0, Math.min(WATER_GOAL + 4, n)))); } catch {}
+}
+
 // ── Macro palette: Protein=blue, Carbs=green, Fat=amber ──────────────
 const PROT = '#38BDF8';
 const CARB = '#22C55E';
@@ -110,6 +120,92 @@ function TrainingIcon({ type, size = 20 }: { type: TrainingType; size?: number }
     default:
       return <svg {...p}><circle cx="12" cy="12" r="10"/></svg>;
   }
+}
+
+// ── Water Tracker component ───────────────────────────────────────────
+function WaterTracker({ date }: { date: string }) {
+  const [glasses, setGlasses] = useState(() => loadWater(date));
+
+  useEffect(() => { setGlasses(loadWater(date)); }, [date]);
+
+  const set = (n: number) => {
+    const clamped = Math.max(0, Math.min(WATER_GOAL + 4, n));
+    setGlasses(clamped);
+    saveWater(date, clamped);
+  };
+
+  const pct  = Math.min(glasses / WATER_GOAL, 1);
+  const done = glasses >= WATER_GOAL;
+
+  return (
+    <div style={{
+      background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
+      padding: '12px 14px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" style={{ display:'none' }}/>
+            <path d="M12 2 C8 8 5 12 5 15 a7 7 0 0 0 14 0 c0-3-3-7-7-13z"/>
+          </svg>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+            Hydration
+          </span>
+          <span style={{
+            fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '1px 7px',
+            color: done ? '#38BDF8' : 'var(--muted)',
+            background: done ? 'rgba(56,189,248,0.12)' : 'var(--edge)',
+          }}>
+            {glasses}/{WATER_GOAL}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => set(glasses - 1)} className="nrc-press" style={{
+            width: 28, height: 28, borderRadius: 6, border: '1px solid var(--edge)',
+            background: 'var(--surf2)', color: 'var(--muted)', fontSize: 16, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>−</button>
+          <button onClick={() => set(glasses + 1)} className="nrc-press" style={{
+            width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(56,189,248,0.4)',
+            background: 'rgba(56,189,248,0.08)', color: '#38BDF8', fontSize: 16, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700,
+          }}>+</button>
+        </div>
+      </div>
+
+      {/* Drop icons */}
+      <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+        {Array.from({ length: WATER_GOAL }, (_, i) => {
+          const filled = i < glasses;
+          return (
+            <button key={i} onClick={() => set(filled && glasses === i + 1 ? i : i + 1)}
+              className="nrc-press"
+              style={{ flex: 1, height: 22, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
+                background: filled ? '#38BDF8' : 'var(--edge)',
+                opacity: filled ? 1 : 0.35,
+                transition: 'background 0.18s ease, opacity 0.18s ease',
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 2, background: 'var(--edge)', borderRadius: 1, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 1,
+          background: done ? '#38BDF8' : '#38BDF880',
+          width: `${pct * 100}%`,
+          transition: 'width 0.35s ease',
+        }} />
+      </div>
+      {done && (
+        <div style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, textAlign: 'center', marginTop: 5 }}>
+          💧 Hydration goal hit!
+        </div>
+      )}
+    </div>
+  );
 }
 
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
@@ -411,11 +507,22 @@ function MealSection({
 }
 
 // ── Training type definitions ──────────────────────────────────────────
-const TRAINING_TYPES: { type: TrainingType; label: string; color: string; isAccent?: boolean }[] = [
-  { type: 'rest',     label: 'Rest',     color: '#8B949E'           },
-  { type: 'strength', label: 'Strength', color: PROT                },
-  { type: 'cardio',   label: 'Cardio',   color: CARB                },
-  { type: 'hybrid',   label: 'Hybrid',   color: '#8B949E', isAccent: true },
+const TRAINING_TYPES: {
+  type: TrainingType; label: string; color: string; isAccent?: boolean;
+  desc: string; macroTip: string;
+}[] = [
+  { type: 'rest',     label: 'Rest',     color: '#8B949E',
+    desc: 'Recovery day — low carb, high fat',
+    macroTip: 'High fat · low carb · moderate protein' },
+  { type: 'strength', label: 'Strength', color: PROT,
+    desc: 'Muscle building — high protein day',
+    macroTip: 'High protein · moderate carb · low fat' },
+  { type: 'cardio',   label: 'Cardio',   color: CARB,
+    desc: 'Endurance session — fuel with carbs',
+    macroTip: 'High carb · moderate protein · low fat' },
+  { type: 'hybrid',   label: 'Hybrid',   color: '#8B949E', isAccent: true,
+    desc: 'Mixed training — balanced macros',
+    macroTip: 'Balanced protein · carb · fat split' },
 ];
 
 // ── Supplement checklist ───────────────────────────────────────────────
@@ -665,6 +772,9 @@ export default function HomeScreen() {
   const [logs,     setLogs]     = useState<FoodLog[]>([]);
   const [consumed, setConsumed] = useState<MacroTargets>(emptyMacros());
   const [logTick,  setLogTick]  = useState(0);
+  const [expandedTraining, setExpandedTraining] = useState<TrainingType | null>(null);
+
+  const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
 
   useEffect(() => {
     getLogs(viewDate).then(ls => {
@@ -674,8 +784,12 @@ export default function HomeScreen() {
     });
   }, [viewDate, logTick]);
 
-  const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
-  void reloadLogs;
+  // Auto-reload when tab becomes visible again (catches food logged in DIARY tab)
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) reloadLogs(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [reloadLogs]);
 
   const targets = useEffectiveTargets();
 
@@ -718,8 +832,40 @@ export default function HomeScreen() {
     weekday: 'short', month: 'long', day: 'numeric',
   });
 
+  // Greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const displayName = user?.displayName || '';
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
+
+      {/* ── Greeting bar ── */}
+      {isToday && displayName && (
+        <div style={{
+          padding: '12px 16px 8px',
+          background: 'var(--surf)',
+          borderBottom: '1px solid var(--edge)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{greeting},</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.1 }}>
+              {displayName} 👋
+            </div>
+          </div>
+          {todayLog?.trainingType && (
+            <div style={{
+              padding: '4px 12px', borderRadius: 6,
+              background: 'var(--accent-muted)', border: '1px solid var(--accent)',
+              fontSize: 11, fontWeight: 800, color: 'var(--accent)',
+              textTransform: 'uppercase', letterSpacing: 1.5,
+            }}>
+              {todayLog.trainingType}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Top bar: Date nav + settings icon ── */}
       <div style={{
@@ -828,11 +974,19 @@ export default function HomeScreen() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
             {TRAINING_TYPES.map(({ type, label, color, isAccent }) => {
               const active       = todayLog?.trainingType === type;
+              const expanded     = expandedTraining === type;
               const displayColor = isAccent ? 'var(--accent)' : color;
               return (
                 <button
                   key={type}
-                  onClick={() => handleSelectType(type)}
+                  onClick={() => {
+                    if (active) {
+                      setExpandedTraining(expanded ? null : type);
+                    } else {
+                      handleSelectType(type);
+                      setExpandedTraining(type);
+                    }
+                  }}
                   className="nrc-press"
                   style={{
                     padding: '11px 4px', borderRadius: 8,
@@ -855,47 +1009,69 @@ export default function HomeScreen() {
             })}
           </div>
 
-          {/* NEAT / Activity modifier */}
-          {todayLog && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
-                Daily Activity Level
+          {/* Training description tooltip */}
+          {expandedTraining && (() => {
+            const t = TRAINING_TYPES.find(x => x.type === expandedTraining);
+            if (!t) return null;
+            const displayColor = t.isAccent ? 'var(--accent)' : t.color;
+            return (
+              <div style={{
+                marginTop: 10, padding: '10px 12px', borderRadius: 8,
+                background: `${t.isAccent ? 'var(--accent-muted)' : t.color + '14'}`,
+                border: `1px solid ${displayColor}40`,
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+              }}>
+                <TrainingIcon type={expandedTraining} size={16} />
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: displayColor, marginBottom: 2 }}>{t.label} Day</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>{t.desc}</div>
+                  <div style={{ fontSize: 10, color: displayColor, marginTop: 4, fontWeight: 700, opacity: 0.85 }}>→ {t.macroTip}</div>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); setExpandedTraining(null); }}
+                  style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>×</button>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5, opacity: 0.7 }}>
-                Non-workout movement — steps, job, errands.
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {([
-                  { val: 'low',    label: 'Low',    desc: 'Desk · sitting'   },
-                  { val: 'normal', label: 'Normal', desc: 'Some walking'     },
-                  { val: 'high',   label: 'High',   desc: 'On feet all day'  },
-                ] as const).map(({ val, label, desc }) => {
-                  const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
-                  return (
-                    <button
-                      key={val}
-                      onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
-                      style={{
-                        flex: 1, padding: '9px 4px', borderRadius: 8,
-                        border: `1.5px solid ${sel ? 'var(--accent)' : 'var(--edge)'}`,
-                        background: sel ? 'var(--accent-muted)' : 'transparent',
-                        cursor: 'pointer',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      <span style={{ fontSize: 12, fontWeight: sel ? 800 : 600, color: sel ? 'var(--accent)' : 'var(--muted)' }}>
-                        {label}
-                      </span>
-                      <span style={{ fontSize: 9, color: sel ? 'var(--accent)' : 'var(--muted)', textAlign: 'center', lineHeight: 1.4, opacity: sel ? 0.85 : 0.5 }}>
-                        {desc}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+            );
+          })()}
+
+          {/* NEAT / Activity modifier — always visible */}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+              Daily Activity Level
             </div>
-          )}
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5, opacity: 0.7 }}>
+              Non-workout movement — steps, job, errands.
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {([
+                { val: 'low',    label: 'Low',    desc: 'Desk · sitting'   },
+                { val: 'normal', label: 'Normal', desc: 'Some walking'     },
+                { val: 'high',   label: 'High',   desc: 'On feet all day'  },
+              ] as const).map(({ val, label, desc }) => {
+                const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
+                return (
+                  <button
+                    key={val}
+                    onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
+                    style={{
+                      flex: 1, padding: '9px 4px', borderRadius: 8,
+                      border: `1.5px solid ${sel ? 'var(--accent)' : 'var(--edge)'}`,
+                      background: sel ? 'var(--accent-muted)' : 'transparent',
+                      cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: sel ? 800 : 600, color: sel ? 'var(--accent)' : 'var(--muted)' }}>
+                      {label}
+                    </span>
+                    <span style={{ fontSize: 9, color: sel ? 'var(--accent)' : 'var(--muted)', textAlign: 'center', lineHeight: 1.4, opacity: sel ? 0.85 : 0.5 }}>
+                      {desc}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -914,34 +1090,72 @@ export default function HomeScreen() {
             </span>
           )}
         </div>
-        <div style={{
-          background: 'var(--surf)',
-          border: '1px solid var(--edge)',
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}>
-          {MEAL_ORDER.map((meal) => {
-            const items        = byMeal[meal] ?? [];
-            const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
-            const visIdx       = visibleMeals.indexOf(meal);
-            if (meal === 'other' && items.length === 0) return null;
-            return (
-              <div key={meal}>
-                {visIdx > 0 && (
-                  <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
-                )}
-                <div style={{ padding: '9px 12px 8px' }}>
-                  <MealSection
-                    meal={meal}
-                    items={items}
-                    onAddFood={handleAddFood}
-                  />
+
+        {/* Empty state — single CTA instead of 6 orphan rows */}
+        {logs.length === 0 ? (
+          <div style={{
+            background: 'var(--surf)', border: '1px solid var(--edge)',
+            borderRadius: 8, padding: '28px 20px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          }}>
+            <div style={{ fontSize: 32 }}>🍽️</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>
+              Nothing logged yet
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
+              {isToday ? 'Start tracking your meals to hit your daily targets.' : 'No food was logged on this day.'}
+            </div>
+            {isToday && (
+              <button
+                onClick={() => handleAddFood('breakfast')}
+                className="nrc-press"
+                style={{
+                  marginTop: 4, padding: '11px 28px', borderRadius: 8,
+                  background: 'var(--accent)', border: 'none',
+                  color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                }}
+              >
+                + Log First Meal
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{
+            background: 'var(--surf)',
+            border: '1px solid var(--edge)',
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}>
+            {MEAL_ORDER.map((meal) => {
+              const items        = byMeal[meal] ?? [];
+              const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
+              const visIdx       = visibleMeals.indexOf(meal);
+              if (meal === 'other' && items.length === 0) return null;
+              return (
+                <div key={meal}>
+                  {visIdx > 0 && (
+                    <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
+                  )}
+                  <div style={{ padding: '9px 12px 8px' }}>
+                    <MealSection
+                      meal={meal}
+                      items={items}
+                      onAddFood={handleAddFood}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* ── Water Tracker (today only) ── */}
+      {isToday && (
+        <div style={{ margin: '8px 14px 0' }}>
+          <WaterTracker date={todayStr} />
+        </div>
+      )}
 
       {/* ── Supplements (today only) ── */}
       {isToday && (

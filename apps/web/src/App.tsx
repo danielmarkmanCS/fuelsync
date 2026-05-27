@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from './store/authStore';
 import { useAppStore } from './store/appStore';
-import { useThemeStore } from './store/themeStore';
+import { useThemeStore, ACCENT_COLORS } from './store/themeStore';
 import { getProfile, createProfile, updateProfile } from './api/auth';
 import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
@@ -91,14 +91,22 @@ const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> 
 export default function App() {
   const { user, pinVerified, setUser, setPinVerified } = useAuthStore();
   const { activeTab, setActiveTab } = useAppStore();
-  const { isDark } = useThemeStore();
+  const { isDark, accentKey } = useThemeStore();
   const profileIncomplete = !!user && (!user.weightKg || !user.heightCm || !user.age);
 
-  // Apply data-theme to body for CSS variable switching
+  // Apply data-theme + accent CSS vars to body
   useEffect(() => {
     document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
   }, [isDark]);
+
+  useEffect(() => {
+    const a = ACCENT_COLORS[accentKey];
+    const v = isDark ? a.dark : a.light;
+    document.documentElement.style.setProperty('--accent',       v);
+    document.documentElement.style.setProperty('--accent2',      v);
+    document.documentElement.style.setProperty('--accent-muted', a.muted);
+  }, [accentKey, isDark]);
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
   const [stravaConnecting, setStravaConnecting] = useState(false);
