@@ -637,12 +637,36 @@ export default function ProfileSetupScreen() {
             {googleConnected ? (
               <div style={{
                 padding: '12px 14px', borderRadius: 8, background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.25)', display: 'flex', alignItems: 'center', gap: 10,
+                border: '1px solid rgba(34,197,94,0.25)',
               }}>
-                <span style={{ fontSize: 18 }}>☁️</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>Google Sync Active</div>
-                  <div style={{ fontSize: 11, color: MUTED }}>Profile, training & supplements sync to your Google account</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 18 }}>☁️</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>Google Sync Active</div>
+                    <div style={{ fontSize: 11, color: MUTED }}>Profile, training & supplements sync to your Google account</div>
+                  </div>
+                </div>
+                {/* Copy token — lets user pair this account on another device without Google OAuth */}
+                <button
+                  onClick={async () => {
+                    const token = getSyncToken();
+                    if (!token) return;
+                    await navigator.clipboard.writeText(token).catch(() => {});
+                    // Show brief confirmation
+                    const el = document.getElementById('fs-token-copy-msg');
+                    if (el) { el.style.display = 'block'; setTimeout(() => { el.style.display = 'none'; }, 2000); }
+                  }}
+                  style={{
+                    width: '100%', padding: '8px 0', borderRadius: 6,
+                    background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
+                    color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}
+                >
+                  📋 Copy Device Token (for pairing another device)
+                </button>
+                <div id="fs-token-copy-msg" style={{ display: 'none', fontSize: 10, color: GREEN, textAlign: 'center', marginTop: 4 }}>
+                  ✓ Token copied — paste it on the other device
                 </div>
               </div>
             ) : (

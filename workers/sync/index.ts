@@ -371,6 +371,76 @@ export default {
         return json({ ok: true }, 200, ao);
       }
 
+      // ── POST /pair/create — phone creates a short-lived pairing code ─────────
+      if (path === '/pair/create' && request.method === 'POST') {
+        const userId = await authenticate(request, env);
+        if (!userId) return err('Unauthorized', 401, ao);
+
+        // Ensure table exists (idempotent)
+        await env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS pairing_codes (
+            code TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            token TEXT NOT NULL,
+            expires_at INTEGER NOT NULL
+          )
+        `).run();
+
+        // Generate 6-char uppercase alphanumeric code
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        const buf = new Uint8Array(6);
+        crypto.getRandomValues(buf);
+        for (const b of buf) code += chars[b % chars.length];
+
+        // Create a fresh 30-day token to hand to the computer
+        const expiresTokenAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        const token = await signToken(userId, expiresTokenAt, env.SESSION_SECRET);
+
+        // Store code valid for 5 minutes
+        const expiresAt = Date.now() + 5 * 60 * 1000;
+        await env.DB.prepare(
+          'INSERT OR REPLACE INTO pairing_codes (code, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
+        ).bind(code, userId, token, expiresAt).run();
+
+        return json({ code }, 200, ao);
+      }
+
+      // ── POST /pair/redeem — computer redeems the code for a token ────────────
+      if (path === '/pair/redeem' && request.method === 'POST') {
+        // Ensure table exists
+        await env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS pairing_codes (
+            code TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            token TEXT NOT NULL,
+            expires_at INTEGER NOT NULL
+          )
+        `).run();
+
+        const { code } = await request.json() as { code?: string };
+        if (!code) return err('code required', 400, ao);
+
+        const row = await env.DB.prepare(
+          'SELECT * FROM pairing_codes WHERE code = ?'
+        ).bind(code.toUpperCase().trim()).first<{ code: string; user_id: string; token: string; expires_at: number }>();
+
+        if (!row) return err('Invalid code', 404, ao);
+        if (Date.now() > row.expires_at) {
+          await env.DB.prepare('DELETE FROM pairing_codes WHERE code = ?').bind(code).run();
+          return err('Code expired', 410, ao);
+        }
+
+        // Delete code so it can only be used once
+        await env.DB.prepare('DELETE FROM pairing_codes WHERE code = ?').bind(code).run();
+
+        // Load user profile to return alongside the token
+        const user    = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(row.user_id).first<Record<string, unknown>>();
+        const profile = await env.DB.prepare('SELECT * FROM profiles WHERE user_id = ?').bind(row.user_id).first<Record<string, unknown>>();
+
+        return json({ token: row.token, user: { ...user, ...profile } }, 200, ao);
+      }
+
       return err('Not found', 404, ao);
     } catch (e: unknown) {
       console.error(e);

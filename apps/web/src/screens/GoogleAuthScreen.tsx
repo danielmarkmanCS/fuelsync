@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { googleSignIn, setSyncToken } from '../api/syncClient';
+import { googleSignIn, setSyncToken, getMe } from '../api/syncClient';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
@@ -29,6 +29,9 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
   const btnRef  = useRef<HTMLDivElement>(null);
   const [error,     setError]     = useState('');
   const [loading,   setLoading]   = useState(false);
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [pasteToken,     setPasteToken]     = useState('');
+  const [tokenError,     setTokenError]     = useState('');
 
   useEffect(() => {
     if (IS_NATIVE || !CLIENT_ID) return;
@@ -90,6 +93,27 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
     } finally { setLoading(false); }
   }
 
+  async function handlePasteToken() {
+    const t = pasteToken.trim();
+    if (!t) return;
+    setLoading(true); setTokenError('');
+    try {
+      setSyncToken(t);
+      const user = await getMe();
+      if (!user) throw new Error('Invalid token');
+      onSignedIn({
+        displayName: user.display_name || user.name,
+        email: user.email, picture: user.picture,
+        weightKg: user.weight_kg ?? null, heightCm: user.height_cm ?? null,
+        age: user.age ?? null, gender: (user.gender as string | null) ?? null,
+        activityLevel: user.activity_level ?? 'moderate', dailyGoal: user.daily_goal ?? 2000,
+      });
+    } catch {
+      setSyncToken('');
+      setTokenError('Token invalid or expired. Copy it again from your phone.');
+    } finally { setLoading(false); }
+  }
+
 return (
     <div style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
@@ -138,6 +162,44 @@ return (
         ) : (
           <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 16, fontWeight: 600 }}>
             Google Sign-In unavailable in this browser.
+          </div>
+        )}
+
+        {/* Paste token — alternative for devices where Google OAuth doesn't work */}
+        {!showTokenInput ? (
+          <button
+            onClick={() => setShowTokenInput(true)}
+            style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', color: MUTED, fontSize: 11, fontWeight: 600 }}
+          >
+            Already have a device token? Paste it here
+          </button>
+        ) : (
+          <div style={{ marginTop: 12, width: '100%' }}>
+            <input
+              type="text"
+              value={pasteToken}
+              onChange={e => setPasteToken(e.target.value)}
+              placeholder="Paste sync token from your phone…"
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                borderRadius: 8, border: '1px solid #3E4452', background: '#1A1C22',
+                color: '#fff', fontSize: 12, outline: 'none', fontFamily: 'monospace',
+                marginBottom: 8,
+              }}
+            />
+            <button
+              onClick={handlePasteToken}
+              disabled={loading || !pasteToken.trim()}
+              style={{
+                width: '100%', padding: '11px 0', borderRadius: 8,
+                background: pasteToken.trim() ? GREEN : '#2E3340', border: 'none',
+                color: pasteToken.trim() ? '#000' : MUTED,
+                fontSize: 13, fontWeight: 700, cursor: pasteToken.trim() ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {loading ? 'Verifying…' : 'Use Token'}
+            </button>
+            {tokenError && <div style={{ color: '#EF4444', fontSize: 11, marginTop: 6, textAlign: 'center' }}>{tokenError}</div>}
           </div>
         )}
 
