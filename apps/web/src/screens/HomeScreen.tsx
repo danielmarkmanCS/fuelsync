@@ -10,6 +10,7 @@ import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
+import { getDailyGoal } from '../hooks/useNutrition';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 
@@ -718,7 +719,9 @@ export default function HomeScreen() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [reloadLogs]);
 
-  const targets = useEffectiveTargets();
+  const todayTargets = useEffectiveTargets();
+  // For past days: load the snapshot that was saved when that day's training was logged
+  const targets = isToday ? todayTargets : getDailyGoal(viewDate);
 
   // Group by meal
   const byMeal = MEAL_ORDER.reduce<Record<string, FoodLog[]>>((acc, m) => { acc[m] = []; return acc; }, {});
@@ -896,14 +899,14 @@ export default function HomeScreen() {
       )}
 
       {/* ── Calorie dashboard ── */}
-      {/* For past days: targets = null (no goal — we don't store historical targets) */}
+      {/* targets: today = live computed; past day = snapshot saved when that day was logged */}
       <div style={{ margin: '10px 14px 0' }}>
-        <CalDashboard consumed={consumed} targets={isToday ? targets : null} />
+        <CalDashboard consumed={consumed} targets={targets} />
       </div>
 
       {/* ── Macro row ── */}
       <div style={{ margin: '8px 14px 0' }}>
-        <MacroRow consumed={consumed} targets={isToday ? targets : null} />
+        <MacroRow consumed={consumed} targets={targets} />
       </div>
 
       {/* ── Training selector (today only) ── */}

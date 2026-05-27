@@ -5,8 +5,31 @@ import { fetchWeather, evaluateEnvironment } from '../services/weatherService';
 import { computeMacros, checkLegFatigueGate } from '../services/nutritionEngine';
 import { fetchTrainingState, saveTrainingState, getSyncToken } from '../api/syncClient';
 import { drainSyncQueue, clearPullCache } from '../api/localFood';
-import type { DailyLog, TrainingType, UserProfile, WeatherConditions, EnvironmentAlert, WeeklyLoad } from '@shared/types';
+import type { DailyLog, TrainingType, UserProfile, WeatherConditions, EnvironmentAlert, WeeklyLoad, MacroTargets } from '@shared/types';
 import type { BackendUser } from '../api/auth';
+
+// ── Daily goal snapshot ────────────────────────────────────────────────────
+// Saves per-date targets to localStorage so past days still show goals.
+const GOAL_LOG_KEY = 'fs_daily_goals_v1';
+type GoalLog = Record<string, MacroTargets>; // date → targets
+
+function loadGoalLog(): GoalLog {
+  try { return JSON.parse(localStorage.getItem(GOAL_LOG_KEY) ?? '{}'); }
+  catch { return {}; }
+}
+
+export function saveDailyGoal(date: string, targets: MacroTargets): void {
+  const log = loadGoalLog();
+  log[date] = targets;
+  // Keep only last 60 days to avoid unbounded growth
+  const keys = Object.keys(log).sort();
+  if (keys.length > 60) keys.slice(0, keys.length - 60).forEach(k => delete log[k]);
+  try { localStorage.setItem(GOAL_LOG_KEY, JSON.stringify(log)); } catch {}
+}
+
+export function getDailyGoal(date: string): MacroTargets | null {
+  return loadGoalLog()[date] ?? null;
+}
 
 const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_KEY ?? '';
 
@@ -123,6 +146,8 @@ export function useNutrition() {
     if (!profile || !store.todayLog) return;
     const breakdown = computeMacros(profile, store.todayLog, store.weeklyLoad);
     store.setTargets(breakdown.targets);
+    // Snapshot today's goal so past-day views can still show it
+    saveDailyGoal(store.todayLog.date, breakdown.targets);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.weightKg, user?.heightCm, user?.age, user?.gender, user?.activityLevel, store.todayLog?.trainingType, store.todayLog?.dailyActivityModifier]);
 
@@ -143,6 +168,7 @@ export function useNutrition() {
       if (profile) {
         const breakdown = computeMacros(profile, log, store.weeklyLoad);
         store.setTargets(breakdown.targets);
+        saveDailyGoal(today, breakdown.targets);
       }
       return { blocked: false, message: null, log };
     },
