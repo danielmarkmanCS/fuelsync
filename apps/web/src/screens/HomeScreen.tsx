@@ -737,6 +737,19 @@ export default function HomeScreen() {
     const r = logDay(type);
     if (r.blocked && !window.confirm('Heavy run load this week. Cardio today risks injury.\n\nLog anyway?')) return;
     if (r.blocked) logDay(type, undefined, undefined, true);
+
+    // Auto-log 1 session immediately for strength-type days (once per day)
+    // Cardio types wait for the user to enter km in the expanded form
+    const isStrengthDay = type === 'strength' || type === 'hybrid';
+    if (isStrengthDay && !todayLog?.actualWorkoutLogged) {
+      logWorkoutComplete(0, 1);
+      setWorkoutLogged(true);
+    }
+    // Reset logged state when switching to a cardio type
+    if (!isStrengthDay) {
+      setWorkoutLogged(false);
+      setWorkoutKm('');
+    }
   };
 
   const activityModifier = todayLog?.dailyActivityModifier ?? null;
@@ -1066,89 +1079,7 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* ── Food Diary ── */}
-      <div style={{ margin: '8px 14px 0' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 6, paddingLeft: 2,
-        }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
-            Food Diary
-          </span>
-          {logs.length > 0 && (
-            <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>
-              {logs.length} item{logs.length !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-
-        {/* Empty state — single CTA instead of 6 orphan rows */}
-        {logs.length === 0 ? (
-          <div style={{
-            background: 'var(--surf)', border: '1px solid var(--edge)',
-            borderRadius: 8, padding: '28px 20px',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          }}>
-            <div style={{ fontSize: 32 }}>🍽️</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>
-              Nothing logged yet
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
-              {isToday ? 'Start tracking your meals to hit your daily targets.' : 'No food was logged on this day.'}
-            </div>
-            {isToday && (
-              <button
-                onClick={() => handleAddFood('breakfast')}
-                className="nrc-press"
-                style={{
-                  marginTop: 4, padding: '11px 28px', borderRadius: 8,
-                  background: 'var(--accent)', border: 'none',
-                  color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                }}
-              >
-                + Log First Meal
-              </button>
-            )}
-          </div>
-        ) : (
-          <div style={{
-            background: 'var(--surf)',
-            border: '1px solid var(--edge)',
-            borderRadius: 8,
-            overflow: 'hidden',
-          }}>
-            {MEAL_ORDER.map((meal) => {
-              const items        = byMeal[meal] ?? [];
-              const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
-              const visIdx       = visibleMeals.indexOf(meal);
-              if (meal === 'other' && items.length === 0) return null;
-              return (
-                <div key={meal}>
-                  {visIdx > 0 && (
-                    <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
-                  )}
-                  <div style={{ padding: '9px 12px 8px' }}>
-                    <MealSection
-                      meal={meal}
-                      items={items}
-                      onAddFood={handleAddFood}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── Supplements (today only) ── */}
-      {isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <SupplementBlock />
-        </div>
-      )}
-
-      {/* ── Strava ── */}
+      {/* ── Strava (today only) ── */}
       {user && isToday && (
         <div style={{ margin: '8px 14px 0' }}>
           <StravaCard />
@@ -1159,7 +1090,6 @@ export default function HomeScreen() {
       {isToday && (() => {
         const rec  = weeklyLoad.recoveryScore ?? 70;
         const fat  = weeklyLoad.legFatigueScore ?? 0;
-        // Readiness = recovery strong + low fatigue
         const readiness = Math.round(Math.max(0, Math.min(100, rec * 0.6 + (100 - fat) * 0.4)));
         const rColor = readiness >= 70 ? 'var(--accent)' : readiness >= 40 ? CARB : RED;
         const rLabel = readiness >= 80 ? 'PEAK' : readiness >= 60 ? 'GOOD' : readiness >= 40 ? 'MODERATE' : 'LOW';
@@ -1174,11 +1104,11 @@ export default function HomeScreen() {
         const hasLoad = weeklyLoad.totalRunKm > 0 || weeklyLoad.totalStrengthSets > 0;
         return (
           <div style={{
-            margin: '10px 14px 0', background: 'var(--surf)',
+            margin: '8px 14px 0', background: 'var(--surf)',
             borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 14px',
           }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 10 }}>
-              Readiness
+              Readiness &amp; Weekly Load
             </div>
             {/* Readiness bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -1266,6 +1196,88 @@ export default function HomeScreen() {
           </div>
         );
       })()}
+
+      {/* ── Food Diary ── */}
+      <div style={{ margin: '8px 14px 0' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 6, paddingLeft: 2,
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
+            Food Diary
+          </span>
+          {logs.length > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>
+              {logs.length} item{logs.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        {/* Empty state — single CTA instead of 6 orphan rows */}
+        {logs.length === 0 ? (
+          <div style={{
+            background: 'var(--surf)', border: '1px solid var(--edge)',
+            borderRadius: 8, padding: '28px 20px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          }}>
+            <div style={{ fontSize: 32 }}>🍽️</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>
+              Nothing logged yet
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
+              {isToday ? 'Start tracking your meals to hit your daily targets.' : 'No food was logged on this day.'}
+            </div>
+            {isToday && (
+              <button
+                onClick={() => handleAddFood('breakfast')}
+                className="nrc-press"
+                style={{
+                  marginTop: 4, padding: '11px 28px', borderRadius: 8,
+                  background: 'var(--accent)', border: 'none',
+                  color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                }}
+              >
+                + Log First Meal
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{
+            background: 'var(--surf)',
+            border: '1px solid var(--edge)',
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}>
+            {MEAL_ORDER.map((meal) => {
+              const items        = byMeal[meal] ?? [];
+              const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
+              const visIdx       = visibleMeals.indexOf(meal);
+              if (meal === 'other' && items.length === 0) return null;
+              return (
+                <div key={meal}>
+                  {visIdx > 0 && (
+                    <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
+                  )}
+                  <div style={{ padding: '9px 12px 8px' }}>
+                    <MealSection
+                      meal={meal}
+                      items={items}
+                      onAddFood={handleAddFood}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Supplements (today only) ── */}
+      {isToday && (
+        <div style={{ margin: '8px 14px 0' }}>
+          <SupplementBlock />
+        </div>
+      )}
 
       {/* ── Past day notice ── */}
       {!isToday && (

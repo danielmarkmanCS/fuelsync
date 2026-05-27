@@ -5,9 +5,8 @@ WORKDIR /app
 COPY apps/web/package*.json ./apps/web/
 RUN cd apps/web && npm ci --legacy-peer-deps
 
-# Copy source: web app + mobile services (reused by web) + shared types
+# Copy source: web app + shared types
 COPY apps/web        ./apps/web
-COPY apps/mobile/src/services ./apps/mobile/src/services
 COPY shared          ./shared
 
 # Build
