@@ -7,13 +7,14 @@ interface Env {
   GEMINI_API_KEY_2?: string;
   GEMINI_API_KEY_3?: string;
   ALLOWED_ORIGIN: string;
+  DANMAP_TOKEN?: string;
 }
 
 function cors(origin: string): HeadersInit {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
 
@@ -161,6 +162,35 @@ Keep it coach-like, direct, no fluff. No markdown. No bullet points. Just plain 
 Respond ONLY with valid JSON: {"well":"string","watch":"string","focus":"string"}`;
         const text = await gemini(apiKeys, prompt, 512);
         return json(parseJSON(text), 200, allowedOrigin);
+      }
+
+      // ── danmap security analysis ──────────────────────────────────────
+      // Called by the danmap CLI tool. Protected by DANMAP_TOKEN secret.
+      // Accepts: { scan: string } — plain-text port scan summary
+      // Returns: { analysis: string }
+      if (url.pathname.endsWith('/security-analyze')) {
+        const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+        if (env.DANMAP_TOKEN && token !== env.DANMAP_TOKEN) {
+          return err('Unauthorized', 401, allowedOrigin);
+        }
+        const { scan } = body;
+        if (!scan) return err('scan required', 400, allowedOrigin);
+        const prompt = `You are a cybersecurity expert. Analyze this port scan and respond in EXACTLY this format:
+
+RISK: [LOW / MEDIUM / HIGH / CRITICAL]
+
+FINDINGS:
+• [one line per notable port or issue]
+
+RECOMMENDATIONS:
+1. [specific action]
+2. [specific action]
+
+Keep it short and actionable. Scan results:
+
+${scan}`;
+        const text = await gemini(apiKeys, prompt, 512);
+        return json({ analysis: text }, 200, allowedOrigin);
       }
 
       return err('Not found', 404, allowedOrigin);
