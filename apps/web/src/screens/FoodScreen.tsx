@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache, patchLogImage } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
 import { useNutrition } from '../hooks/useNutrition';
@@ -208,6 +209,7 @@ function dateLabel(date: string): string {
 }
 
 export default function FoodScreen() {
+  const isNative = Capacitor.isNativePlatform();
   const { weather } = useNutrition();
   const targets = useEffectiveTargets(); // synced with HomeScreen (goal-mode + custom targets applied)
   const { pendingMealType, setPendingMealType } = useAppStore();
@@ -369,6 +371,7 @@ export default function FoodScreen() {
 
   const startScan = async () => {
     setScanError('');
+    if (isNative) { setScanSupported(false); return; }
     const supported = 'BarcodeDetector' in window;
     setScanSupported(supported);
     if (!supported) return;
@@ -1653,7 +1656,7 @@ export default function FoodScreen() {
               )}
 
               {/* BARCODE SCANNER */}
-              {mode === 'search' && (scanActive || barcodeLoading) && (
+              {mode === 'search' && (scanActive || barcodeLoading || scanSupported === false) && (
                 <div>
                   {barcodeLoading && (
                     <div style={{ textAlign: 'center', padding: '40px 0', color: MUTED, fontSize: 14, fontWeight: 700 }}>
@@ -1721,32 +1724,34 @@ export default function FoodScreen() {
                     <textarea autoFocus value={aiQuery}
                       onChange={(e) => { setAiQuery(e.target.value); setAiError(''); }}
                       placeholder="What did you eat?" rows={3}
-                      style={{ ...inp, width: '100%', resize: 'none', lineHeight: 1.6, paddingRight: 44 }} />
-                    {/* Mic button */}
-                    <button
-                      onClick={handleVoiceInput}
-                      title={isListening ? 'Stop listening' : 'Speak your meal'}
-                      style={{
-                        position: 'absolute', right: 8, top: 8,
-                        width: 32, height: 32, borderRadius: 8,
-                        border: `1.5px solid ${isListening ? '#EF4444' : 'var(--edge)'}`,
-                        background: isListening ? '#EF444420' : 'var(--surf2)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', transition: 'all 0.2s ease',
-                        animation: isListening ? 'pulse 1s infinite' : 'none',
-                      }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                        stroke={isListening ? '#EF4444' : 'var(--muted)'}
-                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" y1="19" x2="12" y2="23"/>
-                        <line x1="8" y1="23" x2="16" y2="23"/>
-                      </svg>
-                    </button>
+                      style={{ ...inp, width: '100%', resize: 'none', lineHeight: 1.6, paddingRight: isNative ? undefined : 44 }} />
+                    {/* Mic button — web only (Speech API not available in Android WebView) */}
+                    {!isNative && (
+                      <button
+                        onClick={handleVoiceInput}
+                        title={isListening ? 'Stop listening' : 'Speak your meal'}
+                        style={{
+                          position: 'absolute', right: 8, top: 8,
+                          width: 32, height: 32, borderRadius: 8,
+                          border: `1.5px solid ${isListening ? '#EF4444' : 'var(--edge)'}`,
+                          background: isListening ? '#EF444420' : 'var(--surf2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', transition: 'all 0.2s ease',
+                          animation: isListening ? 'pulse 1s infinite' : 'none',
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                          stroke={isListening ? '#EF4444' : 'var(--muted)'}
+                          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                          <line x1="12" y1="19" x2="12" y2="23"/>
+                          <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                      </button>
+                    )}
                   </div>
-                  {isListening && (
+                  {!isNative && isListening && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
                       padding: '8px 12px', borderRadius: 8, background: '#EF444412', border: '1px solid #EF444440' }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#EF4444', animation: 'pulse 1s infinite' }} />
