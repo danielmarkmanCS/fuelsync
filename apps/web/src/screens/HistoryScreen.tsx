@@ -275,6 +275,7 @@ function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calor
 
 // ── WEEKLY BAR CHART ──────────────────────────────────────────────
 function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
+  const [showPrev, setShowPrev] = useState(false);
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   const week = Array.from({ length: 7 }, (_, i) => {
@@ -282,12 +283,19 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
     d.setDate(today.getDate() - (6 - i));
     return d.toISOString().split('T')[0];
   });
+  const prevWeek = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (13 - i));
+    return d.toISOString().split('T')[0];
+  });
 
-  const dayMap    = new Map(days.map(d => [d.date, d]));
-  const maxCal    = Math.max(goalCal * 1.2, ...week.map(d => dayMap.get(d)?.totalCal ?? 0), 1);
-  const CHART_H   = 80;
+  const dayMap     = new Map(days.map(d => [d.date, d]));
+  const maxCal     = Math.max(goalCal * 1.2, ...week.map(d => dayMap.get(d)?.totalCal ?? 0), showPrev ? Math.max(...prevWeek.map(d => dayMap.get(d)?.totalCal ?? 0)) : 0, 1);
+  const CHART_H    = 80;
   const weekTotal  = week.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
   const daysLogged = week.filter(d => (dayMap.get(d)?.totalCal ?? 0) > 0).length;
+  const prevTotal  = prevWeek.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
+  const hasPrevData = prevTotal > 0;
 
   return (
     <div style={{
@@ -295,8 +303,23 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
       border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
-          This Week
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
+            This Week
+          </div>
+          {hasPrevData && (
+            <button
+              onClick={() => setShowPrev(v => !v)}
+              style={{
+                background: showPrev ? `${ORANGE_HEX}18` : 'none',
+                border: `1px solid ${showPrev ? ORANGE_HEX + '40' : EDGE}`,
+                borderRadius: 5, padding: '3px 8px', cursor: 'pointer',
+                fontSize: 8, fontWeight: 700, color: showPrev ? ORANGE : MUTED,
+              }}
+            >
+              {showPrev ? '▲ Hide prev week' : '▼ vs prev week'}
+            </button>
+          )}
         </div>
         {weekTotal > 0 && (
           <div style={{ textAlign: 'right' }}>
@@ -305,6 +328,11 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
             </div>
             <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>
               kcal · {daysLogged} day{daysLogged !== 1 ? 's' : ''}
+              {showPrev && hasPrevData && (
+                <span style={{ marginLeft: 6, color: weekTotal >= prevTotal ? GREEN : RED }}>
+                  {weekTotal >= prevTotal ? '▲' : '▼'} {Math.abs(weekTotal - prevTotal).toLocaleString()} vs last week
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -321,7 +349,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
         }} />
 
         <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: CHART_H, position: 'relative', zIndex: 2 }}>
-          {week.map((date) => {
+          {week.map((date, idx) => {
             const ds    = dayMap.get(date);
             const cal   = ds?.totalCal ?? 0;
             const barH  = cal > 0 ? Math.max((cal / maxCal) * CHART_H, 6) : 3;
@@ -329,12 +357,23 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
             const isToday = date === todayStr;
             const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? YELLOW : 'rgba(255,255,255,0.10)';
             const dayLbl = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
+            const prevCal = dayMap.get(prevWeek[idx])?.totalCal ?? 0;
+            const prevBarH = showPrev && prevCal > 0 ? Math.max((prevCal / maxCal) * CHART_H, 3) : 0;
 
             return (
               <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', height: CHART_H, justifyContent: 'flex-end' }}>
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', height: CHART_H, justifyContent: 'flex-end', position: 'relative' }}>
+                  {/* Previous week ghost bar */}
+                  {prevBarH > 0 && (
+                    <div style={{
+                      position: 'absolute', bottom: 0, width: '100%', height: prevBarH,
+                      background: `${MUTED2}40`,
+                      borderRadius: '5px 5px 3px 3px',
+                      border: `1px solid ${MUTED2}30`,
+                    }} />
+                  )}
                   {cal > 0 && (
-                    <div style={{ fontSize: 8, fontWeight: 700, color: isToday ? color : MUTED, marginBottom: 3, letterSpacing: 0.3 }}>
+                    <div style={{ fontSize: 8, fontWeight: 700, color: isToday ? color : MUTED, marginBottom: 3, letterSpacing: 0.3, position: 'relative', zIndex: 1 }}>
                       {cal >= 1000 ? `${(cal / 1000).toFixed(1)}k` : cal}
                     </div>
                   )}
@@ -345,6 +384,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
                     boxShadow: isToday ? `0 0 14px ${color}55, 0 2px 6px ${color}30` : `0 1px 4px ${color}20`,
                     opacity: isToday ? 1 : 0.78,
                     transition: 'height 0.6s cubic-bezier(0.4,0,0.2,1)',
+                    position: 'relative', zIndex: 1,
                   }} />
                 </div>
                 <div style={{
@@ -365,6 +405,12 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
           Goal {goalCal.toLocaleString()} kcal
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          {showPrev && hasPrevData && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 6, height: 6, borderRadius: 2, background: MUTED2, opacity: 0.5 }} />
+              <div style={{ fontSize: 8, color: MUTED, fontWeight: 700 }}>prev week</div>
+            </div>
+          )}
           {[[GREEN, '85–110%'], [RED, '110%+']].map(([c, lbl]) => (
             <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <div style={{ width: 6, height: 6, borderRadius: 2, background: c }} />
@@ -378,14 +424,25 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
 }
 
 // ── STATS ROW ─────────────────────────────────────────────────────
-function StatsRow({ streak, totalDays, avgCal, goalCal }: { streak: number; totalDays: number; avgCal: number; goalCal: number }) {
+function StatsRow({ streak, totalDays, avgCal, goalCal, days }: { streak: number; totalDays: number; avgCal: number; goalCal: number; days: DaySummary[] }) {
   const goalPct = goalCal > 0 ? Math.round((avgCal / goalCal) * 100) : 0;
+
+  // Goal hit streak: consecutive days ending today where calories were 85–110% of goal
+  let goalStreak = 0;
+  const sorted = [...days].sort((a, b) => b.date.localeCompare(a.date));
+  for (const d of sorted) {
+    const pct = goalCal > 0 ? d.totalCal / goalCal : 0;
+    if (pct >= 0.85 && pct <= 1.10) goalStreak++;
+    else break;
+  }
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
       {[
-        { label: 'Day Streak',  value: streak,   unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE, colorHex: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : ORANGE_HEX, highlight: streak >= 3 },
-        { label: 'Days Logged', value: totalDays, unit: 'total',      color: YELLOW, colorHex: YELLOW, highlight: false },
-        { label: 'Avg Daily',   value: goalPct,   unit: '% of goal',  color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE, colorHex: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE_HEX, highlight: goalPct >= 85 && goalPct <= 115 },
+        { label: 'Log Streak',  value: streak,     unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE, colorHex: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : ORANGE_HEX, highlight: streak >= 3 },
+        { label: 'Goal Streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#F59E0B' : goalStreak >= 2 ? GREEN : MUTED, colorHex: goalStreak >= 5 ? '#F59E0B' : goalStreak >= 2 ? GREEN : MUTED2, highlight: goalStreak >= 2 },
+        { label: 'Days Logged', value: totalDays,  unit: 'total',     color: YELLOW, colorHex: YELLOW, highlight: false },
+        { label: 'Avg Daily',   value: goalPct,    unit: '% of goal', color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE, colorHex: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE_HEX, highlight: goalPct >= 85 && goalPct <= 115 },
       ].map(({ label, value, unit, color, colorHex, highlight }) => (
         <div key={label} style={{
           background: highlight ? `${colorHex}12` : SURF,
@@ -519,10 +576,334 @@ function CoachTab({
     marginBottom: 10,
   });
 
+  const coachGoalCal = targets?.calories ?? 0;
+
+  // Compute local insights from data
+  const localInsights: { icon: string; text: string; color: string }[] = [];
+  if (days.length >= 3) {
+    const avgCal = days.reduce((s, d) => s + d.totalCal, 0) / days.length;
+    const goalCal = coachGoalCal;
+    if (goalCal > 0) {
+      const pctOfGoal = Math.round((avgCal / goalCal) * 100);
+      if (pctOfGoal >= 90 && pctOfGoal <= 110)
+        localInsights.push({ icon: '✅', text: `Calorie accuracy: ${pctOfGoal}% of goal. Excellent consistency.`, color: GREEN });
+      else if (pctOfGoal < 75)
+        localInsights.push({ icon: '⚠️', text: `Averaging only ${pctOfGoal}% of calorie goal — you may be under-logging.`, color: ORANGE_HEX });
+      else if (pctOfGoal > 120)
+        localInsights.push({ icon: '⚠️', text: `Averaging ${pctOfGoal}% of goal — ${Math.round(avgCal - goalCal)} extra kcal/day over target.`, color: RED });
+    }
+    const protHits = days.filter(d => targets?.proteinG && d.totalProtein >= targets.proteinG * 0.9).length;
+    const protRate = Math.round((protHits / days.length) * 100);
+    if (protRate >= 80)
+      localInsights.push({ icon: '💪', text: `Protein goal hit ${protRate}% of days — great muscle recovery support.`, color: PROT });
+    else
+      localInsights.push({ icon: '🥩', text: `Protein target only hit ${protRate}% of days — focus on adding a protein source to each meal.`, color: ORANGE_HEX });
+    if (streak >= 7)
+      localInsights.push({ icon: '🔥', text: `${streak}-day logging streak — consistency is your biggest asset.`, color: ORANGE_HEX });
+    else if (streak >= 3)
+      localInsights.push({ icon: '⚡', text: `${streak}-day streak — keep going to reach your next milestone!`, color: GREEN });
+    const cals = days.map(d => d.totalCal);
+    const mean = cals.reduce((s, c) => s + c, 0) / cals.length;
+    const stdDev = Math.sqrt(cals.reduce((s, c) => s + (c - mean) ** 2, 0) / cals.length);
+    const cv = mean > 0 ? (stdDev / mean) * 100 : 0;
+    if (cv < 8)
+      localInsights.push({ icon: '📊', text: `Calorie variance is only ±${Math.round(stdDev)} kcal (CV ${cv.toFixed(0)}%) — elite consistency.`, color: GREEN });
+    if (weightEntries.length >= 3) {
+      const first = weightEntries[0].weightKg;
+      const last  = weightEntries[weightEntries.length - 1].weightKg;
+      const diff  = last - first;
+      const weeks = Math.max(1, (new Date(weightEntries[weightEntries.length-1].date).getTime() - new Date(weightEntries[0].date).getTime()) / (7 * 86400000));
+      const wkRate = diff / weeks;
+      if (Math.abs(wkRate) > 0.05)
+        localInsights.push({ icon: wkRate < 0 ? '⬇️' : '⬆️', text: `Weight trending ${wkRate < 0 ? 'down' : 'up'} at ${Math.abs(wkRate).toFixed(2)} kg/week over ${Math.round(weeks)} weeks.`, color: wkRate < 0 ? GREEN : ORANGE_HEX });
+    }
+  }
+
   return (
     <div>
+      {/* Local pattern insights */}
+      {localInsights.length > 0 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            Pattern Insights
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {localInsights.map((ins, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, padding: '9px 11px', background: `${ins.color}0D`, borderRadius: 7, border: `1px solid ${ins.color}25` }}>
+                <div style={{ fontSize: 14, flexShrink: 0, lineHeight: 1.4 }}>{ins.icon}</div>
+                <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.5 }}>{ins.text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Body Composition */}
       <BodyCompositionCard weightEntries={weightEntries} days={days} />
+
+      {/* Macro Cycling Efficiency */}
+      {days.length >= 5 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            Macro Cycling Efficiency
+          </div>
+          {(() => {
+            const history: Record<string, string> = (() => {
+              try { return JSON.parse(localStorage.getItem('fs_training_type_history_v1') || '{}'); } catch { return {}; }
+            })();
+            const last7 = Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(); d.setDate(d.getDate() - i);
+              return d.toISOString().split('T')[0];
+            });
+            const dayMap = new Map(days.map(d => [d.date, d]));
+            const pairs = last7.map(date => ({ date, tt: history[date], day: dayMap.get(date) }))
+              .filter(p => p.tt && p.day && p.day.totalCal > 0);
+
+            if (pairs.length < 3) return <div style={{ fontSize: 11, color: MUTED }}>Log 3+ days with training types to see cycling efficiency.</div>;
+
+            const IDEAL_PROT_PCT: Record<string, [number, number]> = {
+              rest: [20, 30], strength: [30, 40], cardio: [18, 28], hiit: [25, 35], hybrid: [28, 38],
+            };
+
+            const results = pairs.map(p => {
+              const day = p.day!;
+              const energy = day.totalProtein * 4 + day.totalCarbs * 4 + day.totalFat * 9 || 1;
+              const protPct = Math.round((day.totalProtein * 4 / energy) * 100);
+              const range = IDEAL_PROT_PCT[p.tt!] ?? [25, 35];
+              const aligned = protPct >= range[0] && protPct <= range[1];
+              return { date: p.date, tt: p.tt, protPct, aligned, range };
+            });
+
+            const alignedCount = results.filter(r => r.aligned).length;
+            const alignRate    = Math.round((alignedCount / results.length) * 100);
+            const alignColor   = alignRate >= 70 ? GREEN : alignRate >= 40 ? FAT_CLR : RED;
+
+            return (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: alignColor, letterSpacing: -1 }}>
+                    {alignRate}% <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>aligned</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: MUTED }}>{alignedCount}/{results.length} days macro-cycling matches training</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {results.slice(0, 5).map(r => (
+                    <div key={r.date} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 60, fontSize: 9, color: MUTED, fontWeight: 600 }}>
+                        {new Date(r.date + 'T12:00:00').toLocaleDateString('en', { weekday: 'short' })}
+                      </div>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, color: r.aligned ? GREEN : RED,
+                        background: `${r.aligned ? GREEN : RED}10`, border: `1px solid ${r.aligned ? GREEN : RED}30`,
+                        borderRadius: 4, padding: '2px 6px', minWidth: 58, textAlign: 'center',
+                      }}>
+                        {r.tt?.charAt(0).toUpperCase() + (r.tt?.slice(1) ?? '')}
+                      </div>
+                      <div style={{ flex: 1, fontSize: 9, color: MUTED }}>Prot {r.protPct}% (target {r.range[0]}–{r.range[1]}%)</div>
+                      <div style={{ fontSize: 12, color: r.aligned ? GREEN : RED, fontWeight: 900 }}>{r.aligned ? '✓' : '!'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Average macros by training type */}
+      {days.length >= 5 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            Avg Intake by Training Type
+          </div>
+          {(() => {
+            const history: Record<string, string> = (() => {
+              try { return JSON.parse(localStorage.getItem('fs_training_type_history_v1') || '{}'); } catch { return {}; }
+            })();
+            const groups: Record<string, { cals: number[]; prot: number[]; carb: number[]; fat: number[] }> = {};
+            days.filter(d => d.totalCal > 0 && history[d.date]).forEach(d => {
+              const t = history[d.date];
+              if (!groups[t]) groups[t] = { cals: [], prot: [], carb: [], fat: [] };
+              groups[t].cals.push(d.totalCal);
+              groups[t].prot.push(d.totalProtein);
+              groups[t].carb.push(d.totalCarbs);
+              groups[t].fat.push(d.totalFat);
+            });
+            const types = Object.keys(groups);
+            if (types.length < 2) return <div style={{ fontSize: 11, color: MUTED }}>Need 2+ different training types logged to compare.</div>;
+            const TYPE_COLORS: Record<string, string> = { rest: FAT_CLR, strength: PROT, cardio: GREEN, hybrid: '#C084FC', hiit: RED };
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {types.map(t => {
+                  const g = groups[t];
+                  const n = g.cals.length;
+                  const avgCal  = Math.round(g.cals.reduce((s,v)=>s+v,0)/n);
+                  const avgProt = Math.round(g.prot.reduce((s,v)=>s+v,0)/n);
+                  const avgCarb = Math.round(g.carb.reduce((s,v)=>s+v,0)/n);
+                  const avgFat  = Math.round(g.fat.reduce((s,v)=>s+v,0)/n);
+                  const color   = TYPE_COLORS[t] ?? PROT;
+                  return (
+                    <div key={t} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 8, background: `${color}11`, border: `1px solid ${color}33` }}>
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color, textTransform: 'capitalize' }}>{t} <span style={{ fontSize: 8, color: MUTED }}>×{n} days</span></div>
+                        <div style={{ fontSize: 9, color: MUTED }}>{avgCal} kcal</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, fontSize: 10 }}>
+                        <span style={{ color: PROT }}><b>{avgProt}g</b> P</span>
+                        <span style={{ color: GREEN }}><b>{avgCarb}g</b> C</span>
+                        <span style={{ color: FAT_CLR }}><b>{avgFat}g</b> F</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Recent 7-day summary stats */}
+      {days.length >= 7 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            Last 7 Days — Quick Stats
+          </div>
+          {(() => {
+            const last7 = days.slice(0, 7).filter(d => d.totalCal > 0);
+            if (last7.length < 3) return <div style={{ fontSize: 11, color: MUTED }}>Log more days to see stats.</div>;
+            const avgCal  = Math.round(last7.reduce((s,d)=>s+d.totalCal,0)/last7.length);
+            const avgProt = Math.round(last7.reduce((s,d)=>s+d.totalProtein,0)/last7.length);
+            const maxProt = Math.max(...last7.map(d => d.totalProtein));
+            const maxCal  = Math.max(...last7.map(d => d.totalCal));
+            const minCal  = Math.min(...last7.map(d => d.totalCal));
+            const calRange = maxCal - minCal;
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {[
+                  { label: 'Avg Calories', val: avgCal, color: ORANGE_HEX },
+                  { label: 'Avg Protein', val: `${avgProt}g`, color: PROT },
+                  { label: 'Best Protein', val: `${Math.round(maxProt)}g`, color: GREEN },
+                  { label: 'Peak Day', val: maxCal, color: RED },
+                  { label: 'Lowest Day', val: minCal, color: FAT_CLR },
+                  { label: 'Cal Range', val: calRange, color: MUTED },
+                ].map(item => (
+                  <div key={item.label} style={{ textAlign: 'center', background: 'var(--bg)', borderRadius: 8, padding: '8px 4px' }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: item.color }}>{item.val}</div>
+                    <div style={{ fontSize: 7, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Macro Hit/Miss Scorecard */}
+      {days.length >= 5 && coachGoalCal > 0 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            Last 7 Days — Macro Scorecard
+          </div>
+          {(() => {
+            const last7 = days.slice(0, 7);
+            const calGoal = coachGoalCal;
+            const protGoal = targets ? targets.proteinG : 0;
+            const items = [
+              { l: 'Cal on target', count: last7.filter(d => d.totalCal >= calGoal * 0.85 && d.totalCal <= calGoal * 1.1).length, color: ORANGE_HEX },
+              { l: 'Cal under', count: last7.filter(d => d.totalCal < calGoal * 0.85).length, color: FAT_CLR },
+              { l: 'Cal over', count: last7.filter(d => d.totalCal > calGoal * 1.1).length, color: RED },
+              { l: 'Protein hit', count: protGoal > 0 ? last7.filter(d => d.totalProtein >= protGoal * 0.9).length : 0, color: PROT },
+            ];
+            return (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {items.map(({ l, count, color }) => (
+                  <div key={l} style={{ flex: 1, textAlign: 'center', background: 'var(--bg)', borderRadius: 8, padding: '8px 4px' }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color }}>{count}<span style={{ fontSize: 10, color: MUTED }}>/7</span></div>
+                    <div style={{ fontSize: 7, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Top 3 Action Items */}
+      {days.length >= 5 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            Top Action Items
+          </div>
+          {(() => {
+            const last7 = days.slice(0, 7);
+            const avgCal = last7.reduce((s, d) => s + d.totalCal, 0) / last7.length;
+            const avgProt = last7.reduce((s, d) => s + d.totalProtein, 0) / last7.length;
+            const avgCarbs = last7.reduce((s, d) => s + d.totalCarbs, 0) / last7.length;
+            const items: { icon: string; text: string; color: string }[] = [];
+            if (coachGoalCal > 0 && avgCal < coachGoalCal * 0.8) items.push({ icon: '⚡', text: `Increase daily intake — avg ${Math.round(coachGoalCal - avgCal)} kcal below goal`, color: ORANGE_HEX });
+            if (coachGoalCal > 0 && avgCal > coachGoalCal * 1.15) items.push({ icon: '⚠', text: `Reduce portion sizes — avg ${Math.round(avgCal - coachGoalCal)} kcal over goal`, color: RED });
+            if (targets && avgProt < targets.proteinG * 0.85) items.push({ icon: '💪', text: `Boost protein — avg ${Math.round(targets.proteinG - avgProt)}g short of target`, color: PROT });
+            if (avgCarbs < 100) items.push({ icon: '🌾', text: 'Low carb intake — add complex carbs for energy', color: GREEN });
+            const variance = Math.sqrt(last7.reduce((s, d) => s + Math.pow(d.totalCal - avgCal, 2), 0) / last7.length);
+            if (variance > 500) items.push({ icon: '📊', text: `High calorie variability (±${Math.round(variance)} kcal) — aim for consistency`, color: FAT_CLR });
+            if (items.length === 0) items.push({ icon: '✅', text: 'Great week! Calories and protein on track. Keep it up.', color: GREEN });
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {items.slice(0, 3).map(({ icon, text, color }, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', background: 'var(--bg)', borderRadius: 7, borderLeft: `3px solid ${color}` }}>
+                    <span style={{ fontSize: 14 }}>{icon}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text)', lineHeight: 1.5 }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Weekly PR vs Previous Week */}
+      {days.length >= 10 && (
+        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+            This Week vs Last Week
+          </div>
+          {(() => {
+            const thisWeek = days.slice(0, 7).filter(d => d.totalCal > 0);
+            const lastWeek = days.slice(7, 14).filter(d => d.totalCal > 0);
+            if (thisWeek.length < 2 || lastWeek.length < 2) return <div style={{ fontSize: 10, color: MUTED }}>Need 14 days of data.</div>;
+            const thisAvgCal = Math.round(thisWeek.reduce((s, d) => s + d.totalCal, 0) / thisWeek.length);
+            const lastAvgCal = Math.round(lastWeek.reduce((s, d) => s + d.totalCal, 0) / lastWeek.length);
+            const thisAvgProt = Math.round(thisWeek.reduce((s, d) => s + d.totalProtein, 0) / thisWeek.length);
+            const lastAvgProt = Math.round(lastWeek.reduce((s, d) => s + d.totalProtein, 0) / lastWeek.length);
+            const rows = [
+              { l: 'Avg Calories', a: thisAvgCal, b: lastAvgCal, unit: 'kcal', higherBetter: false, goalVal: coachGoalCal },
+              { l: 'Avg Protein', a: thisAvgProt, b: lastAvgProt, unit: 'g', higherBetter: true, goalVal: targets?.proteinG ?? 0 },
+              { l: 'Days logged', a: thisWeek.length, b: lastWeek.length, unit: 'd', higherBetter: true, goalVal: 7 },
+            ];
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {rows.map(({ l, a, b, unit, higherBetter }) => {
+                  const diff = a - b;
+                  const improved = higherBetter ? diff > 0 : Math.abs(a - coachGoalCal) < Math.abs(b - coachGoalCal);
+                  return (
+                    <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 80, fontSize: 9, color: MUTED }}>{l}</div>
+                      <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{a}{unit}</div>
+                      <div style={{ fontSize: 10, color: improved ? GREEN : RED, fontWeight: 700 }}>
+                        {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '='}{unit}
+                      </div>
+                      <div style={{ flex: 1, textAlign: 'center', fontSize: 12, color: MUTED }}>{b}{unit}</div>
+                    </div>
+                  );
+                })}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: MUTED, paddingTop: 4 }}>
+                  <span>This week</span><span>Last week</span>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Weekly AI Summary */}
       <div style={{
@@ -595,8 +976,16 @@ function CoachTab({
             >Regenerate</button>
           </div>
         ) : error ? (
-          <div style={{ padding: '12px', borderRadius: 8, background: '#EF444415', border: '1px solid #EF444440', color: '#EF4444', fontSize: 12, marginBottom: 12 }}>
-            {error}
+          <div style={{ padding: '12px', borderRadius: 8, background: '#EF444415', border: '1px solid #EF444440', marginBottom: 12 }}>
+            <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 8 }}>{error}</div>
+            <button
+              onClick={onGenerate}
+              style={{
+                padding: '7px 14px', borderRadius: 6, border: '1px solid #EF444440',
+                background: '#EF444420', color: '#EF4444', fontSize: 12, fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >Try again</button>
           </div>
         ) : null}
 
@@ -625,6 +1014,414 @@ function CoachTab({
     </div>
   );
 }
+
+// ─── Calorie Heatmap Calendar ───────────────────────────────────────────────
+function CalorieHeatmap({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
+  if (days.length < 5) return null;
+  const today = new Date();
+  // Build 7-week grid (49 days), starting from Monday 7 weeks ago
+  const grid: { date: string; pct: number | null }[][] = [];
+  // Find the start of the current week (Sunday)
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 48); // 7 weeks back
+  // Align to Sunday
+  while (startDate.getDay() !== 0) startDate.setDate(startDate.getDate() - 1);
+
+  const dayMap = new Map(days.map(d => [d.date, d]));
+  const todayStr = today.toISOString().split('T')[0];
+
+  let row: { date: string; pct: number | null }[] = [];
+  const cur = new Date(startDate);
+  for (let i = 0; i < 49; i++) {
+    const ds = cur.toISOString().split('T')[0];
+    const daySummary = dayMap.get(ds);
+    const pct = daySummary ? (goalCal > 0 ? daySummary.totalCal / goalCal : null) : null;
+    row.push({ date: ds, pct });
+    if (row.length === 7) { grid.push(row); row = []; }
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (row.length > 0) grid.push(row);
+
+  const cellColor = (pct: number | null, date: string): string => {
+    if (date > todayStr) return 'transparent';
+    if (pct === null) return EDGE;
+    if (pct >= 0.85 && pct <= 1.10) return '#22C55E';
+    if (pct > 1.10) return '#EF4444';
+    if (pct >= 0.60) return ORANGE_HEX;
+    return 'rgba(255,255,255,0.08)';
+  };
+
+  const DAY_LABELS = ['S','M','T','W','T','F','S'];
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>Calorie Calendar</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[
+            { color: '#22C55E', label: 'On target' },
+            { color: ORANGE_HEX, label: 'Under' },
+            { color: '#EF4444', label: 'Over' },
+          ].map(({ color, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
+              <span style={{ fontSize: 8, fontWeight: 700, color: MUTED }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Day labels */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 4 }}>
+        {DAY_LABELS.map((d, i) => (
+          <div key={i} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: MUTED }}>{d}</div>
+        ))}
+      </div>
+      {/* Week rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {grid.map((week, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+            {week.map(({ date, pct }) => {
+              const isTdy = date === todayStr;
+              const color = cellColor(pct, date);
+              return (
+                <div key={date} style={{
+                  aspectRatio: '1', borderRadius: 4,
+                  background: color,
+                  border: isTdy ? '1.5px solid var(--accent)' : 'none',
+                  transition: 'background 0.2s',
+                  opacity: date > todayStr ? 0 : 1,
+                }} />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Supplement Adherence ────────────────────────────────────────────────────
+interface SuppEntry { taken: number; total: number }
+function SupplementAdherenceCard({ suppByDate, suppTotal }: { suppByDate: Map<string, SuppEntry>; suppTotal: number }) {
+  if (suppTotal === 0 || suppByDate.size === 0) return null;
+  const today = new Date();
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+  const data = last7.map(date => {
+    const e = suppByDate.get(date);
+    return { date, taken: e?.taken ?? 0, total: suppTotal };
+  });
+  const overallPct = Math.round(data.reduce((s, d) => s + (d.total > 0 ? d.taken / d.total : 0), 0) / 7 * 100);
+  const dayLabel = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
+          Supplement Adherence
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 900, color: overallPct >= 80 ? GREEN : overallPct >= 50 ? ORANGE_HEX : RED }}>
+          {overallPct}%
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 48, marginBottom: 8 }}>
+        {data.map(({ date, taken, total }) => {
+          const pct = total > 0 ? taken / total : 0;
+          const h   = Math.max(pct * 48, pct > 0 ? 4 : 2);
+          const c   = pct >= 1 ? GREEN : pct >= 0.5 ? ORANGE_HEX : pct > 0 ? RED : EDGE;
+          return (
+            <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: '100%', height: h, background: c, borderRadius: '3px 3px 0 0', transition: 'height 0.4s ease' }} />
+              <div style={{ fontSize: 8, fontWeight: 700, color: date === today.toISOString().split('T')[0] ? ORANGE_HEX : MUTED }}>
+                {dayLabel(date)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: MUTED }}>7-day average</div>
+        <div style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>
+          {suppTotal} supplement{suppTotal !== 1 ? 's' : ''} tracked
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Calorie Trend (surplus / deficit) ──────────────────────────────────────
+function CalorieTrendChart({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
+  const today = new Date();
+  const last30 = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (29 - i));
+    return d.toISOString().split('T')[0];
+  });
+  const dayMap = new Map(days.map(d => [d.date, d]));
+  const dataPoints = last30.map(date => {
+    const ds = dayMap.get(date);
+    return ds ? ds.totalCal - goalCal : null;
+  });
+  const hasData = dataPoints.some(v => v !== null);
+  if (!hasData) return null;
+
+  const maxAbs = Math.max(...dataPoints.filter(Boolean).map(v => Math.abs(v!)), goalCal * 0.5, 1);
+  const CHART_H = 60;
+  const zeroY   = CHART_H / 2;
+
+  // Rolling 7-day deficit
+  const logsWithData = dataPoints.filter(v => v !== null) as number[];
+  const totalDeficit  = logsWithData.reduce((s, v) => s + v, 0);
+  const avgDelta      = logsWithData.length > 0 ? Math.round(totalDeficit / logsWithData.length) : 0;
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px 14px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 2 }}>30-Day Calorie Balance</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: avgDelta <= 0 ? GREEN : RED }}>
+            Avg {avgDelta <= 0 ? 'deficit' : 'surplus'}: {Math.abs(avgDelta).toLocaleString()} kcal/day
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: GREEN }} />
+              <span style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>Deficit</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: RED }} />
+              <span style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>Surplus</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', height: CHART_H }}>
+        {/* Zero line */}
+        <div style={{
+          position: 'absolute', top: zeroY, left: 0, right: 0, height: 1,
+          borderTop: '1px dashed var(--edge)', zIndex: 1, pointerEvents: 'none',
+        }} />
+        {/* 7-day rolling average line overlay */}
+        {(() => {
+          const avgLine = dataPoints.map((_, i) => {
+            const win = dataPoints.slice(Math.max(0, i - 6), i + 1).filter(x => x !== null) as number[];
+            return win.length >= 3 ? win.reduce((s, x) => s + x, 0) / win.length : null;
+          });
+          if (!avgLine.some(v => v !== null)) return null;
+          const W = 290;
+          const pts = avgLine.map((v, i) => {
+            if (v === null) return null;
+            const x = (i / (last30.length - 1)) * W;
+            const y = CHART_H / 2 - (v / maxAbs) * (CHART_H / 2 - 2);
+            return `${x},${Math.max(2, Math.min(CHART_H - 2, y))}`;
+          });
+          const segs: string[] = [];
+          let cur: string[] = [];
+          for (const p of pts) { if (p) cur.push(p); else if (cur.length) { segs.push(cur.join(' ')); cur = []; } }
+          if (cur.length) segs.push(cur.join(' '));
+          return (
+            <svg width="100%" viewBox={`0 0 ${W} ${CHART_H}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 3 }}>
+              {segs.map((seg, i) => (
+                <polyline key={i} points={seg} fill="none" stroke={PROT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" strokeDasharray="3 2" />
+              ))}
+            </svg>
+          );
+        })()}
+        {/* Bars */}
+        <div style={{ display: 'flex', gap: 2, alignItems: 'center', height: '100%', position: 'relative', zIndex: 2 }}>
+          {last30.map((date, i) => {
+            const delta = dataPoints[i];
+            if (delta === null) {
+              return <div key={date} style={{ flex: 1, height: 2, background: EDGE, borderRadius: 1, alignSelf: 'center' }} />;
+            }
+            const isToday = date === today.toISOString().split('T')[0];
+            const pct    = Math.min(Math.abs(delta) / maxAbs, 1);
+            const barH   = Math.max(pct * (CHART_H / 2 - 2), 2);
+            const color  = delta <= 0 ? GREEN : RED;
+            const isNeg  = delta <= 0;
+            return (
+              <div key={date} style={{ flex: 1, height: CHART_H, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Surplus bar (above zero) */}
+                <div style={{ height: CHART_H / 2 - 1, display: 'flex', alignItems: 'flex-end' }}>
+                  {!isNeg ? (
+                    <div style={{ width: '100%', height: barH, background: color, borderRadius: '2px 2px 0 0', opacity: isToday ? 1 : 0.8 }} />
+                  ) : <div style={{ height: 0 }} />}
+                </div>
+                <div style={{ height: 1 }} />
+                {/* Deficit bar (below zero) */}
+                <div style={{ height: CHART_H / 2 - 1, display: 'flex', alignItems: 'flex-start' }}>
+                  {isNeg ? (
+                    <div style={{ width: '100%', height: barH, background: color, borderRadius: '0 0 2px 2px', opacity: isToday ? 1 : 0.8 }} />
+                  ) : <div style={{ height: 0 }} />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* X-axis labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+        <div style={{ fontSize: 8, fontWeight: 700, color: MUTED }}>30 days ago</div>
+        <div style={{ fontSize: 8, fontWeight: 700, color: MUTED }}>Today</div>
+      </div>
+
+      {/* Net total */}
+      <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${EDGE}`, display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: MUTED }}>Net 30-day balance</div>
+        <div style={{ fontSize: 12, fontWeight: 900, color: totalDeficit <= 0 ? GREEN : RED }}>
+          {totalDeficit <= 0 ? '−' : '+'}{Math.abs(Math.round(totalDeficit)).toLocaleString()} kcal
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Meal Timing Analysis ────────────────────────────────────────────────────
+function MealTimingCard({ logs }: { logs: FoodLog[] }) {
+  const HOURS = Array.from({ length: 24 }, (_, i) => i);
+  const hourBuckets = new Array(24).fill(0);
+  const hourCals    = new Array(24).fill(0);
+  for (const log of logs) {
+    if (log.removed) continue;
+    const h = new Date(log.logged_at).getHours();
+    hourBuckets[h]++;
+    hourCals[h] += Number(log.calories);
+  }
+  const maxCount = Math.max(...hourBuckets, 1);
+  const totalLogs = hourBuckets.reduce((s, v) => s + v, 0);
+  if (totalLogs === 0) return null;
+
+  const peakHour = hourBuckets.indexOf(Math.max(...hourBuckets));
+  const formatHour = (h: number) => h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`;
+
+  // Aggregate into time windows for summary
+  const windows = [
+    { label: 'Morning', range: [5,  11], icon: '🌅' },
+    { label: 'Midday',  range: [11, 15], icon: '☀️' },
+    { label: 'Evening', range: [15, 20], icon: '🌇' },
+    { label: 'Night',   range: [20, 24], icon: '🌙' },
+  ];
+  const windowData = windows.map(w => {
+    const count = HOURS.slice(w.range[0], w.range[1]).reduce((s, h) => s + hourBuckets[h], 0);
+    const cals  = HOURS.slice(w.range[0], w.range[1]).reduce((s, h) => s + hourCals[h],  0);
+    return { ...w, count, cals, pct: totalLogs > 0 ? Math.round((count / totalLogs) * 100) : 0 };
+  });
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px 14px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+        Meal Timing
+      </div>
+
+      {/* Hourly bar chart */}
+      <div style={{ display: 'flex', gap: 1, alignItems: 'flex-end', height: 40, marginBottom: 4 }}>
+        {HOURS.map((h) => {
+          const count = hourBuckets[h];
+          const barH  = count > 0 ? Math.max((count / maxCount) * 40, 3) : 1;
+          const isPeak = h === peakHour && count > 0;
+          const isBreakfast = h >= 5  && h < 11;
+          const isLunch     = h >= 11 && h < 15;
+          const isEvening   = h >= 15 && h < 20;
+          const color = isPeak ? '#F59E0B' : isBreakfast ? '#38BDF8' : isLunch ? '#22C55E' : isEvening ? ORANGE_HEX : '#8B5CF6';
+          return (
+            <div key={h} style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
+              <div style={{
+                width: '100%', height: barH,
+                background: count > 0 ? color : EDGE,
+                borderRadius: count > 0 ? '2px 2px 0 0' : 1,
+                opacity: count > 0 ? 0.9 : 0.3,
+              }} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* X-axis: show 6h interval labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        {[0, 6, 12, 18, 23].map(h => (
+          <div key={h} style={{ fontSize: 7, fontWeight: 700, color: MUTED }}>{formatHour(h)}</div>
+        ))}
+      </div>
+
+      {/* Window summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {windowData.map(w => (
+          <div key={w.label} style={{
+            background: SURF2, borderRadius: 10, padding: '10px 12px',
+            border: `1px solid ${EDGE}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span style={{ fontSize: 14 }}>{w.icon}</span>
+              <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>{w.label}</div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: w.count > 0 ? ORANGE_HEX : MUTED, letterSpacing: -1, lineHeight: 1 }}>
+              {w.count}
+            </div>
+            <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>
+              logs · {w.pct}%{w.cals > 0 ? ` · ${Math.round(w.cals).toLocaleString()} kcal` : ''}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 10, fontSize: 10, color: MUTED, fontWeight: 700, textAlign: 'center' }}>
+        Peak time: <span style={{ color: '#F59E0B' }}>{formatHour(peakHour)}</span> ({hourBuckets[peakHour]} logs)
+      </div>
+    </div>
+  );
+}
+
+// ─── Best / Worst days ───────────────────────────────────────────────────────
+function BestWorstCard({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
+  if (days.length < 3) return null;
+  const scored = days.map(d => ({
+    ...d,
+    score: Math.abs(d.totalCal - goalCal) / goalCal,
+  })).filter(d => d.totalCal > 0);
+  if (scored.length === 0) return null;
+  scored.sort((a, b) => a.score - b.score);
+  const best  = scored[0];
+  const worst = scored[scored.length - 1];
+  const fmtDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+
+  return (
+    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 12 }}>
+        Best & Worst Days
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {[
+          { label: 'Best Day', entry: best,  color: GREEN,  icon: '🏆' },
+          { label: 'Worst Day', entry: worst, color: RED,    icon: '📉' },
+        ].map(({ label, entry, color, icon }) => (
+          <div key={label} style={{ background: `${color}10`, borderRadius: 10, padding: '12px', border: `1px solid ${color}30` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 16 }}>{icon}</span>
+              <div style={{ fontSize: 9, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, marginBottom: 4 }}>{fmtDate(entry.date)}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color, letterSpacing: -1, lineHeight: 1 }}>{entry.totalCal.toLocaleString()}</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: MUTED, marginTop: 2 }}>
+              kcal · {entry.score <= 0.05 ? 'Perfect' : `${Math.round(entry.score * 100)}% off goal`}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function loadEnergyRatings(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem('fs_energy_ratings_v1') ?? '{}'); } catch { return {}; }
+}
+const ENERGY_ICON: Record<string, string>  = { low: '😴', medium: '😊', high: '⚡' };
+const ENERGY_COLOR: Record<string, string> = { low: '#6B7280', medium: '#F59E0B', high: '#22C55E' };
 
 type Tab = 'days' | 'foods' | 'coach';
 
@@ -812,7 +1609,7 @@ export default function HistoryScreen() {
 
             {/* Stats summary */}
             {totalDays > 0 && (
-              <StatsRow streak={streak} totalDays={totalDays} avgCal={avgCal} goalCal={goalCal} />
+              <StatsRow streak={streak} totalDays={totalDays} avgCal={avgCal} goalCal={goalCal} days={days} />
             )}
 
             {/* 7-day macro averages */}
@@ -823,17 +1620,37 @@ export default function HistoryScreen() {
               />
             )}
 
+            {/* Calorie heatmap */}
+            {days.length >= 5 && <CalorieHeatmap days={days} goalCal={goalCal} />}
+
+            {/* Calorie trend chart */}
+            {days.length >= 3 && <CalorieTrendChart days={days} goalCal={goalCal} />}
+
+
+            {/* Best/Worst days */}
+            {days.length >= 3 && <BestWorstCard days={days} goalCal={goalCal} />}
+
+
+            {/* Supplement adherence */}
+            {suppTotal > 0 && <SupplementAdherenceCard suppByDate={suppByDate} suppTotal={suppTotal} />}
+
+            {/* Meal timing */}
+            {allLogs.length > 5 && <MealTimingCard logs={allLogs} />}
+
             {/* Streak milestone */}
             {streak >= 3 && <StreakMilestone streak={streak} />}
 
             {/* Day cards */}
-            {days.map((day) => {
+            {(() => {
+              const energyRatings = loadEnergyRatings();
+              return days.map((day) => {
               const isOpen      = expanded === day.date;
               const pct         = Math.min(100, Math.round((day.totalCal / goalCal) * 100));
               const barColor    = pct >= 110 ? RED : pct >= 85 ? GREEN : ORANGE;       // direct color prop
               const barColorHex = pct >= 110 ? RED : pct >= 85 ? GREEN : ORANGE_HEX;  // hex — for template-literal opacity suffixes
               const perf        = pct >= 85 && pct <= 110 ? 'ON TARGET' : pct > 110 ? 'OVER' : 'UNDER';
               const perfCol     = pct >= 85 && pct <= 110 ? GREEN : pct > 110 ? RED : ORANGE;
+              const energy      = energyRatings[day.date] as string | undefined;
 
               return (
                 <div key={day.date} className="card-lift" style={{
@@ -848,10 +1665,25 @@ export default function HistoryScreen() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>
-                          {day.label}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>
+                            {day.label}
+                          </div>
+                          {energy && (
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: 3,
+                              padding: '2px 7px', borderRadius: 20,
+                              background: `${ENERGY_COLOR[energy]}20`,
+                              border: `1px solid ${ENERGY_COLOR[energy]}40`,
+                            }}>
+                              <span style={{ fontSize: 11 }}>{ENERGY_ICON[energy]}</span>
+                              <span style={{ fontSize: 8, fontWeight: 700, color: ENERGY_COLOR[energy], textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                {energy}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+                        <div style={{ fontSize: 10, color: MUTED, marginTop: 0 }}>
                           {new Date(day.date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                           {(() => { const n = day.items.filter(i => !i.removed).length; return ` · ${n} item${n === 1 ? '' : 's'}`; })()}
                         </div>
@@ -916,8 +1748,18 @@ export default function HistoryScreen() {
                     </div>
                   </button>
 
-                  {isOpen && (
+                  {isOpen && (() => {
+                    // Read diary note for this date
+                    let diaryNote = '';
+                    try { diaryNote = JSON.parse(localStorage.getItem('fs_diary_notes_v1') ?? '{}')[day.date] ?? ''; } catch {}
+                    return (
                     <div style={{ borderTop: `1px solid ${EDGE}`, background: 'transparent' }}>
+                      {diaryNote ? (
+                        <div style={{ padding: '10px 16px', borderBottom: `1px solid ${EDGE}`, background: `${ORANGE_HEX}06` }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: ORANGE, textTransform: 'uppercase', marginBottom: 4 }}>📝 Note</div>
+                          <div style={{ fontSize: 12, color: TEXT, fontWeight: 600, lineHeight: 1.5 }}>{diaryNote}</div>
+                        </div>
+                      ) : null}
                       {day.items.filter((i) => !i.removed).map((item, idx, arr) => {
                         const hasIngs    = item.ingredients && item.ingredients.length > 1;
                         const isFoodOpen = expandedFood === item.id;
@@ -1007,10 +1849,12 @@ export default function HistoryScreen() {
                         );
                       })}
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
-            })}
+            });
+            })()}
           </>
         ) : tab === 'coach' ? (
           /* ── COACH TAB — AI weekly summary + body composition ── */
@@ -1054,6 +1898,267 @@ export default function HistoryScreen() {
         ) : (
           /* ── FOODS TAB — deduplicated food directory ── */
           <>
+            {/* Caloric density insights */}
+            {foodDir.length >= 3 && !foodSearch && (() => {
+              const withWeight = foodDir.filter(f => f.latestLog.weight_grams && f.latestLog.weight_grams > 10 && f.calories > 0);
+              if (withWeight.length < 2) return null;
+              const withDensity = withWeight.map(f => ({
+                name: f.name,
+                density: Math.round((f.calories / (f.latestLog.weight_grams!)) * 100),
+                protein: f.protein,
+                calories: f.calories,
+                grams: f.latestLog.weight_grams!,
+              })).sort((a, b) => a.density - b.density);
+              const lean = withDensity.slice(0, 3);
+              const dense = withDensity.slice(-3).reverse();
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '12px 14px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Caloric Density
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: GREEN, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Low Density</div>
+                      {lean.map(f => (
+                        <div key={f.name} style={{ marginBottom: 5 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 9, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>{f.name}</span>
+                            <span style={{ fontSize: 9, color: GREEN, fontWeight: 700, flexShrink: 0 }}>{f.density} kcal</span>
+                          </div>
+                          <div style={{ fontSize: 7, color: MUTED }}>per 100g</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: RED, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>High Density</div>
+                      {dense.map(f => (
+                        <div key={f.name} style={{ marginBottom: 5 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 9, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>{f.name}</span>
+                            <span style={{ fontSize: 9, color: RED, fontWeight: 700, flexShrink: 0 }}>{f.density} kcal</span>
+                          </div>
+                          <div style={{ fontSize: 7, color: MUTED }}>per 100g</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Top foods by frequency */}
+            {foodDir.length >= 3 && !foodSearch && (() => {
+              const top5 = [...foodDir].sort((a, b) => b.count - a.count).slice(0, 5);
+              const maxCount = top5[0]?.count ?? 1;
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '12px 14px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Most Logged Foods</span>
+                    <span style={{ fontSize: 9, color: MUTED }}>{foodDir.length} unique</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {top5.map((f, i) => {
+                      const eff = f.calories > 0 ? Math.round((f.protein / f.calories) * 100 * 10) / 10 : 0;
+                      return (
+                        <div key={f.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: i === 0 ? ORANGE_HEX : MUTED, width: 14, textAlign: 'right', flexShrink: 0 }}>#{i+1}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{f.name}</span>
+                              <span style={{ fontSize: 9, color: MUTED, flexShrink: 0 }}>{f.count}×</span>
+                            </div>
+                            <div style={{ height: 4, background: EDGE, borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${(f.count / maxCount) * 100}%`, background: i === 0 ? ORANGE_HEX : PROT, borderRadius: 2 }} />
+                            </div>
+                          </div>
+                          {eff > 0 && <div style={{ fontSize: 8, color: eff >= 10 ? PROT : MUTED, flexShrink: 0, width: 32, textAlign: 'right', fontWeight: 700 }}>{eff}g/c</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Food Hall of Fame ── */}
+            {foodDir.length >= 5 && (() => {
+              const withEff = foodDir
+                .filter(e => e.calories > 50 && e.protein > 3)
+                .map(e => ({ ...e, eff: (e.protein / e.calories) * 100 }))
+                .sort((a, b) => b.eff - a.eff)
+                .slice(0, 5);
+              if (withEff.length < 3) return null;
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Hall of Fame — Protein Efficiency
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    {withEff.map((e, i) => {
+                      const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+                      return (
+                        <div key={e.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', background: i === 0 ? `${GREEN}08` : SURF2, borderRadius: 7, border: `1px solid ${i === 0 ? GREEN + '30' : EDGE}` }}>
+                          <div style={{ fontSize: 14, minWidth: 20, textAlign: 'center' }}>{medals[i]}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</div>
+                            <div style={{ fontSize: 9, color: MUTED, marginTop: 1 }}>{e.calories} kcal · P{e.protein}g · logged {e.count}×</div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 900, color: PROT, letterSpacing: -0.3 }}>{e.eff.toFixed(1)}</div>
+                            <div style={{ fontSize: 8, color: MUTED, fontWeight: 600 }}>g P/100kcal</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Food Frequency Analysis ── */}
+            {foodDir.length >= 3 && (() => {
+              const frequent = [...foodDir].sort((a, b) => b.count - a.count).slice(0, 5);
+              const totalLogs = allLogs.filter(l => !l.removed).length;
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Most Logged Foods
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {frequent.map(e => {
+                      const pct = Math.round((e.count / totalLogs) * 100);
+                      return (
+                        <div key={e.name}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontSize: 10, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{e.name}</span>
+                            <span style={{ fontSize: 10, color: ORANGE_HEX, fontWeight: 700, flexShrink: 0 }}>{e.count}× ({pct}%)</span>
+                          </div>
+                          <div style={{ height: 4, borderRadius: 2, background: SURF2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${Math.min(100, (e.count / frequent[0].count) * 100)}%`, background: ORANGE_HEX, borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Worst Foods for Goals ── */}
+            {foodDir.length >= 5 && (() => {
+              const withCal = foodDir.filter(e => e.calories > 200).sort((a, b) => b.calories - a.calories).slice(0, 5);
+              if (withCal.length < 2) return null;
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Highest Calorie Foods
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {withCal.map((e, i) => (
+                      <div key={e.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', borderRadius: 6, background: i === 0 ? `${RED}11` : 'transparent', border: `1px solid ${i === 0 ? RED + '30' : EDGE}` }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</div>
+                          <div style={{ fontSize: 8, color: MUTED }}>P{e.protein}g · C{e.carbs}g · F{e.fat}g</div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: RED }}>{e.calories}</div>
+                          <div style={{ fontSize: 7, color: MUTED }}>kcal</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Best Low-Calorie High-Volume Foods ── */}
+            {foodDir.length >= 5 && (() => {
+              const highVolume = foodDir.filter(f => {
+                const wt = f.latestLog.weight_grams;
+                return wt && wt >= 150 && f.calories < 200;
+              }).sort((a, b) => {
+                const aWt = a.latestLog.weight_grams ?? 0;
+                const bWt = b.latestLog.weight_grams ?? 0;
+                return (a.calories / aWt) - (b.calories / bWt);
+              }).slice(0, 4);
+              if (highVolume.length < 2) return null;
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    High-Volume Low-Cal Foods 🥦
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {highVolume.map(f => {
+                      const wt = f.latestLog.weight_grams ?? 1;
+                      const density = Math.round((f.calories / wt) * 100);
+                      return (
+                        <div key={f.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 10, color: TEXT, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{f.name}</span>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: 9, color: GREEN, fontWeight: 700 }}>{density} kcal/100g</span>
+                            <span style={{ fontSize: 9, color: MUTED }}>{Math.round(wt)}g serving</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Most Consistent Foods */}
+            {foodDir.length >= 5 && !foodSearch && (() => {
+              const consistent = [...foodDir].sort((a, b) => b.count - a.count).slice(0, 5);
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Most Logged Foods
+                  </div>
+                  {consistent.map((f, i) => (
+                    <div key={f.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: '50%', background: EDGE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: [ORANGE_HEX, PROT, GREEN, FAT_CLR, RED][i] ?? MUTED, flexShrink: 0 }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                        <div style={{ fontSize: 8, color: MUTED }}>{f.calories} kcal · {f.protein}g P · avg per serving</div>
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: MUTED }}>{f.count}×</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Best Protein-per-Calorie Foods */}
+            {foodDir.length >= 5 && !foodSearch && (() => {
+              const scored = foodDir
+                .filter(f => f.calories > 50 && f.protein > 3)
+                .map(f => ({ ...f, ratio: (f.protein / f.calories) * 100 }))
+                .sort((a, b) => b.ratio - a.ratio)
+                .slice(0, 5);
+              if (scored.length < 3) return null;
+              return (
+                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                    Best Protein-per-Calorie
+                  </div>
+                  {scored.map(f => (
+                    <div key={f.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                          <div style={{ height: 5, flex: Math.round(f.ratio), background: PROT, borderRadius: 3 }} />
+                          <div style={{ height: 5, flex: Math.max(1, 10 - Math.round(f.ratio)), background: EDGE, borderRadius: 3 }} />
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', fontSize: 9, color: PROT, fontWeight: 800, minWidth: 50 }}>{f.ratio.toFixed(1)}g/100kcal</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
             {/* Search bar */}
             <div style={{ position: 'relative', marginBottom: 14 }}>
               <input

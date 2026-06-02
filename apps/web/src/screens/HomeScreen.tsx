@@ -6,13 +6,23 @@ import { useAppStore } from '../store/appStore';
 import { useThemeStore } from '../store/themeStore';
 import WeatherBanner from '../components/WeatherBanner';
 import StravaCard from '../components/StravaCard';
-import { getLogs } from '../api/localFood';
+import WorkoutLogger from '../components/WorkoutLogger';
+import WaterTracker from '../components/WaterTracker';
+import MacroPie, { MacroPieLegend } from '../components/MacroPie';
+import ExerciseCalcModal from '../components/ExerciseCalcModal';
+import NutrientDetails from '../components/NutrientDetails';
+import { getLogs, addLog } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
+import { playFoodLogSound } from '../utils/sounds';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { getDailyGoal } from '../hooks/useNutrition';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
+import { calcStreak, invalidateStreakCache } from '../lib/streak';
+import { checkAndUnlock } from '../lib/achievements';
+import type { Achievement } from '../lib/achievements';
+import AchievementToast from '../components/AchievementToast';
 
 // ── Macro palette: Protein=blue, Carbs=green, Fat=amber ──────────────
 const PROT = '#38BDF8';
@@ -152,12 +162,36 @@ function useCountUp(to: number, ms = 500): number {
 }
 
 // ── Calorie Dashboard — MFP equation + ring ──────────────────────────
+const EXERCISE_KEY = 'fs_exercise_kcal_v1';
+function loadExerciseKcal(date: string): number {
+  try { return parseInt(JSON.parse(localStorage.getItem(EXERCISE_KEY) ?? '{}')[date] ?? '0', 10) || 0; }
+  catch { return 0; }
+}
+function saveExerciseKcal(date: string, kcal: number): void {
+  try {
+    const map = JSON.parse(localStorage.getItem(EXERCISE_KEY) ?? '{}');
+    map[date] = kcal;
+    // Keep only last 30 days
+    const keys = Object.keys(map).sort().slice(-30);
+    const trimmed: Record<string, number> = {};
+    keys.forEach(k => { trimmed[k] = map[k]; });
+    localStorage.setItem(EXERCISE_KEY, JSON.stringify(trimmed));
+  } catch {}
+}
+
 function CalDashboard({
-  consumed, targets,
-}: { consumed: MacroTargets; targets: MacroTargets | null }) {
+  consumed, targets, date, onOpenExerciseCalc, externalExercise,
+}: { consumed: MacroTargets; targets: MacroTargets | null; date: string; onOpenExerciseCalc?: () => void; externalExercise?: number }) {
   const goal      = targets?.calories ?? 0;
   const food      = Math.round(consumed.calories);
-  const exercise  = 0;
+  const [exercise, setExercise] = useState(() => loadExerciseKcal(date));
+  const [editingEx, setEditingEx] = useState(false);
+  const [exInput,   setExInput]   = useState('');
+
+  // Sync from external source (exercise calc modal)
+  useEffect(() => {
+    if (externalExercise !== undefined) setExercise(externalExercise);
+  }, [externalExercise]);
   const remaining = goal > 0 ? goal - food + exercise : null;
   const over      = remaining !== null && remaining < 0;
   const pct       = goal > 0 ? Math.min((food / goal) * 100, 100) : 0;
@@ -213,9 +247,48 @@ function CalDashboard({
 
         {/* Exercise */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
-            {exercise}
-          </div>
+          {editingEx ? (
+            <input
+              autoFocus
+              type="number" min={0} max={5000}
+              value={exInput}
+              onChange={e => setExInput(e.target.value)}
+              onBlur={() => {
+                const v = Math.max(0, Math.min(5000, parseInt(exInput, 10) || 0));
+                setExercise(v);
+                saveExerciseKcal(date, v);
+                setEditingEx(false);
+              }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') (e.target as HTMLInputElement).blur(); }}
+              style={{
+                width: '100%', background: 'transparent', border: 'none',
+                borderBottom: '1.5px solid var(--accent)', outline: 'none',
+                color: 'var(--accent)', fontSize: 18, fontWeight: 900,
+                textAlign: 'center', padding: '2px 0',
+              }}
+            />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <div
+                onClick={() => { setExInput(exercise > 0 ? String(exercise) : ''); setEditingEx(true); }}
+                style={{ fontSize: 20, fontWeight: 900, color: exercise > 0 ? 'var(--accent)' : 'var(--muted)', letterSpacing: -0.5, lineHeight: 1, cursor: 'pointer' }}
+                title="Tap to log exercise calories"
+              >
+                {exercise > 0 ? exercise : '+'}
+              </div>
+              {onOpenExerciseCalc && (
+                <button
+                  onClick={onOpenExerciseCalc}
+                  title="Calculate from activity"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, color: 'var(--muted)' }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="21" x2="8" y2="3"/><line x1="16" y1="21" x2="16" y2="3"/><line x1="2" y1="12" x2="22" y2="12"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
           <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
             Exercise
           </div>
@@ -279,6 +352,26 @@ function CalDashboard({
           {goal > 0 ? `${goal.toLocaleString()} kcal target` : '—'}
         </span>
       </div>
+      {/* Calorie forecast */}
+      {(() => {
+        const h = new Date().getHours();
+        if (food <= 0 || goal <= 0 || h < 7 || h > 21) return null;
+        const fraction  = Math.max(0.1, Math.min(0.95, (h - 6) / 16));
+        const projected = Math.round(food / fraction);
+        const projPct   = Math.round((projected / goal) * 100);
+        const projColor = projPct >= 110 ? RED : projPct >= 85 ? CARB : 'var(--muted)';
+        return (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--edge)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Day Forecast
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: projColor, letterSpacing: -0.3 }}>
+              ~{projected.toLocaleString()} kcal &nbsp;
+              <span style={{ fontSize: 9, fontWeight: 600, opacity: 0.7 }}>({projPct}%)</span>
+            </span>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -682,12 +775,13 @@ function SupplementBlock() {
   );
 }
 
+
 // ── Main screen ────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user }                          = useAuthStore();
   const { setActiveTab, setPendingMealType } = useAppStore();
   const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete, removeStrengthSession, startNewWeek } = useNutritionStore();
-  const { logDay, setActivityModifier }   = useNutrition();
+  const { logDay, setActivityModifier, syncDropped, clearSyncDropped } = useNutrition();
   const { isDark }                        = useThemeStore();
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -701,6 +795,13 @@ export default function HomeScreen() {
   const [workoutKm,       setWorkoutKm]       = useState('');
   const [workoutSets,     setWorkoutSets]     = useState('');
   const [workoutLogged,   setWorkoutLogged]   = useState(false);
+  const [streak,         setStreak]         = useState<{ current: number; longest: number } | null>(null);
+  const [pendingAchievement, setPendingAchievement] = useState<Achievement | null>(null);
+  const achievementQueue = useRef<Achievement[]>([]);
+  const [showExerciseCalc, setShowExerciseCalc] = useState(false);
+  const [exerciseKcal,    setExerciseKcal]    = useState(() => {
+    try { const m = JSON.parse(localStorage.getItem(EXERCISE_KEY) ?? '{}'); return parseInt(m[new Date().toISOString().split('T')[0]] ?? '0', 10) || 0; } catch { return 0; }
+  });
 
   const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
 
@@ -718,6 +819,25 @@ export default function HomeScreen() {
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [reloadLogs]);
+
+  // Load streak + check achievements
+  useEffect(() => {
+    invalidateStreakCache();
+    calcStreak().then(async (s) => {
+      setStreak(s);
+      const totalLogs = await db.food_logs.where('removed').notEqual(1).count().catch(() =>
+        db.food_logs.toCollection().filter(l => !l.removed).count()
+      );
+      const newly = checkAndUnlock({ streak: s.current, totalLogs, isFirstLog: totalLogs === 1 });
+      if (newly.length > 0) {
+        achievementQueue.current = [...achievementQueue.current, ...newly];
+        if (!pendingAchievement) {
+          setPendingAchievement(achievementQueue.current.shift() ?? null);
+        }
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logTick]);
 
   const todayTargets = useEffectiveTargets();
   // For past days: load the snapshot that was saved when that day's training was logged
@@ -738,6 +858,15 @@ export default function HomeScreen() {
 
   const handleSelectType = (type: TrainingType) => {
     if (!isToday) return; // safety: never mutate today's log while viewing a past day
+    // Persist training type per day for macro cycling compliance history
+    try {
+      const hist = JSON.parse(localStorage.getItem('fs_training_type_history_v1') ?? '{}');
+      hist[viewDate] = type;
+      const keys = Object.keys(hist).sort().slice(-60);
+      const trimmed: Record<string, string> = {};
+      keys.forEach(k => { trimmed[k] = hist[k]; });
+      localStorage.setItem('fs_training_type_history_v1', JSON.stringify(trimmed));
+    } catch {}
     const r = logDay(type);
     if (r.blocked && !window.confirm('Heavy run load this week. Cardio today risks injury.\n\nLog anyway?')) return;
     if (r.blocked) logDay(type, undefined, undefined, true);
@@ -786,30 +915,71 @@ export default function HomeScreen() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
+      <AchievementToast
+        achievement={pendingAchievement}
+        onDismiss={() => {
+          const next = achievementQueue.current.shift() ?? null;
+          setPendingAchievement(next);
+        }}
+      />
+
+      {/* ── Sync failure toast ── */}
+      {syncDropped > 0 && (
+        <div style={{
+          position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 999,
+          background: '#EF444420', border: '1px solid #EF444440',
+          borderRadius: 10, padding: '12px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444' }}>
+            {syncDropped} food log{syncDropped > 1 ? 's' : ''} failed to sync — data saved locally
+          </div>
+          <button
+            onClick={clearSyncDropped}
+            style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: 16, cursor: 'pointer', padding: 4 }}
+          >✕</button>
+        </div>
+      )}
+
       {/* ── Greeting bar ── */}
       {isToday && displayName && (
         <div style={{
-          padding: '12px 16px 8px',
+          padding: '12px 16px 10px',
           background: 'var(--surf)',
           borderBottom: '1px solid var(--edge)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
         }}>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{greeting},</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.1 }}>
-              {displayName} 👋
+              {displayName}
             </div>
           </div>
-          {todayLog?.trainingType && (
-            <div style={{
-              padding: '4px 12px', borderRadius: 6,
-              background: 'var(--accent-muted)', border: '1px solid var(--accent)',
-              fontSize: 11, fontWeight: 800, color: 'var(--accent)',
-              textTransform: 'uppercase', letterSpacing: 1.5,
-            }}>
-              {todayLog.trainingType}
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            {streak && streak.current >= 2 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 10px', borderRadius: 20,
+                background: '#F59E0B18', border: '1px solid #F59E0B40',
+              }}>
+                <span style={{ fontSize: 14 }}>🔥</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: '#F59E0B', lineHeight: 1, letterSpacing: -0.5 }}>{streak.current}</div>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: '#F59E0B', opacity: 0.7, letterSpacing: 0.5 }}>DAY STREAK</div>
+                </div>
+              </div>
+            )}
+            {todayLog?.trainingType && (
+              <div style={{
+                padding: '4px 10px', borderRadius: 6,
+                background: 'var(--accent-muted)', border: '1px solid var(--accent)',
+                fontSize: 11, fontWeight: 800, color: 'var(--accent)',
+                textTransform: 'uppercase', letterSpacing: 1.5,
+              }}>
+                {todayLog.trainingType}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -901,13 +1071,32 @@ export default function HomeScreen() {
       {/* ── Calorie dashboard ── */}
       {/* targets: today = live computed; past day = snapshot saved when that day was logged */}
       <div style={{ margin: '10px 14px 0' }}>
-        <CalDashboard consumed={consumed} targets={targets} />
+        <CalDashboard consumed={consumed} targets={targets} date={viewDate} onOpenExerciseCalc={isToday ? () => setShowExerciseCalc(true) : undefined} externalExercise={isToday ? exerciseKcal : undefined} />
       </div>
 
       {/* ── Macro row ── */}
       <div style={{ margin: '8px 14px 0' }}>
         <MacroRow consumed={consumed} targets={targets} />
       </div>
+
+      {/* ── Macro distribution pie + legend ── */}
+      {(consumed.proteinG > 0 || consumed.carbsG > 0 || consumed.fatG > 0) && (
+        <div style={{ margin: '8px 14px 0' }}>
+          <div style={{
+            background: 'var(--surf)', border: '1px solid var(--edge)',
+            borderRadius: 8, padding: '12px 16px',
+            display: 'flex', alignItems: 'center', gap: 16,
+          }}>
+            <MacroPie protein={consumed.proteinG} carbs={consumed.carbsG} fat={consumed.fatG} size={72} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>
+                Macro Split
+              </div>
+              <MacroPieLegend protein={consumed.proteinG} carbs={consumed.carbsG} fat={consumed.fatG} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Training selector (today only) ── */}
       {isToday && (
@@ -987,54 +1176,32 @@ export default function HomeScreen() {
                     style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>×</button>
                 </div>
 
-                {/* Workout logging form */}
-                {hasWorkoutLog && !workoutLogged && (
+                {/* Workout logging */}
+                {isStrength && (
+                  <WorkoutLogger date={viewDate} />
+                )}
+                {isCardioType && !workoutLogged && (
                   <div>
                     <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                       Log Today's Workout
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {isCardioType && (
-                        <input
-                          type="number" inputMode="decimal" placeholder="km" value={workoutKm}
-                          onChange={(e) => setWorkoutKm(e.target.value)}
-                          style={{ ...inp, width: 80 }}
-                        />
-                      )}
-                      {isStrength && (
-                        <input
-                          type="number" inputMode="numeric" placeholder="sets" value={workoutSets}
-                          onChange={(e) => setWorkoutSets(e.target.value)}
-                          style={{ ...inp, width: 80 }}
-                        />
-                      )}
+                      <input
+                        type="number" inputMode="decimal" placeholder="km" value={workoutKm}
+                        onChange={(e) => setWorkoutKm(e.target.value)}
+                        style={{ ...inp, width: 80 }}
+                      />
                       <button
                         onClick={() => {
-                          const km   = parseFloat(workoutKm)   || 0;
-                          const sets = parseInt(workoutSets) || 0;
-                          if (isCardioType && km > 0) {
-                            addRunKm(km, `${t.label} · ${km}km`, 'manual');
-                          }
-                          if (isStrength && sets > 0) {
-                            logWorkoutComplete(0, sets, t.label);
-                          }
-                          if (km > 0 || sets > 0) {
-                            setWorkoutLogged(true);
-                            setWorkoutKm(''); setWorkoutSets('');
-                          }
+                          const km = parseFloat(workoutKm) || 0;
+                          if (km > 0) { addRunKm(km, `${t.label} · ${km}km`, 'manual'); setWorkoutLogged(true); setWorkoutKm(''); }
                         }}
-                        style={{
-                          flex: 1, padding: '9px 12px', borderRadius: 8,
-                          border: 'none', background: displayColor,
-                          color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                        }}
-                      >
-                        Log ✓
-                      </button>
+                        style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: 'none', background: displayColor, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
+                      >Log ✓</button>
                     </div>
                   </div>
                 )}
-                {workoutLogged && (
+                {isCardioType && workoutLogged && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${displayColor}18` }}>
                     <span style={{ fontSize: 16 }}>✅</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: displayColor }}>Workout logged!</span>
@@ -1252,6 +1419,27 @@ export default function HomeScreen() {
         </div>
       )}
 
+      {/* ── Water Tracker (today only) ── */}
+      {isToday && (
+        <div style={{ margin: '8px 14px 0' }}>
+          <WaterTracker date={viewDate} />
+        </div>
+      )}
+
+      {/* ── Exercise Calc Modal ── */}
+      {showExerciseCalc && (
+        <ExerciseCalcModal
+          weightKg={user?.weightKg ?? 0}
+          onAdd={(kcal) => {
+            const newVal = Math.round(kcal);
+            saveExerciseKcal(viewDate, newVal);
+            setExerciseKcal(newVal);
+            setShowExerciseCalc(false);
+          }}
+          onClose={() => setShowExerciseCalc(false)}
+        />
+      )}
+
       {/* ── Food Diary ── */}
       <div style={{ margin: '8px 14px 0' }}>
         <div style={{
@@ -1303,6 +1491,24 @@ export default function HomeScreen() {
             borderRadius: 8,
             overflow: 'hidden',
           }}>
+            {/* Aggregate nutrient details from all logs */}
+            {(() => {
+              const fiber   = logs.reduce((s, l) => s + (l.fiber_g       ?? 0), 0);
+              const sodium  = logs.reduce((s, l) => s + (l.sodium_mg     ?? 0), 0);
+              const chol    = logs.reduce((s, l) => s + (l.cholesterol_mg ?? 0), 0);
+              const vitC    = logs.reduce((s, l) => s + (l.vitamin_c_mg  ?? 0), 0);
+              const vitD    = logs.reduce((s, l) => s + (l.vitamin_d_mcg ?? 0), 0);
+              const calc    = logs.reduce((s, l) => s + (l.calcium_mg    ?? 0), 0);
+              const iron    = logs.reduce((s, l) => s + (l.iron_mg       ?? 0), 0);
+              const hasAny  = fiber > 0 || sodium > 0 || chol > 0 || vitC > 0 || vitD > 0 || calc > 0 || iron > 0;
+              if (!hasAny) return null;
+              return (
+                <div style={{ padding: '10px 12px 12px', borderTop: '1px solid var(--edge)' }}>
+                  <NutrientDetails fiber_g={fiber} sodium_mg={sodium} cholesterol_mg={chol} vitamin_c_mg={vitC} vitamin_d_mcg={vitD} calcium_mg={calc} iron_mg={iron} />
+                </div>
+              );
+            })()}
+
             {MEAL_ORDER.map((meal) => {
               const items        = byMeal[meal] ?? [];
               const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));

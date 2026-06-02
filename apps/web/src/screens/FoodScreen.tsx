@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { getLogs, addLog, deleteLog, softDeleteLog, unremoveLog, estimateByWeight, estimateByDescription, analyzeByImage, suggestMeal, clearPullCache, patchLogImage } from '../api/localFood';
 import type { FoodLog, AIEstimate, IngredientItem } from '../api/localFood';
+import NutritionGradeCard from '../components/NutritionGradeCard';
+import type { DiaryCompletion } from '../lib/db';
 import { useNutrition } from '../hooks/useNutrition';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { useAppStore } from '../store/appStore';
@@ -229,7 +231,40 @@ export default function FoodScreen() {
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
-  const [mode,       setMode]       = useState<'search' | 'ai' | 'photo' | 'manual' | 'suggest' | 'recipe'>('search');
+  const [mode,       setMode]       = useState<'search' | 'ai' | 'photo' | 'manual' | 'suggest' | 'recipe' | 'quick'>('search');
+
+  // Quick Add state
+  const [quickCal,   setQuickCal]   = useState('');
+  const [quickPro,   setQuickPro]   = useState('');
+  const [quickCarb,  setQuickCarb]  = useState('');
+  const [quickFat,   setQuickFat]   = useState('');
+  const [quickNote,  setQuickNote]  = useState('');
+  const [quickMeal,  setQuickMeal]  = useState<MealType>(mealFromTime());
+
+  // Diary completion
+  const [diaryCompletion, setDiaryCompletion] = useState<DiaryCompletion | null>(null);
+
+  // Diary notes
+  const NOTES_KEY = 'fs_diary_notes_v1';
+  const notesForDate = (date: string): string => {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) ?? '{}')[date] ?? ''; } catch { return ''; }
+  };
+  const [diaryNote, setDiaryNote] = useState(() => notesForDate(todayStr));
+  const [noteEditing, setNoteEditing] = useState(false);
+  const saveDiaryNote = (note: string) => {
+    try {
+      const map = JSON.parse(localStorage.getItem(NOTES_KEY) ?? '{}');
+      if (note.trim()) map[selectedDate] = note.trim();
+      else delete map[selectedDate];
+      const keys = Object.keys(map).sort().slice(-90);
+      const trimmed: Record<string, string> = {};
+      keys.forEach(k => { trimmed[k] = map[k]; });
+      localStorage.setItem(NOTES_KEY, JSON.stringify(trimmed));
+    } catch {}
+  };
+
+  // Reload note when date changes
+  useEffect(() => { setDiaryNote(notesForDate(selectedDate)); setNoteEditing(false); }, [selectedDate]);
   const [form,       setForm]       = useState<Form>(emptyForm);
   const [estimate,   setEstimate]   = useState<AIEstimate | null>(null);
   const [aiLoading,  setAiLoading]  = useState(false);
@@ -315,6 +350,13 @@ export default function FoodScreen() {
 
   const fetchLogs = useCallback(() => getLogs(selectedDate).then(setLogs).catch(() => {}), [selectedDate]);
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  // Load diary completion for selected date
+  useEffect(() => {
+    db.diary_completions.where('date').equals(selectedDate).first()
+      .then(c => setDiaryCompletion(c ?? null))
+      .catch(() => setDiaryCompletion(null));
+  }, [selectedDate]);
 
   // Open sheet pre-selecting meal type when navigated from HomeScreen
   useEffect(() => {
@@ -587,7 +629,33 @@ export default function FoodScreen() {
     setScanError(''); setManualBarcode('');
     setRecipeView('list'); setRecipeSearch(''); setRecipeResults([]);
     setLoggingRecipeId(null); setLoggingRecipeServings('1');
+    setQuickCal(''); setQuickPro(''); setQuickCarb(''); setQuickFat(''); setQuickNote('');
+    setQuickMeal(mealFromTime());
     stopScan();
+  };
+
+  const handleQuickAdd = async () => {
+    const kcal = parseFloat(quickCal);
+    if (isNaN(kcal) || kcal <= 0) { setFormError('Enter a calorie value.'); return; }
+    const p = parseFloat(quickPro)  || 0;
+    const c = parseFloat(quickCarb) || 0;
+    const f = parseFloat(quickFat)  || 0;
+    const computedCal = p * 4 + c * 4 + f * 9;
+    if (computedCal > 0 && Math.abs(computedCal - kcal) / kcal > 0.2) {
+      setFormError(`Macros compute to ~${Math.round(computedCal)} kcal — adjust macros or calories.`);
+      return;
+    }
+    setSubmitting(true); setFormError('');
+    try {
+      await addLog({
+        food_name: quickNote.trim() || 'Quick Add',
+        calories: kcal, protein: p, carbs: c, fat: f,
+        meal_type: quickMeal,
+      });
+      playFoodLogSound();
+      fetchLogs(); closeSheet();
+    } catch (e: unknown) { setFormError(e instanceof Error ? e.message : 'Failed to save'); }
+    finally { setSubmitting(false); }
   };
   const closeSheet = () => { setOpen(false); resetSheet(); };
 
@@ -950,7 +1018,7 @@ export default function FoodScreen() {
               </div>
             )}
           </div>
-          <div style={{ height: 7, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 18 }}>
+          <div style={{ height: 7, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
             <div
               className="bar-ani"
               style={{
@@ -960,6 +1028,40 @@ export default function FoodScreen() {
               }}
             />
           </div>
+
+          {/* 4 mini rings row */}
+          {targets && (() => {
+            const rings = [
+              { label: 'Cal',  val: consumed.calories, max: targets.calories, color: CAL_CLR },
+              { label: 'Prot', val: consumed.protein,  max: targets.proteinG, color: PROT },
+              { label: 'Carb', val: consumed.carbs,    max: targets.carbsG,   color: YELLOW },
+              { label: 'Fat',  val: consumed.fat,      max: targets.fatG,     color: FAT_CLR },
+            ];
+            return (
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 16 }}>
+                {rings.map(({ label, val, max, color }) => {
+                  if (!max || max <= 0) return null;
+                  const pct = Math.min(val / max, 1);
+                  const deg = Math.round(pct * 360);
+                  const R = 18; const sz = R * 2 + 6;
+                  return (
+                    <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <div style={{ width: sz, height: sz, borderRadius: '50%', position: 'relative',
+                        background: `conic-gradient(${color} ${deg}deg, var(--edge) 0deg)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <div style={{ width: R * 1.3, height: R * 1.3, borderRadius: '50%', background: SURF, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 8, fontWeight: 800, color }}>{Math.round(pct * 100)}%</span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 7, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             {[
               { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: PROT    },
@@ -988,6 +1090,50 @@ export default function FoodScreen() {
               );
             })}
           </div>
+
+          {/* Meal calorie distribution */}
+          {byMeal.length > 1 && consumed.calories > 0 && (() => {
+            const MEAL_COLORS_MAP: Record<string, string> = {
+              breakfast: '#38BDF8', pre_workout: '#A78BFA', lunch: '#22C55E',
+              post_workout: '#34D399', dinner: '#F59E0B', snack: '#FB923C', other: '#6B7280',
+            };
+            const total = consumed.calories;
+            return (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>
+                  Meal Distribution
+                </div>
+                {/* Stacked bar */}
+                <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', marginBottom: 8, gap: 1 }}>
+                  {byMeal.map(({ meal, entries }) => {
+                    const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
+                    const pct  = (mCal / total) * 100;
+                    const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
+                    return pct > 0 ? (
+                      <div key={meal} style={{ width: `${pct}%`, background: col, transition: 'width 0.5s ease' }} />
+                    ) : null;
+                  })}
+                </div>
+                {/* Legend pills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {byMeal.map(({ meal, entries }) => {
+                    const mCal = Math.round(entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0));
+                    const pct  = Math.round((mCal / total) * 100);
+                    const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
+                    const lbl  = MEAL_LABEL[meal as keyof typeof MEAL_LABEL] ?? meal;
+                    return (
+                      <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 2, background: col }} />
+                        <span style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>
+                          {lbl}: {mCal} kcal ({pct}%)
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -1153,6 +1299,9 @@ export default function FoodScreen() {
           </div>
         ) : byMeal.map(({ meal, entries }) => {
           const mealTotal  = entries.reduce((s, e) => s + Number(e.calories), 0);
+          const mealProt   = Math.round(entries.reduce((s, e) => s + Number(e.protein ?? 0), 0));
+          const mealCarbs  = Math.round(entries.reduce((s, e) => s + Number(e.carbs ?? 0), 0));
+          const mealFat    = Math.round(entries.reduce((s, e) => s + Number(e.fat ?? 0), 0));
           const mealTarget = mealCalTargets[meal as keyof MealCalTargets] ?? 0;
           const mealPct    = mealTarget > 0 ? Math.min(mealTotal / mealTarget, 1) : 0;
           const mealOver   = mealTarget > 0 && mealTotal > mealTarget;
@@ -1172,7 +1321,14 @@ export default function FoodScreen() {
                   </span>
                   <span style={{ fontSize: 9, color: MUTED }}>({entries.length})</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {mealTotal > 0 && (
+                    <>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: PROT }}>P{mealProt}</span>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: GREEN }}>C{mealCarbs}</span>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: FAT_CLR }}>F{mealFat}</span>
+                    </>
+                  )}
                   <span style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
                     {Math.round(mealTotal)}
                     {mealTarget > 0 && <span style={{ fontWeight: 500, color: mealOver ? RED : MUTED, fontSize: 10 }}> / {mealTarget}</span>}
@@ -1204,7 +1360,118 @@ export default function FoodScreen() {
         })}
       </div>
 
-      {/* meal target editor now lives at top — removed from here */}
+      {/* ── DIARY NOTE ── */}
+      <div style={{ margin: '0 22px 12px' }}>
+        {noteEditing ? (
+          <div style={{ background: SURF, borderRadius: 10, border: `1px solid ${ORANGE}40`, overflow: 'hidden' }}>
+            <textarea
+              autoFocus
+              value={diaryNote}
+              onChange={(e) => setDiaryNote(e.target.value)}
+              placeholder="Add a note to this day — mood, context, how you felt…"
+              rows={3}
+              style={{
+                width: '100%', background: 'transparent', border: 'none',
+                color: TEXT, fontSize: 13, fontWeight: 600, padding: '12px 14px',
+                resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.6,
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
+              <button onClick={() => { saveDiaryNote(diaryNote); setNoteEditing(false); }} style={{
+                flex: 1, padding: '9px 0', background: `${ORANGE}10`, border: 'none',
+                color: ORANGE, fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Save Note</button>
+              <button onClick={() => { setDiaryNote(notesForDate(selectedDate)); setNoteEditing(false); }} style={{
+                flex: 1, padding: '9px 0', background: 'none', border: 'none',
+                color: MUTED, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setNoteEditing(true)} style={{
+            width: '100%', padding: '10px 14px', borderRadius: 10,
+            background: 'none', border: `1px dashed ${diaryNote ? ORANGE + '40' : EDGE}`,
+            cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+          }}>
+            {diaryNote ? (
+              <div style={{ fontSize: 12, fontWeight: 600, color: MUTED, lineHeight: 1.5 }}>
+                <span style={{ color: ORANGE, fontWeight: 700, marginRight: 6 }}>📝</span>
+                {diaryNote}
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, fontWeight: 700, color: MUTED }}>
+                + Add diary note
+              </div>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* ── MICRONUTRIENT SNAPSHOT ── */}
+      {logs.length > 0 && (() => {
+        const fiber  = Math.round(logs.reduce((s, l) => s + (l.fiber_g        ?? 0), 0));
+        const sodium = Math.round(logs.reduce((s, l) => s + (l.sodium_mg      ?? 0), 0));
+        const vitC   = Math.round(logs.reduce((s, l) => s + (l.vitamin_c_mg   ?? 0), 0));
+        const vitD   = Math.round(logs.reduce((s, l) => s + (l.vitamin_d_mcg ?? 0), 0) * 10) / 10;
+        const calc   = Math.round(logs.reduce((s, l) => s + (l.calcium_mg    ?? 0), 0));
+        const iron   = Math.round(logs.reduce((s, l) => s + (l.iron_mg       ?? 0), 0) * 10) / 10;
+        const hasAny = fiber > 0 || sodium > 0 || vitC > 0 || calc > 0 || iron > 0;
+        if (!hasAny) return null;
+        const items = [
+          { label: 'Fiber',     value: fiber,  unit: 'g',   goal: 25,   color: GREEN,   isLower: false },
+          { label: 'Sodium',    value: sodium,  unit: 'mg',  goal: 2300, color: RED,     isLower: true  },
+          { label: 'Vit C',     value: vitC,    unit: 'mg',  goal: 90,   color: '#FB923C', isLower: false },
+          { label: 'Vit D',     value: vitD,    unit: 'mcg', goal: 15,   color: '#FCD34D', isLower: false },
+          { label: 'Calcium',   value: calc,    unit: 'mg',  goal: 1000, color: PROT,    isLower: false },
+          { label: 'Iron',      value: iron,    unit: 'mg',  goal: 10,   color: '#F87171', isLower: false },
+        ].filter(n => n.value > 0);
+        if (items.length < 2) return null;
+        return (
+          <div style={{ margin: '0 22px 12px' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+              Micronutrients · Today
+            </div>
+            <div style={{ background: SURF, borderRadius: 10, border: `1px solid ${EDGE}`, padding: '12px 14px', boxShadow: CARD_SHADOW }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {items.map(({ label, value, unit, goal, color, isLower }) => {
+                  const pct     = Math.min((value / goal) * 100, 100);
+                  const isOver  = value > goal;
+                  const barCol  = isLower ? (isOver ? RED : GREEN) : (pct >= 80 ? GREEN : pct >= 50 ? ORANGE : color);
+                  const status  = isLower ? (isOver ? 'OVER' : 'OK') : (pct >= 80 ? 'MET' : pct >= 50 ? 'PARTIAL' : 'LOW');
+                  return (
+                    <div key={label}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: barCol }}>{label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: barCol }}>{value}{unit}</span>
+                          <span style={{ fontSize: 9, color: MUTED }}>/ {goal}{unit}</span>
+                          <span style={{ fontSize: 8, fontWeight: 700, color: barCol, letterSpacing: 0.5 }}>{status}</span>
+                        </div>
+                      </div>
+                      <div style={{ height: 4, background: SURF2, borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, borderRadius: 2, background: barCol, transition: 'width 0.5s ease' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+
+      {/* ── COMPLETE DIARY ── */}
+      {isToday && logs.length > 0 && targets && (
+        <NutritionGradeCard
+          date={selectedDate}
+          consumed={consumed}
+          targets={targets}
+          existingCompletion={diaryCompletion}
+          onCompleted={setDiaryCompletion}
+        />
+      )}
 
       {/* ── FAB ── */}
       {isToday && (
@@ -1278,6 +1545,7 @@ export default function FoodScreen() {
                   ['suggest', '🍽', 'Suggest'],
                   ['recipe',  '📖', 'Recipe'],
                   ['manual',  '✏️',  'Manual'],
+                  ['quick',   '⚡', 'Quick Add'],
                 ] as const).map(([m, icon, label]) => {
                   const active = mode === m;
                   return (
@@ -2017,6 +2285,92 @@ export default function FoodScreen() {
                   </div>
                 </>
               )}
+
+              {/* QUICK ADD MODE */}
+              {mode === 'quick' && (
+                <>
+                  <div style={{ background: `${ORANGE}08`, border: `1px solid ${ORANGE}20`, borderRadius: 10, padding: '10px 14px', marginBottom: 18 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: ORANGE, letterSpacing: -0.3 }}>Quick Add</div>
+                    <div style={{ fontSize: 11, color: MUTED, marginTop: 2, lineHeight: 1.5 }}>
+                      Log calories without a full food entry — just the numbers.
+                    </div>
+                  </div>
+
+                  {/* Calories — big hero input */}
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Calories *</div>
+                    <input
+                      autoFocus
+                      type="number" min={1} max={9999} value={quickCal}
+                      onChange={(e) => { setQuickCal(e.target.value); setFormError(''); }}
+                      placeholder="0"
+                      style={{
+                        ...inp, fontSize: 42, fontWeight: 900, letterSpacing: -2,
+                        color: ORANGE, textAlign: 'center', padding: '16px 14px',
+                      }}
+                    />
+                    <div style={{ textAlign: 'center', fontSize: 10, color: MUTED, fontWeight: 600, marginTop: 4 }}>kcal</div>
+                  </div>
+
+                  {/* Optional macros */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>Macros (optional)</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                      {([
+                        { label: 'Protein', color: PROT,    val: quickPro,  set: setQuickPro  },
+                        { label: 'Carbs',   color: YELLOW,  val: quickCarb, set: setQuickCarb },
+                        { label: 'Fat',     color: FAT_CLR, val: quickFat,  set: setQuickFat  },
+                      ] as const).map(({ label, color, val, set }) => (
+                        <div key={label}>
+                          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                          <input type="number" min={0} value={val}
+                            onChange={(e) => { (set as React.Dispatch<React.SetStateAction<string>>)(e.target.value); setFormError(''); }}
+                            placeholder="0"
+                            style={{ width: '100%', background: SURF2, border: `1px solid ${color}30`, borderRadius: 10, color: TEXT, fontSize: 18, fontWeight: 700, padding: '10px 10px', outline: 'none', fontFamily: 'inherit' }}
+                          />
+                          <div style={{ fontSize: 9, color: MUTED, marginTop: 3, textAlign: 'right' }}>g</div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* computed total */}
+                    {(parseFloat(quickPro) || parseFloat(quickCarb) || parseFloat(quickFat)) ? (
+                      <div style={{ marginTop: 8, fontSize: 11, color: MUTED, textAlign: 'center', fontWeight: 700 }}>
+                        Macros → {Math.round((parseFloat(quickPro)||0)*4 + (parseFloat(quickCarb)||0)*4 + (parseFloat(quickFat)||0)*9)} kcal
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Note */}
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Note (optional)</div>
+                    <input value={quickNote} onChange={(e) => setQuickNote(e.target.value)}
+                      placeholder='e.g. "cheat meal", "protein shake"'
+                      style={{ ...inp }}
+                    />
+                  </div>
+
+                  {/* Meal selector */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Meal</div>
+                    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' as const }}>
+                      {MEAL_TYPES.map((m) => (
+                        <button key={m} onClick={() => setQuickMeal(m)} className="nrc-press" style={{
+                          flexShrink: 0, padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                          background: quickMeal === m ? ORANGE : SURF2,
+                          border: `1px solid ${quickMeal === m ? ORANGE : EDGE}`,
+                          color: quickMeal === m ? '#fff' : MUTED, fontWeight: 700, fontSize: 11,
+                          fontFamily: 'inherit',
+                        }}>{MEAL_LABEL[m]}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {formError && <ErrBox msg={formError} />}
+                  <button onClick={handleQuickAdd} disabled={submitting || !quickCal} className="nrc-press" style={bigBtn(submitting || !quickCal, ORANGE)}>
+                    {submitting ? '···' : `Log ${quickCal || '0'} kcal →`}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -2084,6 +2438,17 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
             {Math.round(Number(entry.calories))}
           </div>
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>KCAL</div>
+          {(() => {
+            const kcal = Number(entry.calories); const prot = Number(entry.protein);
+            if (kcal < 20 || prot < 1) return null;
+            const eff = Math.round((prot / kcal) * 100 * 10) / 10;
+            const color = eff >= 10 ? PROT : eff >= 6 ? GREEN : MUTED2;
+            return (
+              <div style={{ fontSize: 8, fontWeight: 700, color, marginTop: 2, letterSpacing: 0.5 }}>
+                {eff}g P/100
+              </div>
+            );
+          })()}
         </div>
       </div>
       <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
