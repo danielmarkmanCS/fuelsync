@@ -180,8 +180,8 @@ export default function SettingsScreen() {
       {/* ── Header ── */}
       <div style={{ padding: '24px 18px 18px' }}>
         <div style={{
-          fontSize: 26, fontWeight: 900, color: 'var(--text)',
-          letterSpacing: -0.5, fontFamily: "'Barlow Condensed', sans-serif",
+          fontSize: 26, fontWeight: 700, color: 'var(--text)',
+          letterSpacing: -0.5,
         }}>
           SETTINGS
         </div>

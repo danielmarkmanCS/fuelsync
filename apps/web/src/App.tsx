@@ -317,10 +317,10 @@ export default function App() {
         gap: 0, position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--text)' }}>
+          <div style={{ fontFamily: "inherit", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--text)' }}>
             FUEL
           </div>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--accent)' }}>
+          <div style={{ fontFamily: "inherit", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--accent)' }}>
             SYNC
           </div>
           <div style={{ marginTop: 40, display: 'flex', gap: 6 }}>
@@ -437,7 +437,7 @@ export default function App() {
             width: '100%', maxWidth: 340, textAlign: 'center',
             border: '1px solid var(--edge)',
           }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: 0.5 }}>
+            <div style={{ fontFamily: "inherit", fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: 0.5 }}>
               MORNING CHECK-IN
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.6 }}>
@@ -477,7 +477,7 @@ export default function App() {
                 background: weightSaving ? 'var(--edge)' : 'var(--accent)', border: 'none',
                 color: weightSaving ? 'var(--muted)' : '#fff',
                 fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1,
+                marginBottom: 10, fontFamily: "inherit", letterSpacing: 1,
               }}
             >
               {weightSaving ? 'SAVING…' : 'LOG WEIGHT'}
@@ -498,32 +498,26 @@ export default function App() {
         background: 'var(--surf)',
         borderTop: '1px solid var(--edge)',
         display: 'flex',
-        alignItems: 'flex-start',  /* buttons align to top of nav, not affected by bottom padding */
+        alignItems: 'flex-start',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
       }}>
         {TABS.map(({ id, label, Icon }) => {
           const active = activeTab === id;
           return (
-            <button key={id} onClick={() => setActiveTab(id as Tab)} className="nrc-press" style={{
+            <button key={id} onClick={() => setActiveTab(id as Tab)} className="press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 2,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
-              position: 'relative', minWidth: 0,
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 4px',
+              minWidth: 0,
             }}>
-              {active && (
-                <div style={{
-                  position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: 28, height: 2, background: 'var(--accent)', borderRadius: '0 0 2px 2px',
-                }} />
-              )}
-              <div style={{ color: active ? 'var(--accent)' : 'var(--muted)', transition: 'color 0.18s ease' }}>
+              <div style={{ color: active ? 'var(--accent)' : 'var(--muted)', transition: 'color 0.15s ease' }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 8, fontWeight: active ? 800 : 500, letterSpacing: 0.5,
-                fontFamily: "'Barlow Condensed', sans-serif",
-                color: active ? 'var(--accent)' : 'var(--muted)', transition: 'all 0.18s ease',
+                fontSize: 10, fontWeight: active ? 700 : 400,
+                color: active ? 'var(--accent)' : 'var(--muted)', transition: 'all 0.15s ease',
+                letterSpacing: 0,
               }}>
                 {label}
               </span>

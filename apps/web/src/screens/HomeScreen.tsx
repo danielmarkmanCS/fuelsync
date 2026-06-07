@@ -8,11 +8,11 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 
-// ── Macro palette: Protein=blue, Carbs=green, Fat=amber ──────────────
-const PROT = '#38BDF8';
-const CARB = '#22C55E';
-const FAT  = '#F59E0B';
-const RED  = '#EF4444';
+// ── Macro palette: Apple Health colors ───────────────────────────────
+const PROT = '#32ADE6';
+const CARB = '#30D158';
+const FAT  = '#FF9F0A';
+const RED  = '#FF453A';
 
 const MEAL_ORDER = ['breakfast','pre_workout','lunch','post_workout','dinner','snack','other'] as const;
 
@@ -194,35 +194,35 @@ function CalDashboard({
 
   return (
     <div style={{
-      background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
-      padding: '18px 18px 16px',
+      background: 'var(--surf)', borderRadius: 'var(--r-md)',
+      padding: '20px 20px 18px',
     }}>
       {/* ── Equation row ── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 18px 1fr 18px 1fr 18px 1fr',
+        gridTemplateColumns: '1fr 20px 1fr 20px 1fr 20px 1fr',
         alignItems: 'flex-end',
         gap: 0,
-        marginBottom: 18,
+        marginBottom: 20,
       }}>
         {/* Eaten (Food) — shown first */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)', letterSpacing: -0.5, lineHeight: 1 }}>
             {displayFood.toLocaleString()}
           </div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)', marginTop: 5 }}>
             Eaten
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', fontSize: 16, fontWeight: 300, color: 'var(--muted)', paddingBottom: 14 }}>of</div>
+        <div style={{ textAlign: 'center', fontSize: 18, fontWeight: 300, color: 'var(--muted)', paddingBottom: 16 }}>of</div>
 
         {/* Goal (Target) — shown second */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
             {goal > 0 ? goal.toLocaleString() : '—'}
           </div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)', marginTop: 5 }}>
             Goal
           </div>
         </div>

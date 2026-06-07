@@ -27,14 +27,14 @@ const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
-const GREEN      = '#22C55E';   // carbs
-const ORANGE     = '#2F81F7';   // accent blue (hex so template-literal opacity suffixes work)
-const YELLOW     = '#22C55E';   // carbs (alias)
-const PROT       = '#38BDF8';   // protein — blue
-const RED        = '#EF4444';
-const FAT_CLR    = '#F59E0B';   // fat — amber
-const CAL_CLR    = 'var(--accent)'; // blue calorie numbers, adapts to dark/light mode
-const CARD_SHADOW = 'var(--shadow-md)';
+const GREEN      = '#30D158';   // Apple green — carbs
+const ORANGE     = '#0A84FF';   // Apple blue — accent (hex for template-literal opacity)
+const YELLOW     = '#30D158';   // carbs alias
+const PROT       = '#32ADE6';   // Apple blue — protein
+const RED        = '#FF453A';   // Apple red
+const FAT_CLR    = '#FF9F0A';   // Apple amber — fat
+const CAL_CLR    = 'var(--accent)';
+const CARD_SHADOW = 'none';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -1307,7 +1307,7 @@ export default function FoodScreen() {
           const mealOver   = mealTarget > 0 && mealTotal > mealTarget;
           const collapsed  = collapsedMeals.has(meal);
           return (
-            <div key={meal} style={{ marginBottom: 10, background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+            <div key={meal} style={{ marginBottom: 10, background: SURF, borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
               {/* Collapsible meal header */}
               <button onClick={() => toggleMealCollapse(meal)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1522,22 +1522,22 @@ export default function FoodScreen() {
       {open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: SURF, borderRadius: '24px 24px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', borderTop: `1px solid ${EDGE}`, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -12px 48px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.07)' }}>
+          <div style={{ background: 'var(--surf)', borderRadius: '20px 20px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
 
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.18)' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.15)' }} />
             </div>
 
-            <div style={{ padding: '16px 22px 44px' }}>
+            <div style={{ padding: '16px 20px 44px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, textTransform: 'uppercase' }}>
-                  {editingId ? 'EDIT' : 'LOG IT'}
+                <div style={{ fontSize: 17, fontWeight: 700, color: TEXT }}>
+                  {editingId ? 'Edit Entry' : 'Log Food'}
                 </div>
-                <button onClick={closeSheet} style={{ background: SURF2, border: `1px solid ${EDGE}`, color: MUTED, fontSize: 18, cursor: 'pointer', borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                <button onClick={closeSheet} style={{ background: SURF2, border: 'none', color: MUTED, fontSize: 18, cursor: 'pointer', borderRadius: 99, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>×</button>
               </div>
 
               {/* Mode tabs */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 22 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
                 {([
                   ['ai',     '✨', 'Describe'],
                   ['photo',  '📷', 'Photo'],
@@ -1548,14 +1548,14 @@ export default function FoodScreen() {
                     <button key={m} onClick={() => {
                       setMode(m); setAiError(''); setFormError('');
                     }} style={{
-                      padding: '12px 4px 11px', borderRadius: 12, border: `1px solid ${active ? ORANGE : EDGE}`,
-                      background: active ? `${ORANGE}14` : SURF2,
+                      padding: '12px 4px 11px', borderRadius: 12,
+                      border: 'none',
+                      background: active ? `${ORANGE}18` : SURF2,
                       color: active ? ORANGE : MUTED,
-                      fontWeight: active ? 800 : 600,
-                      fontSize: 11, cursor: 'pointer', transition: 'all 0.15s',
-                      fontFamily: 'inherit', letterSpacing: 0.3,
+                      fontWeight: active ? 700 : 500,
+                      fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
+                      fontFamily: 'inherit',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                      boxShadow: active ? `0 0 12px ${ORANGE}25` : 'none',
                     }}>
                       <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
                       <span>{label}</span>
@@ -1863,68 +1863,42 @@ function FoodCard({ entry, onEdit, onDelete, onReLog, reLogLabel }: {
   const accentColor = getDominantColor(Number(entry.protein), Number(entry.carbs), Number(entry.fat));
   return (
     <div className="card-lift" style={{
-      background: `linear-gradient(135deg, ${accentColor}18 0%, ${SURF} 50%)`,
-      borderRadius: 18, marginBottom: 10,
-      border: `1px solid ${accentColor}18`, overflow: 'hidden', boxShadow: CARD_SHADOW,
-      borderLeft: `3px solid ${accentColor}`,
+      background: SURF,
+      borderRadius: 'var(--r-md)', marginBottom: 8, overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px' }}>
         {entry.image_url && (
-          <img src={entry.image_url} alt={entry.food_name} style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0, border: `1px solid ${EDGE}` }} />
+          <img src={entry.image_url} alt={entry.food_name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: TEXT, fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 6 }}>
+          <div style={{ color: TEXT, fontSize: 15, fontWeight: 600, lineHeight: 1.3, marginBottom: 5 }}>
             {entry.food_name}
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ background: `${PROT}15`,   border: `1px solid ${PROT}30`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: PROT,  fontWeight: 700 }}>
-              P {Math.round(Number(entry.protein))}g
-            </span>
-            <span style={{ background: `${YELLOW}15`,   border: `1px solid ${YELLOW}30`,   borderRadius: 6, padding: '2px 7px', fontSize: 10, color: YELLOW,  fontWeight: 700 }}>
-              C {Math.round(Number(entry.carbs))}g
-            </span>
-            <span style={{ background: `${FAT_CLR}10`, border: `1px solid ${FAT_CLR}20`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: FAT_CLR, fontWeight: 700 }}>
-              F {Math.round(Number(entry.fat))}g
-            </span>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <span style={{ fontSize: 12, color: PROT, fontWeight: 600 }}>P {Math.round(Number(entry.protein))}g</span>
+            <span style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>C {Math.round(Number(entry.carbs))}g</span>
+            <span style={{ fontSize: 12, color: FAT_CLR, fontWeight: 600 }}>F {Math.round(Number(entry.fat))}g</span>
             {entry.weight_grams && (
-              <span style={{ background: SURF2, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: MUTED, fontWeight: 700 }}>
-                {entry.weight_grams}g
-              </span>
-            )}
-            {hasIngredients && (
-              <span style={{ background: `${ORANGE}08`, borderRadius: 6, padding: '2px 7px', fontSize: 10, color: ORANGE, fontWeight: 700 }}>
-                {entry.ingredients!.length} items
-              </span>
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>{entry.weight_grams}g</span>
             )}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: CAL_CLR, letterSpacing: -2, lineHeight: 1 }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: CAL_CLR, letterSpacing: -0.5, lineHeight: 1 }}>
             {Math.round(Number(entry.calories))}
           </div>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, letterSpacing: 1, marginTop: 2 }}>KCAL</div>
-          {(() => {
-            const kcal = Number(entry.calories); const prot = Number(entry.protein);
-            if (kcal < 20 || prot < 1) return null;
-            const eff = Math.round((prot / kcal) * 100 * 10) / 10;
-            const color = eff >= 10 ? PROT : eff >= 6 ? GREEN : MUTED2;
-            return (
-              <div style={{ fontSize: 8, fontWeight: 700, color, marginTop: 2, letterSpacing: 0.5 }}>
-                {eff}g P/100
-              </div>
-            );
-          })()}
+          <div style={{ fontSize: 11, color: MUTED, fontWeight: 500, marginTop: 2 }}>kcal</div>
         </div>
       </div>
       <div style={{ display: 'flex', borderTop: `1px solid ${EDGE}` }}>
         <button onClick={() => onEdit(entry)} style={{
-          flex: 1, padding: '9px 0', background: 'none', border: 'none',
-          color: ORANGE, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-          borderRight: `1px solid ${EDGE}`, letterSpacing: 0.3,
+          flex: 1, padding: '10px 0', background: 'none', border: 'none',
+          color: ORANGE, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          borderRight: `1px solid ${EDGE}`,
         }}>Edit</button>
         <button onClick={() => onDelete(entry)} style={{
-          flex: 1, padding: '9px 0', background: 'none', border: 'none',
-          color: RED, fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.3,
+          flex: 1, padding: '10px 0', background: 'none', border: 'none',
+          color: RED, fontSize: 13, fontWeight: 600, cursor: 'pointer',
           borderRight: `1px solid ${EDGE}`,
         }}>Remove</button>
         {onReLog ? (

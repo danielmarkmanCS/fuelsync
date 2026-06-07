@@ -40,9 +40,8 @@ export default function TrainingPicker({ selected, onSelect }: Props) {
           >
             <div style={{ fontSize: 16, lineHeight: 1, marginBottom: 4 }}>{emoji}</div>
             <div style={{
-              fontSize: 11, fontWeight: 900, letterSpacing: 0.5,
+              fontSize: 11, fontWeight: 700, letterSpacing: 0,
               color: active ? color : 'var(--muted)',
-              fontFamily: "'Barlow Condensed', system-ui, sans-serif",
             }}>
               {label}
             </div>

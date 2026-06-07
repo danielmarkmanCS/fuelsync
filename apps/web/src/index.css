@@ -1,39 +1,40 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Dark mode: deep slate/charcoal ── */
-  --bg:     #0D1117;
-  --surf:   #161B22;
-  --surf2:  #1C2128;
-  --edge:   #21262D;
-  --edge2:  #30363D;
+  /* ── Apple dark palette ── */
+  --bg:    #000000;
+  --surf:  #1C1C1E;
+  --surf2: #2C2C2E;
+  --edge:  rgba(255,255,255,0.08);
+  --edge2: rgba(255,255,255,0.14);
 
   /* ── Typography ── */
-  --text:   #F0F3F6;
-  --muted:  #8B949E;
-  --muted2: #6E7681;
+  --text:   #FFFFFF;
+  --muted:  #8E8E93;
+  --muted2: #636366;
 
-  /* ── Shadows (flat in dark — borders carry depth) ── */
+  /* ── Shadows — flat in dark, separation comes from bg contrast ── */
   --shadow-sm: none;
-  --shadow-md: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-md: none;
+  --shadow-lg: none;
 
-  /* ── Brand accent ── */
-  --accent:        #2F81F7;
-  --accent2:       #1971E8;
-  --accent-muted:  rgba(47,129,247,0.12);
+  /* ── Brand accent — iOS system blue ── */
+  --accent:       #0A84FF;
+  --accent2:      #0070F0;
+  --accent-muted: rgba(10,132,255,0.15);
 
-  /* ── Macro palette — fixed semantics: P=blue C=green F=amber ── */
-  --prot:   #38BDF8;
-  --carb:   #22C55E;
-  --fat:    #F59E0B;
-  --red:    #EF4444;
-  --green:  #22C55E;
+  /* ── Macro palette — Apple Health semantics ── */
+  --prot:  #32ADE6;
+  --carb:  #30D158;
+  --fat:   #FF9F0A;
+  --red:   #FF453A;
+  --green: #30D158;
 
-  /* ── Geometry ── */
-  --r-xs: 4px;
-  --r-sm: 6px;
-  --r-md: 8px;
+  /* ── Geometry — Apple uses 16px for cards ── */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
 
   /* ── Easing ── */
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -43,20 +44,20 @@
 
 /* ── LIGHT THEME ─────────────────────────────────── */
 body[data-theme="light"] {
-  --bg:           #E4E7EB;
-  --surf:         #F2F4F6;
-  --surf2:        #E9ECF0;
-  --edge:         #D0D4DA;
-  --edge2:        #BCC1C8;
-  --text:         #1A1F26;
-  --muted:        #586069;
-  --muted2:       #8C96A0;
-  --shadow-sm:    0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md:    0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px var(--edge);
+  --bg:           #F2F2F7;
+  --surf:         #FFFFFF;
+  --surf2:        #F2F2F7;
+  --edge:         rgba(0,0,0,0.08);
+  --edge2:        rgba(0,0,0,0.14);
+  --text:         #000000;
+  --muted:        #8E8E93;
+  --muted2:       #AEAEB2;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md:    0 2px 8px rgba(0,0,0,0.08);
   --shadow-lg:    0 4px 16px rgba(0,0,0,0.10);
-  --accent:       #0066EE;
-  --accent2:      #0055CC;
-  --accent-muted: rgba(0,102,238,0.09);
+  --accent:       #007AFF;
+  --accent2:      #0060CC;
+  --accent-muted: rgba(0,122,255,0.10);
   color-scheme: light;
   background-color: var(--bg);
 }
@@ -69,7 +70,7 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color-scheme: dark;
@@ -81,22 +82,22 @@ button, input, select, textarea { font-family: inherit; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── TYPOGRAPHY SCALE ─────────────────────────────── */
-.t-title    { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+.t-title    { font-size: 17px; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
 .t-headline { font-size: 15px; font-weight: 600; color: var(--text); }
 .t-body     { font-size: 14px; font-weight: 400; color: var(--text); }
-.t-label    { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.t-label    { font-size: 11px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); }
 .t-caption  { font-size: 12px; font-weight: 400; color: var(--muted); }
 
-/* Legacy aliases — kept for backward compatibility */
-.label     { font-weight: 600; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
-.nrc-label { font-weight: 600; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
-.nrc-hero  { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
-.hero      { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
-.display-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; }
+/* Legacy aliases */
+.label     { font-weight: 600; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); }
+.nrc-label { font-weight: 600; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); }
+.nrc-hero  { font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
+.hero      { font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); }
+.display-num { font-weight: 800; }
 
 /* ── ENTRANCE ANIMATIONS ─────────────────────────── */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
@@ -115,49 +116,59 @@ button, input, select, textarea { font-family: inherit; }
   0%   { transform: scale(0.94); opacity: 0; }
   100% { transform: scale(1);    opacity: 1; }
 }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 @keyframes barFillAni { from { width: 0 !important; } }
 
-.a  { animation: slideUp 0.25s var(--ease) both; }
+.a  { animation: slideUp 0.22s var(--ease) both; }
 .a1 { animation-delay:   0ms; }
-.a2 { animation-delay:  30ms; }
-.a3 { animation-delay:  60ms; }
-.a4 { animation-delay:  90ms; }
-.a5 { animation-delay: 120ms; }
-.a6 { animation-delay: 150ms; }
+.a2 { animation-delay:  25ms; }
+.a3 { animation-delay:  50ms; }
+.a4 { animation-delay:  75ms; }
+.a5 { animation-delay: 100ms; }
+.a6 { animation-delay: 125ms; }
 
-.nrc-a  { animation: slideUp 0.25s var(--ease) both; }
+.nrc-a  { animation: slideUp 0.22s var(--ease) both; }
 .nrc-a1 { animation-delay:   0ms; }
-.nrc-a2 { animation-delay:  30ms; }
-.nrc-a3 { animation-delay:  60ms; }
-.nrc-a4 { animation-delay:  90ms; }
-.nrc-a5 { animation-delay: 120ms; }
-.nrc-a6 { animation-delay: 150ms; }
+.nrc-a2 { animation-delay:  25ms; }
+.nrc-a3 { animation-delay:  50ms; }
+.nrc-a4 { animation-delay:  75ms; }
+.nrc-a5 { animation-delay: 100ms; }
+.nrc-a6 { animation-delay: 125ms; }
 
 /* ── INTERACTION ─────────────────────────────────── */
 .nrc-press, .press {
-  transition: opacity 0.1s ease;
+  transition: opacity 0.1s ease, transform 0.1s ease;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
-.nrc-press:active, .press:active { opacity: 0.65; }
+.nrc-press:active, .press:active { opacity: 0.6; transform: scale(0.97); }
+
+/* card-lift: subtle scale on press for cards */
+.card-lift {
+  transition: transform 0.15s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.card-lift:active { transform: scale(0.985); }
 
 /* ── CARD BASE ──────────────────────────────────── */
 .card {
   background: var(--surf);
   border-radius: var(--r-md);
-  border: 1px solid var(--edge);
 }
 
 /* ── BARS ─────────────────────────────────────────── */
 .bar-track {
   height: 3px;
   background: var(--edge2);
-  border-radius: 2px;
+  border-radius: 99px;
   overflow: hidden;
 }
 .bar-fill {
   height: 100%;
-  border-radius: 2px;
+  border-radius: 99px;
   transition: width 0.5s var(--ease);
 }
 .bar-ani { animation: barFillAni 0.6s var(--ease) both; }
