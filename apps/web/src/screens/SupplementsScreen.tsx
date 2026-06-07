@@ -34,6 +34,9 @@ export default function SupplementsScreen() {
   const [showCongrats, setShowCongrats] = useState(false);
   const [syncing,     setSyncing]     = useState(false);
   const [syncMsg,     setSyncMsg]     = useState('');
+  const [notifPerm,   setNotifPerm]   = useState<NotificationPermission>(() =>
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+  );
 
   const load = useCallback(async () => {
     const [all, log] = await Promise.all([
@@ -46,7 +49,22 @@ export default function SupplementsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const isTaken = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
+  const isTaken   = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
+  const isSkipped = (id: number) => logs.some(l => l.supplement_id === id && l.skipped && !l.taken);
+
+  const toggleSkipped = async (supp: Supplement) => {
+    const id = supp.id!;
+    const existing = logs.find(l => l.supplement_id === id);
+    const now = new Date().toISOString();
+    if (existing) {
+      const newSkipped = !existing.skipped;
+      await db.supplement_logs.update(existing.id!, { skipped: newSkipped, taken: false, logged_at: now });
+    } else {
+      const syncId = crypto.randomUUID();
+      await db.supplement_logs.add({ sync_id: syncId, supplement_id: id, date: today, taken: false, skipped: true, logged_at: now });
+    }
+    load();
+  };
 
   const toggleTaken = async (supp: Supplement) => {
     const id = supp.id!;
@@ -158,8 +176,40 @@ export default function SupplementsScreen() {
     }
   };
 
-  const takenCount = supplements.filter(s => isTaken(s.id!)).length;
-  const allDone    = supplements.length > 0 && takenCount === supplements.length;
+  const takenCount   = supplements.filter(s => isTaken(s.id!)).length;
+  const skippedCount = supplements.filter(s => isSkipped(s.id!)).length;
+  const allDone      = supplements.length > 0 && (takenCount + skippedCount) === supplements.length;
+
+  const handleEnableReminders = async () => {
+    if (typeof Notification === 'undefined') return;
+    const perm = await Notification.requestPermission();
+    setNotifPerm(perm);
+    if (perm === 'granted') {
+      // Schedule one notification per timing group based on time-of-day
+      const TIMING_HOURS: Record<Supplement['timing'], number> = {
+        morning: 8, 'pre-workout': 13, 'post-workout': 15, evening: 20, anytime: 12,
+      };
+      const timingsPresent = [...new Set(supplements.map(s => s.timing))];
+      for (const timing of timingsPresent) {
+        const hour = TIMING_HOURS[timing];
+        const now = new Date();
+        const fire = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
+        if (fire <= now) fire.setDate(fire.getDate() + 1);
+        const delay = fire.getTime() - now.getTime();
+        setTimeout(() => {
+          const suppsForTiming = supplements.filter(s => s.timing === timing && !isTaken(s.id!));
+          if (suppsForTiming.length === 0) return;
+          new Notification('Supplement reminder', {
+            body: suppsForTiming.map(s => `${s.name} ${s.dose}${s.unit}`).join(', '),
+            icon: '/icons/icon-192.png',
+            tag: `supp-${timing}`,
+          });
+        }, delay);
+      }
+      setSyncMsg('✓ Reminders enabled for today');
+      setTimeout(() => setSyncMsg(''), 3000);
+    }
+  };
 
   // Show congrats once per calendar day when all supplements are marked
   useEffect(() => {
@@ -179,6 +229,7 @@ export default function SupplementsScreen() {
           <div style={{ fontSize: 20, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>Supplements</div>
           <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
             {takenCount}/{supplements.length} taken today
+            {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#F59E0B' }}>· {skippedCount} skipped</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -188,6 +239,16 @@ export default function SupplementsScreen() {
               <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
               <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
             </svg>
+          )}
+          {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
+            <button
+              onClick={handleEnableReminders}
+              title="Enable supplement reminders"
+              style={{ background: 'none', border: `1px solid ${EDGE}`, borderRadius: 6, padding: '7px 10px', color: MUTED, fontSize: 13, cursor: 'pointer' }}
+            >🔔</button>
+          )}
+          {notifPerm === 'granted' && (
+            <span title="Reminders on" style={{ fontSize: 14 }}>🔔</span>
           )}
           <button
             onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
@@ -233,37 +294,48 @@ export default function SupplementsScreen() {
           </div>
           <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
             {supplements.filter(s => s.timing === t).map((s, i, arr) => {
-              const taken = isTaken(s.id!);
+              const taken   = isTaken(s.id!);
+              const skipped = isSkipped(s.id!);
               return (
                 <div key={s.id} style={{
                   display: 'flex', alignItems: 'center', padding: '14px 16px', gap: 14,
                   borderBottom: i < arr.length - 1 ? `1px solid ${EDGE}` : 'none',
+                  opacity: skipped ? 0.55 : 1,
                 }}>
                   {/* Checkbox */}
                   <button
                     onClick={() => toggleTaken(s)}
                     style={{
                       width: 24, height: 24, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-                      border: `2px solid ${taken ? ACCENT : EDGE}`,
+                      border: `2px solid ${taken ? ACCENT : skipped ? '#F59E0B' : EDGE}`,
                       background: taken ? ACCENT : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
                     {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    {skipped && !taken && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><line x1="2" y1="5" x2="8" y2="5" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"/></svg>}
                   </button>
 
                   {/* Info */}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: taken ? MUTED : TEXT, transition: 'color 0.2s' }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: taken ? MUTED : TEXT, transition: 'color 0.2s', textDecoration: skipped ? 'line-through' : 'none' }}>
                       {s.name}
                     </div>
                     <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>
                       {s.dose} {s.unit}
+                      {skipped && <span style={{ marginLeft: 6, color: '#F59E0B', fontWeight: 700 }}>· Skipped</span>}
                     </div>
                   </div>
 
-                  {/* Edit/delete */}
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  {/* Skip / Edit / Delete */}
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                      onClick={() => toggleSkipped(s)}
+                      title={skipped ? 'Undo skip' : 'Skip today'}
+                      style={{ background: skipped ? '#F59E0B18' : 'none', border: skipped ? '1px solid #F59E0B30' : 'none', borderRadius: 6, color: skipped ? '#F59E0B' : MUTED, cursor: 'pointer', fontSize: 13, padding: '4px 7px' }}
+                    >
+                      {skipped ? '↩' : '–'}
+                    </button>
                     <button onClick={() => startEdit(s)} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: 14, padding: '4px 6px' }}>✎</button>
                     <button onClick={() => handleDelete(s.id!)} style={{ background: 'none', border: 'none', color: RED, cursor: 'pointer', fontSize: 14, padding: '4px 6px' }}>✕</button>
                   </div>

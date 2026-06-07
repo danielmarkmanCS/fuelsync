@@ -12,10 +12,18 @@ async function queueDelete(id: string): Promise<void> {
   await db.sync_queue.add({ operation: 'delete', payload: JSON.stringify({ id }), retries: 0, created_at: new Date().toISOString() }).catch(() => {});
 }
 
+type SyncFailListener = (droppedCount: number) => void;
+const syncFailListeners = new Set<SyncFailListener>();
+export function onSyncQueueDrop(fn: SyncFailListener): () => void {
+  syncFailListeners.add(fn);
+  return () => syncFailListeners.delete(fn);
+}
+
 export async function drainSyncQueue(): Promise<void> {
   if (!getSyncToken()) return;
   const items = await db.sync_queue.toArray();
   if (items.length === 0) return;
+  let dropped = 0;
   for (const item of items) {
     try {
       const payload = JSON.parse(item.payload);
@@ -29,11 +37,13 @@ export async function drainSyncQueue(): Promise<void> {
       const retries = (item.retries ?? 0) + 1;
       if (retries >= 5) {
         await db.sync_queue.delete(item.id!);
+        dropped++;
       } else {
         await db.sync_queue.update(item.id!, { retries }).catch(() => {});
       }
     }
   }
+  if (dropped > 0) syncFailListeners.forEach(fn => fn(dropped));
   clearPullCache();
 }
 

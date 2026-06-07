@@ -82,6 +82,53 @@ export interface SupplementLog {
   supplement_id: number;
   date: string;       // YYYY-MM-DD
   taken: boolean;
+  skipped?: boolean;
+  logged_at: string;
+}
+
+export interface WaterLog {
+  id?: number;
+  date: string;       // YYYY-MM-DD
+  ml: number;         // amount in ml
+  logged_at: string;  // ISO timestamp
+}
+
+export interface DiaryCompletion {
+  id?: number;
+  date: string;       // YYYY-MM-DD
+  completed_at: string;
+  totalCal: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+}
+
+export interface BodyMeasurement {
+  id?: number;
+  date: string;       // YYYY-MM-DD
+  waist_cm?: number | null;
+  chest_cm?: number | null;
+  arms_cm?: number | null;   // bicep
+  hips_cm?: number | null;
+  thighs_cm?: number | null;
+  neck_cm?: number | null;
+  body_fat_pct?: number | null;
+  logged_at: string;
+}
+
+export interface WorkoutSet {
+  reps: number;
+  weight: number;   // kg
+  logged_at: string;
+}
+
+export interface WorkoutExercise {
+  id?: number;
+  date: string;           // YYYY-MM-DD
+  exercise_name: string;
+  muscle_group: string;
+  sets: WorkoutSet[];     // stored as JSON blob
+  order: number;
   logged_at: string;
 }
 
@@ -99,13 +146,17 @@ export interface PinState {
 }
 
 class FuelSyncDB extends Dexie {
-  profile!:          Table<LocalProfile, number>;
-  food_logs!:        Table<LocalFoodLog, number>;
-  pin_state!:        Table<PinState, number>;
-  weight_logs!:      Table<WeightLog, number>;
-  sync_queue!:       Table<SyncQueueItem, number>;
-  supplements!:      Table<Supplement, number>;
-  supplement_logs!:  Table<SupplementLog, number>;
+  profile!:            Table<LocalProfile, number>;
+  food_logs!:          Table<LocalFoodLog, number>;
+  pin_state!:          Table<PinState, number>;
+  weight_logs!:        Table<WeightLog, number>;
+  sync_queue!:         Table<SyncQueueItem, number>;
+  supplements!:        Table<Supplement, number>;
+  supplement_logs!:    Table<SupplementLog, number>;
+  workout_exercises!:  Table<WorkoutExercise, number>;
+  water_logs!:         Table<WaterLog, number>;
+  diary_completions!:  Table<DiaryCompletion, number>;
+  body_measurements!:  Table<BodyMeasurement, number>;
 
   constructor() {
     super('FuelSyncDB');
@@ -131,6 +182,16 @@ class FuelSyncDB extends Dexie {
       supplements:     '++id, active, sync_id',
       supplement_logs: '++id, supplement_id, date, sync_id',
       weight_logs:     '++id, date, sync_id',
+    });
+    this.version(7).stores({
+      workout_exercises: '++id, date, exercise_name',
+    });
+    this.version(8).stores({
+      water_logs:         '++id, date',
+      diary_completions:  '++id, date',
+    });
+    this.version(9).stores({
+      body_measurements: '++id, date',
     });
   }
 }

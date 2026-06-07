@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { fetchWeather, evaluateEnvironment } from '../services/weatherService';
 import { computeMacros, checkLegFatigueGate } from '../services/nutritionEngine';
 import { fetchTrainingState, saveTrainingState, getSyncToken } from '../api/syncClient';
-import { drainSyncQueue, clearPullCache } from '../api/localFood';
+import { drainSyncQueue, clearPullCache, onSyncQueueDrop } from '../api/localFood';
 import type { DailyLog, TrainingType, UserProfile, WeatherConditions, EnvironmentAlert, WeeklyLoad, MacroTargets } from '@shared/types';
 import type { BackendUser } from '../api/auth';
 
@@ -119,23 +119,24 @@ export function useNutrition() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.todayLog, store.weeklyLoad, trainingLoaded]);
 
-  // Midnight reset — fires when the clock ticks past 00:00 while the app is open
+  // Midnight reset — re-schedules itself after each firing so it stays accurate
+  // across DST shifts, long app sessions, and system sleep/wake cycles.
   useEffect(() => {
-    const scheduleReset = () => {
+    let t: ReturnType<typeof setTimeout>;
+    const scheduleNext = () => {
       const now = new Date();
       const msUntilMidnight =
         new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime();
-      return setTimeout(() => {
-        const monday = (() => {
-          const d = new Date();
-          const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
-          return new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
-        })();
+      t = setTimeout(() => {
+        const d = new Date();
+        const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+        const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff).toISOString().split('T')[0];
         store.resetDay();
         if (useNutritionStore.getState().weeklyLoad.weekStart !== monday) store.startNewWeek(monday);
+        scheduleNext();
       }, msUntilMidnight);
     };
-    const t = scheduleReset();
+    scheduleNext();
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -209,6 +210,9 @@ export function useNutrition() {
     }
   }, [store, profile]);
 
+  const [syncDropped, setSyncDropped] = useState(0);
+  useEffect(() => onSyncQueueDrop(count => setSyncDropped(n => n + count)), []);
+
   return {
     profile,
     todayLog: store.todayLog,
@@ -223,5 +227,7 @@ export function useNutrition() {
     setActivityModifier,
     logWorkoutComplete: store.logWorkoutComplete,
     resetDay: store.resetDay,
+    syncDropped,
+    clearSyncDropped: () => setSyncDropped(0),
   };
 }
