@@ -1564,6 +1564,90 @@ export default function FoodScreen() {
                 })}
               </div>
 
+              {/* RECENTS / SAVED / TEMPLATES */}
+              {(recents.length > 0 || favorites.length > 0 || templates.length > 0) && !editingId && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                    {(['recent', 'fav', 'templates'] as const).map((t) => (
+                      <button key={t} onClick={() => setFavTab(t)} style={{
+                        flex: 1, padding: '7px 4px', borderRadius: 8,
+                        border: `1px solid ${favTab === t ? ORANGE : EDGE}`,
+                        background: favTab === t ? `${ORANGE}14` : SURF2,
+                        color: favTab === t ? ORANGE : MUTED,
+                        fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                        fontFamily: 'inherit', letterSpacing: 0.5, textTransform: 'uppercase',
+                      }}>
+                        {t === 'recent' ? 'Recent' : t === 'fav' ? 'Saved' : 'Templates'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {favTab === 'recent' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+                      {recents.length === 0 && (
+                        <div style={{ color: MUTED, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>No recent foods yet.</div>
+                      )}
+                      {recents.map((food) => (
+                        <div key={food.food_name + food.lastUsed} style={{ display: 'flex', alignItems: 'center', gap: 8, background: SURF2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${EDGE}` }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{food.food_name}</div>
+                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
+                              {Math.round(food.calories)} kcal · P{Math.round(food.protein)}g C{Math.round(food.carbs)}g F{Math.round(food.fat)}g
+                            </div>
+                          </div>
+                          <button onClick={() => handleToggleFavorite(food)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 4, color: (favoriteStates[food.food_name] ?? isFavorite(food.food_name)) ? '#F59E0B' : MUTED }}>★</button>
+                          <button onClick={() => applySavedFood(food)} style={{ background: `${ORANGE}18`, border: `1px solid ${ORANGE}40`, borderRadius: 7, color: ORANGE, fontWeight: 700, fontSize: 11, padding: '6px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>+</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {favTab === 'fav' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+                      {favorites.length === 0 && (
+                        <div style={{ color: MUTED, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>No saved foods yet. Star a recent food to save it.</div>
+                      )}
+                      {favorites.map((food) => (
+                        <div key={food.food_name} style={{ display: 'flex', alignItems: 'center', gap: 8, background: SURF2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${EDGE}` }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{food.food_name}</div>
+                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
+                              {Math.round(food.calories)} kcal · P{Math.round(food.protein)}g C{Math.round(food.carbs)}g F{Math.round(food.fat)}g
+                            </div>
+                          </div>
+                          <button onClick={() => handleToggleFavorite(food)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 4, color: '#F59E0B' }}>★</button>
+                          <button onClick={() => applySavedFood(food)} style={{ background: `${ORANGE}18`, border: `1px solid ${ORANGE}40`, borderRadius: 7, color: ORANGE, fontWeight: 700, fontSize: 11, padding: '6px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>+</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {favTab === 'templates' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+                      {templates.length === 0 && (
+                        <div style={{ color: MUTED, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>No templates yet. Templates let you log a full meal with one tap.</div>
+                      )}
+                      {templates.map((t) => (
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: SURF2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${EDGE}` }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{t.name}</div>
+                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
+                              {t.foods.length} item{t.foods.length !== 1 ? 's' : ''} · {t.foods.reduce((s, f) => s + f.calories, 0).toFixed(0)} kcal
+                            </div>
+                          </div>
+                          <button onClick={() => handleLogTemplate(t)} disabled={loggingTemplateId === t.id} style={{
+                            background: loggingTemplateId === t.id ? EDGE : `${GREEN}18`, border: `1px solid ${GREEN}40`,
+                            borderRadius: 7, color: loggingTemplateId === t.id ? MUTED : GREEN, fontWeight: 700,
+                            fontSize: 11, padding: '6px 10px', cursor: loggingTemplateId === t.id ? 'default' : 'pointer', fontFamily: 'inherit',
+                          }}>
+                            {loggingTemplateId === t.id ? '···' : 'Log all'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* AI MODE */}
               {mode === 'ai' && (
