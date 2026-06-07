@@ -231,7 +231,7 @@ export default function FoodScreen() {
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
-  const [mode,       setMode]       = useState<'ai' | 'manual'>('ai');
+  const [mode,       setMode]       = useState<'ai' | 'photo' | 'manual'>('ai');
 
   // Quick Add state
   const [quickCal,   setQuickCal]   = useState('');
@@ -1537,10 +1537,11 @@ export default function FoodScreen() {
               </div>
 
               {/* Mode tabs */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 22 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 22 }}>
                 {([
-                  ['ai',     '✨', 'Describe with AI'],
-                  ['manual', '✏️', 'Manual Entry'],
+                  ['ai',     '✨', 'Describe'],
+                  ['photo',  '📷', 'Photo'],
+                  ['manual', '✏️', 'Manual'],
                 ] as const).map(([m, icon, label]) => {
                   const active = mode === m;
                   return (
@@ -1616,6 +1617,57 @@ export default function FoodScreen() {
                 </>
               )}
 
+
+              {/* PHOTO MODE */}
+              {mode === 'photo' && (
+                <>
+                  {aiLoading ? (
+                    <div style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      gap: 16, padding: '40px 20px', borderRadius: 8,
+                      border: `2px dashed ${EDGE}`, background: SURF2, marginBottom: 16,
+                    }}>
+                      <div style={{ width: 48, height: 48, borderRadius: '50%', border: `3px solid ${ORANGE}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                      <div style={{ fontSize: 16, fontWeight: 800, color: MUTED, textAlign: 'center' }}>Analysing…</div>
+                      <div style={{ fontSize: 12, color: MUTED, textAlign: 'center', fontWeight: 600 }}>AI is estimating macros</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      <label style={{
+                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: 12, padding: '28px 12px', borderRadius: 8,
+                        border: `2px dashed ${ORANGE}`, background: `${ORANGE}05`, cursor: 'pointer',
+                      }}>
+                        <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+                          onChange={(e) => { const file = e.target.files?.[0]; if (file) handlePhotoAnalyze(file); e.target.value = ''; }} />
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                          <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: ORANGE }}>Take Photo</div>
+                        <div style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>Open camera</div>
+                      </label>
+                      <label style={{
+                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: 12, padding: '28px 12px', borderRadius: 8,
+                        border: `2px dashed ${EDGE}`, background: SURF2, cursor: 'pointer',
+                      }}>
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={(e) => { const file = e.target.files?.[0]; if (file) handlePhotoAnalyze(file); e.target.value = ''; }} />
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="18" height="18" rx="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>Choose Photo</div>
+                        <div style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>From gallery</div>
+                      </label>
+                    </div>
+                  )}
+                  <MealChips form={form} setForm={setForm} />
+                  {aiError && <ErrBox msg={aiError} />}
+                </>
+              )}
 
               {/* MANUAL MODE */}
               {mode === 'manual' && (

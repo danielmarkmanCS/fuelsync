@@ -535,20 +535,35 @@ export default function HomeScreen() {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
-  const [consumed, setConsumed] = useState<MacroTargets>(emptyMacros());
-  const [logTick,  setLogTick]  = useState(0);
+  const [viewDate, setViewDate]   = useState(todayStr);
+  const [foodLogs, setFoodLogs]   = useState<FoodLog[]>([]);
+  const [consumed, setConsumed]   = useState<MacroTargets>(emptyMacros());
+  const [logTick,  setLogTick]    = useState(0);
   const [expandedTraining, setExpandedTraining] = useState<TrainingType | null>(null);
+
+  const isToday = viewDate === todayStr;
+
+  const goToPrev = () => {
+    const d = new Date(viewDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    setViewDate(d.toISOString().split('T')[0]);
+  };
+  const goToNext = () => {
+    if (isToday) return;
+    const d = new Date(viewDate + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    setViewDate(d.toISOString().split('T')[0]);
+  };
 
   const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
 
   useEffect(() => {
-    getLogs(todayStr).then(ls => {
+    getLogs(viewDate).then(ls => {
       const active = ls.filter(l => !l.removed);
       setFoodLogs(active);
       setConsumed(sumLogs(active));
     });
-  }, [todayStr, logTick]);
+  }, [viewDate, logTick]);
 
   useEffect(() => {
     const onVisible = () => { if (!document.hidden) reloadLogs(); };
@@ -622,14 +637,38 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {/* Date label */}
-      <div style={{ padding: '10px 16px 0', textAlign: 'center' }}>
-        <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>{dateLabel}</div>
+      {/* Date nav */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 14px 0',
+      }}>
+        <button onClick={goToPrev} className="nrc-press" style={{
+          width: 34, height: 34, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--surf)', border: '1px solid var(--edge)', cursor: 'pointer',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+            {isToday ? `Today · ${dateLabel}` : dateLabel}
+          </div>
+        </div>
+        <button onClick={goToNext} className="nrc-press" disabled={isToday} style={{
+          width: 34, height: 34, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--surf)', border: '1px solid var(--edge)',
+          cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.3 : 1,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
       </div>
 
       {/* Calorie dashboard */}
       <div style={{ margin: '10px 14px 0' }}>
-        <CalDashboard consumed={consumed} targets={targets} date={todayStr} />
+        <CalDashboard consumed={consumed} targets={targets} date={viewDate} />
       </div>
 
       {/* Macro row */}
@@ -637,8 +676,8 @@ export default function HomeScreen() {
         <MacroRow consumed={consumed} targets={targets} />
       </div>
 
-      {/* Training selector + NEAT */}
-      <div style={{
+      {/* Training selector + NEAT (today only) */}
+      {isToday && <div style={{
         margin: '10px 14px 0', background: 'var(--surf)',
         borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
       }}>
@@ -732,7 +771,7 @@ export default function HomeScreen() {
             })}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Food diary */}
       <div style={{ margin: '8px 14px 0' }}>
@@ -759,19 +798,21 @@ export default function HomeScreen() {
             <div style={{ fontSize: 32 }}>🍽️</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>Nothing logged yet</div>
             <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
-              Start tracking your meals to hit your daily targets.
+              {isToday ? 'Start tracking your meals to hit your daily targets.' : 'No food was logged on this day.'}
             </div>
-            <button
-              onClick={() => handleAddFood('breakfast')}
-              className="nrc-press"
-              style={{
-                marginTop: 4, padding: '11px 28px', borderRadius: 8,
-                background: 'var(--accent)', border: 'none',
-                color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-              }}
-            >
-              + Log First Meal
-            </button>
+            {isToday && (
+              <button
+                onClick={() => handleAddFood('breakfast')}
+                className="nrc-press"
+                style={{
+                  marginTop: 4, padding: '11px 28px', borderRadius: 8,
+                  background: 'var(--accent)', border: 'none',
+                  color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                }}
+              >
+                + Log First Meal
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ background: 'var(--surf)', border: '1px solid var(--edge)', borderRadius: 8, overflow: 'hidden' }}>
@@ -792,6 +833,21 @@ export default function HomeScreen() {
           </div>
         )}
       </div>
+
+      {/* Past day notice */}
+      {!isToday && (
+        <div style={{
+          margin: '12px 14px 0', padding: '10px 14px', borderRadius: 8,
+          background: 'var(--surf)', border: '1px solid var(--edge)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)' }}>Viewing past entry</span>
+          <button
+            onClick={() => setViewDate(todayStr)}
+            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0 }}
+          >Back to Today</button>
+        </div>
+      )}
 
     </div>
   );
