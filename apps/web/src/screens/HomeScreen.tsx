@@ -1,28 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNutrition } from '../hooks/useNutrition';
 import { useAuthStore } from '../store/authStore';
 import { useNutritionStore } from '../store/nutritionStore';
 import { useAppStore } from '../store/appStore';
-import { useThemeStore } from '../store/themeStore';
-import WeatherBanner from '../components/WeatherBanner';
-import StravaCard from '../components/StravaCard';
-import WorkoutLogger from '../components/WorkoutLogger';
-import WaterTracker from '../components/WaterTracker';
-import MacroPie, { MacroPieLegend } from '../components/MacroPie';
-import ExerciseCalcModal from '../components/ExerciseCalcModal';
-import NutrientDetails from '../components/NutrientDetails';
-import { getLogs, addLog } from '../api/localFood';
+import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
-import { playFoodLogSound } from '../utils/sounds';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
-import { getDailyGoal } from '../hooks/useNutrition';
-import { db } from '../lib/db';
-import type { Supplement, SupplementLog } from '../lib/db';
-import { calcStreak, invalidateStreakCache } from '../lib/streak';
-import { checkAndUnlock } from '../lib/achievements';
-import type { Achievement } from '../lib/achievements';
-import AchievementToast from '../components/AchievementToast';
 
 // ── Macro palette: Protein=blue, Carbs=green, Fat=amber ──────────────
 const PROT = '#38BDF8';
@@ -543,309 +527,40 @@ const TRAINING_TYPES: {
     macroTip: 'High fat · low carb · moderate protein' },
 ];
 
-// ── Supplement checklist ───────────────────────────────────────────────
-function SupplementBlock() {
-  const { setActiveTab } = useAppStore();
-  const today  = new Date().toISOString().split('T')[0];
-
-  const [supplements,  setSupplements]  = useState<Supplement[]>([]);
-  const [logs,         setLogs]         = useState<SupplementLog[]>([]);
-  const [showCongrats, setShowCongrats] = useState(false);
-
-  const load = useCallback(async () => {
-    const [all, log] = await Promise.all([
-      db.supplements.toArray(),
-      db.supplement_logs.where('date').equals(today).toArray(),
-    ]);
-    setSupplements(all.filter(s => s.active !== false));
-    setLogs(log);
-  }, [today]);
-
-  useEffect(() => { load(); }, [load]);
-
-  // ── All hooks must be called before any early return ──────────────────
-  const isTaken    = (id: number) => logs.some(l => l.supplement_id === id && l.taken);
-  const takenCountEarly = supplements.filter(s => isTaken(s.id!)).length;
-  const allDoneEarly    = supplements.length > 0 && takenCountEarly === supplements.length;
-
-  // Show congrats once per calendar day when all supplements are marked
-  useEffect(() => {
-    if (!allDoneEarly) return;
-    const key = `fs_supp_congrats_${today}`;
-    if (!localStorage.getItem(key)) {
-      localStorage.setItem(key, '1');
-      setShowCongrats(true);
-    }
-  }, [allDoneEarly, today]);
-
-  if (supplements.length === 0) return (
-    <div style={{
-      background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)',
-      padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10,
-    }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7"/>
-        <circle cx="17" cy="17" r="5"/><path d="M14.5 19.5l5-5"/>
-      </svg>
-      <span style={{ fontSize: 12, color: 'var(--muted)', flex: 1 }}>No supplements set up yet</span>
-      <button
-        onClick={() => setActiveTab('supplements')}
-        style={{
-          background: 'var(--accent-muted)',
-          border: '1px solid var(--accent)',
-          borderRadius: 6,
-          color: 'var(--accent)', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: '5px 12px',
-          transition: 'all 0.2s ease',
-        }}
-      >Set up</button>
-    </div>
-  );
-
-  const timePeriod = (id: number): 'M' | 'A' | 'E' | null => {
-    const l = logs.find(l => l.supplement_id === id && l.taken);
-    if (!l) return null;
-    const h = new Date(l.logged_at).getHours();
-    return h < 12 ? 'M' : h < 17 ? 'A' : 'E';
-  };
-
-  const logAtPeriod = async (supp: Supplement, period: 'M' | 'A' | 'E') => {
-    const hour     = period === 'M' ? 8 : period === 'A' ? 13 : 19;
-    const logTime  = new Date(); logTime.setHours(hour, 0, 0, 0);
-    const id       = supp.id!;
-    const existing = logs.find(l => l.supplement_id === id);
-    if (existing) {
-      const cur = timePeriod(id);
-      await db.supplement_logs.update(existing.id!, {
-        taken: !(cur === period && existing.taken),
-        logged_at: logTime.toISOString(),
-      });
-    } else {
-      await db.supplement_logs.add({ supplement_id: id, date: today, taken: true, logged_at: logTime.toISOString() });
-    }
-    load();
-  };
-
-  const toggleTaken = async (supp: Supplement) => {
-    const id       = supp.id!;
-    const existing = logs.find(l => l.supplement_id === id);
-    if (existing) {
-      await db.supplement_logs.update(existing.id!, { taken: !existing.taken, logged_at: new Date().toISOString() });
-    } else {
-      await db.supplement_logs.add({ supplement_id: id, date: today, taken: true, logged_at: new Date().toISOString() });
-    }
-    load();
-  };
-
-  const takenCount = takenCountEarly;
-  const allDone    = allDoneEarly;
-
-  return (
-    <>
-    <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7"/>
-            <circle cx="17" cy="17" r="5"/><path d="M14.5 19.5l5-5"/>
-          </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-            Supplements
-          </span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '1px 7px',
-            color: allDone ? 'var(--accent)' : 'var(--muted)',
-            background: allDone ? 'var(--accent-muted)' : 'var(--edge)',
-          }}>
-            {takenCount}/{supplements.length}
-          </span>
-        </div>
-        <button
-          onClick={() => setActiveTab('supplements')}
-          style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-        >Manage</button>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 2, background: 'var(--edge)', margin: '0 14px 4px', borderRadius: 1, overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', borderRadius: 1,
-          background: allDone ? 'var(--accent)' : 'var(--accent)',
-          width: `${supplements.length ? (takenCount / supplements.length) * 100 : 0}%`,
-          opacity: allDone ? 1 : 0.4,
-          transition: 'width 0.35s ease',
-        }} />
-      </div>
-
-      {/* Rows */}
-      <div style={{ padding: '5px 0 8px' }}>
-        {supplements.map((s, i) => {
-          const taken = isTaken(s.id!);
-          return (
-            <div key={s.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px',
-              borderBottom: i < supplements.length - 1 ? '1px solid var(--edge)' : 'none',
-            }}>
-              <button
-                onClick={() => toggleTaken(s)}
-                className="nrc-press"
-                style={{
-                  width: 20, height: 20, borderRadius: 4, flexShrink: 0, cursor: 'pointer', padding: 0,
-                  border: `2px solid ${taken ? 'var(--accent)' : 'var(--edge)'}`,
-                  background: taken ? 'var(--accent)' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {taken && (
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <polyline points="2,5 4.5,7.5 8,2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
-              <span style={{
-                flex: 1, fontSize: 13, fontWeight: 600,
-                color: taken ? 'var(--muted)' : 'var(--text)',
-                transition: 'color 0.2s ease',
-              }}>
-                {s.name}
-              </span>
-              <span style={{ fontSize: 10, color: 'var(--muted)', flexShrink: 0 }}>{s.dose} {s.unit}</span>
-              <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-                {(['M', 'A', 'E'] as const).map(p => {
-                  const active = taken && timePeriod(s.id!) === p;
-                  return (
-                    <button
-                      key={p}
-                      onClick={e => { e.stopPropagation(); logAtPeriod(s, p); }}
-                      className="nrc-press"
-                      style={{
-                        width: 22, height: 20, borderRadius: 4, flexShrink: 0, padding: 0,
-                        border: `1px solid ${active ? 'var(--accent)' : 'var(--edge)'}`,
-                        background: active ? 'var(--accent-muted)' : 'transparent',
-                        color: active ? 'var(--accent)' : 'var(--muted)',
-                        fontSize: 9, fontWeight: 800, letterSpacing: 0.3,
-                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >{p}</button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-
-    {/* ── Congrats overlay ── */}
-    {showCongrats && (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 400,
-        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '0 24px',
-      }} onClick={() => setShowCongrats(false)}>
-        <div style={{
-          background: 'var(--surf)', borderRadius: 8, padding: '32px 28px',
-          border: '1px solid var(--accent)',
-          textAlign: 'center', maxWidth: 340, width: '100%',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-        }} onClick={e => e.stopPropagation()}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
-          <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, marginBottom: 8 }}>
-            All Done!
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.65, marginBottom: 24 }}>
-            Every supplement logged today. Consistency compounds — you're building the habits that separate good athletes from elite ones.
-          </div>
-          <button
-            onClick={() => setShowCongrats(false)}
-            style={{
-              width: '100%', padding: '13px', borderRadius: 8,
-              background: 'var(--accent)', border: 'none',
-              color: '#fff', fontSize: 14, fontWeight: 800,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >Let's Go 💪</button>
-        </div>
-      </div>
-    )}
-    </>
-  );
-}
-
-
-// ── Main screen ────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { user }                          = useAuthStore();
+  const { user }                             = useAuthStore();
   const { setActiveTab, setPendingMealType } = useAppStore();
-  const { todayLog, weeklyLoad, weather, environmentAlert, addRunKm, logWorkoutComplete, removeStrengthSession, startNewWeek } = useNutritionStore();
-  const { logDay, setActivityModifier, syncDropped, clearSyncDropped } = useNutrition();
-  const { isDark }                        = useThemeStore();
+  const { todayLog, logWorkoutComplete }     = useNutritionStore();
+  const { logDay, setActivityModifier }      = useNutrition();
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const [viewDate, setViewDate] = useState(todayStr);
-  const isToday   = viewDate === todayStr;
 
-  const [logs,     setLogs]     = useState<FoodLog[]>([]);
+  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
   const [consumed, setConsumed] = useState<MacroTargets>(emptyMacros());
   const [logTick,  setLogTick]  = useState(0);
   const [expandedTraining, setExpandedTraining] = useState<TrainingType | null>(null);
-  const [workoutKm,       setWorkoutKm]       = useState('');
-  const [workoutSets,     setWorkoutSets]     = useState('');
-  const [workoutLogged,   setWorkoutLogged]   = useState(false);
-  const [streak,         setStreak]         = useState<{ current: number; longest: number } | null>(null);
-  const [pendingAchievement, setPendingAchievement] = useState<Achievement | null>(null);
-  const achievementQueue = useRef<Achievement[]>([]);
-  const [showExerciseCalc, setShowExerciseCalc] = useState(false);
-  const [exerciseKcal,    setExerciseKcal]    = useState(() => {
-    try { const m = JSON.parse(localStorage.getItem(EXERCISE_KEY) ?? '{}'); return parseInt(m[new Date().toISOString().split('T')[0]] ?? '0', 10) || 0; } catch { return 0; }
-  });
 
   const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
 
   useEffect(() => {
-    getLogs(viewDate).then(ls => {
+    getLogs(todayStr).then(ls => {
       const active = ls.filter(l => !l.removed);
-      setLogs(active);
+      setFoodLogs(active);
       setConsumed(sumLogs(active));
     });
-  }, [viewDate, logTick]);
+  }, [todayStr, logTick]);
 
-  // Auto-reload when tab becomes visible again (catches food logged in DIARY tab)
   useEffect(() => {
     const onVisible = () => { if (!document.hidden) reloadLogs(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [reloadLogs]);
 
-  // Load streak + check achievements
-  useEffect(() => {
-    invalidateStreakCache();
-    calcStreak().then(async (s) => {
-      setStreak(s);
-      const totalLogs = await db.food_logs.where('removed').notEqual(1).count().catch(() =>
-        db.food_logs.toCollection().filter(l => !l.removed).count()
-      );
-      const newly = checkAndUnlock({ streak: s.current, totalLogs, isFirstLog: totalLogs === 1 });
-      if (newly.length > 0) {
-        achievementQueue.current = [...achievementQueue.current, ...newly];
-        if (!pendingAchievement) {
-          setPendingAchievement(achievementQueue.current.shift() ?? null);
-        }
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logTick]);
+  const targets          = useEffectiveTargets();
+  const activityModifier = todayLog?.dailyActivityModifier ?? null;
 
-  const todayTargets = useEffectiveTargets();
-  // For past days: load the snapshot that was saved when that day's training was logged
-  const targets = isToday ? todayTargets : getDailyGoal(viewDate);
-
-  // Group by meal
   const byMeal = MEAL_ORDER.reduce<Record<string, FoodLog[]>>((acc, m) => { acc[m] = []; return acc; }, {});
-  logs.forEach(l => {
+  foodLogs.forEach(l => {
     const key = (l.meal_type ?? 'other') as string;
     if (byMeal[key]) byMeal[key].push(l);
     else byMeal['other'].push(l);
@@ -857,11 +572,9 @@ export default function HomeScreen() {
   }, [setActiveTab, setPendingMealType]);
 
   const handleSelectType = (type: TrainingType) => {
-    if (!isToday) return; // safety: never mutate today's log while viewing a past day
-    // Persist training type per day for macro cycling compliance history
     try {
       const hist = JSON.parse(localStorage.getItem('fs_training_type_history_v1') ?? '{}');
-      hist[viewDate] = type;
+      hist[todayStr] = type;
       const keys = Object.keys(hist).sort().slice(-60);
       const trimmed: Record<string, string> = {};
       keys.forEach(k => { trimmed[k] = hist[k]; });
@@ -870,577 +583,158 @@ export default function HomeScreen() {
     const r = logDay(type);
     if (r.blocked && !window.confirm('Heavy run load this week. Cardio today risks injury.\n\nLog anyway?')) return;
     if (r.blocked) logDay(type, undefined, undefined, true);
-
-    // Auto-log 1 session immediately for strength-type days (once per day)
-    // Cardio types wait for the user to enter km in the expanded form
-    const isStrengthDay = type === 'strength' || type === 'hybrid';
-    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-    if (isStrengthDay && !todayLog?.actualWorkoutLogged) {
-      logWorkoutComplete(0, 1, typeLabel);
-      setWorkoutLogged(true);
-    }
-    // Reset logged state when switching to a cardio type
-    if (!isStrengthDay) {
-      setWorkoutLogged(false);
-      setWorkoutKm('');
+    if ((type === 'strength' || type === 'hybrid') && !todayLog?.actualWorkoutLogged) {
+      logWorkoutComplete(0, 1, type.charAt(0).toUpperCase() + type.slice(1));
     }
   };
 
-  const activityModifier    = todayLog?.dailyActivityModifier ?? null;
-  const loggedRuns          = weeklyLoad.loggedRuns ?? [];
-  const strengthSessions    = weeklyLoad.strengthSessions ?? [];
-
-  // Date navigation helpers
-  const goToPrev = () => {
-    const d = new Date(viewDate + 'T12:00:00');
-    d.setDate(d.getDate() - 1);
-    setViewDate(d.toISOString().split('T')[0]);
-  };
-  const goToNext = () => {
-    if (isToday) return;
-    const d = new Date(viewDate + 'T12:00:00');
-    d.setDate(d.getDate() + 1);
-    setViewDate(d.toISOString().split('T')[0]);
-  };
-
-  const dateLabel = new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', {
+  const hour        = new Date().getHours();
+  const greeting    = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const displayName = user?.displayName || '';
+  const dateLabel   = new Date(todayStr + 'T12:00:00').toLocaleDateString('en-US', {
     weekday: 'short', month: 'long', day: 'numeric',
   });
-
-  // Greeting
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const displayName = user?.displayName || '';
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
-      <AchievementToast
-        achievement={pendingAchievement}
-        onDismiss={() => {
-          const next = achievementQueue.current.shift() ?? null;
-          setPendingAchievement(next);
-        }}
-      />
-
-      {/* ── Sync failure toast ── */}
-      {syncDropped > 0 && (
+      {/* Greeting header */}
+      {displayName && (
         <div style={{
-          position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 999,
-          background: '#EF444420', border: '1px solid #EF444440',
-          borderRadius: 10, padding: '12px 16px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444' }}>
-            {syncDropped} food log{syncDropped > 1 ? 's' : ''} failed to sync — data saved locally
-          </div>
-          <button
-            onClick={clearSyncDropped}
-            style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: 16, cursor: 'pointer', padding: 4 }}
-          >✕</button>
-        </div>
-      )}
-
-      {/* ── Greeting bar ── */}
-      {isToday && displayName && (
-        <div style={{
-          padding: '12px 16px 10px',
-          background: 'var(--surf)',
+          padding: '12px 16px 10px', background: 'var(--surf)',
           borderBottom: '1px solid var(--edge)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
         }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{greeting},</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.1 }}>
-              {displayName}
-            </div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.1 }}>{displayName}</div>
           </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            {streak && streak.current >= 2 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '5px 10px', borderRadius: 20,
-                background: '#F59E0B18', border: '1px solid #F59E0B40',
-              }}>
-                <span style={{ fontSize: 14 }}>🔥</span>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: '#F59E0B', lineHeight: 1, letterSpacing: -0.5 }}>{streak.current}</div>
-                  <div style={{ fontSize: 8, fontWeight: 700, color: '#F59E0B', opacity: 0.7, letterSpacing: 0.5 }}>DAY STREAK</div>
-                </div>
-              </div>
-            )}
-            {todayLog?.trainingType && (
-              <div style={{
-                padding: '4px 10px', borderRadius: 6,
-                background: 'var(--accent-muted)', border: '1px solid var(--accent)',
-                fontSize: 11, fontWeight: 800, color: 'var(--accent)',
-                textTransform: 'uppercase', letterSpacing: 1.5,
-              }}>
-                {todayLog.trainingType}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Top bar: Date nav + settings icon ── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 14px 10px',
-        borderBottom: '1px solid var(--edge)',
-        background: 'var(--surf)',
-      }}>
-        {/* Prev day */}
-        <button
-          onClick={goToPrev}
-          className="nrc-press"
-          style={{
-            width: 34, height: 34, borderRadius: 6, display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'var(--surf2)', border: '1px solid var(--edge)',
-            cursor: 'pointer', flexShrink: 0,
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text)' }}>
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-
-        {/* Date label */}
-        <div style={{ textAlign: 'center', flex: 1, padding: '0 8px' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', letterSpacing: 0.1 }}>
-            {isToday ? `Today · ${dateLabel}` : dateLabel}
-          </div>
-          {todayLog?.trainingType && isToday && (
+          {todayLog?.trainingType && (
             <div style={{
-              display: 'inline-block', marginTop: 4,
-              padding: '2px 10px', borderRadius: 4,
-              background: 'var(--accent-muted)',
-              border: '1px solid var(--accent)',
-              fontSize: 10, fontWeight: 700, color: 'var(--accent)',
+              padding: '4px 10px', borderRadius: 6,
+              background: 'var(--accent-muted)', border: '1px solid var(--accent)',
+              fontSize: 11, fontWeight: 800, color: 'var(--accent)',
               textTransform: 'uppercase', letterSpacing: 1.5,
             }}>
               {todayLog.trainingType}
             </div>
           )}
         </div>
-
-        {/* Next day / Settings */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-          <button
-            onClick={goToNext}
-            className="nrc-press"
-            disabled={isToday}
-            style={{
-              width: 34, height: 34, borderRadius: 6, display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              background: 'var(--surf2)', border: '1px solid var(--edge)',
-              cursor: isToday ? 'default' : 'pointer',
-              opacity: isToday ? 0.3 : 1,
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text)' }}>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className="nrc-press"
-            style={{
-              width: 34, height: 34, borderRadius: 6, display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              background: 'var(--surf2)', border: '1px solid var(--edge)',
-              cursor: 'pointer',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--muted)' }}>
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Weather ── */}
-      {weather && isToday && (
-        <div style={{ padding: '10px 14px 0' }}>
-          <WeatherBanner weather={weather} alert={environmentAlert ?? { level: 'none', message: '' }} />
-        </div>
       )}
 
-      {/* ── Calorie dashboard ── */}
-      {/* targets: today = live computed; past day = snapshot saved when that day was logged */}
-      <div style={{ margin: '10px 14px 0' }}>
-        <CalDashboard consumed={consumed} targets={targets} date={viewDate} onOpenExerciseCalc={isToday ? () => setShowExerciseCalc(true) : undefined} externalExercise={isToday ? exerciseKcal : undefined} />
+      {/* Date label */}
+      <div style={{ padding: '10px 16px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>{dateLabel}</div>
       </div>
 
-      {/* ── Macro row ── */}
+      {/* Calorie dashboard */}
+      <div style={{ margin: '10px 14px 0' }}>
+        <CalDashboard consumed={consumed} targets={targets} date={todayStr} />
+      </div>
+
+      {/* Macro row */}
       <div style={{ margin: '8px 14px 0' }}>
         <MacroRow consumed={consumed} targets={targets} />
       </div>
 
-      {/* ── Macro distribution pie + legend ── */}
-      {(consumed.proteinG > 0 || consumed.carbsG > 0 || consumed.fatG > 0) && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <div style={{
-            background: 'var(--surf)', border: '1px solid var(--edge)',
-            borderRadius: 8, padding: '12px 16px',
-            display: 'flex', alignItems: 'center', gap: 16,
-          }}>
-            <MacroPie protein={consumed.proteinG} carbs={consumed.carbsG} fat={consumed.fatG} size={72} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>
-                Macro Split
-              </div>
-              <MacroPieLegend protein={consumed.proteinG} carbs={consumed.carbsG} fat={consumed.fatG} />
-            </div>
-          </div>
+      {/* Training selector + NEAT */}
+      <div style={{
+        margin: '10px 14px 0', background: 'var(--surf)',
+        borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
+          Today's Training
         </div>
-      )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+          {TRAINING_TYPES.map(({ type, label, color, isAccent }) => {
+            const active       = todayLog?.trainingType === type;
+            const displayColor = isAccent ? 'var(--accent)' : color;
+            return (
+              <button
+                key={type}
+                onClick={() => {
+                  if (!active) handleSelectType(type);
+                  setExpandedTraining(expandedTraining === type ? null : type);
+                }}
+                className="nrc-press"
+                style={{
+                  padding: '11px 4px', borderRadius: 8,
+                  border: `1.5px solid ${active ? displayColor : 'var(--edge)'}`,
+                  background: active ? (isAccent ? 'var(--accent-muted)' : `${color}18`) : 'var(--surf2)',
+                  cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  transition: 'border-color 0.2s ease, background 0.2s ease',
+                  color: active ? displayColor : 'var(--muted)',
+                }}
+              >
+                <TrainingIcon type={type} size={18} />
+                <div style={{ fontSize: 10, fontWeight: active ? 800 : 600, letterSpacing: 0.3 }}>{label}</div>
+              </button>
+            );
+          })}
+        </div>
 
-      {/* ── Training selector (today only) ── */}
-      {isToday && (
-        <div style={{
-          margin: '10px 14px 0', background: 'var(--surf)',
-          borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 }}>
-            Today's Training
+        {expandedTraining && (() => {
+          const t = TRAINING_TYPES.find(x => x.type === expandedTraining);
+          if (!t) return null;
+          const displayColor = t.isAccent ? 'var(--accent)' : t.color;
+          return (
+            <div style={{
+              marginTop: 10, padding: '12px', borderRadius: 8,
+              background: t.isAccent ? 'var(--accent-muted)' : `${t.color}10`,
+              border: `1px solid ${displayColor}40`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <TrainingIcon type={expandedTraining} size={16} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: displayColor, marginBottom: 2 }}>{t.label} Day</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>{t.desc}</div>
+                  <div style={{ fontSize: 10, color: displayColor, marginTop: 3, fontWeight: 700, opacity: 0.85 }}>→ {t.macroTip}</div>
+                </div>
+                <button
+                  onClick={() => setExpandedTraining(null)}
+                  style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}
+                >×</button>
+              </div>
+            </div>
+          );
+        })()}
+
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+            Daily Activity Level
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-            {TRAINING_TYPES.map(({ type, label, color, isAccent }) => {
-              const active       = todayLog?.trainingType === type;
-              const expanded     = expandedTraining === type;
-              const displayColor = isAccent ? 'var(--accent)' : color;
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5, opacity: 0.7 }}>
+            Non-workout movement — steps, job, errands.
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([
+              { val: 'low',    label: 'Low',    desc: 'Desk · sitting'  },
+              { val: 'normal', label: 'Normal', desc: 'Some walking'    },
+              { val: 'high',   label: 'High',   desc: 'On feet all day' },
+            ] as const).map(({ val, label, desc }) => {
+              const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
               return (
                 <button
-                  key={type}
-                  onClick={() => {
-                    if (active) {
-                      setExpandedTraining(expanded ? null : type);
-                    } else {
-                      handleSelectType(type);
-                      setExpandedTraining(type);
-                    }
-                  }}
-                  className="nrc-press"
+                  key={val}
+                  onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
                   style={{
-                    padding: '11px 4px', borderRadius: 8,
-                    border: `1.5px solid ${active ? displayColor : 'var(--edge)'}`,
-                    background: active
-                      ? (isAccent ? 'var(--accent-muted)' : `${color}18`)
-                      : 'var(--surf2)',
-                    cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    transition: 'border-color 0.2s ease, background 0.2s ease',
-                    color: active ? displayColor : 'var(--muted)',
+                    flex: 1, padding: '9px 4px', borderRadius: 8,
+                    border: `1.5px solid ${sel ? 'var(--accent)' : 'var(--edge)'}`,
+                    background: sel ? 'var(--accent-muted)' : 'transparent',
+                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  <TrainingIcon type={type} size={18} />
-                  <div style={{ fontSize: 10, fontWeight: active ? 800 : 600, letterSpacing: 0.3 }}>
-                    {label}
-                  </div>
+                  <span style={{ fontSize: 12, fontWeight: sel ? 800 : 600, color: sel ? 'var(--accent)' : 'var(--muted)' }}>{label}</span>
+                  <span style={{ fontSize: 9, color: sel ? 'var(--accent)' : 'var(--muted)', textAlign: 'center', lineHeight: 1.4, opacity: sel ? 0.85 : 0.5 }}>{desc}</span>
                 </button>
               );
             })}
           </div>
-
-          {/* Training description + workout log form */}
-          {expandedTraining && (() => {
-            const t = TRAINING_TYPES.find(x => x.type === expandedTraining);
-            if (!t) return null;
-            const displayColor = t.isAccent ? 'var(--accent)' : t.color;
-            const isCardioType = ['cardio','hiit','cycling','walk'].includes(expandedTraining);
-            const isStrength   = ['strength','hybrid'].includes(expandedTraining);
-            const hasWorkoutLog = isCardioType || isStrength;
-            const inp: React.CSSProperties = {
-              flex: 1, padding: '8px 10px', borderRadius: 8,
-              border: `1px solid ${displayColor}50`, background: 'var(--surf)',
-              color: 'var(--text)', fontSize: 14, fontWeight: 700, outline: 'none',
-              minWidth: 0,
-            };
-            return (
-              <div style={{
-                marginTop: 10, padding: '12px 12px', borderRadius: 8,
-                background: `${t.isAccent ? 'var(--accent-muted)' : t.color + '10'}`,
-                border: `1px solid ${displayColor}40`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: hasWorkoutLog ? 12 : 0 }}>
-                  <TrainingIcon type={expandedTraining} size={16} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: displayColor, marginBottom: 2 }}>{t.label} Day</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>{t.desc}</div>
-                    <div style={{ fontSize: 10, color: displayColor, marginTop: 3, fontWeight: 700, opacity: 0.85 }}>→ {t.macroTip}</div>
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); setExpandedTraining(null); setWorkoutLogged(false); setWorkoutKm(''); setWorkoutSets(''); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 16, cursor: 'pointer', padding: 0, flexShrink: 0 }}>×</button>
-                </div>
-
-                {/* Workout logging */}
-                {isStrength && (
-                  <WorkoutLogger date={viewDate} />
-                )}
-                {isCardioType && !workoutLogged && (
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
-                      Log Today's Workout
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input
-                        type="number" inputMode="decimal" placeholder="km" value={workoutKm}
-                        onChange={(e) => setWorkoutKm(e.target.value)}
-                        style={{ ...inp, width: 80 }}
-                      />
-                      <button
-                        onClick={() => {
-                          const km = parseFloat(workoutKm) || 0;
-                          if (km > 0) { addRunKm(km, `${t.label} · ${km}km`, 'manual'); setWorkoutLogged(true); setWorkoutKm(''); }
-                        }}
-                        style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: 'none', background: displayColor, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
-                      >Log ✓</button>
-                    </div>
-                  </div>
-                )}
-                {isCardioType && workoutLogged && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${displayColor}18` }}>
-                    <span style={{ fontSize: 16 }}>✅</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: displayColor }}>Workout logged!</span>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* NEAT / Activity modifier — always visible */}
-          <div style={{ marginTop: 14 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
-              Daily Activity Level
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5, opacity: 0.7 }}>
-              Non-workout movement — steps, job, errands.
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {([
-                { val: 'low',    label: 'Low',    desc: 'Desk · sitting'   },
-                { val: 'normal', label: 'Normal', desc: 'Some walking'     },
-                { val: 'high',   label: 'High',   desc: 'On feet all day'  },
-              ] as const).map(({ val, label, desc }) => {
-                const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
-                return (
-                  <button
-                    key={val}
-                    onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
-                    style={{
-                      flex: 1, padding: '9px 4px', borderRadius: 8,
-                      border: `1.5px solid ${sel ? 'var(--accent)' : 'var(--edge)'}`,
-                      background: sel ? 'var(--accent-muted)' : 'transparent',
-                      cursor: 'pointer',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <span style={{ fontSize: 12, fontWeight: sel ? 800 : 600, color: sel ? 'var(--accent)' : 'var(--muted)' }}>
-                      {label}
-                    </span>
-                    <span style={{ fontSize: 9, color: sel ? 'var(--accent)' : 'var(--muted)', textAlign: 'center', lineHeight: 1.4, opacity: sel ? 0.85 : 0.5 }}>
-                      {desc}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
-      )}
+      </div>
 
-      {/* ── Readiness + Weekly load ── */}
-      {isToday && (() => {
-        const rec  = weeklyLoad.recoveryScore ?? 70;
-        const fat  = weeklyLoad.legFatigueScore ?? 0;
-        const readiness = Math.round(Math.max(0, Math.min(100, rec * 0.6 + (100 - fat) * 0.4)));
-        const rColor = readiness >= 70 ? 'var(--accent)' : readiness >= 40 ? CARB : RED;
-        const rLabel = readiness >= 80 ? 'PEAK' : readiness >= 60 ? 'GOOD' : readiness >= 40 ? 'MODERATE' : 'LOW';
-        const rTip   = readiness >= 80
-          ? 'Body is primed — push hard today.'
-          : readiness >= 60
-          ? 'Good readiness — train at planned intensity.'
-          : readiness >= 40
-          ? 'Moderate fatigue — consider lowering intensity.'
-          : 'Recovery needed — rest or yoga recommended.';
-        const fatColor = fat < 40 ? 'var(--accent)' : fat < 70 ? CARB : RED;
-        const hasLoad = weeklyLoad.totalRunKm > 0 || weeklyLoad.totalStrengthSets > 0;
-        return (
-          <div style={{
-            margin: '8px 14px 0', background: 'var(--surf)',
-            borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 14px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
-                Readiness &amp; Weekly Load
-              </div>
-              {hasLoad && (
-                <button
-                  onClick={() => {
-                    if (window.confirm('Reset all weekly load data (runs + strength sessions)?')) {
-                      const monday = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().split('T')[0]; })();
-                      startNewWeek(monday);
-                    }
-                  }}
-                  style={{ fontSize: 10, fontWeight: 700, color: RED, background: 'none', border: `1px solid ${RED}40`, borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
-                >Reset Week</button>
-              )}
-            </div>
-            {/* Readiness bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--surf2)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${readiness}%`, background: rColor, borderRadius: 3, transition: 'width 0.5s ease' }} />
-                </div>
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: rColor, letterSpacing: -0.5, minWidth: 40 }}>
-                {readiness}<span style={{ fontSize: 9, fontWeight: 700 }}>%</span>
-              </div>
-              <div style={{
-                padding: '2px 8px', borderRadius: 4, background: `${rColor === 'var(--accent)' ? 'var(--accent-muted)' : rColor + '18'}`,
-                border: `1px solid ${rColor}40`,
-                fontSize: 9, fontWeight: 900, color: rColor, letterSpacing: 1.5,
-              }}>{rLabel}</div>
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: hasLoad ? 12 : 0, lineHeight: 1.5 }}>
-              {rTip}
-            </div>
-            {/* Weekly load stats */}
-            {hasLoad && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: (loggedRuns.length > 0 || strengthSessions.length > 0) ? 12 : 0 }}>
-                {weeklyLoad.totalRunKm > 0 && (
-                  <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: CARB, letterSpacing: -0.5 }}>
-                      {weeklyLoad.totalRunKm.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>km</span>
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Run this week</div>
-                  </div>
-                )}
-                {weeklyLoad.totalStrengthSets > 0 && (
-                  <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: PROT, letterSpacing: -0.5 }}>
-                      {weeklyLoad.totalStrengthSets}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>sessions</span>
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Strength this week</div>
-                  </div>
-                )}
-                <div style={{ flex: 1, background: 'var(--surf2)', borderRadius: 8, padding: '9px 10px', border: '1px solid var(--edge)' }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: fatColor, letterSpacing: -0.5 }}>
-                    {fat}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginLeft: 2 }}>pts</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, fontWeight: 500 }}>Leg fatigue</div>
-                </div>
-              </div>
-            )}
-            {/* Individual logged sessions — runs + strength, sorted by date */}
-            {(loggedRuns.length > 0 || strengthSessions.length > 0) && (
-              <div style={{ borderTop: '1px solid var(--edge)', paddingTop: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>
-                  This week's sessions
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {/* Strength sessions */}
-                  {strengthSessions.map((s) => {
-                    const dayLabel = (() => {
-                      const today = new Date().toISOString().split('T')[0];
-                      if (s.date === today) return 'Today';
-                      const d = new Date(s.date + 'T12:00:00');
-                      return d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
-                    })();
-                    return (
-                      <div key={s.id} style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 10px', borderRadius: 8, background: 'var(--surf2)',
-                        border: `1px solid ${PROT}30`, borderLeft: `3px solid ${PROT}`,
-                      }}>
-                        <div style={{ fontSize: 16, lineHeight: 1 }}>🏋️</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{s.label}</div>
-                          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>{dayLabel} · 1 session</div>
-                        </div>
-                        <button
-                          onClick={() => removeStrengthSession(s.id)}
-                          style={{ background: 'none', border: 'none', color: RED, fontSize: 16, cursor: 'pointer', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
-                          title="Remove session"
-                        >×</button>
-                      </div>
-                    );
-                  })}
-                  {/* Run sessions */}
-                  {loggedRuns.map((run, i) => {
-                    const isStrava = run.source === 'strava';
-                    const pace = run.paceMinPerKm
-                      ? `${Math.floor(run.paceMinPerKm)}:${String(Math.round((run.paceMinPerKm % 1) * 60)).padStart(2,'0')}/km`
-                      : null;
-                    return (
-                      <div key={i} style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 10px', borderRadius: 8, background: 'var(--surf2)',
-                        border: `1px solid ${isStrava ? '#FC4C0230' : CARB + '30'}`,
-                        borderLeft: `3px solid ${isStrava ? '#FC4C02' : CARB}`,
-                      }}>
-                        <div style={{ fontSize: 16, lineHeight: 1 }}>{isStrava ? '🟠' : '🏃'}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {run.name}
-                          </div>
-                          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>
-                            {isStrava ? 'Strava' : 'Manual'}{pace ? ` · ${pace}` : ''}{run.durationMin ? ` · ${Math.round(run.durationMin)}min` : ''}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: 16, fontWeight: 900, color: CARB, letterSpacing: -0.5, flexShrink: 0 }}>
-                          {run.km}<span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)' }}> km</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* ── Strava (today only) ── */}
-      {user && isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <StravaCard />
-        </div>
-      )}
-
-      {/* ── Supplements (today only) ── */}
-      {isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <SupplementBlock />
-        </div>
-      )}
-
-      {/* ── Water Tracker (today only) ── */}
-      {isToday && (
-        <div style={{ margin: '8px 14px 0' }}>
-          <WaterTracker date={viewDate} />
-        </div>
-      )}
-
-      {/* ── Exercise Calc Modal ── */}
-      {showExerciseCalc && (
-        <ExerciseCalcModal
-          weightKg={user?.weightKg ?? 0}
-          onAdd={(kcal) => {
-            const newVal = Math.round(kcal);
-            saveExerciseKcal(viewDate, newVal);
-            setExerciseKcal(newVal);
-            setShowExerciseCalc(false);
-          }}
-          onClose={() => setShowExerciseCalc(false)}
-        />
-      )}
-
-      {/* ── Food Diary ── */}
+      {/* Food diary */}
       <div style={{ margin: '8px 14px 0' }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1449,66 +743,38 @@ export default function HomeScreen() {
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
             Food Diary
           </span>
-          {logs.length > 0 && (
+          {foodLogs.length > 0 && (
             <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>
-              {logs.length} item{logs.length !== 1 ? 's' : ''}
+              {foodLogs.length} item{foodLogs.length !== 1 ? 's' : ''}
             </span>
           )}
         </div>
 
-        {/* Empty state — single CTA instead of 6 orphan rows */}
-        {logs.length === 0 ? (
+        {foodLogs.length === 0 ? (
           <div style={{
             background: 'var(--surf)', border: '1px solid var(--edge)',
             borderRadius: 8, padding: '28px 20px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
           }}>
             <div style={{ fontSize: 32 }}>🍽️</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>
-              Nothing logged yet
-            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>Nothing logged yet</div>
             <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
-              {isToday ? 'Start tracking your meals to hit your daily targets.' : 'No food was logged on this day.'}
+              Start tracking your meals to hit your daily targets.
             </div>
-            {isToday && (
-              <button
-                onClick={() => handleAddFood('breakfast')}
-                className="nrc-press"
-                style={{
-                  marginTop: 4, padding: '11px 28px', borderRadius: 8,
-                  background: 'var(--accent)', border: 'none',
-                  color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                }}
-              >
-                + Log First Meal
-              </button>
-            )}
+            <button
+              onClick={() => handleAddFood('breakfast')}
+              className="nrc-press"
+              style={{
+                marginTop: 4, padding: '11px 28px', borderRadius: 8,
+                background: 'var(--accent)', border: 'none',
+                color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+              }}
+            >
+              + Log First Meal
+            </button>
           </div>
         ) : (
-          <div style={{
-            background: 'var(--surf)',
-            border: '1px solid var(--edge)',
-            borderRadius: 8,
-            overflow: 'hidden',
-          }}>
-            {/* Aggregate nutrient details from all logs */}
-            {(() => {
-              const fiber   = logs.reduce((s, l) => s + (l.fiber_g       ?? 0), 0);
-              const sodium  = logs.reduce((s, l) => s + (l.sodium_mg     ?? 0), 0);
-              const chol    = logs.reduce((s, l) => s + (l.cholesterol_mg ?? 0), 0);
-              const vitC    = logs.reduce((s, l) => s + (l.vitamin_c_mg  ?? 0), 0);
-              const vitD    = logs.reduce((s, l) => s + (l.vitamin_d_mcg ?? 0), 0);
-              const calc    = logs.reduce((s, l) => s + (l.calcium_mg    ?? 0), 0);
-              const iron    = logs.reduce((s, l) => s + (l.iron_mg       ?? 0), 0);
-              const hasAny  = fiber > 0 || sodium > 0 || chol > 0 || vitC > 0 || vitD > 0 || calc > 0 || iron > 0;
-              if (!hasAny) return null;
-              return (
-                <div style={{ padding: '10px 12px 12px', borderTop: '1px solid var(--edge)' }}>
-                  <NutrientDetails fiber_g={fiber} sodium_mg={sodium} cholesterol_mg={chol} vitamin_c_mg={vitC} vitamin_d_mcg={vitD} calcium_mg={calc} iron_mg={iron} />
-                </div>
-              );
-            })()}
-
+          <div style={{ background: 'var(--surf)', border: '1px solid var(--edge)', borderRadius: 8, overflow: 'hidden' }}>
             {MEAL_ORDER.map((meal) => {
               const items        = byMeal[meal] ?? [];
               const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
@@ -1516,15 +782,9 @@ export default function HomeScreen() {
               if (meal === 'other' && items.length === 0) return null;
               return (
                 <div key={meal}>
-                  {visIdx > 0 && (
-                    <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />
-                  )}
+                  {visIdx > 0 && <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />}
                   <div style={{ padding: '9px 12px 8px' }}>
-                    <MealSection
-                      meal={meal}
-                      items={items}
-                      onAddFood={handleAddFood}
-                    />
+                    <MealSection meal={meal} items={items} onAddFood={handleAddFood} />
                   </div>
                 </div>
               );
@@ -1532,28 +792,6 @@ export default function HomeScreen() {
           </div>
         )}
       </div>
-
-      {/* ── Past day notice ── */}
-      {!isToday && (
-        <div style={{
-          margin: '14px 14px 0', padding: '12px 14px',
-          background: 'var(--accent-muted)',
-          border: '1px solid var(--accent)',
-          borderRadius: 8, textAlign: 'center',
-          opacity: 0.9,
-        }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            Viewing past diary entry · Training &amp; supplements shown for today only
-          </div>
-          <button
-            onClick={() => setViewDate(todayStr)}
-            style={{
-              marginTop: 8, background: 'none', border: 'none',
-              color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}
-          >Back to Today</button>
-        </div>
-      )}
 
     </div>
   );

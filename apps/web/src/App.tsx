@@ -21,7 +21,7 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import SupplementsScreen from './screens/SupplementsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 
-type Tab = 'home' | 'food' | 'history' | 'supplements' | 'profile' | 'settings';
+type Tab = 'home' | 'food' | 'profile';
 const NAV_H = 64;
 
 function DiaryIcon({ active }: { active: boolean }) {
@@ -80,12 +80,9 @@ function GearIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',        label: 'HOME',     Icon: DiaryIcon },
-  { id: 'food',        label: 'DIARY',    Icon: LogIcon },
-  { id: 'history',     label: 'TRENDS',   Icon: TrendsIcon },
-  { id: 'supplements', label: 'SUPPS',    Icon: PillIcon },
-  { id: 'profile',     label: 'PROFILE',  Icon: ProfileIcon },
-  { id: 'settings',    label: 'SETTINGS', Icon: GearIcon },
+  { id: 'home',    label: 'HOME',    Icon: DiaryIcon   },
+  { id: 'food',    label: 'DIARY',   Icon: LogIcon     },
+  { id: 'profile', label: 'PROFILE', Icon: ProfileIcon },
 ];
 
 export default function App() {
@@ -422,10 +419,7 @@ export default function App() {
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
         {(activeTab === 'home' && profileIncomplete)     && <ProfileSetupScreen />}
         {activeTab === 'food'        && <FoodScreen />}
-        {activeTab === 'history'     && <HistoryScreen />}
-        {activeTab === 'supplements' && <SupplementsScreen />}
         {activeTab === 'profile'     && <ProfileSetupScreen />}
-        {activeTab === 'settings'    && <SettingsScreen />}
       </div>
 
       {/* Daily weight check-in modal */}
