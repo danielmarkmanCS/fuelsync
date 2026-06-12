@@ -797,7 +797,8 @@ export default function FoodScreen() {
       setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
       const g = r.estimated_weight_grams || 100;
       setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
-      setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)), meal: form.meal });
+      const p = Math.round(r.protein), c = Math.round(r.carbs), f = Math.round(r.fat);
+      setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(calcCal(p, c, f)), protein: String(p), carbs: String(c), fat: String(f), meal: form.meal });
       setMode('manual');
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'Photo analysis failed'); }
     finally { setAiLoading(false); }
@@ -813,7 +814,8 @@ export default function FoodScreen() {
       setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
       const g = r.estimated_weight_grams || 100;
       setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
-      setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)), meal: form.meal });
+      const p = Math.round(r.protein), c = Math.round(r.carbs), f = Math.round(r.fat);
+      setForm({ name: r.food_name, amount: String(g), amountIsText: false, calories: String(calcCal(p, c, f)), protein: String(p), carbs: String(c), fat: String(f), meal: form.meal });
       setMode('manual');
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'AI failed'); }
     finally { setAiLoading(false); }
@@ -863,7 +865,8 @@ export default function FoodScreen() {
         setEstimate(r);
         setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
         setBasePerGram({ protein: r.protein/g, carbs: r.carbs/g, fat: r.fat/g });
-        setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
+        const p = Math.round(r.protein), c = Math.round(r.carbs), ft = Math.round(r.fat);
+        setForm((prev) => ({ ...prev, name: r.food_name, calories: String(calcCal(p, c, ft)), protein: String(p), carbs: String(c), fat: String(ft) }));
       } else {
         const w = parseFloat(form.amount);
         if (isNaN(w) || w <= 0) { setAiError('Enter weight in grams.'); setAiLoading(false); return; }
@@ -871,7 +874,8 @@ export default function FoodScreen() {
         setEstimate(r);
         setEditableIngredients(r.ingredients?.length ? [...r.ingredients] : null);
         setBasePerGram({ protein: r.protein/w, carbs: r.carbs/w, fat: r.fat/w });
-        setForm((f) => ({ ...f, name: r.food_name, calories: String(Math.round(r.calories)), protein: String(Math.round(r.protein)), carbs: String(Math.round(r.carbs)), fat: String(Math.round(r.fat)) }));
+        const p2 = Math.round(r.protein), c2 = Math.round(r.carbs), ft2 = Math.round(r.fat);
+        setForm((prev) => ({ ...prev, name: r.food_name, calories: String(calcCal(p2, c2, ft2)), protein: String(p2), carbs: String(c2), fat: String(ft2) }));
       }
     } catch (e: unknown) { setAiError(e instanceof Error ? e.message : 'AI failed'); }
     finally { setAiLoading(false); }
