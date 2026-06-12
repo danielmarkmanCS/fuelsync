@@ -232,6 +232,7 @@ export default function FoodScreen() {
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
   const [mode,       setMode]       = useState<'ai' | 'photo' | 'manual'>('ai');
+  const [logSuccess, setLogSuccess] = useState(false);
 
   // Quick Add state
   const [quickCal,   setQuickCal]   = useState('');
@@ -653,6 +654,8 @@ export default function FoodScreen() {
         meal_type: quickMeal,
       });
       playFoodLogSound();
+      setLogSuccess(true);
+      setTimeout(() => setLogSuccess(false), 700);
       fetchLogs(); closeSheet();
     } catch (e: unknown) { setFormError(e instanceof Error ? e.message : 'Failed to save'); }
     finally { setSubmitting(false); }
@@ -910,6 +913,8 @@ export default function FoodScreen() {
       });
       if (!editingId) {
         playFoodLogSound();
+        setLogSuccess(true);
+        setTimeout(() => setLogSuccess(false), 700);
         addRecentFood({
           food_name:    form.name.trim(),
           calories:     parseFloat(form.calories),
@@ -1475,26 +1480,30 @@ export default function FoodScreen() {
 
       {/* ── FAB ── */}
       {isToday && (
-        <button
-          onClick={() => { setOpen(true); setMode('ai'); }}
-          className="nrc-press fab-pulse"
-          style={{
-            position: 'fixed',
-            bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
-            right: 'max(20px, calc(50vw - 220px))',
-            width: 60, height: 60, borderRadius: 30,
-            background: `linear-gradient(135deg, ${YELLOW} 0%, ${ORANGE} 100%)`,
-            border: 'none', cursor: 'pointer',
-            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 4px 20px ${ORANGE}50, 0 1px 4px rgba(0,0,0,0.15)`,
-            zIndex: 90,
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
+        <div style={{
+          position: 'fixed',
+          bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
+          right: 'max(20px, calc(50vw - 220px))',
+          width: 60, height: 60, zIndex: 90,
+        }}>
+          {logSuccess && <div className="fab-ring" />}
+          <button
+            onClick={() => { setOpen(true); setMode('ai'); }}
+            className="nrc-press"
+            style={{
+              width: '100%', height: '100%', borderRadius: 30,
+              background: `linear-gradient(135deg, ${YELLOW} 0%, ${ORANGE} 100%)`,
+              border: 'none', cursor: 'pointer',
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 4px 20px ${ORANGE}50, 0 1px 4px rgba(0,0,0,0.15)`,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
       )}
 
       {/* ── UNDO TOAST ── */}
@@ -1520,9 +1529,9 @@ export default function FoodScreen() {
 
       {/* ── SHEET ── */}
       {open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
+        <div className="backdrop-enter" style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 100 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeSheet(); }}>
-          <div style={{ background: 'var(--surf)', borderRadius: '20px 20px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
+          <div className="sheet-enter" style={{ background: 'var(--surf)', borderRadius: '20px 20px 0 0', maxWidth: 480, width: '100%', margin: '0 auto', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
 
             <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
               <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.15)' }} />

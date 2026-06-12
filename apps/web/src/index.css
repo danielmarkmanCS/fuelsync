@@ -139,19 +139,54 @@ button, input, select, textarea { font-family: inherit; }
 .nrc-a6 { animation-delay: 125ms; }
 
 /* ── INTERACTION ─────────────────────────────────── */
+
+/* Spring bounce: fast snap down on press, spring-overshoot return on release */
 .nrc-press, .press {
-  transition: opacity 0.1s ease, transform 0.1s ease;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
-.nrc-press:active, .press:active { opacity: 0.6; transform: scale(0.97); }
+.nrc-press:active, .press:active {
+  transform: scale(0.93);
+  transition: transform 0.08s ease;
+}
 
 /* card-lift: subtle scale on press for cards */
 .card-lift {
-  transition: transform 0.15s var(--ease);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-tap-highlight-color: transparent;
 }
-.card-lift:active { transform: scale(0.985); }
+.card-lift:active { transform: scale(0.97); transition: transform 0.08s ease; }
+
+/* FAB success ring — expanding accent border that fades out */
+@keyframes fabRing {
+  0%   { transform: scale(1);   opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0;   }
+}
+.fab-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: fabRing 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  pointer-events: none;
+}
+
+/* Sheet spring entry */
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.sheet-enter {
+  animation: sheetUp 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.backdrop-enter {
+  animation: backdropIn 0.2s ease both;
+}
 
 /* ── CARD BASE ──────────────────────────────────── */
 .card {
