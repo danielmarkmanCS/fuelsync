@@ -614,28 +614,47 @@ export default function HomeScreen() {
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
       {/* Greeting header */}
-      {displayName && (
-        <div style={{
-          padding: '12px 16px 10px', background: 'var(--surf)',
-          borderBottom: '1px solid var(--edge)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-        }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{greeting},</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.1 }}>{displayName}</div>
-          </div>
-          {todayLog?.trainingType && (
-            <div style={{
-              padding: '4px 10px', borderRadius: 6,
-              background: 'var(--accent-muted)', border: '1px solid var(--accent)',
-              fontSize: 11, fontWeight: 800, color: 'var(--accent)',
-              textTransform: 'uppercase', letterSpacing: 1.5,
-            }}>
-              {todayLog.trainingType}
-            </div>
+      <div style={{
+        padding: '12px 16px 10px', background: 'var(--surf)',
+        borderBottom: '1px solid var(--edge)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      }}>
+        <div style={{ flex: 1 }}>
+          {displayName ? (
+            <>
+              <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{greeting},</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.1 }}>{displayName}</div>
+            </>
+          ) : (
+            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5 }}>TODAY</div>
           )}
         </div>
-      )}
+        {todayLog?.trainingType && (
+          <div style={{
+            padding: '4px 10px', borderRadius: 6,
+            background: 'var(--accent-muted)', border: '1px solid var(--accent)',
+            fontSize: 11, fontWeight: 800, color: 'var(--accent)',
+            textTransform: 'uppercase', letterSpacing: 1.5,
+          }}>
+            {todayLog.trainingType}
+          </div>
+        )}
+        <button
+          onClick={() => setActiveTab('profile')}
+          className="nrc-press"
+          style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'var(--surf2)', border: '1px solid var(--edge)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', flexShrink: 0,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+          </svg>
+        </button>
+      </div>
 
       {/* Date nav */}
       <div style={{

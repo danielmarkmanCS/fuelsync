@@ -22,7 +22,7 @@ import SupplementsScreen from './screens/SupplementsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 
 type Tab = 'home' | 'food' | 'history' | 'profile';
-const NAV_H = 64;
+const NAV_H = 60;
 
 function DiaryIcon({ active }: { active: boolean }) {
   return (
@@ -80,10 +80,9 @@ function GearIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',    label: 'HOME',    Icon: DiaryIcon   },
-  { id: 'food',    label: 'DIARY',   Icon: LogIcon     },
-  { id: 'history', label: 'TRENDS',  Icon: TrendsIcon  },
-  { id: 'profile', label: 'PROFILE', Icon: ProfileIcon },
+  { id: 'home',    label: 'TODAY',  Icon: DiaryIcon  },
+  { id: 'food',    label: 'LOG',    Icon: LogIcon    },
+  { id: 'history', label: 'STATS',  Icon: TrendsIcon },
 ];
 
 export default function App() {
@@ -508,16 +507,16 @@ export default function App() {
             <button key={id} onClick={() => setActiveTab(id as Tab)} className="press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', gap: 3,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 4px',
+              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0 4px',
               minWidth: 0,
             }}>
               <div style={{ color: active ? 'var(--accent)' : 'var(--muted)', transition: 'color 0.15s ease' }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 10, fontWeight: active ? 700 : 400,
+                fontSize: 10, fontWeight: active ? 700 : 500,
                 color: active ? 'var(--accent)' : 'var(--muted)', transition: 'all 0.15s ease',
-                letterSpacing: 0,
+                letterSpacing: 0.5,
               }}>
                 {label}
               </span>
