@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNutrition } from '../hooks/useNutrition';
 import { useAuthStore } from '../store/authStore';
 import { useNutritionStore } from '../store/nutritionStore';
@@ -13,72 +13,6 @@ const PROT = '#32ADE6';
 const CARB = '#30D158';
 const FAT  = '#FF9F0A';
 const RED  = '#FF453A';
-
-const MEAL_ORDER = ['breakfast','pre_workout','lunch','post_workout','dinner','snack','other'] as const;
-
-const MEAL_META: Record<string, { label: string; short: string }> = {
-  breakfast:    { label: 'Breakfast',    short: 'Breakfast' },
-  pre_workout:  { label: 'Pre-Workout',  short: 'Pre-WO'    },
-  lunch:        { label: 'Lunch',        short: 'Lunch'     },
-  post_workout: { label: 'Post-Workout', short: 'Post-WO'   },
-  dinner:       { label: 'Dinner',       short: 'Dinner'    },
-  snack:        { label: 'Snacks',       short: 'Snacks'    },
-  other:        { label: 'Other',        short: 'Other'     },
-};
-
-// ── Meal icons — flat SVGs, no emojis ────────────────────────────────
-function MealIcon({ meal }: { meal: string }) {
-  const p = {
-    width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none',
-    stroke: 'var(--accent)', strokeWidth: 1.8,
-    strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
-  };
-  switch (meal) {
-    case 'breakfast':
-      return (
-        <svg {...p}>
-          <circle cx="12" cy="12" r="4"/>
-          <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-        </svg>
-      );
-    case 'pre_workout':
-      return (
-        <svg {...p}>
-          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-      );
-    case 'lunch':
-    case 'dinner':
-      return (
-        <svg {...p}>
-          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/>
-          <path d="M7 2v20"/>
-          <path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
-        </svg>
-      );
-    case 'post_workout':
-      return (
-        <svg {...p}>
-          <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/>
-          <circle cx="5" cy="12" r="2"/>
-          <circle cx="19" cy="12" r="2"/>
-        </svg>
-      );
-    case 'snack':
-      return (
-        <svg {...p}>
-          <path d="M12 2a7 7 0 017 7c0 3-1.5 5.5-4 6.8V19a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3.2C6.5 14.5 5 12 5 9a7 7 0 017-7z"/>
-        </svg>
-      );
-    default:
-      return (
-        <svg {...p}>
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M3 9h18M9 21V9"/>
-        </svg>
-      );
-  }
-}
 
 // ── Training icons — flat SVGs, no emojis ────────────────────────────
 function TrainingIcon({ type, size = 20 }: { type: TrainingType; size?: number }) {
@@ -406,96 +340,6 @@ function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: Macr
   );
 }
 
-// ── Meal section — paragraph style with colorful macros ──────────────
-function MealSection({
-  meal, items, onAddFood,
-}: {
-  meal: string;
-  items: FoodLog[];
-  onAddFood: (meal: string) => void;
-}) {
-  const meta    = MEAL_META[meal] ?? { label: meal, short: meal };
-  const mealCal = items.reduce((s, l) => s + +l.calories, 0);
-  const mealP   = items.reduce((s, l) => s + +l.protein,  0);
-  const mealC   = items.reduce((s, l) => s + +l.carbs,    0);
-  const mealF   = items.reduce((s, l) => s + +l.fat,      0);
-
-  return (
-    <div style={{ paddingBottom: 2 }}>
-      {/* Header row: icon + name + kcal + Add button */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        paddingBottom: items.length > 0 ? 5 : 0,
-      }}>
-        <MealIcon meal={meal} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', flex: 1 }}>
-          {meta.label}
-        </span>
-        {mealCal > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', marginRight: 4 }}>
-            {Math.round(mealCal)} kcal
-          </span>
-        )}
-        <button
-          onClick={() => onAddFood(meal)}
-          className="nrc-press"
-          style={{
-            background: 'var(--accent-muted)',
-            border: '1px solid var(--accent)',
-            borderRadius: 4,
-            color: 'var(--accent)',
-            fontSize: 10, fontWeight: 700,
-            cursor: 'pointer', padding: '3px 8px',
-            letterSpacing: 0.3, whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          + Add
-        </button>
-      </div>
-
-      {/* Food items — paragraph style, colorful macros */}
-      {items.map((item, i) => (
-        <div key={item.id ?? i} style={{
-          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-          paddingLeft: 20, paddingBottom: 5, gap: 8,
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: 12, color: 'var(--text)', fontWeight: 500,
-              lineHeight: 1.35, wordBreak: 'break-word',
-            }}>
-              {item.food_name}
-            </div>
-            {(+item.protein > 0 || +item.carbs > 0) && (
-              <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: PROT }}>P{Math.round(+item.protein)}g</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: CARB }}>C{Math.round(+item.carbs)}g</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: FAT }}>F{Math.round(+item.fat)}g</span>
-              </div>
-            )}
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', flexShrink: 0, paddingTop: 1 }}>
-            {Math.round(+item.calories)}
-          </span>
-        </div>
-      ))}
-
-      {/* Meal macro total row */}
-      {items.length > 0 && (
-        <div style={{
-          display: 'flex', gap: 8, paddingLeft: 20, paddingTop: 4,
-          borderTop: '1px solid var(--edge)', marginTop: 1,
-        }}>
-          <span style={{ fontSize: 9, fontWeight: 800, color: PROT, opacity: 0.75 }}>P{Math.round(mealP)}g</span>
-          <span style={{ fontSize: 9, fontWeight: 800, color: CARB, opacity: 0.75 }}>C{Math.round(mealC)}g</span>
-          <span style={{ fontSize: 9, fontWeight: 800, color: FAT,  opacity: 0.75 }}>F{Math.round(mealF)}g</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Training type definitions ──────────────────────────────────────────
 const TRAINING_TYPES: {
   type: TrainingType; label: string; color: string; isAccent?: boolean;
@@ -528,63 +372,41 @@ const TRAINING_TYPES: {
 ];
 
 export default function HomeScreen() {
-  const { user }                             = useAuthStore();
-  const { setActiveTab, setPendingMealType } = useAppStore();
-  const { todayLog, logWorkoutComplete }     = useNutritionStore();
-  const { logDay, setActivityModifier }      = useNutrition();
+  const { user }                         = useAuthStore();
+  const { setActiveTab }                 = useAppStore();
+  const { todayLog, logWorkoutComplete } = useNutritionStore();
+  const { logDay, setActivityModifier }  = useNutrition();
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const [viewDate, setViewDate]   = useState(todayStr);
-  const [foodLogs, setFoodLogs]   = useState<FoodLog[]>([]);
-  const [consumed, setConsumed]   = useState<MacroTargets>(emptyMacros());
-  const [logTick,  setLogTick]    = useState(0);
+  const [foodLogs, setFoodLogs]         = useState<FoodLog[]>([]);
+  const [consumed, setConsumed]         = useState<MacroTargets>(emptyMacros());
   const [expandedTraining, setExpandedTraining] = useState<TrainingType | null>(null);
 
-  const isToday = viewDate === todayStr;
-
-  const goToPrev = () => {
-    const d = new Date(viewDate + 'T12:00:00');
-    d.setDate(d.getDate() - 1);
-    setViewDate(d.toISOString().split('T')[0]);
-  };
-  const goToNext = () => {
-    if (isToday) return;
-    const d = new Date(viewDate + 'T12:00:00');
-    d.setDate(d.getDate() + 1);
-    setViewDate(d.toISOString().split('T')[0]);
-  };
-
-  const reloadLogs = useCallback(() => setLogTick(t => t + 1), []);
-
   useEffect(() => {
-    getLogs(viewDate).then(ls => {
+    getLogs(todayStr).then(ls => {
       const active = ls.filter(l => !l.removed);
       setFoodLogs(active);
       setConsumed(sumLogs(active));
     });
-  }, [viewDate, logTick]);
+  }, [todayStr]);
 
   useEffect(() => {
-    const onVisible = () => { if (!document.hidden) reloadLogs(); };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [reloadLogs]);
+    const reload = () => {
+      if (!document.hidden) {
+        getLogs(todayStr).then(ls => {
+          const active = ls.filter(l => !l.removed);
+          setFoodLogs(active);
+          setConsumed(sumLogs(active));
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', reload);
+    return () => document.removeEventListener('visibilitychange', reload);
+  }, [todayStr]);
 
   const targets          = useEffectiveTargets();
   const activityModifier = todayLog?.dailyActivityModifier ?? null;
-
-  const byMeal = MEAL_ORDER.reduce<Record<string, FoodLog[]>>((acc, m) => { acc[m] = []; return acc; }, {});
-  foodLogs.forEach(l => {
-    const key = (l.meal_type ?? 'other') as string;
-    if (byMeal[key]) byMeal[key].push(l);
-    else byMeal['other'].push(l);
-  });
-
-  const handleAddFood = useCallback((meal: string) => {
-    setPendingMealType(meal);
-    setActiveTab('food');
-  }, [setActiveTab, setPendingMealType]);
 
   const handleSelectType = (type: TrainingType) => {
     try {
@@ -606,9 +428,6 @@ export default function HomeScreen() {
   const hour        = new Date().getHours();
   const greeting    = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const displayName = user?.displayName || '';
-  const dateLabel   = new Date(todayStr + 'T12:00:00').toLocaleDateString('en-US', {
-    weekday: 'short', month: 'long', day: 'numeric',
-  });
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
@@ -656,38 +475,9 @@ export default function HomeScreen() {
         </button>
       </div>
 
-      {/* Date nav */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 14px 0',
-      }}>
-        <button onClick={goToPrev} className="nrc-press" style={{
-          width: 34, height: 34, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'var(--surf)', border: '1px solid var(--edge)', cursor: 'pointer',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-            {isToday ? `Today · ${dateLabel}` : dateLabel}
-          </div>
-        </div>
-        <button onClick={goToNext} className="nrc-press" disabled={isToday} style={{
-          width: 34, height: 34, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'var(--surf)', border: '1px solid var(--edge)',
-          cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.3 : 1,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
-
       {/* Calorie dashboard */}
       <div style={{ margin: '10px 14px 0' }}>
-        <CalDashboard consumed={consumed} targets={targets} date={viewDate} />
+        <CalDashboard consumed={consumed} targets={targets} date={todayStr} />
       </div>
 
       {/* Macro row */}
@@ -695,8 +485,8 @@ export default function HomeScreen() {
         <MacroRow consumed={consumed} targets={targets} />
       </div>
 
-      {/* Training selector + NEAT (today only) */}
-      {isToday && <div style={{
+      {/* Training selector + NEAT */}
+      <div style={{
         margin: '10px 14px 0', background: 'var(--surf)',
         borderRadius: 8, border: '1px solid var(--edge)', padding: '14px 14px 16px',
       }}>
@@ -790,83 +580,7 @@ export default function HomeScreen() {
             })}
           </div>
         </div>
-      </div>}
-
-      {/* Food diary */}
-      <div style={{ margin: '8px 14px 0' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 6, paddingLeft: 2,
-        }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 2 }}>
-            Food Diary
-          </span>
-          {foodLogs.length > 0 && (
-            <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>
-              {foodLogs.length} item{foodLogs.length !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-
-        {foodLogs.length === 0 ? (
-          <div style={{
-            background: 'var(--surf)', border: '1px solid var(--edge)',
-            borderRadius: 8, padding: '28px 20px',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          }}>
-            <div style={{ fontSize: 32 }}>🍽️</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.3 }}>Nothing logged yet</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
-              {isToday ? 'Start tracking your meals to hit your daily targets.' : 'No food was logged on this day.'}
-            </div>
-            {isToday && (
-              <button
-                onClick={() => handleAddFood('breakfast')}
-                className="nrc-press"
-                style={{
-                  marginTop: 4, padding: '11px 28px', borderRadius: 8,
-                  background: 'var(--accent)', border: 'none',
-                  color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                }}
-              >
-                + Log First Meal
-              </button>
-            )}
-          </div>
-        ) : (
-          <div style={{ background: 'var(--surf)', border: '1px solid var(--edge)', borderRadius: 8, overflow: 'hidden' }}>
-            {MEAL_ORDER.map((meal) => {
-              const items        = byMeal[meal] ?? [];
-              const visibleMeals = MEAL_ORDER.filter(m => !(m === 'other' && (byMeal[m] ?? []).length === 0));
-              const visIdx       = visibleMeals.indexOf(meal);
-              if (meal === 'other' && items.length === 0) return null;
-              return (
-                <div key={meal}>
-                  {visIdx > 0 && <div style={{ height: 1, background: 'var(--edge)', marginLeft: 20 }} />}
-                  <div style={{ padding: '9px 12px 8px' }}>
-                    <MealSection meal={meal} items={items} onAddFood={handleAddFood} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
-
-      {/* Past day notice */}
-      {!isToday && (
-        <div style={{
-          margin: '12px 14px 0', padding: '10px 14px', borderRadius: 8,
-          background: 'var(--surf)', border: '1px solid var(--edge)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span style={{ fontSize: 12, color: 'var(--muted)' }}>Viewing past entry</span>
-          <button
-            onClick={() => setViewDate(todayStr)}
-            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-          >Back to Today</button>
-        </div>
-      )}
 
     </div>
   );
