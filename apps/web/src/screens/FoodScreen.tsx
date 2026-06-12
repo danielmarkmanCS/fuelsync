@@ -1531,121 +1531,27 @@ export default function FoodScreen() {
             <div style={{ padding: '16px 20px 44px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <div style={{ fontSize: 17, fontWeight: 700, color: TEXT }}>
-                  {editingId ? 'Edit Entry' : 'Log Food'}
+                  {editingId ? 'Edit Entry' : mode === 'photo' ? 'Photo Log' : mode === 'manual' && !estimate ? 'Manual Entry' : 'Log Food'}
                 </div>
                 <button onClick={closeSheet} style={{ background: SURF2, border: 'none', color: MUTED, fontSize: 18, cursor: 'pointer', borderRadius: 99, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>×</button>
               </div>
 
-              {/* Mode tabs */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
-                {([
-                  ['ai',     '✨', 'Describe'],
-                  ['photo',  '📷', 'Photo'],
-                  ['manual', '✏️', 'Manual'],
-                ] as const).map(([m, icon, label]) => {
-                  const active = mode === m;
-                  return (
-                    <button key={m} onClick={() => {
-                      setMode(m); setAiError(''); setFormError('');
-                    }} style={{
-                      padding: '12px 4px 11px', borderRadius: 12,
-                      border: 'none',
-                      background: active ? `${ORANGE}18` : SURF2,
-                      color: active ? ORANGE : MUTED,
-                      fontWeight: active ? 700 : 500,
-                      fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
-                      fontFamily: 'inherit',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                    }}>
-                      <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
-                      <span>{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* RECENTS / SAVED / TEMPLATES */}
-              {(recents.length > 0 || favorites.length > 0 || templates.length > 0) && !editingId && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                    {(['recent', 'fav', 'templates'] as const).map((t) => (
-                      <button key={t} onClick={() => setFavTab(t)} style={{
-                        flex: 1, padding: '7px 4px', borderRadius: 8,
-                        border: `1px solid ${favTab === t ? ORANGE : EDGE}`,
-                        background: favTab === t ? `${ORANGE}14` : SURF2,
-                        color: favTab === t ? ORANGE : MUTED,
-                        fontSize: 10, fontWeight: 700, cursor: 'pointer',
-                        fontFamily: 'inherit', letterSpacing: 0.5, textTransform: 'uppercase',
+              {/* RECENT CHIPS — quick re-log without opening the form */}
+              {!editingId && mode === 'ai' && recents.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Recent</div>
+                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' as const }}>
+                    {recents.slice(0, 6).map((food) => (
+                      <button key={food.food_name + food.lastUsed} onClick={() => applySavedFood(food)} style={{
+                        flexShrink: 0, padding: '6px 12px', borderRadius: 20,
+                        background: SURF2, border: `1px solid ${EDGE}`,
+                        color: TEXT, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
                       }}>
-                        {t === 'recent' ? 'Recent' : t === 'fav' ? 'Saved' : 'Templates'}
+                        {food.food_name} <span style={{ color: MUTED, fontWeight: 500, fontSize: 11 }}>{Math.round(food.calories)}</span>
                       </button>
                     ))}
                   </div>
-
-                  {favTab === 'recent' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
-                      {recents.length === 0 && (
-                        <div style={{ color: MUTED, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>No recent foods yet.</div>
-                      )}
-                      {recents.map((food) => (
-                        <div key={food.food_name + food.lastUsed} style={{ display: 'flex', alignItems: 'center', gap: 8, background: SURF2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${EDGE}` }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{food.food_name}</div>
-                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
-                              {Math.round(food.calories)} kcal · P{Math.round(food.protein)}g C{Math.round(food.carbs)}g F{Math.round(food.fat)}g
-                            </div>
-                          </div>
-                          <button onClick={() => handleToggleFavorite(food)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 4, color: (favoriteStates[food.food_name] ?? isFavorite(food.food_name)) ? '#F59E0B' : MUTED }}>★</button>
-                          <button onClick={() => applySavedFood(food)} style={{ background: `${ORANGE}18`, border: `1px solid ${ORANGE}40`, borderRadius: 7, color: ORANGE, fontWeight: 700, fontSize: 11, padding: '6px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>+</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {favTab === 'fav' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
-                      {favorites.length === 0 && (
-                        <div style={{ color: MUTED, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>No saved foods yet. Star a recent food to save it.</div>
-                      )}
-                      {favorites.map((food) => (
-                        <div key={food.food_name} style={{ display: 'flex', alignItems: 'center', gap: 8, background: SURF2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${EDGE}` }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{food.food_name}</div>
-                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
-                              {Math.round(food.calories)} kcal · P{Math.round(food.protein)}g C{Math.round(food.carbs)}g F{Math.round(food.fat)}g
-                            </div>
-                          </div>
-                          <button onClick={() => handleToggleFavorite(food)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 4, color: '#F59E0B' }}>★</button>
-                          <button onClick={() => applySavedFood(food)} style={{ background: `${ORANGE}18`, border: `1px solid ${ORANGE}40`, borderRadius: 7, color: ORANGE, fontWeight: 700, fontSize: 11, padding: '6px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>+</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {favTab === 'templates' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
-                      {templates.length === 0 && (
-                        <div style={{ color: MUTED, fontSize: 12, textAlign: 'center', padding: '12px 0' }}>No templates yet. Templates let you log a full meal with one tap.</div>
-                      )}
-                      {templates.map((t) => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: SURF2, borderRadius: 10, padding: '10px 12px', border: `1px solid ${EDGE}` }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{t.name}</div>
-                            <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
-                              {t.foods.length} item{t.foods.length !== 1 ? 's' : ''} · {t.foods.reduce((s, f) => s + f.calories, 0).toFixed(0)} kcal
-                            </div>
-                          </div>
-                          <button onClick={() => handleLogTemplate(t)} disabled={loggingTemplateId === t.id} style={{
-                            background: loggingTemplateId === t.id ? EDGE : `${GREEN}18`, border: `1px solid ${GREEN}40`,
-                            borderRadius: 7, color: loggingTemplateId === t.id ? MUTED : GREEN, fontWeight: 700,
-                            fontSize: 11, padding: '6px 10px', cursor: loggingTemplateId === t.id ? 'default' : 'pointer', fontFamily: 'inherit',
-                          }}>
-                            {loggingTemplateId === t.id ? '···' : 'Log all'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -1698,6 +1604,10 @@ export default function FoodScreen() {
                   <button onClick={handleAISmart} disabled={aiLoading} className="nrc-press" style={bigBtn(aiLoading, ORANGE)}>
                     {aiLoading ? 'Analysing…' : 'Analyse with AI →'}
                   </button>
+                  <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 14 }}>
+                    <button onClick={() => { setMode('photo'); setAiError(''); setFormError(''); }} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>📷 Use photo</button>
+                    <button onClick={() => { setMode('manual'); setAiError(''); setFormError(''); }} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>✏️ Enter manually</button>
+                  </div>
                 </>
               )}
 
@@ -1705,6 +1615,7 @@ export default function FoodScreen() {
               {/* PHOTO MODE */}
               {mode === 'photo' && (
                 <>
+                  <button onClick={() => { setMode('ai'); setAiError(''); }} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '0 0 16px', display: 'block' }}>← Describe instead</button>
                   {aiLoading ? (
                     <div style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -1756,6 +1667,9 @@ export default function FoodScreen() {
               {/* MANUAL MODE */}
               {mode === 'manual' && (
                 <>
+                  {!editingId && !estimate && (
+                    <button onClick={() => { setMode('ai'); setAiError(''); setFormError(''); setForm(emptyForm()); }} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '0 0 16px', display: 'block' }}>← Describe instead</button>
+                  )}
                   {estimate && (
                     <div style={{ marginBottom: 16, background: SURF2, borderRadius: 12, padding: '12px 14px', border: `1px solid ${EDGE}` }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
