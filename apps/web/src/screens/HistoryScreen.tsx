@@ -1015,90 +1015,6 @@ function CoachTab({
   );
 }
 
-// ─── Calorie Heatmap Calendar ───────────────────────────────────────────────
-function CalorieHeatmap({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
-  if (days.length < 5) return null;
-  const today = new Date();
-  // Build 7-week grid (49 days), starting from Monday 7 weeks ago
-  const grid: { date: string; pct: number | null }[][] = [];
-  // Find the start of the current week (Sunday)
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 48); // 7 weeks back
-  // Align to Sunday
-  while (startDate.getDay() !== 0) startDate.setDate(startDate.getDate() - 1);
-
-  const dayMap = new Map(days.map(d => [d.date, d]));
-  const todayStr = today.toISOString().split('T')[0];
-
-  let row: { date: string; pct: number | null }[] = [];
-  const cur = new Date(startDate);
-  for (let i = 0; i < 49; i++) {
-    const ds = cur.toISOString().split('T')[0];
-    const daySummary = dayMap.get(ds);
-    const pct = daySummary ? (goalCal > 0 ? daySummary.totalCal / goalCal : null) : null;
-    row.push({ date: ds, pct });
-    if (row.length === 7) { grid.push(row); row = []; }
-    cur.setDate(cur.getDate() + 1);
-  }
-  if (row.length > 0) grid.push(row);
-
-  const cellColor = (pct: number | null, date: string): string => {
-    if (date > todayStr) return 'transparent';
-    if (pct === null) return EDGE;
-    if (pct >= 0.85 && pct <= 1.10) return '#22C55E';
-    if (pct > 1.10) return '#EF4444';
-    if (pct >= 0.60) return ORANGE_HEX;
-    return 'rgba(255,255,255,0.08)';
-  };
-
-  const DAY_LABELS = ['S','M','T','W','T','F','S'];
-
-  return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>Calorie Calendar</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {[
-            { color: '#22C55E', label: 'On target' },
-            { color: ORANGE_HEX, label: 'Under' },
-            { color: '#EF4444', label: 'Over' },
-          ].map(({ color, label }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <div style={{ width: 8, height: 8, borderRadius: 2, background: color }} />
-              <span style={{ fontSize: 8, fontWeight: 700, color: MUTED }}>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Day labels */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 4 }}>
-        {DAY_LABELS.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: MUTED }}>{d}</div>
-        ))}
-      </div>
-      {/* Week rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {grid.map((week, wi) => (
-          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-            {week.map(({ date, pct }) => {
-              const isTdy = date === todayStr;
-              const color = cellColor(pct, date);
-              return (
-                <div key={date} style={{
-                  aspectRatio: '1', borderRadius: 4,
-                  background: color,
-                  border: isTdy ? '1.5px solid var(--accent)' : 'none',
-                  transition: 'background 0.2s',
-                  opacity: date > todayStr ? 0 : 1,
-                }} />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ─── Supplement Adherence ────────────────────────────────────────────────────
 interface SuppEntry { taken: number; total: number }
@@ -1620,8 +1536,6 @@ export default function HistoryScreen() {
               />
             )}
 
-            {/* Calorie heatmap */}
-            {days.length >= 5 && <CalorieHeatmap days={days} goalCal={goalCal} />}
 
             {/* Calorie trend chart */}
             {days.length >= 3 && <CalorieTrendChart days={days} goalCal={goalCal} />}
