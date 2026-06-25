@@ -24,13 +24,13 @@ const SURF2   = 'var(--surf2)';
 const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
-const GREEN      = '#22C55E';   // success green
+const GREEN      = '#4ADE80';   // emerald green
 const ORANGE     = 'var(--accent)';  // system accent (blue)
 const ORANGE_MUT = 'var(--accent-muted)';
 const YELLOW     = 'var(--accent)';  // weight today highlight
-const PROT       = '#38BDF8';   // protein — blue
+const PROT       = '#38BDF8';   // sky blue — protein
 const RED     = '#FF4444';
-const FAT_CLR = '#F59E0B';  // fat — amber
+const FAT_CLR = '#FBBF24';  // amber — fat
 const CARD_SHADOW = 'var(--shadow-md)';
 
 const ACTIVITY_LEVELS = [
@@ -688,7 +688,7 @@ export default function ProfileSetupScreen() {
                     {Array.from({ length: total }).map((_, i) => (
                       <div key={i} style={{
                         width: 8, height: 8, borderRadius: 2,
-                        background: i < count ? '#F59E0B' : EDGE,
+                        background: i < count ? '#FBBF24' : EDGE,
                         transition: 'background 0.3s',
                       }} />
                     ))}
@@ -953,7 +953,7 @@ export default function ProfileSetupScreen() {
                     )}
                   </div>
                   {dailyTarget !== null && Math.abs(dailyTarget) > 800 && (
-                    <div style={{ marginTop: 10, fontSize: 10, color: '#F59E0B', fontWeight: 700, lineHeight: 1.5 }}>
+                    <div style={{ marginTop: 10, fontSize: 10, color: '#FBBF24', fontWeight: 700, lineHeight: 1.5 }}>
                       ⚠ Aggressive goal — consider extending the timeline for healthier progress.
                     </div>
                   )}

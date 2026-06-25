@@ -6,11 +6,11 @@ export type Units = 'metric' | 'imperial';
 export type GoalMode = 'lose' | 'maintain' | 'gain';
 
 export const ACCENT_COLORS: Record<AccentKey, { dark: string; light: string; label: string; muted: string }> = {
-  blue:   { dark: '#2F81F7', light: '#0066EE', label: 'Ocean',   muted: 'rgba(47,129,247,0.12)'  },
-  green:  { dark: '#22C55E', light: '#16A34A', label: 'Forest',  muted: 'rgba(34,197,94,0.12)'   },
-  purple: { dark: '#A78BFA', light: '#7C3AED', label: 'Galaxy',  muted: 'rgba(167,139,250,0.12)' },
-  orange: { dark: '#F97316', light: '#EA580C', label: 'Ember',   muted: 'rgba(249,115,22,0.12)'  },
-  red:    { dark: '#EF4444', light: '#DC2626', label: 'Crimson', muted: 'rgba(239,68,68,0.12)'   },
+  blue:   { dark: '#60AFFF', light: '#2563EB', label: 'Ocean',   muted: 'rgba(96,175,255,0.13)'  },
+  green:  { dark: '#4ADE80', light: '#16A34A', label: 'Forest',  muted: 'rgba(74,222,128,0.13)'  },
+  purple: { dark: '#9D7EFF', light: '#7C3AED', label: 'Galaxy',  muted: 'rgba(157,126,255,0.15)' },
+  orange: { dark: '#FB923C', light: '#EA580C', label: 'Ember',   muted: 'rgba(251,146,60,0.13)'  },
+  red:    { dark: '#F87171', light: '#DC2626', label: 'Crimson', muted: 'rgba(248,113,113,0.13)' },
 };
 
 interface ThemeStore {
@@ -29,7 +29,7 @@ export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
       isDark:      true,
-      accentKey:   'blue',
+      accentKey:   'purple',
       units:       'metric',
       // Migrate from old fs_goal_mode_v1 key on first load
       goalMode:    (() => {

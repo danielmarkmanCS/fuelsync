@@ -27,12 +27,12 @@ const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
-const GREEN      = '#30D158';   // Apple green — carbs
-const ORANGE     = '#0A84FF';   // Apple blue — accent (hex for template-literal opacity)
-const YELLOW     = '#30D158';   // carbs alias
-const PROT       = '#32ADE6';   // Apple blue — protein
-const RED        = '#FF453A';   // Apple red
-const FAT_CLR    = '#FF9F0A';   // Apple amber — fat
+const GREEN      = '#4ADE80';   // emerald — carbs
+const ORANGE     = '#9D7EFF';   // violet — accent hex
+const YELLOW     = '#4ADE80';   // carbs alias
+const PROT       = '#38BDF8';   // sky blue — protein
+const RED        = '#F87171';   // rose — errors
+const FAT_CLR    = '#FBBF24';   // amber — fat
 const CAL_CLR    = 'var(--accent)';
 const CARD_SHADOW = 'none';
 
@@ -1034,8 +1034,8 @@ export default function FoodScreen() {
         {/* Meal distribution — thin bar */}
         {byMeal.length > 1 && consumed.calories > 0 && (() => {
           const MEAL_COLORS_MAP: Record<string, string> = {
-            breakfast: '#38BDF8', pre_workout: '#A78BFA', lunch: '#22C55E',
-            post_workout: '#34D399', dinner: '#F59E0B', snack: '#FB923C', other: '#6B7280',
+            breakfast: '#38BDF8', pre_workout: '#A78BFA', lunch: '#4ADE80',
+            post_workout: '#34D399', dinner: '#FBBF24', snack: '#FB923C', other: '#6B7280',
           };
           const total = consumed.calories;
           return (

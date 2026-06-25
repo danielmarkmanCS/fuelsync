@@ -229,7 +229,7 @@ export default function SupplementsScreen() {
           <div style={{ fontSize: 20, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>Supplements</div>
           <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
             {takenCount}/{supplements.length} taken today
-            {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#F59E0B' }}>· {skippedCount} skipped</span>}
+            {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FBBF24' }}>· {skippedCount} skipped</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -307,13 +307,13 @@ export default function SupplementsScreen() {
                     onClick={() => toggleTaken(s)}
                     style={{
                       width: 24, height: 24, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-                      border: `2px solid ${taken ? ACCENT : skipped ? '#F59E0B' : EDGE}`,
+                      border: `2px solid ${taken ? ACCENT : skipped ? '#FBBF24' : EDGE}`,
                       background: taken ? ACCENT : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
                     {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    {skipped && !taken && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><line x1="2" y1="5" x2="8" y2="5" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"/></svg>}
+                    {skipped && !taken && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><line x1="2" y1="5" x2="8" y2="5" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round"/></svg>}
                   </button>
 
                   {/* Info */}
@@ -323,7 +323,7 @@ export default function SupplementsScreen() {
                     </div>
                     <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>
                       {s.dose} {s.unit}
-                      {skipped && <span style={{ marginLeft: 6, color: '#F59E0B', fontWeight: 700 }}>· Skipped</span>}
+                      {skipped && <span style={{ marginLeft: 6, color: '#FBBF24', fontWeight: 700 }}>· Skipped</span>}
                     </div>
                   </div>
 
@@ -332,7 +332,7 @@ export default function SupplementsScreen() {
                     <button
                       onClick={() => toggleSkipped(s)}
                       title={skipped ? 'Undo skip' : 'Skip today'}
-                      style={{ background: skipped ? '#F59E0B18' : 'none', border: skipped ? '1px solid #F59E0B30' : 'none', borderRadius: 6, color: skipped ? '#F59E0B' : MUTED, cursor: 'pointer', fontSize: 13, padding: '4px 7px' }}
+                      style={{ background: skipped ? '#FBBF2418' : 'none', border: skipped ? '1px solid #FBBF2430' : 'none', borderRadius: 6, color: skipped ? '#FBBF24' : MUTED, cursor: 'pointer', fontSize: 13, padding: '4px 7px' }}
                     >
                       {skipped ? '↩' : '–'}
                     </button>

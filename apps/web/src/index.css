@@ -1,36 +1,36 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── Apple dark palette ── */
-  --bg:    #000000;
-  --surf:  #1C1C1E;
-  --surf2: #2C2C2E;
-  --edge:  rgba(255,255,255,0.08);
-  --edge2: rgba(255,255,255,0.14);
+  /* ── Deep Space dark palette ── */
+  --bg:    #08091A;
+  --surf:  #0E1028;
+  --surf2: #161930;
+  --edge:  rgba(140,130,255,0.10);
+  --edge2: rgba(140,130,255,0.18);
 
   /* ── Typography ── */
-  --text:   #FFFFFF;
-  --muted:  #8E8E93;
-  --muted2: #636366;
+  --text:   #EEF0FF;
+  --muted:  #6E7BAF;
+  --muted2: #4A5280;
 
-  /* ── Shadows — flat in dark, separation comes from bg contrast ── */
+  /* ── Shadows — flat in dark ── */
   --shadow-sm: none;
   --shadow-md: none;
   --shadow-lg: none;
 
-  /* ── Brand accent — iOS system blue ── */
-  --accent:       #0A84FF;
-  --accent2:      #0070F0;
-  --accent-muted: rgba(10,132,255,0.15);
+  /* ── Brand accent — electric violet ── */
+  --accent:       #9D7EFF;
+  --accent2:      #7C5CFC;
+  --accent-muted: rgba(157,126,255,0.15);
 
-  /* ── Macro palette — Apple Health semantics ── */
-  --prot:  #32ADE6;
-  --carb:  #30D158;
-  --fat:   #FF9F0A;
-  --red:   #FF453A;
-  --green: #30D158;
+  /* ── Macro palette ── */
+  --prot:  #38BDF8;
+  --carb:  #4ADE80;
+  --fat:   #FBBF24;
+  --red:   #F87171;
+  --green: #4ADE80;
 
-  /* ── Geometry — Apple uses 16px for cards ── */
+  /* ── Geometry ── */
   --r-xs: 8px;
   --r-sm: 12px;
   --r-md: 16px;

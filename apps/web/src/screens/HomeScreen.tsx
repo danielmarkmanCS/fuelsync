@@ -9,10 +9,10 @@ import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { useThemeStore } from '../store/themeStore';
 
-const PROT = '#32ADE6';
-const CARB = '#30D158';
-const FAT  = '#FF9F0A';
-const RED  = '#FF453A';
+const PROT = '#38BDF8';
+const CARB = '#4ADE80';
+const FAT  = '#FBBF24';
+const RED  = '#F87171';
 
 function TrainingIcon({ type, size = 20 }: { type: TrainingType; size?: number }) {
   const p = {
