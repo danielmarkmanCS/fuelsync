@@ -21,7 +21,6 @@ const YELLOW     = '#22C55E';   // carbs (alias)
 const PROT    = '#38BDF8';   // protein — blue
 const RED     = '#EF4444';
 const FAT_CLR = '#F59E0B';   // fat — amber
-const CARD_SHADOW = 'var(--shadow-md)';
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -135,20 +134,18 @@ function StreakMilestone({ streak }: { streak: number }) {
   const m = milestones.find((x) => streak >= x.min)!;
   return (
     <div className="milestone-in" style={{
-      background: `linear-gradient(135deg, ${m.color}18, ${m.color}06)`,
-      border: `1px solid ${m.color}40`,
-      borderRadius: 8, padding: '18px 20px', marginBottom: 16,
+      background: SURF,
+      borderRadius: 16, padding: '18px 20px', marginBottom: 16,
       display: 'flex', alignItems: 'center', gap: 16,
-      boxShadow: `0 4px 24px ${m.color}18`,
     }}>
-      <div style={{ width: 52, height: 52, borderRadius: 8, background: `${m.color}20`, border: `2px solid ${m.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ width: 52, height: 52, borderRadius: 12, background: `${m.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: m.color, letterSpacing: -1 }}>{streak}</div>
       </div>
       <div>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: m.color, textTransform: 'uppercase', marginBottom: 4 }}>
-          {streak} Day Streak · {m.label}
+        <div style={{ fontSize: 11, fontWeight: 600, color: m.color, marginBottom: 3 }}>
+          {streak}-day streak · {m.label}
         </div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, lineHeight: 1.4 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.4 }}>
           {m.msg}
         </div>
       </div>
@@ -176,10 +173,10 @@ function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metri
   const unitLabel = units === 'imperial' ? 'lb' : 'kg';
 
   return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px 14px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+    <div style={{ background: SURF, borderRadius: 16, padding: '16px 16px 14px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 4 }}>
             Weight Trend
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
@@ -241,8 +238,8 @@ function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calor
   ];
 
   return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+    <div style={{ background: SURF, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14 }}>
         7-Day Macro Avg · {logged.length} days
       </div>
       {macros.map(({ label, key, color, target }) => {
@@ -299,12 +296,12 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
 
   return (
     <div style={{
-      background: SURF, borderRadius: 8, padding: '18px 16px 14px',
-      border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW,
+      background: SURF, borderRadius: 16, padding: '18px 16px 14px',
+      marginBottom: 16,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 4 }}>
             This Week
           </div>
           {hasPrevData && (
@@ -437,28 +434,21 @@ function StatsRow({ streak, totalDays, avgCal, goalCal, days }: { streak: number
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: EDGE, borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
       {[
-        { label: 'Log Streak',  value: streak,     unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE, colorHex: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : ORANGE_HEX, highlight: streak >= 3 },
-        { label: 'Goal Streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#F59E0B' : goalStreak >= 2 ? GREEN : MUTED, colorHex: goalStreak >= 5 ? '#F59E0B' : goalStreak >= 2 ? GREEN : MUTED2, highlight: goalStreak >= 2 },
-        { label: 'Days Logged', value: totalDays,  unit: 'total',     color: YELLOW, colorHex: YELLOW, highlight: false },
-        { label: 'Avg Daily',   value: goalPct,    unit: '% of goal', color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE, colorHex: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE_HEX, highlight: goalPct >= 85 && goalPct <= 115 },
-      ].map(({ label, value, unit, color, colorHex, highlight }) => (
-        <div key={label} style={{
-          background: highlight ? `${colorHex}12` : SURF,
-          borderRadius: 8, padding: '14px 12px',
-          border: `1px solid ${highlight ? colorHex + '30' : EDGE}`,
-          borderTop: `3px solid ${color}`,
-          boxShadow: highlight ? `0 4px 16px ${colorHex}18` : CARD_SHADOW,
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: color, textTransform: 'uppercase', marginBottom: 6 }}>
+        { label: 'Log streak',  value: streak,     unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE },
+        { label: 'Goal streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#F59E0B' : goalStreak >= 2 ? GREEN : MUTED },
+        { label: 'Days logged', value: totalDays,  unit: 'total',     color: YELLOW },
+        { label: 'Avg daily',   value: goalPct,    unit: '% of goal', color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE },
+      ].map(({ label, value, unit, color }) => (
+        <div key={label} style={{ background: SURF, padding: '14px 12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 500, color: MUTED, marginBottom: 6 }}>
             {label}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -2, color: color, lineHeight: 1 }}>
+          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -2, color, lineHeight: 1 }}>
             {value}
           </div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 3 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: MUTED, marginTop: 3 }}>
             {unit}
           </div>
         </div>
@@ -509,9 +499,9 @@ function BodyCompositionCard({ weightEntries, days }: { weightEntries: WeightEnt
 
   return (
     <div style={{
-      background: SURF, borderRadius: 12, border: `1px solid ${EDGE}`, padding: '16px 16px', marginBottom: 14,
+      background: SURF, borderRadius: 16, padding: '16px 16px', marginBottom: 14,
     }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
         Body Composition Estimate
       </div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
@@ -623,8 +613,8 @@ function CoachTab({
     <div>
       {/* Local pattern insights */}
       {localInsights.length > 0 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             Pattern Insights
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -643,8 +633,8 @@ function CoachTab({
 
       {/* Macro Cycling Efficiency */}
       {days.length >= 5 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             Macro Cycling Efficiency
           </div>
           {(() => {
@@ -712,8 +702,8 @@ function CoachTab({
 
       {/* Average macros by training type */}
       {days.length >= 5 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             Avg Intake by Training Type
           </div>
           {(() => {
@@ -764,8 +754,8 @@ function CoachTab({
 
       {/* Recent 7-day summary stats */}
       {days.length >= 7 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             Last 7 Days — Quick Stats
           </div>
           {(() => {
@@ -800,8 +790,8 @@ function CoachTab({
 
       {/* Macro Hit/Miss Scorecard */}
       {days.length >= 5 && coachGoalCal > 0 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             Last 7 Days — Macro Scorecard
           </div>
           {(() => {
@@ -830,8 +820,8 @@ function CoachTab({
 
       {/* Top 3 Action Items */}
       {days.length >= 5 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             Top Action Items
           </div>
           {(() => {
@@ -863,8 +853,8 @@ function CoachTab({
 
       {/* Weekly PR vs Previous Week */}
       {days.length >= 10 && (
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
             This Week vs Last Week
           </div>
           {(() => {
@@ -907,11 +897,11 @@ function CoachTab({
 
       {/* Weekly AI Summary */}
       <div style={{
-        background: SURF, borderRadius: 12, border: `1px solid ${EDGE}`, padding: '16px 16px',
+        background: SURF, borderRadius: 16, padding: '16px 16px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 3 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 3 }}>
               AI Coach
             </div>
             <div style={{ fontSize: 16, fontWeight: 900, color: TEXT, letterSpacing: -0.5 }}>
@@ -949,19 +939,19 @@ function CoachTab({
         ) : summary ? (
           <div>
             <div style={sectionStyle(GREEN)}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: GREEN, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: GREEN, marginBottom: 6 }}>
                 ✅ What went well
               </div>
               <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{summary.well}</div>
             </div>
             <div style={sectionStyle(ORANGE_HEX)}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: ORANGE_HEX, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: ORANGE_HEX, marginBottom: 6 }}>
                 ⚠️ What to watch
               </div>
               <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{summary.watch}</div>
             </div>
             <div style={sectionStyle(PROT)}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: PROT, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: PROT, marginBottom: 6 }}>
                 🎯 This week's focus
               </div>
               <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.7 }}>{summary.focus}</div>
@@ -1034,9 +1024,9 @@ function SupplementAdherenceCard({ suppByDate, suppTotal }: { suppByDate: Map<st
   const dayLabel = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
 
   return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+    <div style={{ background: SURF, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED }}>
           Supplement Adherence
         </div>
         <div style={{ fontSize: 14, fontWeight: 900, color: overallPct >= 80 ? GREEN : overallPct >= 50 ? ORANGE_HEX : RED }}>
@@ -1094,10 +1084,10 @@ function CalorieTrendChart({ days, goalCal }: { days: DaySummary[]; goalCal: num
   const avgDelta      = logsWithData.length > 0 ? Math.round(totalDeficit / logsWithData.length) : 0;
 
   return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px 14px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
+    <div style={{ background: SURF, borderRadius: 16, padding: '16px 16px 14px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 2 }}>30-Day Calorie Balance</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 2 }}>30-Day Calorie Balance</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: avgDelta <= 0 ? GREEN : RED }}>
             Avg {avgDelta <= 0 ? 'deficit' : 'surplus'}: {Math.abs(avgDelta).toLocaleString()} kcal/day
           </div>
@@ -1230,8 +1220,8 @@ function MealTimingCard({ logs }: { logs: FoodLog[] }) {
   });
 
   return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px 16px 14px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+    <div style={{ background: SURF, borderRadius: 16, padding: '16px 16px 14px', marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14 }}>
         Meal Timing
       </div>
 
@@ -1307,8 +1297,8 @@ function BestWorstCard({ days, goalCal }: { days: DaySummary[]; goalCal: number 
   const fmtDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
-    <div style={{ background: SURF, borderRadius: 8, padding: '16px', border: `1px solid ${EDGE}`, marginBottom: 16, boxShadow: CARD_SHADOW }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 12 }}>
+    <div style={{ background: SURF, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 12 }}>
         Best & Worst Days
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -1319,7 +1309,7 @@ function BestWorstCard({ days, goalCal }: { days: DaySummary[]; goalCal: number 
           <div key={label} style={{ background: `${color}10`, borderRadius: 10, padding: '12px', border: `1px solid ${color}30` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <span style={{ fontSize: 16 }}>{icon}</span>
-              <div style={{ fontSize: 9, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color }}>{label}</div>
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, marginBottom: 4 }}>{fmtDate(entry.date)}</div>
             <div style={{ fontSize: 22, fontWeight: 900, color, letterSpacing: -1, lineHeight: 1 }}>{entry.totalCal.toLocaleString()}</div>
@@ -1450,31 +1440,21 @@ export default function HistoryScreen() {
     <div style={{ minHeight: '100%', background: BG }}>
 
       {/* ── HEADER ── */}
-      <div style={{
-        background: 'var(--surf)',
-        padding: '32px 16px 0', position: 'relative', overflow: 'hidden',
-        borderBottom: '1px solid var(--edge)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginBottom: 4, textTransform: 'uppercase' }}>
-              My Way
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: ORANGE }}>
-              Your Journey
-            </div>
+      <div style={{ background: BG, padding: '32px 16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: TEXT, letterSpacing: -1 }}>
+            Your journey
           </div>
           {streak >= 2 && (
             <div style={{
-              background: ORANGE_MUT, border: '1px solid var(--accent)',
-              borderRadius: 8, padding: '4px 12px',
-              fontSize: 11, fontWeight: 800, color: ORANGE,
+              background: ORANGE_MUT, borderRadius: 20, padding: '4px 12px',
+              fontSize: 11, fontWeight: 700, color: ORANGE,
             }}>
               {streak} day streak
             </div>
           )}
         </div>
-        <div style={{ fontSize: 11, color: MUTED, marginBottom: 14, fontWeight: 700 }}>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>
           {totalDays > 0
             ? tab === 'foods'
               ? `${foodDir.length} unique foods · ${allLogs.filter(l => !l.removed).length} total logs`
@@ -1487,9 +1467,9 @@ export default function HistoryScreen() {
           {(['days', 'foods', 'coach'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)} style={{
               flex: 1, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 11, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase',
+              fontSize: 13, fontWeight: 600,
               color: tab === t ? ORANGE : MUTED,
-              borderBottom: tab === t ? `3px solid ${ORANGE}` : '3px solid transparent',
+              borderBottom: tab === t ? `2px solid ${ORANGE}` : '2px solid transparent',
               marginBottom: -1, transition: 'all 0.15s',
             }}>
               {t === 'days' ? 'Days' : t === 'foods' ? 'Foods' : '🧠 Coach'}
@@ -1568,10 +1548,9 @@ export default function HistoryScreen() {
 
               return (
                 <div key={day.date} className="card-lift" style={{
-                  background: `linear-gradient(135deg, ${barColorHex}18 0%, var(--surf) 50%)`,
-                  borderRadius: 8, border: `1px solid ${barColorHex}20`,
-                  marginBottom: 12, overflow: 'hidden', boxShadow: CARD_SHADOW,
-                  borderLeft: `3px solid ${barColor}`,
+                  background: SURF,
+                  borderRadius: 16,
+                  marginBottom: 10, overflow: 'hidden',
                 }}>
                   <button
                     onClick={() => setExpanded(isOpen ? null : day.date)}
@@ -1614,10 +1593,10 @@ export default function HistoryScreen() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <div style={{ flex: 1, height: 6, background: SURF2, borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ flex: 1, height: 4, background: SURF2, borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{
-                          height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${barColor}80, ${barColor})`,
-                          borderRadius: 4, transition: 'width 0.5s ease',
+                          height: '100%', width: `${pct}%`, background: barColor,
+                          borderRadius: 2, transition: 'width 0.5s ease',
                         }} />
                       </div>
                       <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
@@ -1826,8 +1805,8 @@ export default function HistoryScreen() {
               const lean = withDensity.slice(0, 3);
               const dense = withDensity.slice(-3).reverse();
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '12px 14px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '12px 14px', marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     Caloric Density
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -1865,9 +1844,9 @@ export default function HistoryScreen() {
               const top5 = [...foodDir].sort((a, b) => b.count - a.count).slice(0, 5);
               const maxCount = top5[0]?.count ?? 1;
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '12px 14px', marginBottom: 12, boxShadow: CARD_SHADOW }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '12px 14px', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase' }}>Most Logged Foods</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: MUTED }}>Most Logged Foods</span>
                     <span style={{ fontSize: 9, color: MUTED }}>{foodDir.length} unique</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1903,8 +1882,8 @@ export default function HistoryScreen() {
                 .slice(0, 5);
               if (withEff.length < 3) return null;
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     Hall of Fame — Protein Efficiency
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -1934,8 +1913,8 @@ export default function HistoryScreen() {
               const frequent = [...foodDir].sort((a, b) => b.count - a.count).slice(0, 5);
               const totalLogs = allLogs.filter(l => !l.removed).length;
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     Most Logged Foods
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1963,8 +1942,8 @@ export default function HistoryScreen() {
               const withCal = foodDir.filter(e => e.calories > 200).sort((a, b) => b.calories - a.calories).slice(0, 5);
               if (withCal.length < 2) return null;
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     Highest Calorie Foods
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1997,8 +1976,8 @@ export default function HistoryScreen() {
               }).slice(0, 4);
               if (highVolume.length < 2) return null;
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     High-Volume Low-Cal Foods 🥦
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -2024,8 +2003,8 @@ export default function HistoryScreen() {
             {foodDir.length >= 5 && !foodSearch && (() => {
               const consistent = [...foodDir].sort((a, b) => b.count - a.count).slice(0, 5);
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     Most Logged Foods
                   </div>
                   {consistent.map((f, i) => (
@@ -2053,8 +2032,8 @@ export default function HistoryScreen() {
                 .slice(0, 5);
               if (scored.length < 3) return null;
               return (
-                <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '14px 16px', marginBottom: 14, boxShadow: CARD_SHADOW }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                <div style={{ background: SURF, borderRadius: 16, padding: '14px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                     Best Protein-per-Calorie
                   </div>
                   {scored.map(f => (
@@ -2108,7 +2087,7 @@ export default function HistoryScreen() {
                 </div>
               </div>
             ) : (
-              <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden', boxShadow: CARD_SHADOW }}>
+              <div style={{ background: SURF, borderRadius: 16, overflow: 'hidden' }}>
                 {filteredDir.map((entry, idx) => {
                   const logDate = entry.lastLogged.slice(0, 10);
                   const timeStr = new Date(entry.lastLogged).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });

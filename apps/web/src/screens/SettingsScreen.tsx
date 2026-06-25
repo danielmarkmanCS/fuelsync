@@ -5,8 +5,7 @@ import { useAppStore } from '../store/appStore';
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 10, fontWeight: 700, color: 'var(--muted)',
-      textTransform: 'uppercase', letterSpacing: 2,
+      fontSize: 13, fontWeight: 600, color: 'var(--muted)',
       marginBottom: 8, paddingLeft: 4,
     }}>
       {children}
@@ -57,7 +56,7 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       onClick={onToggle}
       aria-label="Toggle"
       style={{
-        width: 48, height: 28, borderRadius: 6,
+        width: 48, height: 28, borderRadius: 14,
         border: 'none', padding: 0, cursor: 'pointer',
         background: on ? 'var(--accent)' : 'var(--edge)',
         position: 'relative',
@@ -178,12 +177,12 @@ export default function SettingsScreen() {
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: '24px 18px 18px' }}>
+      <div style={{ padding: '24px 16px 16px' }}>
         <div style={{
           fontSize: 26, fontWeight: 700, color: 'var(--text)',
           letterSpacing: -0.5,
         }}>
-          SETTINGS
+          Settings
         </div>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
           Appearance, profile &amp; preferences
@@ -191,9 +190,9 @@ export default function SettingsScreen() {
       </div>
 
       {/* ── Appearance ── */}
-      <div style={{ margin: '0 14px 14px' }}>
+      <div style={{ margin: '0 16px 16px' }}>
         <SectionLabel>Appearance</SectionLabel>
-        <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={isDark ? <MoonIcon /> : <SunIcon />}
             label="Dark Mode"
@@ -260,9 +259,9 @@ export default function SettingsScreen() {
       </div>
 
       {/* ── Profile shortcut ── */}
-      <div style={{ margin: '0 14px 14px' }}>
+      <div style={{ margin: '0 16px 16px' }}>
         <SectionLabel>Profile</SectionLabel>
-        <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={<UserIcon />}
             label="My Profile"
@@ -275,9 +274,9 @@ export default function SettingsScreen() {
       </div>
 
       {/* ── Nutrition ── */}
-      <div style={{ margin: '0 14px 14px' }}>
+      <div style={{ margin: '0 16px 16px' }}>
         <SectionLabel>Nutrition</SectionLabel>
-        <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={<PillIcon />}
             label="Supplements"
@@ -298,9 +297,9 @@ export default function SettingsScreen() {
       </div>
 
       {/* ── About ── */}
-      <div style={{ margin: '0 14px 14px' }}>
+      <div style={{ margin: '0 16px 16px' }}>
         <SectionLabel>About</SectionLabel>
-        <div style={{ background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={<ZapIcon />}
             label="FuelSync"

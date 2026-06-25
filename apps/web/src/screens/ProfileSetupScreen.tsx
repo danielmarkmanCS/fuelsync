@@ -11,7 +11,7 @@ import { clearPin } from '../lib/pin';
 import { useNutritionStore } from '../store/nutritionStore';
 import { getCustomTargets, setCustomTargets, getPresets, savePreset, deletePreset } from '../lib/customTargets';
 import type { CustomTargets, MacroPreset } from '../lib/customTargets';
-import { useThemeStore } from '../store/themeStore';
+import { useThemeStore, type GoalMode } from '../store/themeStore';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
@@ -66,7 +66,7 @@ const inp: React.CSSProperties = {
 };
 
 export default function ProfileSetupScreen() {
-  const { isDark } = useThemeStore();
+  const { isDark, goalMode, setGoalMode } = useThemeStore();
   const { user, setUser, logout } = useAuthStore();
   const name    = user?.displayName || 'ATHLETE';
   const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
@@ -113,16 +113,6 @@ export default function ProfileSetupScreen() {
     try { localStorage.setItem(WG_KEY, JSON.stringify({ target: targetWeightKg, date: goalTargetDate })); } catch {}
   };
 
-  // Goal mode
-  const GOAL_KEY = 'fs_goal_mode_v1';
-  type GoalMode = 'lose' | 'maintain' | 'gain';
-  const [goalMode, setGoalModeState] = useState<GoalMode>(() => {
-    try { return (localStorage.getItem(GOAL_KEY) as GoalMode) ?? 'maintain'; } catch { return 'maintain'; }
-  });
-  const handleSetGoalMode = (mode: GoalMode) => {
-    setGoalModeState(mode);
-    try { localStorage.setItem(GOAL_KEY, mode); } catch {}
-  };
   const goalCalAdj: Record<GoalMode, number> = { lose: -500, maintain: 0, gain: 300 };
 
   // Custom targets
@@ -301,138 +291,82 @@ export default function ProfileSetupScreen() {
     <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
       {/* ── HEADER ── */}
-      <div style={{
-        background: isDark
-          ? 'linear-gradient(145deg, #0D1117 0%, #0E1E3A 60%, #1A3A6E 100%)'
-          : 'linear-gradient(145deg, #0055CC 0%, #0066EE 60%, #3388FF 100%)',
-        padding: '44px 22px 32px', position: 'relative', overflow: 'hidden',
-      }}>
-        <div className="orb1" style={{ position: 'absolute', top: -20, right: 10, width: 160, height: 160, borderRadius: '50%', background: 'rgba(47,129,247,0.12)' }} />
-        <div className="orb2" style={{ position: 'absolute', bottom: -30, left: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(47,129,247,0.07)' }} />
-
-        <div className="nrc-a nrc-a1" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* Avatar */}
-          <div style={{
-            width: 60, height: 60, borderRadius: 8,
-            background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#FFFFFF', letterSpacing: -1 }}>
-              {initials || 'AT'}
-            </div>
+      <div className="nrc-a nrc-a1" style={{ padding: '24px 20px 12px', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 28,
+          background: SURF2,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 20, fontWeight: 700, color: TEXT, letterSpacing: -0.5 }}>
+            {initials || 'AT'}
+          </span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.8, color: TEXT, lineHeight: 1.1 }}>
+            {name}
           </div>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.55)', marginBottom: 4, textTransform: 'uppercase' }}>
-              Athlete Profile
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#FFFFFF' }}>
-              {name.toUpperCase()}
-            </div>
-            {!profileComplete && (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 5, fontWeight: 700 }}>
-                Complete your profile to unlock smart targets
-              </div>
-            )}
+          <div style={{ fontSize: 13, color: MUTED, marginTop: 3, fontWeight: 500 }}>
+            {isFullyComplete ? 'Profile complete ✓' : `${completenessPct}% complete`}
           </div>
         </div>
-
-        {/* Completeness bar */}
-        <div className="nrc-a nrc-a2" style={{ position: 'relative', zIndex: 1, marginTop: 18 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase' }}>
-              {isFullyComplete ? 'Profile Complete' : `Profile ${completenessPct}% complete`}
-            </div>
-            {isFullyComplete
-              ? <div style={{ fontSize: 10, fontWeight: 800, color: GREEN }}>✓ All Set</div>
-              : <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
-                  {4 - filledFields} field{4 - filledFields !== 1 ? 's' : ''} remaining
-                </div>
-            }
-          </div>
-          <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', width: `${completenessPct}%`,
-              background: isFullyComplete ? GREEN : 'rgba(255,255,255,0.75)',
-              borderRadius: 3, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
-            }} />
-          </div>
-        </div>
-
       </div>
 
       {/* ── COMPUTED STATS ── */}
       {hasStats && (
-        <div className="nrc-a nrc-a2" style={{ padding: '20px 22px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div className="nrc-a nrc-a2" style={{ padding: '0 16px 16px' }}>
+          {/* BMR / TDEE / BMI — single surface */}
+          <div style={{
+            background: SURF, borderRadius: 16,
+            display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr',
+            overflow: 'hidden', marginBottom: 10,
+          }}>
             {[
-              { label: 'BMR', value: bmr?.toLocaleString() ?? '—', unit: 'kcal/day', color: ORANGE,   desc: 'Basal metabolic rate' },
-              { label: 'TDEE', value: tdee?.toLocaleString() ?? '—', unit: 'kcal/day', color: GREEN,  desc: 'Total daily expenditure' },
-              { label: 'BMI',  value: bmi?.toString() ?? '—',  unit: bmiInfo?.label ?? '',  color: bmiInfo?.color ?? ORANGE, desc: 'Body mass index' },
-            ].map(({ label, value, unit, color, desc }) => (
-              <div key={label} style={{
-                background: `linear-gradient(160deg, ${color}20 0%, ${SURF} 60%)`,
-                borderRadius: 8, padding: '14px 12px',
-                border: `1px solid ${color}18`, borderTop: `3px solid ${color}`,
-                boxShadow: CARD_SHADOW, textAlign: 'center',
-              }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color, textTransform: 'uppercase', marginBottom: 6 }}>
-                  {label}
+              { label: 'BMR',  value: bmr?.toLocaleString()  ?? '—', unit: 'kcal/day', color: ORANGE },
+              { label: 'TDEE', value: tdee?.toLocaleString() ?? '—', unit: 'kcal/day', color: GREEN  },
+              { label: 'BMI',  value: bmi?.toString()        ?? '—', unit: bmiInfo?.label ?? '', color: bmiInfo?.color ?? ORANGE },
+            ].flatMap(({ label, value, unit, color }, i) => {
+              const cell = (
+                <div key={label} style={{ padding: '14px 10px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginBottom: 5 }}>{label}</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color, letterSpacing: -0.5, lineHeight: 1 }}>{value}</div>
+                  <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{unit}</div>
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1.5, color, lineHeight: 1 }}>
-                  {value}
-                </div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 4 }}>
-                  {unit}
-                </div>
-              </div>
-            ))}
+              );
+              return i > 0 ? [<div key={`d${i}`} style={{ background: EDGE }} />, cell] : [cell];
+            })}
           </div>
 
-          {/* TDEE context bar */}
           {tdee && (
-            <div style={{
-              background: ORANGE_MUT, borderRadius: 8, padding: '13px 16px',
-              border: '1px solid var(--accent)', borderLeft: '3px solid var(--accent)',
-              marginBottom: 10,
-            }}>
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, color: ORANGE, textTransform: 'uppercase', marginBottom: 4 }}>
-                Your Energy Target
-              </div>
-              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6, fontWeight: 700 }}>
-                Based on your stats, you need ~<strong style={{ color: ORANGE }}>{tdee.toLocaleString()} kcal/day</strong> to maintain weight.
-                {' '}FuelSync adjusts this daily based on training type.
+            <div style={{ background: SURF, borderRadius: 12, padding: '13px 16px', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.6 }}>
+                You need ~<strong style={{ color: ORANGE }}>{tdee.toLocaleString()} kcal/day</strong> to maintain weight.{' '}
+                FuelSync adjusts daily targets based on training type.
               </div>
             </div>
           )}
 
-          {/* Metabolic Age */}
           {bmr && (() => {
-            const w = parseFloat(weightKg); const h = parseFloat(heightCm); const a = parseInt(age);
             if (!w || !h || !a || !gender) return null;
-            // Average BMR at each decade for same gender — compare to find metabolic age bracket
             const avgBmrByAge = gender === 'male'
               ? [{ age: 20, bmr: 1900 }, { age: 30, bmr: 1800 }, { age: 40, bmr: 1700 }, { age: 50, bmr: 1600 }, { age: 60, bmr: 1500 }]
               : [{ age: 20, bmr: 1550 }, { age: 30, bmr: 1480 }, { age: 40, bmr: 1400 }, { age: 50, bmr: 1330 }, { age: 60, bmr: 1260 }];
             let metabAge = avgBmrByAge[0].age;
-            for (const row of avgBmrByAge) {
-              if (bmr >= row.bmr) { metabAge = row.age; break; }
-            }
+            for (const row of avgBmrByAge) { if (bmr >= row.bmr) { metabAge = row.age; break; } }
             if (!metabAge) metabAge = avgBmrByAge[avgBmrByAge.length - 1].age + 10;
             const diff = metabAge - a;
             const color = diff <= -5 ? GREEN : diff <= 0 ? PROT : diff <= 5 ? FAT_CLR : RED;
             const label = diff <= -5 ? 'Younger than age' : diff <= 0 ? 'Age-appropriate' : diff <= 5 ? 'Slightly higher' : 'Higher than age';
             return (
-              <div style={{ background: `${color}12`, borderRadius: 8, padding: '12px 16px', border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 3 }}>Metabolic Age</div>
-                  <div style={{ fontSize: 11, color: TEXT, fontWeight: 600 }}>
-                    Based on your BMR vs {gender} averages — <strong style={{ color }}>{label}</strong>
+              <div style={{ background: SURF, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>
+                    Metabolic age — <strong style={{ color }}>{label}</strong>
                   </div>
+                  <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Based on BMR vs {gender} averages</div>
                 </div>
                 <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color, letterSpacing: -1, lineHeight: 1 }}>{metabAge}</div>
-                  <div style={{ fontSize: 8, color: MUTED, fontWeight: 700 }}>est. age</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color, letterSpacing: -1, lineHeight: 1 }}>{metabAge}</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>est. age</div>
                 </div>
               </div>
             );
@@ -463,17 +397,17 @@ export default function ProfileSetupScreen() {
         </div>
       )}
 
-      <div style={{ padding: '20px 22px 48px' }}>
+      <div style={{ padding: '20px 16px 48px' }}>
 
         {/* Display Name */}
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 8 }}>
           Display Name
         </div>
         <input style={{ ...inp, marginBottom: 20 }} type="text" value={displayName}
           onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
 
         {/* Body Stats */}
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 8 }}>
           Body Stats
         </div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
@@ -483,65 +417,65 @@ export default function ProfileSetupScreen() {
         <input style={{ ...inp, marginBottom: 20 }} type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" />
 
         {/* Biological Sex */}
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 8 }}>
           Biological Sex
         </div>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          {(['male', 'female'] as const).map((g) => (
-            <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
-              flex: 1, padding: 15, borderRadius: 8, cursor: 'pointer',
-              border: `1px solid ${gender === g ? 'var(--accent)' : EDGE}`,
-              borderTop: gender === g ? '3px solid var(--accent)' : `1px solid ${EDGE}`,
-              background: gender === g ? ORANGE_MUT : SURF2,
-              color: gender === g ? ORANGE : MUTED,
-              fontWeight: 800, fontSize: 14, transition: 'all 0.2s',
-              // no glow
-            }}>
-              {g.charAt(0).toUpperCase() + g.slice(1)}
-            </button>
-          ))}
+        <div style={{ background: SURF, borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr' }}>
+            {(['male', 'female'] as const).map((g, i) => i === 0 ? (
+              <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
+                padding: 15, border: 'none', cursor: 'pointer',
+                background: gender === g ? ORANGE_MUT : SURF,
+                color: gender === g ? ORANGE : MUTED,
+                fontWeight: 700, fontSize: 14, transition: 'background 0.2s',
+              }}>Male</button>
+            ) : [
+              <div key="div" style={{ background: EDGE }} />,
+              <button key={g} onClick={() => setGender(g)} className="nrc-press" style={{
+                padding: 15, border: 'none', cursor: 'pointer',
+                background: gender === g ? ORANGE_MUT : SURF,
+                color: gender === g ? ORANGE : MUTED,
+                fontWeight: 700, fontSize: 14, transition: 'background 0.2s',
+              }}>Female</button>,
+            ])}
+          </div>
         </div>
 
         {/* Activity Level */}
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
           Activity Level
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
-          {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
-            const active = activityLevel === value;
-            return (
-              <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
-                textAlign: 'left', padding: '14px 16px', borderRadius: 8, cursor: 'pointer',
-                background: active ? ORANGE_MUT : SURF2,
-                border: `1px solid ${active ? 'var(--accent)' : EDGE}`,
-                borderLeft: active ? '3px solid var(--accent)' : `1px solid ${EDGE}`,
-                transition: 'all 0.2s',
-                // no glow
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: active ? ORANGE : TEXT, marginBottom: 3 }}>
-                    {label}
+        <div style={{ background: SURF, borderRadius: 16, overflow: 'hidden', marginBottom: 28 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: EDGE }}>
+            {ACTIVITY_LEVELS.map(({ value, label, desc }) => {
+              const active = activityLevel === value;
+              return (
+                <button key={value} onClick={() => setActivityLevel(value)} className="nrc-press" style={{
+                  textAlign: 'left', padding: '14px 16px', cursor: 'pointer',
+                  background: active ? ORANGE_MUT : SURF, border: 'none',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  transition: 'background 0.2s',
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: active ? 700 : 500, color: active ? ORANGE : TEXT, marginBottom: 2 }}>
+                      {label}
+                    </div>
+                    <div style={{ fontSize: 12, color: MUTED, fontWeight: 400 }}>{desc}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>
-                    {desc}
-                  </div>
-                </div>
-                {active && (
-                  <div style={{ marginLeft: 'auto', color: ORANGE, fontSize: 18, fontWeight: 900 }}>✓</div>
-                )}
-              </button>
-            );
-          })}
+                  {active && <span style={{ color: ORANGE, fontSize: 16 }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── WEIGHT LOG ── */}
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10, marginTop: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10, marginTop: 10 }}>
           Weight Log
         </div>
         <div style={{
-          background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`,
-          padding: '16px 16px 14px', marginBottom: 28, boxShadow: CARD_SHADOW,
+          background: SURF, borderRadius: 16,
+          padding: '16px 16px 14px', marginBottom: 28,
         }}>
           {/* Log today */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
@@ -656,10 +590,10 @@ export default function ProfileSetupScreen() {
         </div>
 
         {/* ── BODY MEASUREMENTS ── */}
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
           Body Measurements
         </div>
-        <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '16px 16px 14px', marginBottom: 28, boxShadow: CARD_SHADOW }}>
+        <div style={{ background: SURF, borderRadius: 16, padding: '16px 16px 14px', marginBottom: 28 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
             {([
               { label: 'Waist',      unit: 'cm',  val: measWaist,  set: setMeasWaist  },
@@ -742,10 +676,10 @@ export default function ProfileSetupScreen() {
           const count    = unlocked.length;
           return (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                 Achievements
               </div>
-              <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '16px', boxShadow: CARD_SHADOW }}>
+              <div style={{ background: SURF, borderRadius: 16, padding: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>
                     {count}/{total} unlocked
@@ -823,10 +757,10 @@ export default function ProfileSetupScreen() {
 
           return (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                 Profile Health Check
               </div>
-              <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, padding: '18px 16px', boxShadow: CARD_SHADOW }}>
+              <div style={{ background: SURF, borderRadius: 16, padding: '18px 16px' }}>
 
                 {/* Score header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
@@ -932,8 +866,8 @@ export default function ProfileSetupScreen() {
             : null;
 
           return (
-            <div style={{ background: SURF, borderRadius: 8, padding: '18px 18px', marginBottom: 20, border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+            <div style={{ background: SURF, borderRadius: 16, padding: '18px 18px', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14 }}>
                 Weight Goal
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
@@ -1032,10 +966,9 @@ export default function ProfileSetupScreen() {
         {/* Goal Mode */}
         <div style={{
           background: SURF,
-          borderRadius: 8, padding: '18px 18px', marginBottom: 20,
-          border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+          borderRadius: 16, padding: '18px 18px', marginBottom: 20,
         }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14 }}>
             Calorie Goal
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -1044,7 +977,7 @@ export default function ProfileSetupScreen() {
               ['maintain', 'Maintain',      GREEN,  'TDEE target'],
               ['gain',     'Gain Muscle',   YELLOW,  '+300 kcal/day'],
             ] as const).map(([mode, label, color, sub]) => (
-              <button key={mode} onClick={() => handleSetGoalMode(mode)} style={{
+              <button key={mode} onClick={() => setGoalMode(mode)} style={{
                 flex: 1, padding: '12px 6px', borderRadius: 8,
                 border: `1px solid ${goalMode === mode ? color + '60' : EDGE}`,
                 background: goalMode === mode ? `${color}14` : SURF2,
@@ -1094,11 +1027,10 @@ export default function ProfileSetupScreen() {
         {/* Custom Targets */}
         <div style={{
           background: SURF,
-          borderRadius: 8, padding: '18px 18px', marginBottom: 20,
-          border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+          borderRadius: 16, padding: '18px 18px', marginBottom: 20,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: MUTED }}>
               Custom Macro Goals
             </div>
             <button
@@ -1189,8 +1121,8 @@ export default function ProfileSetupScreen() {
             { type: 'hybrid',   label: 'Hybrid',   color: FAT_CLR,   p: 0.30, c: 0.40, f: 0.30, note: 'Balanced performance' },
           ];
           return (
-            <div style={{ background: SURF, borderRadius: 8, padding: '18px 18px', marginBottom: 20, border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>
+            <div style={{ background: SURF, borderRadius: 16, padding: '18px 18px', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 4 }}>
                 Training Day Macro Planner
               </div>
               <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>
@@ -1262,9 +1194,9 @@ export default function ProfileSetupScreen() {
         <div style={{
           background: SURF,
           borderRadius: 8, padding: '18px 18px',
-          border: `1px solid ${EDGE}`, boxShadow: CARD_SHADOW,
+          border: `1px solid ${EDGE}`,
         }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14 }}>
             Account
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

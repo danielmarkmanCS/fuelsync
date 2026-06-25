@@ -950,268 +950,148 @@ export default function FoodScreen() {
     <div style={{ height: '100%', overflowY: 'auto', background: BG, position: 'relative' }}>
 
       {/* ── HEADER ── */}
-      <div className="nrc-a nrc-a1" style={{
-        background: 'var(--surf)',
-        padding: '32px 16px 16px', position: 'relative', overflow: 'hidden',
-        borderBottom: '1px solid var(--edge)',
-      }}>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: 'var(--muted)', marginBottom: 10, textTransform: 'uppercase' }}>Fuel Log</div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button onClick={() => setSelectedDate((d) => offsetDate(d, -1))} style={{
-              background: 'var(--surf2)', border: '1px solid var(--edge)',
-              borderRadius: 8, color: 'var(--text)', fontSize: 20, width: 40, height: 40,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>‹</button>
-            <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
-              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: 'var(--text)', lineHeight: 1.1 }}>
-                {dateLabel(selectedDate).toUpperCase()}
-              </div>
-              {isToday ? (
-                <div style={{ marginTop: 5, fontSize: 12, fontWeight: 700, color: 'var(--muted)', letterSpacing: 1 }}>{nowTime}</div>
-              ) : (
-                <button onClick={() => setSelectedDate(todayStr)} style={{
-                  marginTop: 7, background: 'var(--accent-muted)', border: '1px solid var(--accent)',
-                  borderRadius: 8, color: 'var(--accent)', fontSize: 10, fontWeight: 700,
-                  padding: '5px 14px', cursor: 'pointer', letterSpacing: 1,
-                }}>← Back to Today</button>
-              )}
+      <div className="nrc-a nrc-a1" style={{ padding: '24px 16px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button onClick={() => setSelectedDate((d) => offsetDate(d, -1))} style={{
+            background: 'var(--surf2)', border: 'none',
+            borderRadius: 10, color: 'var(--text)', fontSize: 20, width: 40, height: 40,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>‹</button>
+          <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.8, color: 'var(--text)', lineHeight: 1.1 }}>
+              {dateLabel(selectedDate)}
             </div>
-            <button onClick={() => { if (!isToday) setSelectedDate((d) => offsetDate(d, 1)); }} style={{
-              background: 'var(--surf2)', border: '1px solid var(--edge)',
-              borderRadius: 8, color: 'var(--text)', fontSize: 20, width: 40, height: 40,
-              cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.35 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>›</button>
+            {isToday ? (
+              <div style={{ marginTop: 4, fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>{nowTime}</div>
+            ) : (
+              <button onClick={() => setSelectedDate(todayStr)} style={{
+                marginTop: 6, background: 'var(--accent-muted)', border: 'none',
+                borderRadius: 20, color: 'var(--accent)', fontSize: 12, fontWeight: 600,
+                padding: '4px 14px', cursor: 'pointer',
+              }}>← Today</button>
+            )}
           </div>
+          <button onClick={() => { if (!isToday) setSelectedDate((d) => offsetDate(d, 1)); }} style={{
+            background: 'var(--surf2)', border: 'none',
+            borderRadius: 10, color: 'var(--text)', fontSize: 20, width: 40, height: 40,
+            cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.35 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>›</button>
         </div>
       </div>
 
       {/* ── CALORIE + MACROS ── */}
-      <div className="nrc-a nrc-a2" style={{ padding: '16px 22px 0' }}>
-        <div style={{
-          background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`,
-          padding: '20px 20px 18px', overflow: 'hidden', position: 'relative', boxShadow: CARD_SHADOW,
-        }}>
-          <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,189,208,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
-            Calories Consumed
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, lineHeight: 1 }}>
-              <div style={{
-                fontSize: 52, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
-                color: calPct >= 100 ? RED : CAL_CLR,
-                transition: 'color 0.4s',
-              }}>
-                {Math.round(consumed.calories).toLocaleString()}
-              </div>
-              {targets && (
-                <div style={{ paddingBottom: 8 }}>
-                  <span style={{ fontSize: 20, fontWeight: 300, color: MUTED }}>/</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: MUTED, marginLeft: 4 }}>
-                    {Math.round(targets.calories).toLocaleString()}
-                  </span>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 2 }}>kcal</div>
-                </div>
-              )}
+      <div className="nrc-a nrc-a2" style={{ padding: '4px 16px 12px' }}>
+        {/* Big calorie number */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 52, fontWeight: 700, letterSpacing: -2.5, color: calPct >= 100 ? RED : CAL_CLR, lineHeight: 1 }}>
+              {Math.round(consumed.calories).toLocaleString()}
             </div>
+            {targets && (
+              <div style={{ paddingBottom: 10 }}>
+                <span style={{ fontSize: 16, fontWeight: 400, color: MUTED }}> / {Math.round(targets.calories).toLocaleString()} kcal</span>
+              </div>
+            )}
             {calPct >= 85 && calPct < 100 && (
-              <div style={{
-                marginLeft: 'auto', paddingBottom: 8,
-                background: `${GREEN}10`, border: `1px solid ${GREEN}25`,
-                borderRadius: 8, padding: '4px 12px',
-                fontSize: 10, fontWeight: 800, color: GREEN, letterSpacing: 0.5,
-              }}>
-                ON TRACK
+              <div style={{ marginLeft: 'auto', paddingBottom: 10, background: `${GREEN}12`, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 600, color: GREEN }}>
+                On track
               </div>
             )}
           </div>
-          <div style={{ height: 7, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
-            <div
-              className="bar-ani"
-              style={{
-                height: '100%', width: `${Math.min(calPct, 100)}%`,
-                background: calPct >= 100 ? RED : GREEN,
-                borderRadius: 4, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
-              }}
-            />
-          </div>
+        </div>
+        <div style={{ height: 3, background: EDGE, borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ height: '100%', width: `${Math.min(calPct, 100)}%`, background: calPct >= 100 ? RED : GREEN, borderRadius: 2, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
+        </div>
 
-          {/* 4 mini rings row */}
-          {targets && (() => {
-            const rings = [
-              { label: 'Cal',  val: consumed.calories, max: targets.calories, color: CAL_CLR },
-              { label: 'Prot', val: consumed.protein,  max: targets.proteinG, color: PROT },
-              { label: 'Carb', val: consumed.carbs,    max: targets.carbsG,   color: YELLOW },
-              { label: 'Fat',  val: consumed.fat,      max: targets.fatG,     color: FAT_CLR },
-            ];
-            return (
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 16 }}>
-                {rings.map(({ label, val, max, color }) => {
-                  if (!max || max <= 0) return null;
-                  const pct = Math.min(val / max, 1);
-                  const deg = Math.round(pct * 360);
-                  const R = 18; const sz = R * 2 + 6;
+        {/* Macro row — single surface with hairline dividers */}
+        {targets && (
+          <div style={{ background: SURF, borderRadius: 16, display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr', overflow: 'hidden' }}>
+            {[
+              { name: 'Protein', val: consumed.protein, tgt: targets.proteinG, color: PROT    },
+              { name: 'Carbs',   val: consumed.carbs,   tgt: targets.carbsG,   color: YELLOW  },
+              { name: 'Fat',     val: consumed.fat,     tgt: targets.fatG,     color: FAT_CLR },
+            ].flatMap(({ name, val, tgt, color }, i) => {
+              const pct2 = tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
+              const over = tgt > 0 && val > tgt;
+              const cell = (
+                <div key={name} style={{ padding: '14px 12px 12px' }}>
+                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginBottom: 5 }}>{name}</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: over ? RED : TEXT, letterSpacing: -0.5, lineHeight: 1 }}>
+                    {Math.round(val)}<span style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginLeft: 1 }}>g</span>
+                  </div>
+                  {tgt > 0 && <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>of {Math.round(tgt)}g</div>}
+                  <div style={{ height: 3, background: EDGE, borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+                    <div style={{ height: '100%', borderRadius: 2, background: over ? RED : color, width: `${pct2}%`, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
+                  </div>
+                </div>
+              );
+              return i > 0 ? [<div key={`d${i}`} style={{ background: EDGE }} />, cell] : [cell];
+            })}
+          </div>
+        )}
+
+        {/* Meal distribution — thin bar */}
+        {byMeal.length > 1 && consumed.calories > 0 && (() => {
+          const MEAL_COLORS_MAP: Record<string, string> = {
+            breakfast: '#38BDF8', pre_workout: '#A78BFA', lunch: '#22C55E',
+            post_workout: '#34D399', dinner: '#F59E0B', snack: '#FB923C', other: '#6B7280',
+          };
+          const total = consumed.calories;
+          return (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', height: 4, borderRadius: 2, overflow: 'hidden', marginBottom: 8, gap: 1 }}>
+                {byMeal.map(({ meal, entries }) => {
+                  const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
+                  const pct  = (mCal / total) * 100;
+                  const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
+                  return pct > 0 ? (
+                    <div key={meal} style={{ width: `${pct}%`, background: col, transition: 'width 0.5s ease' }} />
+                  ) : null;
+                })}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {byMeal.map(({ meal, entries }) => {
+                  const mCal = Math.round(entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0));
+                  const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
+                  const lbl  = MEAL_LABEL[meal as keyof typeof MEAL_LABEL] ?? meal;
                   return (
-                    <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                      <div style={{ width: sz, height: sz, borderRadius: '50%', position: 'relative',
-                        background: `conic-gradient(${color} ${deg}deg, var(--edge) 0deg)`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <div style={{ width: R * 1.3, height: R * 1.3, borderRadius: '50%', background: SURF, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 8, fontWeight: 800, color }}>{Math.round(pct * 100)}%</span>
-                        </div>
-                      </div>
-                      <span style={{ fontSize: 7, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+                    <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: 2, background: col }} />
+                      <span style={{ fontSize: 11, fontWeight: 500, color: MUTED }}>{lbl} {mCal}</span>
                     </div>
                   );
                 })}
               </div>
-            );
-          })()}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            {[
-              { name: 'Protein', val: consumed.protein, tgt: targets?.proteinG, color: PROT    },
-              { name: 'Carbs',   val: consumed.carbs,   tgt: targets?.carbsG,   color: YELLOW  },
-              { name: 'Fat',     val: consumed.fat,     tgt: targets?.fatG,     color: FAT_CLR },
-            ].map(({ name, val, tgt, color }) => {
-              const pct2 = tgt && tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
-              const over = tgt && tgt > 0 && val > tgt;
-              return (
-                <div key={name} style={{ background: `${color}06`, borderRadius: 12, padding: '10px 10px 8px', border: `1px solid ${color}15` }}>
-                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, color: over ? RED : color, textTransform: 'uppercase', marginBottom: 5 }}>
-                    {name}
-                  </div>
-                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1.5, color: over ? RED : TEXT, lineHeight: 1 }}>
-                    {Math.round(val)}<span style={{ fontSize: 10, color: MUTED, fontWeight: 700 }}>g</span>
-                  </div>
-                  <div style={{ marginTop: 7, height: 4, background: `${color}18`, borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct2}%`, background: `linear-gradient(90deg, ${color}70, ${color})`, borderRadius: 3, transition: 'width 0.7s ease' }} />
-                  </div>
-                  {tgt && tgt > 0 && (
-                    <div style={{ fontSize: 8, color: over ? RED : MUTED, fontWeight: 700, marginTop: 3 }}>
-                      {over ? `+${Math.round(val - tgt)}g` : `${Math.round(tgt - val)}g left`}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Meal calorie distribution */}
-          {byMeal.length > 1 && consumed.calories > 0 && (() => {
-            const MEAL_COLORS_MAP: Record<string, string> = {
-              breakfast: '#38BDF8', pre_workout: '#A78BFA', lunch: '#22C55E',
-              post_workout: '#34D399', dinner: '#F59E0B', snack: '#FB923C', other: '#6B7280',
-            };
-            const total = consumed.calories;
-            return (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 6 }}>
-                  Meal Distribution
-                </div>
-                {/* Stacked bar */}
-                <div style={{ display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', marginBottom: 8, gap: 1 }}>
-                  {byMeal.map(({ meal, entries }) => {
-                    const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
-                    const pct  = (mCal / total) * 100;
-                    const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
-                    return pct > 0 ? (
-                      <div key={meal} style={{ width: `${pct}%`, background: col, transition: 'width 0.5s ease' }} />
-                    ) : null;
-                  })}
-                </div>
-                {/* Legend pills */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {byMeal.map(({ meal, entries }) => {
-                    const mCal = Math.round(entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0));
-                    const pct  = Math.round((mCal / total) * 100);
-                    const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
-                    const lbl  = MEAL_LABEL[meal as keyof typeof MEAL_LABEL] ?? meal;
-                    return (
-                      <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: 2, background: col }} />
-                        <span style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>
-                          {lbl}: {mCal} kcal ({pct}%)
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
+            </div>
+          );
+        })()}
       </div>
-
-      {/* ── REMAINING MACROS ── */}
-      {isToday && targets && (consumed.protein > 0 || consumed.carbs > 0 || consumed.fat > 0) && (
-        <div className="nrc-a nrc-a3" style={{ padding: '10px 22px 0' }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[
-              { label: 'Protein', got: consumed.protein, need: targets.proteinG ?? 0, color: PROT    },
-              { label: 'Carbs',   got: consumed.carbs,   need: targets.carbsG   ?? 0, color: YELLOW  },
-              { label: 'Fat',     got: consumed.fat,      need: targets.fatG     ?? 0, color: FAT_CLR },
-            ].map(({ label, got, need, color }) => {
-              const rem  = need - got;
-              const over = rem < 0;
-              const disp = Math.abs(Math.round(rem));
-              return (
-                <div key={label} style={{
-                  flex: 1, textAlign: 'center', padding: '9px 6px',
-                  background: over ? `${color}08` : SURF,
-                  borderRadius: 12, border: `1px solid ${over ? color + '30' : EDGE}`,
-                  boxShadow: over ? `0 2px 12px ${color}14` : CARD_SHADOW,
-                }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: over ? color : TEXT, letterSpacing: -0.5, lineHeight: 1 }}>
-                    {over ? `+${disp}` : disp}g
-                  </div>
-                  <div style={{ fontSize: 8, fontWeight: 700, color: over ? color : MUTED, letterSpacing: 0.8, marginTop: 3, textTransform: 'uppercase' }}>
-                    {over ? `${label} over` : `${label} left`}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ── COPY YESTERDAY ── */}
       {isToday && logs.length === 0 && (
-        <div style={{ padding: '12px 22px 0' }}>
+        <div style={{ padding: '4px 16px 0' }}>
           <button onClick={handleCopyYesterday} disabled={copyingYesterday} style={{
-            width: '100%', padding: '12px 0', borderRadius: 8,
-            background: copyingYesterday ? SURF2 : `${ORANGE}08`,
-            border: `1px solid ${ORANGE}22`,
-            color: copyingYesterday ? MUTED : ORANGE,
-            fontWeight: 700, fontSize: 13, cursor: copyingYesterday ? 'not-allowed' : 'pointer',
-            fontFamily: 'Inter, system-ui, sans-serif',
+            background: 'none', border: 'none',
+            color: copyingYesterday ? MUTED : MUTED,
+            fontWeight: 600, fontSize: 13, cursor: copyingYesterday ? 'not-allowed' : 'pointer',
+            fontFamily: 'Inter, system-ui, sans-serif', padding: '4px 0',
           }}>
-            {copyingYesterday ? 'Copying…' : '↩ Copy Yesterday\'s Meals'}
+            {copyingYesterday ? 'Copying…' : '↩ Copy yesterday\'s meals'}
           </button>
         </div>
       )}
 
       {/* ── SUPPLEMENT STATUS ── */}
       {isToday && suppTotal > 0 && (
-        <div style={{ padding: '8px 22px 0' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '8px 12px', borderRadius: 10,
-            background: SURF, border: `1px solid ${EDGE}`,
-          }}>
+        <div style={{ padding: '8px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: SURF }}>
             <span style={{ fontSize: 14 }}>💊</span>
-            <span style={{
-              fontSize: 10, fontWeight: 700,
-              color: suppTaken === suppTotal ? GREEN : MUTED,
-              flex: 1,
-            }}>
-              {suppTaken}/{suppTotal} supplements taken today
+            <span style={{ fontSize: 13, fontWeight: 500, color: suppTaken === suppTotal ? GREEN : MUTED, flex: 1 }}>
+              {suppTaken}/{suppTotal} supplements today
             </span>
             {suppTaken === suppTotal && (
-              <span style={{ fontSize: 9, fontWeight: 800, color: GREEN, letterSpacing: 0.5 }}>ALL DONE ✓</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: GREEN }}>Done ✓</span>
             )}
           </div>
         </div>
@@ -1219,9 +1099,9 @@ export default function FoodScreen() {
 
       {/* ── MEAL CALORIE TARGETS (always visible at top of log) ── */}
       {isToday && (
-        <div style={{ padding: '12px 22px 0' }}>
+        <div style={{ padding: '12px 16px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>Meal Targets</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: MUTED }}>Meal targets</div>
             <button onClick={() => setEditingMealTargets(v => !v)} style={{
               background: 'none', border: 'none', color: editingMealTargets ? ORANGE : MUTED,
               fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0, letterSpacing: 0.5,
@@ -1283,7 +1163,7 @@ export default function FoodScreen() {
       )}
 
       {/* ── FOOD LOG ── */}
-      <div className="nrc-a nrc-a3" style={{ padding: '16px 22px 100px' }}>
+      <div className="nrc-a nrc-a3" style={{ padding: '16px 16px 100px' }}>
         {byMeal.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 24px' }}>
             {/* Plate illustration */}
@@ -1324,11 +1204,11 @@ export default function FoodScreen() {
                 borderBottom: collapsed ? 'none' : `1px solid ${EDGE}`,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: MEAL_COLOR[meal] ?? MUTED, flexShrink: 0 }} />
-                  <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2.5, color: MUTED, textTransform: 'uppercase' }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: MEAL_COLOR[meal] ?? MUTED, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>
                     {MEAL_LABEL[meal as MealType] ?? 'Other'}
                   </span>
-                  <span style={{ fontSize: 9, color: MUTED }}>({entries.length})</span>
+                  <span style={{ fontSize: 12, color: MUTED }}>({entries.length})</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   {mealTotal > 0 && (
@@ -1370,7 +1250,7 @@ export default function FoodScreen() {
       </div>
 
       {/* ── DIARY NOTE ── */}
-      <div style={{ margin: '0 22px 12px' }}>
+      <div style={{ margin: '0 16px 12px' }}>
         {noteEditing ? (
           <div style={{ background: SURF, borderRadius: 10, border: `1px solid ${ORANGE}40`, overflow: 'hidden' }}>
             <textarea
@@ -1437,11 +1317,11 @@ export default function FoodScreen() {
         ].filter(n => n.value > 0);
         if (items.length < 2) return null;
         return (
-          <div style={{ margin: '0 22px 12px' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>
-              Micronutrients · Today
+          <div style={{ margin: '0 16px 12px' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 8 }}>
+              Micronutrients
             </div>
-            <div style={{ background: SURF, borderRadius: 10, border: `1px solid ${EDGE}`, padding: '12px 14px', boxShadow: CARD_SHADOW }}>
+            <div style={{ background: SURF, borderRadius: 16, padding: '12px 14px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {items.map(({ label, value, unit, goal, color, isLower }) => {
                   const pct     = Math.min((value / goal) * 100, 100);

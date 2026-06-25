@@ -253,7 +253,7 @@ export default function SupplementsScreen() {
           <button
             onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
             style={{
-              background: ACCENT, border: 'none', borderRadius: 6, padding: '8px 14px',
+              background: ACCENT, border: 'none', borderRadius: 10, padding: '8px 14px',
               color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
             }}
           >+ Add</button>
@@ -289,10 +289,10 @@ export default function SupplementsScreen() {
       {/* Supplement list grouped by timing */}
       {TIMINGS.filter(t => supplements.some(s => s.timing === t)).map(t => (
         <div key={t} style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 8 }}>
             {TIMING_LABEL[t]}
           </div>
-          <div style={{ background: SURF, borderRadius: 8, border: `1px solid ${EDGE}`, overflow: 'hidden' }}>
+          <div style={{ background: SURF, borderRadius: 16, overflow: 'hidden' }}>
             {supplements.filter(s => s.timing === t).map((s, i, arr) => {
               const taken   = isTaken(s.id!);
               const skipped = isSkipped(s.id!);
@@ -365,8 +365,8 @@ export default function SupplementsScreen() {
           display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }} onClick={e => { if (e.target === e.currentTarget) { setAdding(false); setEditId(null); } }}>
           <div style={{
-            background: SURF, borderRadius: '8px 8px 0 0', padding: '24px 20px 40px',
-            width: '100%', maxWidth: 480, border: `1px solid ${EDGE}`,
+            background: SURF, borderRadius: '20px 20px 0 0', padding: '24px 20px 40px',
+            width: '100%', maxWidth: 480,
           }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, marginBottom: 20 }}>
               {editId != null ? 'Edit Supplement' : 'Add Supplement'}
@@ -374,7 +374,7 @@ export default function SupplementsScreen() {
 
             {/* Name */}
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Name</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 6 }}>Name</div>
               <input
                 value={name} onChange={e => setName(e.target.value)}
                 placeholder="e.g. Creatine, Vitamin D…"
@@ -385,7 +385,7 @@ export default function SupplementsScreen() {
             {/* Dose + Unit */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Dose</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 6 }}>Dose</div>
                 <input
                   value={dose} onChange={e => setDose(e.target.value)}
                   placeholder="5"
@@ -394,7 +394,7 @@ export default function SupplementsScreen() {
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 6 }}>Unit</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 6 }}>Unit</div>
                 <select
                   value={unit} onChange={e => setUnit(e.target.value)}
                   style={{ width: '100%', padding: '12px', borderRadius: 8, border: `1.5px solid ${EDGE}`, background: BG, color: TEXT, fontSize: 15, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
@@ -406,7 +406,7 @@ export default function SupplementsScreen() {
 
             {/* Timing — checkbox list */}
             <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 10 }}>
                 Time of Day
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -480,8 +480,7 @@ export default function SupplementsScreen() {
           padding: '0 24px',
         }} onClick={() => setShowCongrats(false)}>
           <div style={{
-            background: SURF, borderRadius: 8, padding: '32px 28px',
-            border: `1px solid ${ACCENT}`,
+            background: SURF, borderRadius: 20, padding: '32px 28px',
             textAlign: 'center', maxWidth: 340, width: '100%',
             boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
           }} onClick={e => e.stopPropagation()}>

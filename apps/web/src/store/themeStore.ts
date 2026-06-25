@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export type AccentKey = 'blue' | 'green' | 'purple' | 'orange' | 'red';
 export type Units = 'metric' | 'imperial';
+export type GoalMode = 'lose' | 'maintain' | 'gain';
 
 export const ACCENT_COLORS: Record<AccentKey, { dark: string; light: string; label: string; muted: string }> = {
   blue:   { dark: '#2F81F7', light: '#0066EE', label: 'Ocean',   muted: 'rgba(47,129,247,0.12)'  },
@@ -13,13 +14,15 @@ export const ACCENT_COLORS: Record<AccentKey, { dark: string; light: string; lab
 };
 
 interface ThemeStore {
-  isDark:      boolean;
-  accentKey:   AccentKey;
-  units:       Units;
-  toggleTheme: () => void;
-  setDark:     (v: boolean) => void;
-  setAccent:   (k: AccentKey) => void;
-  setUnits:    (u: Units) => void;
+  isDark:       boolean;
+  accentKey:    AccentKey;
+  units:        Units;
+  goalMode:     GoalMode;
+  toggleTheme:  () => void;
+  setDark:      (v: boolean) => void;
+  setAccent:    (k: AccentKey) => void;
+  setUnits:     (u: Units) => void;
+  setGoalMode:  (m: GoalMode) => void;
 }
 
 export const useThemeStore = create<ThemeStore>()(
@@ -28,10 +31,15 @@ export const useThemeStore = create<ThemeStore>()(
       isDark:      true,
       accentKey:   'blue',
       units:       'metric',
+      // Migrate from old fs_goal_mode_v1 key on first load
+      goalMode:    (() => {
+        try { return (localStorage.getItem('fs_goal_mode_v1') as GoalMode) ?? 'maintain'; } catch { return 'maintain'; }
+      })(),
       toggleTheme: () => set((s) => ({ isDark: !s.isDark })),
       setDark:     (v)  => set({ isDark: v }),
       setAccent:   (k)  => set({ accentKey: k }),
       setUnits:    (u)  => set({ units: u }),
+      setGoalMode: (m)  => set({ goalMode: m }),
     }),
     { name: 'fs_theme' }
   )
