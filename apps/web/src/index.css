@@ -2,26 +2,34 @@
 
 :root {
   /* ── Deep Space dark palette ── */
-  --bg:    #08091A;
-  --surf:  #0E1028;
-  --surf2: #161930;
-  --edge:  rgba(140,130,255,0.10);
-  --edge2: rgba(140,130,255,0.18);
+  --bg:    #07080F;
+  --surf:  #0D0E1C;
+  --surf2: #131527;
+  --surf3: #1A1D32;
+  --edge:  rgba(255,255,255,0.06);
+  --edge2: rgba(255,255,255,0.10);
 
   /* ── Typography ── */
   --text:   #EEF0FF;
   --muted:  #6E7BAF;
   --muted2: #4A5280;
 
-  /* ── Shadows — flat in dark ── */
+  /* ── Shadows / Glows — use glow in dark, never box-shadow ── */
   --shadow-sm: none;
   --shadow-md: none;
   --shadow-lg: none;
+  --glow-accent: 0 0 24px rgba(157,126,255,0.22);
+  --glow-prot:   0 0 18px rgba(56,189,248,0.20);
+  --glow-carb:   0 0 18px rgba(74,222,128,0.20);
+  --glow-fat:    0 0 18px rgba(251,191,36,0.20);
+  --glow-red:    0 0 18px rgba(248,113,113,0.20);
+  --inner-glow:  inset 0 1px 0 rgba(255,255,255,0.05);
 
   /* ── Brand accent — electric violet ── */
   --accent:       #9D7EFF;
   --accent2:      #7C5CFC;
-  --accent-muted: rgba(157,126,255,0.15);
+  --accent-dim:   rgba(157,126,255,0.70);
+  --accent-muted: rgba(157,126,255,0.12);
 
   /* ── Macro palette ── */
   --prot:  #38BDF8;
@@ -35,6 +43,7 @@
   --r-sm: 12px;
   --r-md: 16px;
   --r-lg: 20px;
+  --r-xl: 24px;
 
   /* ── Easing ── */
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -44,19 +53,27 @@
 
 /* ── LIGHT THEME ─────────────────────────────────── */
 body[data-theme="light"] {
-  --bg:           #F2F2F7;
+  --bg:           #F5F5FA;
   --surf:         #FFFFFF;
-  --surf2:        #F2F2F7;
-  --edge:         rgba(0,0,0,0.08);
-  --edge2:        rgba(0,0,0,0.14);
-  --text:         #000000;
+  --surf2:        #F0F0F8;
+  --surf3:        #E8E8F0;
+  --edge:         rgba(0,0,0,0.07);
+  --edge2:        rgba(0,0,0,0.12);
+  --text:         #0A0A14;
   --muted:        #8E8E93;
   --muted2:       #AEAEB2;
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.06);
-  --shadow-md:    0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg:    0 4px 16px rgba(0,0,0,0.10);
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:    0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-lg:    0 4px 20px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.06);
+  --glow-accent:  0 4px 16px rgba(0,122,255,0.18);
+  --glow-prot:    0 4px 12px rgba(0,122,255,0.14);
+  --glow-carb:    0 4px 12px rgba(52,199,89,0.14);
+  --glow-fat:     0 4px 12px rgba(255,159,10,0.14);
+  --glow-red:     0 4px 12px rgba(255,59,48,0.14);
+  --inner-glow:   inset 0 1px 0 rgba(255,255,255,0.80);
   --accent:       #007AFF;
   --accent2:      #0060CC;
+  --accent-dim:   rgba(0,122,255,0.70);
   --accent-muted: rgba(0,122,255,0.10);
   color-scheme: light;
   background-color: var(--bg);
@@ -191,12 +208,29 @@ button, input, select, textarea { font-family: inherit; }
 /* ── CARD BASE ──────────────────────────────────── */
 .card {
   background: var(--surf);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--edge);
+  box-shadow: var(--inner-glow);
 }
+.card-xl {
+  background: var(--surf);
+  border-radius: var(--r-xl);
+  border: 1px solid var(--edge);
+  box-shadow: var(--inner-glow);
+}
+
+/* tabular numbers — stop layout shift during count-up */
+.tabnum { font-variant-numeric: tabular-nums; }
 
 /* ── BARS ─────────────────────────────────────────── */
 .bar-track {
-  height: 3px;
+  height: 6px;
+  background: var(--edge2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.bar-track-sm {
+  height: 4px;
   background: var(--edge2);
   border-radius: 99px;
   overflow: hidden;
@@ -204,9 +238,9 @@ button, input, select, textarea { font-family: inherit; }
 .bar-fill {
   height: 100%;
   border-radius: 99px;
-  transition: width 0.5s var(--ease);
+  transition: width 0.6s var(--ease);
 }
-.bar-ani { animation: barFillAni 0.6s var(--ease) both; }
+.bar-ani { animation: barFillAni 0.65s var(--ease) both; }
 
 /* ── INPUTS ──────────────────────────────────────── */
 input::placeholder, textarea::placeholder { color: var(--muted2); }

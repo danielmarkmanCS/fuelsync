@@ -94,7 +94,7 @@ function saveExerciseKcal(date: string, kcal: number): void {
   } catch {}
 }
 
-// ── Calorie ring + stats — Apple Fitness style ────────────────────────
+// ── Calorie ring + stats ──────────────────────────────────────────────
 function CalDashboard({
   consumed, targets, date, externalExercise,
 }: {
@@ -110,10 +110,16 @@ function CalDashboard({
     if (externalExercise !== undefined) setExercise(externalExercise);
   }, [externalExercise]);
 
-  const remaining = goal > 0 ? goal - food + exercise : null;
-  const over      = remaining !== null && remaining < 0;
-  const pct       = goal > 0 ? Math.min((food / goal) * 100, 100) : 0;
-  const ringColor = over ? RED : 'var(--accent)';
+  const remaining  = goal > 0 ? goal - food + exercise : null;
+  const over       = remaining !== null && remaining < 0;
+  const complete   = remaining !== null && remaining === 0;
+  const pct        = goal > 0 ? Math.min((food / goal) * 100, 100) : 0;
+  const ringStroke = over ? RED : complete ? '#4ADE80' : 'var(--accent)';
+  const ringGlow   = over
+    ? '0 0 32px rgba(248,113,113,0.28)'
+    : complete
+      ? '0 0 32px rgba(74,222,128,0.28)'
+      : '0 0 32px rgba(157,126,255,0.22)';
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -122,34 +128,60 @@ function CalDashboard({
   }, []);
   const displayRem = useCountUp(mounted ? (remaining !== null ? Math.abs(remaining) : 0) : 0);
 
-  const R    = 70;
+  const R    = 84;
+  const SW   = 13;
   const C    = 2 * Math.PI * R;
   const fill = goal > 0 ? Math.min(food / goal, 1) : 0;
+  const sz   = (R + SW) * 2;
+  const cx   = sz / 2;
 
   return (
     <div>
       {/* Big ring */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-        <div style={{ position: 'relative' }}>
-          <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx="80" cy="80" r={R} fill="none" stroke="var(--edge)" strokeWidth="12" />
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+        <div className="ring-enter" style={{ position: 'relative', width: sz, height: sz }}>
+          <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', overflow: 'visible', display: 'block' }}>
+            {/* Subtle radial backdrop */}
             <circle
-              cx="80" cy="80" r={R}
-              fill="none" stroke={ringColor} strokeWidth="12"
+              cx={cx} cy={cx} r={R + SW * 0.5}
+              fill="none"
+              stroke="var(--edge)"
+              strokeWidth={SW + 6}
+              opacity={0.4}
+            />
+            {/* Track */}
+            <circle cx={cx} cy={cx} r={R} fill="none" stroke="var(--edge2)" strokeWidth={SW} />
+            {/* Fill arc */}
+            <circle
+              cx={cx} cy={cx} r={R}
+              fill="none"
+              stroke={ringStroke}
+              strokeWidth={SW}
               strokeLinecap="round"
               strokeDasharray={`${C}`}
               strokeDashoffset={`${C * (1 - fill)}`}
-              style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.3s ease' }}
+              style={{
+                transition: 'stroke-dashoffset 0.85s cubic-bezier(0.4,0,0.2,1), stroke 0.35s ease',
+                filter: `drop-shadow(0 0 10px ${over ? 'rgba(248,113,113,0.40)' : complete ? 'rgba(74,222,128,0.40)' : 'rgba(157,126,255,0.38)'})`,
+              }}
             />
           </svg>
+          {/* Center */}
           <div style={{
             position: 'absolute', inset: 0,
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            filter: `drop-shadow(${ringGlow})`,
           }}>
-            <div style={{ fontSize: 36, fontWeight: 700, color: ringColor, letterSpacing: -1.5, lineHeight: 1 }}>
+            <div className="tabnum" style={{
+              fontSize: 44, fontWeight: 900, color: ringStroke,
+              letterSpacing: '-2px', lineHeight: 1,
+            }}>
               {remaining !== null ? displayRem.toLocaleString() : '—'}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 5, fontWeight: 500 }}>
+            <div style={{
+              fontSize: 11, color: 'var(--muted)', marginTop: 6,
+              fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase',
+            }}>
               {over ? 'kcal over' : 'kcal left'}
             </div>
           </div>
@@ -158,28 +190,36 @@ function CalDashboard({
 
       {/* Stats row: Eaten | Goal | Burned */}
       <div style={{
+        background: 'var(--surf)', borderRadius: 18,
+        border: '1px solid var(--edge)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
         display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr',
         alignItems: 'center', marginBottom: 16,
+        overflow: 'hidden',
       }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
+        <div style={{ textAlign: 'center', padding: '14px 8px' }}>
+          <div className="tabnum" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.8, lineHeight: 1 }}>
             {food.toLocaleString()}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>Eaten</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5, fontWeight: 600, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+            Eaten
+          </div>
         </div>
 
-        <div style={{ height: 28, background: 'var(--edge)' }} />
+        <div style={{ height: 32, background: 'var(--edge)' }} />
 
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
+        <div style={{ textAlign: 'center', padding: '14px 8px' }}>
+          <div className="tabnum" style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.8, lineHeight: 1 }}>
             {goal > 0 ? goal.toLocaleString() : '—'}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>Goal</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5, fontWeight: 600, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+            Goal
+          </div>
         </div>
 
-        <div style={{ height: 28, background: 'var(--edge)' }} />
+        <div style={{ height: 32, background: 'var(--edge)' }} />
 
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '14px 8px' }}>
           {editingEx ? (
             <input
               autoFocus
@@ -194,73 +234,86 @@ function CalDashboard({
               style={{
                 width: 64, background: 'transparent', border: 'none',
                 borderBottom: '1.5px solid var(--accent)', outline: 'none',
-                color: 'var(--accent)', fontSize: 22, fontWeight: 700,
-                textAlign: 'center', padding: '2px 0',
+                color: 'var(--accent)', fontSize: 24, fontWeight: 800,
+                textAlign: 'center', padding: '2px 0', fontVariantNumeric: 'tabular-nums',
               }}
             />
           ) : (
             <div
               onClick={() => { setExInput(exercise > 0 ? String(exercise) : ''); setEditingEx(true); }}
+              className="tabnum"
               style={{
-                fontSize: 22, fontWeight: 700, letterSpacing: -0.5, cursor: 'pointer', lineHeight: 1,
-                color: exercise > 0 ? CARB : 'var(--muted)',
+                fontSize: 24, fontWeight: 800, letterSpacing: -0.8, cursor: 'pointer', lineHeight: 1,
+                color: exercise > 0 ? CARB : 'var(--muted2)',
+                transition: 'color 0.2s ease',
               }}
               title="Tap to log exercise calories"
             >
               {exercise > 0 ? exercise.toLocaleString() : '+'}
             </div>
           )}
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, fontWeight: 500 }}>Burned</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5, fontWeight: 600, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+            Burned
+          </div>
         </div>
       </div>
 
-      {/* Thin progress bar */}
-      <div style={{ height: 3, background: 'var(--edge)', borderRadius: 2, overflow: 'hidden' }}>
+      {/* Progress bar */}
+      <div style={{ height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
         <div style={{
-          height: '100%', borderRadius: 2,
-          background: over ? RED : 'var(--accent)',
+          height: '100%', borderRadius: 99,
+          background: over ? `linear-gradient(90deg, ${RED}, #FF9F9F)` : 'linear-gradient(90deg, var(--accent), var(--accent-dim))',
+          boxShadow: over ? '0 0 8px rgba(248,113,113,0.40)' : '0 0 8px rgba(157,126,255,0.35)',
           width: `${pct}%`,
-          transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
+          transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
         }} />
       </div>
     </div>
   );
 }
 
-// ── Macros — single surface, 3 columns with hairline dividers ─────────
+// ── Macros — three columns with accent bars ────────────────────────────
 function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
   const macros = [
-    { label: 'Carbs',   val: consumed.carbsG,   target: targets?.carbsG   ?? 0, color: CARB },
-    { label: 'Fat',     val: consumed.fatG,      target: targets?.fatG     ?? 0, color: FAT  },
-    { label: 'Protein', val: consumed.proteinG,  target: targets?.proteinG ?? 0, color: PROT },
+    { label: 'Protein', val: consumed.proteinG,  target: targets?.proteinG ?? 0, color: PROT, glow: 'rgba(56,189,248,0.28)' },
+    { label: 'Carbs',   val: consumed.carbsG,     target: targets?.carbsG   ?? 0, color: CARB, glow: 'rgba(74,222,128,0.28)' },
+    { label: 'Fat',     val: consumed.fatG,        target: targets?.fatG     ?? 0, color: FAT,  glow: 'rgba(251,191,36,0.28)' },
   ];
 
   return (
     <div style={{
-      background: 'var(--surf)', borderRadius: 16,
+      background: 'var(--surf)',
+      borderRadius: 18,
+      border: '1px solid var(--edge)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
       display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr',
       overflow: 'hidden',
     }}>
-      {macros.flatMap(({ label, val, target, color }, i) => {
+      {macros.flatMap(({ label, val, target, color, glow }, i) => {
         const pct  = target > 0 ? Math.min((val / target) * 100, 100) : 0;
         const over = val > target && target > 0;
         const c    = over ? RED : color;
         const cell = (
-          <div key={label} style={{ padding: '14px 12px 12px' }}>
-            <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginBottom: 5 }}>
+          <div key={label} style={{
+            padding: '14px 12px 13px',
+            borderTop: `3px solid ${over ? RED : color}`,
+          }}>
+            <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: 6 }}>
               {label}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: over ? RED : 'var(--text)', letterSpacing: -0.5, lineHeight: 1 }}>
-              {Math.round(val)}<span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginLeft: 1 }}>g</span>
+            <div className="tabnum" style={{ fontSize: 22, fontWeight: 800, color: over ? RED : 'var(--text)', letterSpacing: -0.6, lineHeight: 1 }}>
+              {Math.round(val)}<span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500, marginLeft: 1 }}>g</span>
             </div>
             {target > 0 && (
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, fontWeight: 400 }}>
+              <div style={{ fontSize: 11, color: 'var(--muted2)', marginTop: 3, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
                 of {Math.round(target)}g
               </div>
             )}
-            <div style={{ height: 3, background: 'var(--edge)', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+            <div style={{ height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginTop: 10 }}>
               <div style={{
-                height: '100%', borderRadius: 2, background: c,
+                height: '100%', borderRadius: 99,
+                background: `linear-gradient(90deg, ${c}, ${c}CC)`,
+                boxShadow: `0 0 8px ${over ? 'rgba(248,113,113,0.35)' : glow}`,
                 width: `${pct}%`,
                 transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
               }} />
@@ -343,47 +396,48 @@ export default function HomeScreen() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 40 }}>
 
-      {/* Header — no card, no border */}
+      {/* Header */}
       <div style={{
-        padding: '24px 20px 12px',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        padding: '28px 20px 8px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>
+          <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.3px' }}>
             {displayName ? `${greeting},` : greeting}
           </div>
           {displayName && (
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', letterSpacing: -0.8, lineHeight: 1.1, marginTop: 2 }}>
+            <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text)', letterSpacing: -1, lineHeight: 1.1, marginTop: 3 }}>
               {displayName}
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {goalMode !== 'maintain' && (
             <button
               onClick={() => setActiveTab('profile')}
               style={{
-                padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
-                background: goalMode === 'lose' ? 'rgba(255,69,58,0.15)' : 'rgba(48,209,88,0.15)',
-                border: 'none',
-                fontSize: 13, fontWeight: 600,
+                padding: '5px 13px', borderRadius: 20, cursor: 'pointer',
+                background: goalMode === 'lose' ? 'rgba(255,69,58,0.14)' : 'rgba(48,209,88,0.14)',
+                border: `1px solid ${goalMode === 'lose' ? 'rgba(255,69,58,0.25)' : 'rgba(48,209,88,0.25)'}`,
+                fontSize: 12, fontWeight: 700, letterSpacing: '0.2px',
                 color: goalMode === 'lose' ? '#FF453A' : '#30D158',
               }}
             >
-              {goalMode === 'lose' ? 'Cut' : 'Bulk'}
+              {goalMode === 'lose' ? '↓ Cut' : '↑ Bulk'}
             </button>
           )}
           <button
             onClick={() => setActiveTab('profile')}
             className="nrc-press"
             style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: 'var(--surf2)', border: 'none',
+              width: 38, height: 38, borderRadius: '50%',
+              background: 'var(--surf2)',
+              border: '1px solid var(--edge2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', flexShrink: 0,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="8" r="4" />
               <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
             </svg>
@@ -403,10 +457,15 @@ export default function HomeScreen() {
 
       {/* Training */}
       <div style={{ padding: '20px 16px 0' }}>
-        <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
-          Today's training
+        <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 10 }}>
+          Today's Training
         </div>
-        <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{
+          background: 'var(--surf)', borderRadius: 18,
+          border: '1px solid var(--edge)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+          overflow: 'hidden',
+        }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'var(--edge)' }}>
             {TRAINING_TYPES.map(({ type, label, color, isAccent }) => {
               const active       = todayLog?.trainingType === type;
@@ -417,16 +476,24 @@ export default function HomeScreen() {
                   onClick={() => { if (!active) handleSelectType(type); }}
                   className="nrc-press"
                   style={{
-                    padding: '14px 4px',
-                    background: active ? (isAccent ? 'var(--accent-muted)' : `${color}18`) : 'var(--surf)',
+                    padding: '15px 4px 13px',
+                    background: active
+                      ? (isAccent ? 'var(--accent-muted)' : `${color}16`)
+                      : 'var(--surf)',
                     border: 'none', cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    color: active ? displayColor : 'var(--muted)',
-                    transition: 'background 0.2s ease',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+                    color: active ? displayColor : 'var(--muted2)',
+                    transition: 'background 0.2s ease, color 0.2s ease',
+                    borderTop: active ? `2px solid ${isAccent ? 'var(--accent)' : color}` : '2px solid transparent',
                   }}
                 >
-                  <TrainingIcon type={type} size={18} />
-                  <div style={{ fontSize: 10, fontWeight: active ? 700 : 500 }}>{label}</div>
+                  <TrainingIcon type={type} size={19} />
+                  <div style={{
+                    fontSize: 10, fontWeight: active ? 700 : 500,
+                    letterSpacing: active ? '0.2px' : 0,
+                  }}>
+                    {label}
+                  </div>
                 </button>
               );
             })}
@@ -436,14 +503,19 @@ export default function HomeScreen() {
 
       {/* Daily activity level */}
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
-          Daily activity
+        <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 10 }}>
+          Daily Activity
         </div>
-        <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{
+          background: 'var(--surf)', borderRadius: 18,
+          border: '1px solid var(--edge)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+          overflow: 'hidden',
+        }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--edge)' }}>
             {([
               { val: 'low',    label: 'Low',    desc: 'Desk job'     },
-              { val: 'normal', label: 'Normal', desc: 'Some walking' },
+              { val: 'normal', label: 'Active', desc: 'Some walking' },
               { val: 'high',   label: 'High',   desc: 'On feet'      },
             ] as const).map(({ val, label, desc }) => {
               const sel = (activityModifier ?? 'normal') === val || (!activityModifier && val === 'normal');
@@ -453,17 +525,18 @@ export default function HomeScreen() {
                   onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
                   className="nrc-press"
                   style={{
-                    padding: '14px 4px',
+                    padding: '15px 8px 13px',
                     background: sel ? 'var(--accent-muted)' : 'var(--surf)',
                     border: 'none', cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                     transition: 'background 0.2s ease',
+                    borderTop: sel ? '2px solid var(--accent)' : '2px solid transparent',
                   }}
                 >
-                  <span style={{ fontSize: 13, fontWeight: sel ? 700 : 500, color: sel ? 'var(--accent)' : 'var(--text)' }}>
+                  <span style={{ fontSize: 13, fontWeight: sel ? 700 : 500, color: sel ? 'var(--accent)' : 'var(--text)', transition: 'color 0.2s ease' }}>
                     {label}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 400 }}>{desc}</span>
+                  <span style={{ fontSize: 11, color: 'var(--muted2)', fontWeight: 400 }}>{desc}</span>
                 </button>
               );
             })}

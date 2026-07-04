@@ -22,7 +22,7 @@ import SupplementsScreen from './screens/SupplementsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 
 type Tab = 'home' | 'food' | 'history' | 'profile';
-const NAV_H = 60;
+const NAV_H = 64;
 
 function DiaryIcon({ active }: { active: boolean }) {
   return (
@@ -495,28 +495,49 @@ export default function App() {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         height: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`,
         background: 'var(--surf)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
         borderTop: '1px solid var(--edge)',
         display: 'flex',
         alignItems: 'flex-start',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
         {TABS.map(({ id, label, Icon }) => {
           const active = activeTab === id;
           return (
             <button key={id} onClick={() => setActiveTab(id as Tab)} className="press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 3,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0 4px',
-              minWidth: 0,
+              alignItems: 'center', justifyContent: 'center', gap: 4,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 4px',
+              minWidth: 0, position: 'relative',
             }}>
-              <div style={{ color: active ? 'var(--accent)' : 'var(--muted)', transition: 'color 0.15s ease' }}>
+              {/* Active indicator pill */}
+              <div style={{
+                position: 'absolute', top: 0, left: '50%',
+                transform: 'translateX(-50%)',
+                width: active ? 36 : 0,
+                height: 3,
+                borderRadius: '0 0 3px 3px',
+                background: 'var(--accent)',
+                boxShadow: active ? 'var(--glow-accent)' : 'none',
+                transition: 'width 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+              }} />
+              <div style={{
+                color: active ? 'var(--accent)' : 'var(--muted2)',
+                transition: 'color 0.18s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                transform: active ? 'scale(1.10)' : 'scale(1.0)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 10, fontWeight: active ? 700 : 500,
-                color: active ? 'var(--accent)' : 'var(--muted)', transition: 'all 0.15s ease',
-                letterSpacing: 0.5,
+                fontSize: 9, fontWeight: 700,
+                color: active ? 'var(--accent)' : 'var(--muted2)',
+                transition: 'color 0.18s ease',
+                letterSpacing: '0.8px',
+                textTransform: 'uppercase',
               }}>
                 {label}
               </span>
