@@ -299,15 +299,7 @@ export default function HomeScreen() {
   const [consumed, setConsumed] = useState<MacroTargets>(emptyMacros());
 
   useEffect(() => {
-    getLogs(todayStr).then(ls => {
-      const active = ls.filter(l => !l.removed);
-      setFoodLogs(active);
-      setConsumed(sumLogs(active));
-    });
-  }, [todayStr]);
-
-  useEffect(() => {
-    const reload = () => {
+    const load = () => {
       if (!document.hidden) {
         getLogs(todayStr).then(ls => {
           const active = ls.filter(l => !l.removed);
@@ -316,11 +308,11 @@ export default function HomeScreen() {
         });
       }
     };
-    document.addEventListener('visibilitychange', reload);
-    return () => document.removeEventListener('visibilitychange', reload);
+    load();
+    document.addEventListener('visibilitychange', load);
+    return () => document.removeEventListener('visibilitychange', load);
   }, [todayStr]);
 
-  // suppress unused warning — foodLogs kept for future features
   void foodLogs;
 
   const targets          = useEffectiveTargets();
@@ -459,6 +451,7 @@ export default function HomeScreen() {
                 <button
                   key={val}
                   onClick={() => setActivityModifier(val === 'normal' ? undefined : val)}
+                  className="nrc-press"
                   style={{
                     padding: '14px 4px',
                     background: sel ? 'var(--accent-muted)' : 'var(--surf)',

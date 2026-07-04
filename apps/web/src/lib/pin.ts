@@ -103,6 +103,7 @@ export async function verifyPin(pin: string): Promise<VerifyResult> {
   if (newTotal >= WIPE_AFTER) {
     await db.delete();
     indexedDB.deleteDatabase('FuelSyncDB');
+    localStorage.clear();
     return { ok: false, locked: false, lockedUntil: null, attemptsLeft: 0, wiped: true };
   }
 
@@ -141,6 +142,7 @@ export async function verifySecurityAnswer(answer: string): Promise<SecurityVeri
   if (newAttempts >= 5) {
     await db.delete();
     indexedDB.deleteDatabase('FuelSyncDB');
+    localStorage.clear();
     return { ok: false, attemptsLeft: 0, wiped: true };
   }
 

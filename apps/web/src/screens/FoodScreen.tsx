@@ -34,7 +34,6 @@ const PROT       = '#38BDF8';   // sky blue — protein
 const RED        = '#F87171';   // rose — errors
 const FAT_CLR    = '#FBBF24';   // amber — fat
 const CAL_CLR    = 'var(--accent)';
-const CARD_SHADOW = 'none';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];

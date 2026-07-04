@@ -126,10 +126,10 @@ function calcStreak(days: DaySummary[]): number {
 function StreakMilestone({ streak }: { streak: number }) {
   if (streak < 3) return null;
   const milestones = [
-    { min: 30, label: 'ELITE ATHLETE', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
-    { min: 14, label: 'COMMITTED',     color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
-    { min: 7,  label: 'ON FIRE',       color: ORANGE_HEX, msg: '7 day streak — a perfect week of fuel tracking.' },
-    { min: 3,  label: 'BUILDING',      color: YELLOW,     msg: '3 day streak — momentum is everything. Keep going.' },
+    { min: 30, label: 'Elite athlete', color: '#C8A200', msg: '1 full month of consistency. You are in rare company.' },
+    { min: 14, label: 'Committed',     color: GREEN,     msg: '2 weeks straight. Fuel tracking is becoming your identity.' },
+    { min: 7,  label: 'On fire',       color: ORANGE_HEX, msg: '7 day streak — a perfect week of fuel tracking.' },
+    { min: 3,  label: 'Building',      color: YELLOW,     msg: '3 day streak — momentum is everything. Keep going.' },
   ];
   const m = milestones.find((x) => streak >= x.min)!;
   return (
@@ -388,7 +388,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
                   fontSize: 8, fontWeight: isToday ? 800 : 600,
                   color: isToday ? ORANGE : MUTED, marginTop: 7, letterSpacing: 0.5,
                 }}>
-                  {isToday ? 'TODAY' : dayLbl}
+                  {isToday ? 'Today' : dayLbl}
                 </div>
               </div>
             );
