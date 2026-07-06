@@ -283,14 +283,29 @@ export default function SupplementsScreen() {
         </div>
       )}
 
-      {/* Progress bar */}
+      {/* Progress bar + big count */}
       {supplements.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ height: 4, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+            <span className="tabnum" style={{ fontSize: 34, fontWeight: 900, letterSpacing: -1.5, color: ACCENT, lineHeight: 1 }}>
+              {takenCount}
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)' }}>
+              of {supplements.length} taken today
+            </span>
+            {allDone && (
+              <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#4ADE80', background: 'rgba(74,222,128,0.12)', borderRadius: 20, padding: '3px 10px', border: '1px solid rgba(74,222,128,0.25)' }}>
+                All done ✓
+              </span>
+            )}
+          </div>
+          <div style={{ height: 5, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: 99,
-              background: `linear-gradient(90deg, ${ACCENT}, var(--accent-dim))`,
-              boxShadow: '0 0 10px rgba(157,126,255,0.35)',
+              background: allDone
+                ? `linear-gradient(90deg, #4ADE80, #34D399)`
+                : `linear-gradient(90deg, ${ACCENT}, var(--accent-dim))`,
+              boxShadow: allDone ? '0 0 12px rgba(74,222,128,0.40)' : '0 0 10px rgba(157,126,255,0.35)',
               width: `${takenPct}%`,
               transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)',
             }} />

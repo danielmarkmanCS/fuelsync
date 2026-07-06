@@ -212,6 +212,18 @@ function CalDashboard({ consumed, targets, date, externalExercise }: {
         </div>
       </div>
 
+      {/* ── Consumed / Remaining frosted chips ── */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+        <div className="chip" style={{ fontSize: 12, fontWeight: 700, color: food > 0 ? (over ? RED : CARB) : 'var(--muted)', borderColor: food > 0 ? (over ? 'rgba(248,113,113,0.30)' : 'rgba(74,222,128,0.30)') : 'var(--edge2)' }}>
+          🔥 {displayFood.toLocaleString()} consumed
+        </div>
+        {remaining !== null && (
+          <div className="chip" style={{ fontSize: 12, fontWeight: 700, color: over ? RED : 'var(--accent)', borderColor: over ? 'rgba(248,113,113,0.30)' : 'rgba(157,126,255,0.30)' }}>
+            ⚡ {displayRem.toLocaleString()} {over ? 'over' : 'left'}
+          </div>
+        )}
+      </div>
+
       {/* ── Stats row: Eaten | Goal | Burned ── */}
       <div style={{
         background: 'var(--surf)', borderRadius: 20,

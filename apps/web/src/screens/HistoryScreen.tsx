@@ -342,71 +342,97 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
         )}
       </div>
 
-      <div style={{ position: 'relative' }}>
-        {/* Goal dashed line */}
-        {goalCal > 0 && (
-          <div style={{
-            position: 'absolute',
-            top: CHART_H - (goalCal / maxCal) * CHART_H,
-            left: 0, right: 0, height: 1,
-            borderTop: `1.5px dashed ${ORANGE_HEX}80`,
-            zIndex: 1, pointerEvents: 'none',
-          }}>
-            <span style={{ position: 'absolute', right: 0, top: -8, fontSize: 8, fontWeight: 700, color: ORANGE_HEX, background: SURF, paddingLeft: 4, opacity: 0.8 }}>
-              GOAL
-            </span>
-          </div>
-        )}
+      {/* ── SVG filled area chart ── */}
+      <div style={{ position: 'relative', marginBottom: 8 }}>
+        {(() => {
+          const SVG_W = 320, SVG_H = CHART_H;
+          const PAD_X = 8;
+          const xs = week.map((_, i) => PAD_X + (i / 6) * (SVG_W - PAD_X * 2));
+          const cals = week.map(date => dayMap.get(date)?.totalCal ?? 0);
+          const ys = cals.map(cal => cal > 0 ? Math.max(SVG_H - (cal / maxCal) * (SVG_H - 8), 4) : SVG_H);
+          const hasAny = cals.some(c => c > 0);
+          const linePts = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+          const fillPath = `M${xs[0]},${SVG_H} ` + xs.map((x, i) => `L${x},${ys[i]}`).join(' ') + ` L${xs[xs.length-1]},${SVG_H} Z`;
+          const goalY = goalCal > 0 ? Math.max(SVG_H - (goalCal / maxCal) * (SVG_H - 8), 2) : -1;
 
-        <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end', height: CHART_H, position: 'relative', zIndex: 2 }}>
-          {week.map((date, idx) => {
-            const ds    = dayMap.get(date);
-            const cal   = ds?.totalCal ?? 0;
-            const rawBarH = cal > 0 ? Math.max((cal / maxCal) * CHART_H, 8) : 4;
-            const barH  = animated ? rawBarH : 0;
-            const pct   = goalCal > 0 ? (cal / goalCal) * 100 : 0;
-            const isToday = date === todayStr;
-            const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? YELLOW : 'rgba(255,255,255,0.10)';
-            const dayLbl = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
-            const prevCal  = dayMap.get(prevWeek[idx])?.totalCal ?? 0;
-            const prevBarH = showPrev && prevCal > 0 ? Math.max((prevCal / maxCal) * CHART_H, 3) : 0;
+          return (
+            <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H + 18}`} style={{ overflow: 'visible', display: 'block' }}>
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={ORANGE_HEX} stopOpacity="0.30" />
+                  <stop offset="100%" stopColor={ORANGE_HEX} stopOpacity="0.02" />
+                </linearGradient>
+              </defs>
 
-            return (
-              <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', height: CHART_H, justifyContent: 'flex-end', position: 'relative' }}>
-                  {prevBarH > 0 && (
-                    <div style={{ position: 'absolute', bottom: 0, width: '100%', height: prevBarH, background: `${MUTED2}35`, borderRadius: '5px 5px 3px 3px', border: `1px solid ${MUTED2}25` }} />
-                  )}
-                  {cal > 0 && (
-                    <div style={{ fontSize: 9, fontWeight: 700, color: isToday ? color : MUTED, marginBottom: 4, position: 'relative', zIndex: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2 }}>
-                      {cal >= 1000 ? `${(cal / 1000).toFixed(1)}k` : cal}
-                    </div>
-                  )}
-                  <div style={{
-                    width: '100%', height: barH,
-                    background: `linear-gradient(180deg, ${color}70 0%, ${color} 100%)`,
-                    borderRadius: '6px 6px 4px 4px',
-                    boxShadow: isToday
-                      ? `0 0 18px ${color}60, 0 0 6px ${color}40, inset 0 1px 0 ${color}60`
-                      : `0 2px 8px ${color}30`,
-                    opacity: isToday ? 1 : cal > 0 ? 0.80 : 0.4,
-                    transition: `height 0.65s cubic-bezier(0.4,0,0.2,1) ${idx * 50}ms`,
-                    position: 'relative', zIndex: 1,
-                  }} />
-                </div>
-                <div style={{
-                  fontSize: isToday ? 9 : 8,
-                  fontWeight: isToday ? 900 : 600,
-                  color: isToday ? ORANGE_HEX : MUTED,
-                  marginTop: 8, letterSpacing: 0.5,
-                  textShadow: isToday ? `0 0 8px ${ORANGE_HEX}60` : 'none',
-                }}>
-                  {isToday ? 'Today' : dayLbl}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              {/* Goal dashed line */}
+              {goalY > 0 && (
+                <>
+                  <line x1={PAD_X} y1={goalY} x2={SVG_W - PAD_X} y2={goalY}
+                    stroke={`${ORANGE_HEX}70`} strokeWidth="1.5" strokeDasharray="4 3" />
+                  <text x={SVG_W - PAD_X - 2} y={goalY - 4} fill={ORANGE_HEX} fontSize="7"
+                    fontWeight="700" textAnchor="end" opacity="0.85">GOAL</text>
+                </>
+              )}
+
+              {/* Prev week ghost */}
+              {showPrev && week.map((date, idx) => {
+                const prevCal = dayMap.get(prevWeek[idx])?.totalCal ?? 0;
+                if (!prevCal) return null;
+                const bH = Math.max((prevCal / maxCal) * (SVG_H - 8), 3);
+                const bW = (SVG_W - PAD_X * 2) / 7 * 0.5;
+                return (
+                  <rect key={date} x={xs[idx] - bW / 2} y={SVG_H - bH} width={bW} height={bH}
+                    rx="3" fill={`${MUTED2}28`} />
+                );
+              })}
+
+              {/* Area fill */}
+              {hasAny && (
+                <path d={fillPath} fill="url(#areaGrad)"
+                  style={{ opacity: animated ? 1 : 0, transition: 'opacity 0.7s ease' }} />
+              )}
+
+              {/* Glowing line */}
+              {hasAny && (
+                <polyline points={linePts} fill="none" stroke={ORANGE_HEX} strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  style={{ filter: `drop-shadow(0 0 5px ${ORANGE_HEX}90)`, opacity: animated ? 1 : 0, transition: 'opacity 0.7s ease' }} />
+              )}
+
+              {/* Dots + labels */}
+              {week.map((date, idx) => {
+                const cal = cals[idx];
+                const isToday = date === todayStr;
+                const pct = goalCal > 0 ? (cal / goalCal) * 100 : 0;
+                const dotColor = pct >= 110 ? RED : pct >= 85 ? GREEN : cal > 0 ? ORANGE_HEX : MUTED2;
+                const dayLbl = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
+                const r = isToday ? 5.5 : cal > 0 ? 3.5 : 0;
+                return (
+                  <g key={date}>
+                    {r > 0 && (
+                      <circle cx={xs[idx]} cy={ys[idx]} r={r}
+                        fill={isToday ? dotColor : SURF}
+                        stroke={dotColor} strokeWidth={isToday ? 0 : 1.5}
+                        style={{ filter: isToday ? `drop-shadow(0 0 8px ${dotColor})` : 'none' }} />
+                    )}
+                    {cal > 0 && (
+                      <text x={xs[idx]} y={ys[idx] - r - 4} textAnchor="middle"
+                        fontSize="8" fontWeight="700" fill={isToday ? dotColor : MUTED}
+                        style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {cal >= 1000 ? `${(cal / 1000).toFixed(1)}k` : cal}
+                      </text>
+                    )}
+                    <text x={xs[idx]} y={SVG_H + 14} textAnchor="middle"
+                      fontSize={isToday ? 9 : 8} fontWeight={isToday ? 900 : 600}
+                      fill={isToday ? ORANGE_HEX : MUTED}>
+                      {isToday ? 'Today' : dayLbl}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          );
+        })()}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
