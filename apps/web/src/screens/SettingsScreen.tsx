@@ -5,7 +5,8 @@ import { useAppStore } from '../store/appStore';
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 13, fontWeight: 600, color: 'var(--muted)',
+      fontSize: 11, fontWeight: 700, letterSpacing: '0.8px',
+      textTransform: 'uppercase', color: 'var(--muted)',
       marginBottom: 8, paddingLeft: 4,
     }}>
       {children}
@@ -29,7 +30,7 @@ function SettingsRow({
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: '13px 16px',
+        padding: '0 16px', minHeight: 52,
         borderBottom: borderBottom ? '1px solid var(--edge)' : 'none',
         cursor: onClick ? 'pointer' : 'default',
         transition: 'background 0.15s ease',
@@ -149,17 +150,17 @@ function AccentSwatch({ accentKey, current, onSelect, isDark }: {
       onClick={() => onSelect(accentKey)}
       aria-label={a.label}
       style={{
-        width: 40, height: 40, borderRadius: 12, border: 'none',
-        background: active ? color : `${color}30`,
+        width: 36, height: 36, borderRadius: '50%', border: 'none',
+        background: color,
         cursor: 'pointer', padding: 0, position: 'relative',
-        boxShadow: active ? `0 0 0 3px var(--surf), 0 0 0 5px ${color}` : `0 0 0 1.5px ${color}30`,
-        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-        transform: active ? 'scale(1.12)' : 'scale(1)',
+        boxShadow: active ? `0 0 0 3px var(--surf), 0 0 0 5px ${color}, 0 0 16px ${color}55` : `0 0 0 2px ${color}40`,
+        transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease',
+        transform: active ? 'scale(1.15)' : 'scale(1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >
       {active && (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"
           strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
@@ -177,14 +178,11 @@ export default function SettingsScreen() {
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: '24px 16px 16px' }}>
-        <div style={{
-          fontSize: 26, fontWeight: 700, color: 'var(--text)',
-          letterSpacing: -0.5,
-        }}>
+      <div style={{ padding: '28px 16px 16px' }}>
+        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.8 }}>
           Settings
         </div>
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
           Appearance, profile &amp; preferences
         </div>
       </div>
@@ -225,7 +223,7 @@ export default function SettingsScreen() {
             </div>
           </div>
           {/* Units toggle */}
-          <div style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ padding: '0 16px', minHeight: 52, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ flexShrink: 0, width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 3h7v7H3zM3 14h7v7H3zM14 3h7v7h-7zM17 17h-3v3M17 17v3M20 17v3"/>
@@ -237,20 +235,22 @@ export default function SettingsScreen() {
                 {units === 'metric' ? 'Metric — kg, cm' : 'Imperial — lbs, ft'}
               </div>
             </div>
-            <div style={{ display: 'flex', background: 'var(--surf2)', borderRadius: 8, padding: 3, gap: 2, border: '1px solid var(--edge)' }}>
+            <div style={{ display: 'flex', background: 'var(--surf2)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--edge)' }}>
               {(['metric', 'imperial'] as const).map((u) => (
                 <button
                   key={u}
                   onClick={() => setUnits(u)}
                   style={{
-                    padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                     background: units === u ? 'var(--accent)' : 'transparent',
                     color: units === u ? '#fff' : 'var(--muted)',
-                    fontSize: 12, fontWeight: 700, transition: 'all 0.18s',
+                    fontSize: 12, fontWeight: 700,
+                    transition: 'background 0.18s ease, color 0.18s ease',
                     letterSpacing: 0.3,
+                    boxShadow: units === u ? '0 2px 8px rgba(157,126,255,0.25)' : 'none',
                   }}
                 >
-                  {u === 'metric' ? 'kg' : 'lbs'}
+                  {u === 'metric' ? 'kg · cm' : 'lbs · ft'}
                 </button>
               ))}
             </div>

@@ -221,14 +221,26 @@ export default function SupplementsScreen() {
     }
   }, [allDone, today]);
 
+  const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
+
+  const handleToggleTaken = async (s: Supplement) => {
+    const wasUntaken = !isTaken(s.id!);
+    if (wasUntaken) setCheckedIds(prev => new Set(prev).add(s.id!));
+    await toggleTaken(s);
+    if (wasUntaken) setTimeout(() => setCheckedIds(prev => { const n = new Set(prev); n.delete(s.id!); return n; }), 400);
+  };
+
+  const takenPct = supplements.length ? (takenCount / supplements.length) * 100 : 0;
+
   return (
     <div style={{ minHeight: '100%', background: BG, padding: '16px 16px 32px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: syncMsg ? 10 : 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: syncMsg ? 10 : 16 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>Supplements</div>
-          <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-            {takenCount}/{supplements.length} taken today
+          <div style={{ fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>Supplements</div>
+          <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
+            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? ACCENT : MUTED }}>{takenCount}</span>
+            <span style={{ color: MUTED }}> of {supplements.length} taken today</span>
             {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FBBF24' }}>· {skippedCount} skipped</span>}
           </div>
         </div>
@@ -241,20 +253,18 @@ export default function SupplementsScreen() {
             </svg>
           )}
           {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
-            <button
-              onClick={handleEnableReminders}
-              title="Enable supplement reminders"
-              style={{ background: 'none', border: `1px solid ${EDGE}`, borderRadius: 6, padding: '7px 10px', color: MUTED, fontSize: 13, cursor: 'pointer' }}
-            >🔔</button>
+            <button onClick={handleEnableReminders} title="Enable reminders"
+              style={{ background: 'none', border: `1px solid ${EDGE}`, borderRadius: 8, padding: '7px 10px', color: MUTED, fontSize: 13, cursor: 'pointer' }}>
+              🔔
+            </button>
           )}
-          {notifPerm === 'granted' && (
-            <span title="Reminders on" style={{ fontSize: 14 }}>🔔</span>
-          )}
+          {notifPerm === 'granted' && <span title="Reminders on" style={{ fontSize: 14 }}>🔔</span>}
           <button
             onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
             style={{
-              background: ACCENT, border: 'none', borderRadius: 10, padding: '8px 14px',
+              background: ACCENT, border: 'none', borderRadius: 12, padding: '9px 16px',
               color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(157,126,255,0.30)',
             }}
           >+ Add</button>
         </div>
@@ -263,7 +273,7 @@ export default function SupplementsScreen() {
       {/* Sync message */}
       {syncMsg && (
         <div style={{
-          marginBottom: 14, padding: '8px 12px', borderRadius: 8,
+          marginBottom: 14, padding: '8px 12px', borderRadius: 10,
           background: syncMsg.startsWith('⚠') ? `${RED}12` : `${ACCENT}12`,
           border: `1px solid ${syncMsg.startsWith('⚠') ? RED : ACCENT}30`,
           fontSize: 12, fontWeight: 600,
@@ -276,11 +286,13 @@ export default function SupplementsScreen() {
       {/* Progress bar */}
       {supplements.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ height: 4, background: EDGE, borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ height: 4, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
-              height: '100%', background: ACCENT, borderRadius: 2,
-              width: `${supplements.length ? (takenCount / supplements.length) * 100 : 0}%`,
-              transition: 'width 0.3s ease',
+              height: '100%', borderRadius: 99,
+              background: `linear-gradient(90deg, ${ACCENT}, var(--accent-dim))`,
+              boxShadow: '0 0 10px rgba(157,126,255,0.35)',
+              width: `${takenPct}%`,
+              transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)',
             }} />
           </div>
         </div>
@@ -288,47 +300,69 @@ export default function SupplementsScreen() {
 
       {/* Supplement list grouped by timing */}
       {TIMINGS.filter(t => supplements.some(s => s.timing === t)).map(t => (
-        <div key={t} style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 8 }}>
-            {TIMING_LABEL[t]}
+        <div key={t} style={{ marginBottom: 20 }}>
+          {/* Timing group header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, whiteSpace: 'nowrap' }}>
+              {TIMING_LABEL[t]}
+            </div>
+            <div style={{ flex: 1, height: 1, background: EDGE }} />
           </div>
-          <div style={{ background: SURF, borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ background: SURF, borderRadius: 18, overflow: 'hidden', border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
             {supplements.filter(s => s.timing === t).map((s, i, arr) => {
               const taken   = isTaken(s.id!);
               const skipped = isSkipped(s.id!);
+              const popping = checkedIds.has(s.id!);
               return (
                 <div key={s.id} style={{
-                  display: 'flex', alignItems: 'center', padding: '14px 16px', gap: 14,
+                  display: 'flex', alignItems: 'center', padding: '0 16px', gap: 14,
+                  minHeight: 72,
                   borderBottom: i < arr.length - 1 ? `1px solid ${EDGE}` : 'none',
-                  opacity: skipped ? 0.55 : 1,
+                  opacity: skipped ? 0.5 : 1,
+                  transition: 'opacity 0.2s ease',
                 }}>
-                  {/* Checkbox */}
+                  {/* Circle checkbox with pop animation */}
                   <button
-                    onClick={() => toggleTaken(s)}
+                    onClick={() => handleToggleTaken(s)}
+                    className={popping ? 'check-pop' : ''}
                     style={{
-                      width: 24, height: 24, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-                      border: `2px solid ${taken ? ACCENT : skipped ? '#FBBF24' : EDGE}`,
+                      width: 26, height: 26, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+                      border: `2px solid ${taken ? ACCENT : skipped ? '#FBBF24' : 'var(--edge2)'}`,
                       background: taken ? ACCENT : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'background 0.18s ease, border-color 0.18s ease',
+                      boxShadow: taken ? '0 0 10px rgba(157,126,255,0.30)' : 'none',
                     }}
                   >
-                    {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     {skipped && !taken && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><line x1="2" y1="5" x2="8" y2="5" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round"/></svg>}
                   </button>
 
                   {/* Info */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: taken ? MUTED : TEXT, transition: 'color 0.2s', textDecoration: skipped ? 'line-through' : 'none' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 15, fontWeight: 500, color: taken ? MUTED : TEXT,
+                      transition: 'color 0.2s ease',
+                      textDecoration: taken ? 'line-through' : skipped ? 'line-through' : 'none',
+                      opacity: taken ? 0.5 : 1,
+                    }}>
                       {s.name}
                     </div>
-                    <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>
+                    <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
                       {s.dose} {s.unit}
                       {skipped && <span style={{ marginLeft: 6, color: '#FBBF24', fontWeight: 700 }}>· Skipped</span>}
                     </div>
                   </div>
 
-                  {/* Skip / Edit / Delete */}
-                  <div style={{ display: 'flex', gap: 4 }}>
+                  {/* Time chip + actions */}
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: MUTED,
+                      background: 'var(--surf2)', borderRadius: 6, padding: '3px 7px',
+                      border: `1px solid ${EDGE}`,
+                    }}>
+                      {TIMING_LABEL[t].split('-')[0]}
+                    </span>
                     <button
                       onClick={() => toggleSkipped(s)}
                       title={skipped ? 'Undo skip' : 'Skip today'}
@@ -471,35 +505,40 @@ export default function SupplementsScreen() {
         </div>
       )}
 
-      {/* ── Congrats overlay — all supplements taken for the day ── */}
+      {/* ── Full-screen celebration — all supplements done ── */}
       {showCongrats && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 400,
-          background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '0 24px',
+          background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(16px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '0 32px',
         }} onClick={() => setShowCongrats(false)}>
-          <div style={{
-            background: SURF, borderRadius: 20, padding: '32px 28px',
-            textAlign: 'center', maxWidth: 340, width: '100%',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 44, marginBottom: 12 }}>🎯</div>
-            <div style={{ fontSize: 19, fontWeight: 900, color: TEXT, letterSpacing: -0.5, marginBottom: 8 }}>
-              All Done!
+          <div className="celeb-in" style={{ textAlign: 'center', maxWidth: 360, width: '100%' }} onClick={e => e.stopPropagation()}>
+            {/* Glow ring */}
+            <div style={{
+              width: 120, height: 120, borderRadius: '50%', margin: '0 auto 28px',
+              background: 'var(--accent-muted)',
+              border: '2px solid var(--accent)',
+              boxShadow: '0 0 40px rgba(157,126,255,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 52,
+            }}>🔥</div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: TEXT, letterSpacing: -1, marginBottom: 12 }}>
+              All done!
             </div>
-            <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.65, marginBottom: 24 }}>
-              Every supplement logged today. Consistency compounds — you're building the habits that separate good athletes from elite ones.
+            <div style={{ fontSize: 15, color: MUTED, lineHeight: 1.7, marginBottom: 36 }}>
+              Every supplement logged. Consistency compounds — this is what separates good athletes from elite ones.
             </div>
             <button
               onClick={() => setShowCongrats(false)}
               style={{
-                width: '100%', padding: '13px', borderRadius: 8,
+                width: '100%', height: 52, borderRadius: 14,
                 background: ACCENT, border: 'none',
-                color: '#fff', fontSize: 14, fontWeight: 800,
+                color: '#fff', fontSize: 15, fontWeight: 700,
                 cursor: 'pointer', fontFamily: 'inherit',
+                boxShadow: '0 4px 20px rgba(157,126,255,0.35)',
               }}
-            >Let's Go 💪</button>
+            >Keep going 💪</button>
           </div>
         </div>
       )}

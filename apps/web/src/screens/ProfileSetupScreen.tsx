@@ -158,6 +158,24 @@ export default function ProfileSetupScreen() {
     }).catch(() => {});
   }, []);
 
+  // Auto-save profile whenever valid data changes — no Save button required
+  useEffect(() => {
+    const w = parseFloat(weightKg), h = parseFloat(heightCm), a = parseInt(age, 10);
+    if (isNaN(w) || w < 30 || w > 300) return;
+    if (isNaN(h) || h < 100 || h > 250) return;
+    if (isNaN(a) || a < 10 || a > 100) return;
+    const t = setTimeout(async () => {
+      try {
+        const updated = await updateProfile({ weightKg: w, heightCm: h, age: a, gender, activityLevel, displayName: displayName.trim() || undefined });
+        setUser(updated);
+        syncProfile({ weight_kg: w, height_cm: h, age: a, gender, activity_level: activityLevel, display_name: displayName.trim() || undefined }).catch(() => {});
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1500);
+      } catch { /* ignore */ }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [weightKg, heightCm, age, gender, activityLevel, displayName]);
+
   const handleSaveMeasurements = async () => {
     const hasAny = [measWaist, measChest, measArms, measHips, measThighs, measNeck, measBf].some(v => v.trim());
     if (!hasAny) return;

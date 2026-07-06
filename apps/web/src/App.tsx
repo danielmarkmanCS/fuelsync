@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
 import { useAppStore } from './store/appStore';
 import { useThemeStore, ACCENT_COLORS } from './store/themeStore';
@@ -6,7 +6,7 @@ import { getProfile, createProfile, updateProfile } from './api/auth';
 import type { LocalProfile } from './api/auth';
 import { hasPin } from './lib/pin';
 import { connectStrava } from './api/strava';
-import { getSyncToken, getMe, syncProfile, syncWeightLog, fetchWeightLogs, fetchSupplements, fetchSupplementLogs, syncSupplement, syncSupplementLog } from './api/syncClient';
+import { getSyncToken, getMe, syncProfile, fetchWeightLogs, fetchSupplements, fetchSupplementLogs, syncSupplement, syncSupplementLog } from './api/syncClient';
 import { clearPullCache, drainSyncQueue } from './api/localFood';
 import { db } from './lib/db';
 import type { Supplement } from './lib/db';
@@ -108,10 +108,6 @@ export default function App() {
   const [booting,          setBooting]          = useState(true);
   const [needsPin,         setNeedsPin]         = useState(false);
   const [stravaConnecting, setStravaConnecting] = useState(false);
-  const [showWeightCheckIn, setShowWeightCheckIn] = useState(false);
-  const [weightInput,       setWeightInput]       = useState('');
-  const [weightSaving,      setWeightSaving]      = useState(false);
-  const weightChecked = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -223,20 +219,6 @@ export default function App() {
       }
     })();
   }, []);
-
-  // Daily weight check-in — once per day, only after 08:00
-  useEffect(() => {
-    if (!user || !pinVerified || booting || weightChecked.current) return;
-    if (new Date().getHours() < 8) return;   // don't nag before morning
-    weightChecked.current = true;
-    const today = new Date().toISOString().split('T')[0];
-    db.weight_logs.where('date').equals(today).count().then((count) => {
-      if (count === 0) {
-        setWeightInput(user.weightKg ? String(user.weightKg) : '');
-        setShowWeightCheckIn(true);
-      }
-    }).catch(() => {});
-  }, [user, pinVerified, booting]);
 
   // Clear D1 pull cache whenever the user brings the app to foreground
   useEffect(() => {
@@ -388,26 +370,6 @@ export default function App() {
   );
   if (needsPin && !pinVerified) return <PinScreen />;
 
-  const handleWeightLog = async (skip?: boolean) => {
-    const kg = skip ? (user?.weightKg ?? 0) : parseFloat(weightInput);
-    if (!skip && (!kg || kg < 20 || kg > 300)) return;
-    setWeightSaving(true);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const syncId = crypto.randomUUID();
-      await db.weight_logs.add({ sync_id: syncId, date: today, weightKg: kg || 0, logged_at: new Date().toISOString() });
-      if (!skip && kg) {
-        const updated = await updateProfile({ weightKg: kg });
-        setUser(updated);
-        syncProfile({ weight_kg: kg }).catch(() => {});
-        if (getSyncToken()) {
-          syncWeightLog({ id: syncId, weight_kg: kg, date: today, logged_at: new Date().toISOString() }).catch(() => {});
-        }
-      }
-    } catch { /* ignore */ }
-    finally { setWeightSaving(false); setShowWeightCheckIn(false); }
-  };
-
   return (
     <div style={{
       position: 'relative', height: '100dvh',
@@ -422,74 +384,6 @@ export default function App() {
         {activeTab === 'history'     && <HistoryScreen />}
         {activeTab === 'profile'     && <ProfileSetupScreen />}
       </div>
-
-      {/* Daily weight check-in modal */}
-      {showWeightCheckIn && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 200,
-          background: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px',
-        }}>
-          <div style={{
-            background: 'var(--surf)', borderRadius: 8, padding: '24px 20px',
-            width: '100%', maxWidth: 340, textAlign: 'center',
-            border: '1px solid var(--edge)',
-          }}>
-            <div style={{ fontFamily: "inherit", fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 4, letterSpacing: 0.5 }}>
-              MORNING CHECK-IN
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.6 }}>
-              Log today's weight to keep BMR and targets accurate.
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <button
-                onClick={() => setWeightInput(w => String(Math.max(20, parseFloat(w || '0') - 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--text)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
-              >−</button>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <input
-                  type="number" value={weightInput}
-                  onChange={e => setWeightInput(e.target.value)}
-                  step="0.1" min="20" max="300"
-                  style={{
-                    width: '100%', boxSizing: 'border-box', padding: '12px 36px 12px 12px',
-                    borderRadius: 8, border: '1.5px solid var(--accent)',
-                    background: 'var(--bg)', color: 'var(--text)',
-                    fontSize: 22, fontWeight: 700, textAlign: 'center',
-                    outline: 'none', fontFamily: 'inherit',
-                  }}
-                />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 12, fontWeight: 600 }}>kg</span>
-              </div>
-              <button
-                onClick={() => setWeightInput(w => String(Math.min(300, parseFloat(w || '0') + 0.5)))}
-                style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--accent)', fontSize: 20, cursor: 'pointer', flexShrink: 0 }}
-              >+</button>
-            </div>
-
-            <button
-              onClick={() => handleWeightLog(false)} disabled={weightSaving}
-              style={{
-                width: '100%', padding: '13px 0', borderRadius: 8,
-                background: weightSaving ? 'var(--edge)' : 'var(--accent)', border: 'none',
-                color: weightSaving ? 'var(--muted)' : '#fff',
-                fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                marginBottom: 10, fontFamily: "inherit", letterSpacing: 1,
-              }}
-            >
-              {weightSaving ? 'SAVING…' : 'LOG WEIGHT'}
-            </button>
-            <button
-              onClick={() => handleWeightLog(true)}
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-            >
-              Skip today
-            </button>
-          </div>
-        </div>
-      )}
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,

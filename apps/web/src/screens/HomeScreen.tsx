@@ -393,6 +393,13 @@ export default function HomeScreen() {
   const greeting    = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const displayName = user?.displayName || '';
 
+  const dateChip = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+  const MEAL_COLORS: Record<string, string> = {
+    breakfast: '#F97316', lunch: '#38BDF8', dinner: '#A78BFA',
+    pre_workout: '#4ADE80', post_workout: '#4ADE80', snack: '#FBBF24', other: '#8B949E',
+  };
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 40 }}>
 
@@ -402,19 +409,16 @@ export default function HomeScreen() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.3px' }}>
-            {displayName ? `${greeting},` : greeting}
+          <span className="chip a a1">{dateChip}</span>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: -0.5, lineHeight: 1.2, marginTop: 8 }} className="a a2">
+            {displayName ? `${greeting}, ${displayName}` : greeting}
           </div>
-          {displayName && (
-            <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text)', letterSpacing: -1, lineHeight: 1.1, marginTop: 3 }}>
-              {displayName}
-            </div>
-          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {goalMode !== 'maintain' && (
             <button
               onClick={() => setActiveTab('profile')}
+              className="press"
               style={{
                 padding: '5px 13px', borderRadius: 20, cursor: 'pointer',
                 background: goalMode === 'lose' ? 'rgba(255,69,58,0.14)' : 'rgba(48,209,88,0.14)',
@@ -503,9 +507,7 @@ export default function HomeScreen() {
 
       {/* Daily activity level */}
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 10 }}>
-          Daily Activity
-        </div>
+        <div className="sec-label" style={{ marginBottom: 10 }}>Daily Activity</div>
         <div style={{
           background: 'var(--surf)', borderRadius: 18,
           border: '1px solid var(--edge)',
@@ -543,6 +545,89 @@ export default function HomeScreen() {
           </div>
         </div>
       </div>
+
+      {/* Today's Log */}
+      {foodLogs.length > 0 && (
+        <div style={{ padding: '20px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div className="sec-label">Today's Log</div>
+            <button
+              onClick={() => setActiveTab('food')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.3 }}
+            >
+              See all →
+            </button>
+          </div>
+          <div style={{ background: 'var(--surf)', borderRadius: 18, border: '1px solid var(--edge)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+            {foodLogs.slice(0, 5).map((log, i) => {
+              const mealColor = MEAL_COLORS[log.meal_type ?? 'other'] ?? '#8B949E';
+              const timeStr = new Date(log.logged_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+              return (
+                <div
+                  key={log.id}
+                  className="row-in card-lift"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 16px', minHeight: 64,
+                    borderBottom: i < Math.min(foodLogs.length, 5) - 1 ? '1px solid var(--edge)' : 'none',
+                    animationDelay: `${i * 25}ms`,
+                  }}
+                >
+                  <div className="icon-tile" style={{ background: `${mealColor}18` }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={mealColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/>
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {log.food_name}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 3, alignItems: 'center' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: PROT }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: PROT, display: 'inline-block' }} />
+                        {Math.round(+log.protein)}g
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: CARB }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: CARB, display: 'inline-block' }} />
+                        {Math.round(+log.carbs)}g
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: FAT }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: FAT, display: 'inline-block' }} />
+                        {Math.round(+log.fat)}g
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+                    <div className="tabnum" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+                      {Math.round(+log.calories)}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 500 }}>{timeStr}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Quick-add FAB */}
+      <button
+        onClick={() => setActiveTab('food')}
+        className="press"
+        style={{
+          position: 'fixed', bottom: 80, right: 20,
+          width: 56, height: 56, borderRadius: 18,
+          background: 'var(--accent)',
+          boxShadow: 'var(--glow-accent)',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 40,
+        }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
 
     </div>
   );

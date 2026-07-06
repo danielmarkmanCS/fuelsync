@@ -262,3 +262,49 @@ input, textarea, select { transition: border-color 0.12s ease; }
 
 /* ── RING ────────────────────────────────────────── */
 .ring-enter { animation: ringPop 0.35s var(--ease) both; }
+
+/* ── CHECK POP — supplement checkbox ─────────────── */
+@keyframes checkPop {
+  0%   { transform: scale(0.80); }
+  55%  { transform: scale(1.18); }
+  80%  { transform: scale(0.96); }
+  100% { transform: scale(1.00); }
+}
+.check-pop { animation: checkPop 0.32s var(--spring) both; }
+
+/* ── FOOD ROW entrance ───────────────────────────── */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.row-in { animation: rowIn 0.22s var(--snappy) both; }
+
+/* ── CELEBRATION overlay ─────────────────────────── */
+@keyframes celebIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.celeb-in { animation: celebIn 0.42s var(--spring) both; }
+
+/* ── FROSTED CHIP ────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 99px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--edge2);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px; color: var(--muted);
+}
+body[data-theme="light"] .chip { background: rgba(0,0,0,0.04); }
+
+/* ── SECTION LABEL ───────────────────────────────── */
+.sec-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* ── ICON TILE (food log rows) ───────────────────── */
+.icon-tile {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
