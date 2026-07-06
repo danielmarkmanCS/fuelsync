@@ -47,7 +47,8 @@ const MEAL_SHORT: Record<string, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: ORANGE, pre_workout: ORANGE, lunch: '#38BDF8', post_workout: '#38BDF8', dinner: '#A0A0A0', snack: '#FF4444', other: '#444444',
+  breakfast: '#F97316', pre_workout: '#4ADE80', lunch: '#38BDF8',
+  post_workout: '#34D399', dinner: '#A78BFA', snack: '#FBBF24', other: '#8B949E',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;
@@ -1033,8 +1034,8 @@ export default function FoodScreen() {
         {/* Meal distribution — thin bar */}
         {byMeal.length > 1 && consumed.calories > 0 && (() => {
           const MEAL_COLORS_MAP: Record<string, string> = {
-            breakfast: '#38BDF8', pre_workout: '#A78BFA', lunch: '#4ADE80',
-            post_workout: '#34D399', dinner: '#FBBF24', snack: '#FB923C', other: '#6B7280',
+            breakfast: '#F97316', pre_workout: '#4ADE80', lunch: '#38BDF8',
+            post_workout: '#34D399', dinner: '#A78BFA', snack: '#FBBF24', other: '#8B949E',
           };
           const total = consumed.calories;
           return (

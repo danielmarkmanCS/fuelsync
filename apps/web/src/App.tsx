@@ -21,7 +21,7 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import SupplementsScreen from './screens/SupplementsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 
-type Tab = 'home' | 'food' | 'history' | 'profile';
+import type { AppTab } from './store/appStore';
 const NAV_H = 64;
 
 function DiaryIcon({ active }: { active: boolean }) {
@@ -79,10 +79,12 @@ function GearIcon({ active }: { active: boolean }) {
   );
 }
 
-const TABS: Array<{ id: Tab; label: string; Icon: React.FC<{ active: boolean }> }> = [
-  { id: 'home',    label: 'TODAY',  Icon: DiaryIcon  },
-  { id: 'food',    label: 'LOG',    Icon: LogIcon    },
-  { id: 'history', label: 'STATS',  Icon: TrendsIcon },
+const TABS: Array<{ id: AppTab; label: string; Icon: React.FC<{ active: boolean }>; color: string }> = [
+  { id: 'home',        label: 'TODAY', Icon: DiaryIcon,  color: 'var(--accent)' },
+  { id: 'food',        label: 'LOG',   Icon: LogIcon,    color: '#38BDF8' },
+  { id: 'history',     label: 'STATS', Icon: TrendsIcon, color: '#4ADE80' },
+  { id: 'supplements', label: 'PILLS', Icon: PillIcon,   color: '#FBBF24' },
+  { id: 'settings',    label: 'ME',    Icon: GearIcon,   color: '#A78BFA' },
 ];
 
 export default function App() {
@@ -411,55 +413,59 @@ export default function App() {
         {activeTab === 'food'        && <FoodScreen />}
         {activeTab === 'history'     && <HistoryScreen />}
         {activeTab === 'profile'     && <ProfileSetupScreen />}
+        {activeTab === 'supplements' && <SupplementsScreen />}
+        {activeTab === 'settings'    && <SettingsScreen />}
       </div>
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         height: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`,
         background: 'var(--surf)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        backdropFilter: 'blur(24px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(200%)',
         borderTop: '1px solid var(--edge)',
         display: 'flex',
         alignItems: 'flex-start',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 -8px 32px rgba(0,0,0,0.25)',
       }}>
-        {TABS.map(({ id, label, Icon }) => {
+        {TABS.map(({ id, label, Icon, color }) => {
           const active = activeTab === id;
           return (
-            <button key={id} onClick={() => setActiveTab(id as Tab)} className="press" style={{
+            <button key={id} onClick={() => setActiveTab(id)} className="press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 4,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 4px',
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0 4px',
               minWidth: 0, position: 'relative',
             }}>
-              {/* Active indicator pill */}
+              {/* Glowing pill background */}
               <div style={{
-                position: 'absolute', top: 0, left: '50%',
+                position: 'absolute', top: 5, left: '50%',
                 transform: 'translateX(-50%)',
-                width: active ? 36 : 0,
-                height: 3,
-                borderRadius: '0 0 3px 3px',
-                background: 'var(--accent)',
-                boxShadow: active ? 'var(--glow-accent)' : 'none',
-                transition: 'width 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                width: active ? 46 : 0,
+                height: active ? 30 : 0,
+                borderRadius: 10,
+                background: active ? `${color}1A` : 'transparent',
+                boxShadow: active ? `0 0 16px ${color}40` : 'none',
+                transition: 'width 0.3s var(--spring), height 0.3s var(--spring), opacity 0.2s ease',
+                opacity: active ? 1 : 0,
               }} />
               <div style={{
-                color: active ? 'var(--accent)' : 'var(--muted2)',
-                transition: 'color 0.18s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
-                transform: active ? 'scale(1.10)' : 'scale(1.0)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: active ? color : 'var(--muted2)',
+                transition: 'color 0.18s ease, transform 0.28s var(--spring)',
+                transform: active ? 'scale(1.12) translateY(-1px)' : 'scale(1.0)',
+                position: 'relative', zIndex: 1,
               }}>
                 <Icon active={active} />
               </div>
               <span style={{
                 fontSize: 9, fontWeight: 700,
-                color: active ? 'var(--accent)' : 'var(--muted2)',
+                color: active ? color : 'var(--muted2)',
                 transition: 'color 0.18s ease',
                 letterSpacing: '0.8px',
                 textTransform: 'uppercase',
+                position: 'relative', zIndex: 1,
               }}>
                 {label}
               </span>
