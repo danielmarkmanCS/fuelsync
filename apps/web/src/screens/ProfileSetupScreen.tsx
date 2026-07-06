@@ -268,9 +268,23 @@ export default function ProfileSetupScreen() {
     if (isNaN(a) || a < 10 || a > 100)  { setError('Valid age: 10–100.'); return; }
     setSaving(true); setError('');
     try {
-      const updated = await updateProfile({ weightKg: w, heightCm: h, age: a, gender, activityLevel, displayName: displayName.trim() || undefined });
+      const computedGoal = tdee ? tdee + goalCalAdj[goalMode] : undefined;
+      const updated = await updateProfile({
+        weightKg: w, heightCm: h, age: a, gender, activityLevel,
+        displayName: displayName.trim() || undefined,
+        ...(computedGoal ? { dailyGoal: computedGoal } : {}),
+      });
       setUser(updated);
-      syncProfile({ weight_kg: w, height_cm: h, age: a, gender, activity_level: activityLevel, display_name: displayName.trim() || undefined }).catch(() => {});
+      // Always push to cloud — this is what survives browser wipes
+      await syncProfile({
+        weight_kg: w, height_cm: h, age: a, gender,
+        activity_level: activityLevel,
+        display_name: displayName.trim() || undefined,
+        ...(computedGoal ? { daily_goal: computedGoal } : {}),
+      }).catch((e: unknown) => {
+        // Not a blocking error — local save succeeded. Warn only if signed in.
+        if (getSyncToken()) console.warn('[profile] cloud sync failed:', e);
+      });
       setSaved(true); setTimeout(() => setSaved(false), 2500);
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to save'); }
     finally { setSaving(false); }
