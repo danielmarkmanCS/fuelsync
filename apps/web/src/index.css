@@ -305,6 +305,118 @@ body[data-theme="light"] .chip { background: rgba(0,0,0,0.04); }
 
 /* ── ICON TILE (food log rows) ───────────────────── */
 .icon-tile {
-  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
+}
+
+/* ── ANIMATED GRADIENT ORBS (background mesh) ────── */
+@keyframes orbDrift1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(30px,-20px) scale(1.08); }
+  66%      { transform: translate(-20px,15px) scale(0.94); }
+}
+@keyframes orbDrift2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  40%      { transform: translate(-25px,30px) scale(1.12); }
+  70%      { transform: translate(20px,-10px) scale(0.92); }
+}
+@keyframes orbDrift3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(15px,20px) scale(1.06); }
+}
+.orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(60px); pointer-events: none; z-index: 0;
+  opacity: 0.18;
+}
+body[data-theme="light"] .orb { opacity: 0.08; }
+.orb-1 { width: 280px; height: 280px; background: var(--accent); top: -60px; left: -80px; animation: orbDrift1 14s ease-in-out infinite; }
+.orb-2 { width: 200px; height: 200px; background: #38BDF8; top: 120px; right: -60px; animation: orbDrift2 18s ease-in-out infinite; }
+.orb-3 { width: 160px; height: 160px; background: #4ADE80; top: 300px; left: 20px; animation: orbDrift3 22s ease-in-out infinite; }
+
+/* ── RING BREATH — glow pulse after entry ────────── */
+@keyframes ringBreath {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+.ring-breath { animation: ringBreath 3.5s ease-in-out infinite; animation-delay: 0.4s; }
+
+/* ── FAB FLOAT — subtle idle hover ──────────────── */
+@keyframes fabFloat {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.fab-float { animation: fabFloat 2.8s ease-in-out infinite; }
+
+/* ── NUM POP — number update flash ──────────────── */
+@keyframes numPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.num-pop { animation: numPop 0.28s var(--spring) both; }
+
+/* ── BAR ENTER — animate from 0 on mount ─────────── */
+@keyframes barEnter {
+  from { width: 0 !important; opacity: 0.4; }
+  to   { opacity: 1; }
+}
+.bar-enter { animation: barEnter 0.75s var(--ease) both; }
+
+/* ── STAT CARD glow pulse ────────────────────────── */
+@keyframes statGlow {
+  0%,100% { box-shadow: none; }
+  50%      { box-shadow: 0 0 20px rgba(157,126,255,0.15); }
+}
+
+/* ── TRAINING CHIP active pulse ──────────────────── */
+@keyframes chipActive {
+  0%,100% { box-shadow: 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 12px var(--chip-color,rgba(157,126,255,0.40)); }
+}
+
+/* ── MILESTONE banner slide ──────────────────────── */
+@keyframes milestoneIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.milestone-in { animation: milestoneIn 0.4s var(--ease) both; }
+
+/* ── CHART BAR rise ──────────────────────────────── */
+@keyframes barRise {
+  from { transform: scaleY(0); transform-origin: bottom; }
+  to   { transform: scaleY(1); transform-origin: bottom; }
+}
+
+/* ── GRADIENT TEXT ───────────────────────────────── */
+.grad-text {
+  background: linear-gradient(135deg, var(--accent) 0%, #38BDF8 60%, #4ADE80 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── GLOW CARD — card with ambient color glow ────── */
+.glow-card {
+  background: var(--surf);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--edge);
+  box-shadow: var(--inner-glow);
+  transition: box-shadow 0.3s ease;
+}
+
+/* ── MACRO STAT TILE ─────────────────────────────── */
+.macro-tile {
+  padding: 14px 12px 13px;
+  position: relative; overflow: hidden;
+}
+.macro-tile::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--tile-color, var(--accent));
+}
+
+/* ── RING GRADIENT SWEEP ─────────────────────────── */
+@keyframes ringFill {
+  from { stroke-dashoffset: var(--ring-full); }
 }

@@ -162,7 +162,7 @@ function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metri
   const min    = Math.min(...vals) - 1;
   const max    = Math.max(...vals) + 1;
   const range  = max - min || 1;
-  const W = 280, H = 80, PAD = 12;
+  const W = 320, H = 110, PAD = 14;
   const xs = sorted.map((_, i) => PAD + (i / (sorted.length - 1)) * (W - PAD * 2));
   const ys = vals.map(v => H - PAD - ((v - min) / range) * (H - PAD * 2));
   const polyline = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
@@ -172,25 +172,25 @@ function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metri
   const delta    = latest - first;
   const unitLabel = units === 'imperial' ? 'lb' : 'kg';
 
+  const trendColor = delta <= 0 ? GREEN : RED;
+
   return (
-    <div style={{ background: SURF, borderRadius: 16, padding: '16px 16px 14px', marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
+    <div style={{ background: SURF, borderRadius: 20, padding: '18px 16px 14px', marginBottom: 16, border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 4 }}>
-            Weight Trend
-          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, marginBottom: 6 }}>Weight Trend</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span style={{ fontSize: 24, fontWeight: 900, color: TEXT, letterSpacing: -1, lineHeight: 1 }}>
+            <span style={{ fontSize: 30, fontWeight: 900, color: TEXT, letterSpacing: -1.5, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
               {latest.toFixed(1)}
             </span>
-            <span style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>{unitLabel}</span>
+            <span style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>{unitLabel}</span>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 14, fontWeight: 900, color: delta <= 0 ? GREEN : RED, letterSpacing: -0.5 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: trendColor, letterSpacing: -0.8, textShadow: `0 0 12px ${trendColor}50` }}>
             {delta > 0 ? '+' : ''}{delta.toFixed(1)} {unitLabel}
           </div>
-          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
+          <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginTop: 2 }}>
             vs {sorted.length} days ago
           </div>
         </div>
@@ -199,19 +199,26 @@ function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metri
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible', display: 'block' }}>
         <defs>
           <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={ORANGE_HEX} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={ORANGE_HEX} stopOpacity="0" />
+            <stop offset="0%" stopColor={ORANGE_HEX} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={ORANGE_HEX} stopOpacity="0.02" />
           </linearGradient>
         </defs>
         <path d={fillPath} fill="url(#wg)" />
-        <polyline points={polyline} fill="none" stroke={ORANGE_HEX} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Latest dot */}
-        <circle cx={xs[xs.length-1]} cy={ys[ys.length-1]} r="4" fill={ORANGE_HEX} />
+        <polyline points={polyline} fill="none" stroke={ORANGE_HEX} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 4px ${ORANGE_HEX}80)` }} />
+        {/* All dots */}
+        {xs.map((x, i) => (
+          <circle key={i} cx={x} cy={ys[i]} r={i === xs.length - 1 ? 5 : 3}
+            fill={i === xs.length - 1 ? ORANGE_HEX : SURF}
+            stroke={ORANGE_HEX} strokeWidth={i === xs.length - 1 ? 0 : 1.5}
+            style={{ filter: i === xs.length - 1 ? `drop-shadow(0 0 6px ${ORANGE_HEX})` : 'none' }}
+          />
+        ))}
       </svg>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 9, color: MUTED }}>{sorted[0].date}</span>
-        <span style={{ fontSize: 9, color: MUTED }}>{sorted[sorted.length-1].date}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+        <span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{sorted[0].date}</span>
+        <span style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>{sorted[sorted.length-1].date}</span>
       </div>
     </div>
   );
@@ -238,31 +245,37 @@ function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calor
   ];
 
   return (
-    <div style={{ background: SURF, borderRadius: 16, padding: '16px', marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 14 }}>
-        7-Day Macro Avg · {logged.length} days
+    <div style={{ background: SURF, borderRadius: 20, padding: '18px 16px', marginBottom: 16, border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, marginBottom: 16 }}>
+        7-Day Averages · {logged.length} days
       </div>
       {macros.map(({ label, key, color, target }) => {
         const val = avg(key);
         const pct = target > 0 ? Math.min((val / target) * 100, 130) : 0;
         const over = val > target && target > 0;
+        const c = over ? RED : color;
         return (
-          <div key={label} style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: over ? RED : color }}>{label}</span>
-              <div style={{ fontSize: 11, color: MUTED }}>
-                <span style={{ fontWeight: 800, color: over ? RED : TEXT }}>{val}g</span>
-                {target > 0 && <span style={{ marginLeft: 4 }}>/ {target}g target</span>}
+          <div key={label} style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: c, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: c, letterSpacing: -0.5, fontVariantNumeric: 'tabular-nums', textShadow: `0 0 10px ${c}40` }}>{val}g</span>
+                {target > 0 && <span style={{ fontSize: 10, color: MUTED }}>/ {target}g</span>}
               </div>
             </div>
-            <div style={{ height: 6, background: SURF2, borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', width: `${pct}%`, borderRadius: 4,
-                background: over ? RED : color,
-                transition: 'width 0.6s ease',
-                opacity: over ? 1 : 0.85,
+            <div style={{ height: 6, background: SURF2, borderRadius: 99, overflow: 'hidden' }}>
+              <div className="bar-enter" style={{
+                height: '100%', width: `${Math.min(pct, 100)}%`, borderRadius: 99,
+                background: `linear-gradient(90deg, ${c}, ${c}BB)`,
+                boxShadow: `0 0 8px ${c}40`,
+                transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
               }} />
             </div>
+            {target > 0 && (
+              <div style={{ fontSize: 10, color: over ? RED : c, fontWeight: 700, marginTop: 4, fontVariantNumeric: 'tabular-nums', opacity: 0.85 }}>
+                {Math.round(pct)}%{over ? ' over target' : ' of target'}
+              </div>
+            )}
           </div>
         );
       })}
@@ -273,61 +286,55 @@ function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calor
 // ── WEEKLY BAR CHART ──────────────────────────────────────────────
 function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number }) {
   const [showPrev, setShowPrev] = useState(false);
+  const [animated, setAnimated] = useState(false);
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
+
+  useEffect(() => { const id = setTimeout(() => setAnimated(true), 80); return () => clearTimeout(id); }, []);
+
   const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - (6 - i));
+    const d = new Date(today); d.setDate(today.getDate() - (6 - i));
     return d.toISOString().split('T')[0];
   });
   const prevWeek = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - (13 - i));
+    const d = new Date(today); d.setDate(today.getDate() - (13 - i));
     return d.toISOString().split('T')[0];
   });
 
-  const dayMap     = new Map(days.map(d => [d.date, d]));
-  const maxCal     = Math.max(goalCal * 1.2, ...week.map(d => dayMap.get(d)?.totalCal ?? 0), showPrev ? Math.max(...prevWeek.map(d => dayMap.get(d)?.totalCal ?? 0)) : 0, 1);
-  const CHART_H    = 80;
-  const weekTotal  = week.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
-  const daysLogged = week.filter(d => (dayMap.get(d)?.totalCal ?? 0) > 0).length;
-  const prevTotal  = prevWeek.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
+  const dayMap      = new Map(days.map(d => [d.date, d]));
+  const maxCal      = Math.max(goalCal * 1.25, ...week.map(d => dayMap.get(d)?.totalCal ?? 0), showPrev ? Math.max(...prevWeek.map(d => dayMap.get(d)?.totalCal ?? 0)) : 0, 1);
+  const CHART_H     = 120;
+  const weekTotal   = week.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
+  const daysLogged  = week.filter(d => (dayMap.get(d)?.totalCal ?? 0) > 0).length;
+  const prevTotal   = prevWeek.reduce((s, d) => s + (dayMap.get(d)?.totalCal ?? 0), 0);
   const hasPrevData = prevTotal > 0;
 
   return (
-    <div style={{
-      background: SURF, borderRadius: 16, padding: '18px 16px 14px',
-      marginBottom: 16,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
+    <div style={{ background: SURF, borderRadius: 20, padding: '20px 16px 16px', marginBottom: 16, border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: MUTED, marginBottom: 4 }}>
-            This Week
-          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, marginBottom: 6 }}>This Week</div>
           {hasPrevData && (
-            <button
-              onClick={() => setShowPrev(v => !v)}
-              style={{
-                background: showPrev ? `${ORANGE_HEX}18` : 'none',
-                border: `1px solid ${showPrev ? ORANGE_HEX + '40' : EDGE}`,
-                borderRadius: 5, padding: '3px 8px', cursor: 'pointer',
-                fontSize: 8, fontWeight: 700, color: showPrev ? ORANGE : MUTED,
-              }}
-            >
-              {showPrev ? '▲ Hide prev week' : '▼ vs prev week'}
+            <button onClick={() => setShowPrev(v => !v)} style={{
+              background: showPrev ? `${ORANGE_HEX}18` : 'none',
+              border: `1px solid ${showPrev ? ORANGE_HEX + '40' : EDGE}`,
+              borderRadius: 6, padding: '3px 10px', cursor: 'pointer',
+              fontSize: 10, fontWeight: 700, color: showPrev ? ORANGE : MUTED,
+            }}>
+              {showPrev ? '▲ Hide prev' : '▼ vs prev week'}
             </button>
           )}
         </div>
         {weekTotal > 0 && (
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -1.2, color: TEXT, lineHeight: 1 }}>
+            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -1.5, color: TEXT, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
               {weekTotal.toLocaleString()}
             </div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, marginTop: 3 }}>
               kcal · {daysLogged} day{daysLogged !== 1 ? 's' : ''}
               {showPrev && hasPrevData && (
-                <span style={{ marginLeft: 6, color: weekTotal >= prevTotal ? GREEN : RED }}>
-                  {weekTotal >= prevTotal ? '▲' : '▼'} {Math.abs(weekTotal - prevTotal).toLocaleString()} vs last week
+                <span style={{ marginLeft: 8, color: weekTotal >= prevTotal ? GREEN : RED, fontWeight: 800 }}>
+                  {weekTotal >= prevTotal ? '▲ ' : '▼ '}{Math.abs(weekTotal - prevTotal).toLocaleString()}
                 </span>
               )}
             </div>
@@ -337,56 +344,62 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
 
       <div style={{ position: 'relative' }}>
         {/* Goal dashed line */}
-        <div style={{
-          position: 'absolute',
-          top: CHART_H - (goalCal / maxCal) * CHART_H,
-          left: 0, right: 0, height: 1,
-          borderTop: '1.5px dashed var(--accent)',
-          zIndex: 1, pointerEvents: 'none',
-        }} />
+        {goalCal > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: CHART_H - (goalCal / maxCal) * CHART_H,
+            left: 0, right: 0, height: 1,
+            borderTop: `1.5px dashed ${ORANGE_HEX}80`,
+            zIndex: 1, pointerEvents: 'none',
+          }}>
+            <span style={{ position: 'absolute', right: 0, top: -8, fontSize: 8, fontWeight: 700, color: ORANGE_HEX, background: SURF, paddingLeft: 4, opacity: 0.8 }}>
+              GOAL
+            </span>
+          </div>
+        )}
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: CHART_H, position: 'relative', zIndex: 2 }}>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end', height: CHART_H, position: 'relative', zIndex: 2 }}>
           {week.map((date, idx) => {
             const ds    = dayMap.get(date);
             const cal   = ds?.totalCal ?? 0;
-            const barH  = cal > 0 ? Math.max((cal / maxCal) * CHART_H, 6) : 3;
+            const rawBarH = cal > 0 ? Math.max((cal / maxCal) * CHART_H, 8) : 4;
+            const barH  = animated ? rawBarH : 0;
             const pct   = goalCal > 0 ? (cal / goalCal) * 100 : 0;
             const isToday = date === todayStr;
             const color = pct >= 110 ? RED : pct >= 85 ? GREEN : pct > 0 ? YELLOW : 'rgba(255,255,255,0.10)';
             const dayLbl = new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'narrow' }).toUpperCase();
-            const prevCal = dayMap.get(prevWeek[idx])?.totalCal ?? 0;
+            const prevCal  = dayMap.get(prevWeek[idx])?.totalCal ?? 0;
             const prevBarH = showPrev && prevCal > 0 ? Math.max((prevCal / maxCal) * CHART_H, 3) : 0;
 
             return (
               <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', height: CHART_H, justifyContent: 'flex-end', position: 'relative' }}>
-                  {/* Previous week ghost bar */}
                   {prevBarH > 0 && (
-                    <div style={{
-                      position: 'absolute', bottom: 0, width: '100%', height: prevBarH,
-                      background: `${MUTED2}40`,
-                      borderRadius: '5px 5px 3px 3px',
-                      border: `1px solid ${MUTED2}30`,
-                    }} />
+                    <div style={{ position: 'absolute', bottom: 0, width: '100%', height: prevBarH, background: `${MUTED2}35`, borderRadius: '5px 5px 3px 3px', border: `1px solid ${MUTED2}25` }} />
                   )}
                   {cal > 0 && (
-                    <div style={{ fontSize: 8, fontWeight: 700, color: isToday ? color : MUTED, marginBottom: 3, letterSpacing: 0.3, position: 'relative', zIndex: 1 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: isToday ? color : MUTED, marginBottom: 4, position: 'relative', zIndex: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2 }}>
                       {cal >= 1000 ? `${(cal / 1000).toFixed(1)}k` : cal}
                     </div>
                   )}
                   <div style={{
                     width: '100%', height: barH,
-                    background: `linear-gradient(180deg, ${color}88 0%, ${color} 100%)`,
-                    borderRadius: '5px 5px 3px 3px',
-                    boxShadow: isToday ? `0 0 14px ${color}55, 0 2px 6px ${color}30` : `0 1px 4px ${color}20`,
-                    opacity: isToday ? 1 : 0.78,
-                    transition: 'height 0.6s cubic-bezier(0.4,0,0.2,1)',
+                    background: `linear-gradient(180deg, ${color}70 0%, ${color} 100%)`,
+                    borderRadius: '6px 6px 4px 4px',
+                    boxShadow: isToday
+                      ? `0 0 18px ${color}60, 0 0 6px ${color}40, inset 0 1px 0 ${color}60`
+                      : `0 2px 8px ${color}30`,
+                    opacity: isToday ? 1 : cal > 0 ? 0.80 : 0.4,
+                    transition: `height 0.65s cubic-bezier(0.4,0,0.2,1) ${idx * 50}ms`,
                     position: 'relative', zIndex: 1,
                   }} />
                 </div>
                 <div style={{
-                  fontSize: 8, fontWeight: isToday ? 800 : 600,
-                  color: isToday ? ORANGE : MUTED, marginTop: 7, letterSpacing: 0.5,
+                  fontSize: isToday ? 9 : 8,
+                  fontWeight: isToday ? 900 : 600,
+                  color: isToday ? ORANGE_HEX : MUTED,
+                  marginTop: 8, letterSpacing: 0.5,
+                  textShadow: isToday ? `0 0 8px ${ORANGE_HEX}60` : 'none',
                 }}>
                   {isToday ? 'Today' : dayLbl}
                 </div>
@@ -396,21 +409,19 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
-        <div style={{ width: 16, height: 0, borderTop: '2px dashed var(--accent)' }} />
-        <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>
-          Goal {goalCal.toLocaleString()} kcal
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+        <div style={{ width: 16, height: 0, borderTop: `2px dashed ${ORANGE_HEX}80` }} />
+        <div style={{ fontSize: 9, color: MUTED, fontWeight: 700 }}>Goal {goalCal.toLocaleString()} kcal</div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           {showPrev && hasPrevData && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <div style={{ width: 6, height: 6, borderRadius: 2, background: MUTED2, opacity: 0.5 }} />
-              <div style={{ fontSize: 8, color: MUTED, fontWeight: 700 }}>prev week</div>
+              <div style={{ fontSize: 8, color: MUTED, fontWeight: 700 }}>prev</div>
             </div>
           )}
-          {[[GREEN, '85–110%'], [RED, '110%+']].map(([c, lbl]) => (
-            <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: 2, background: c }} />
+          {[[GREEN, '85–110%'], [RED, '110%+']] .map(([c, lbl]) => (
+            <div key={String(lbl)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 6, height: 6, borderRadius: 2, background: String(c) }} />
               <div style={{ fontSize: 8, color: MUTED, fontWeight: 700 }}>{lbl}</div>
             </div>
           ))}
@@ -434,22 +445,26 @@ function StatsRow({ streak, totalDays, avgCal, goalCal, days }: { streak: number
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: EDGE, borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: EDGE, borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
       {[
-        { label: 'Log streak',  value: streak,     unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE : streak >= 3 ? GREEN : ORANGE },
-        { label: 'Goal streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#FBBF24' : goalStreak >= 2 ? GREEN : MUTED },
-        { label: 'Days logged', value: totalDays,  unit: 'total',     color: YELLOW },
-        { label: 'Avg daily',   value: goalPct,    unit: '% of goal', color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE },
-      ].map(({ label, value, unit, color }) => (
-        <div key={label} style={{ background: SURF, padding: '14px 12px', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: MUTED, marginBottom: 6 }}>
-            {label}
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -2, color, lineHeight: 1 }}>
+        { label: 'Streak',      value: streak,     unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : ORANGE_HEX, emoji: streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '📅' },
+        { label: 'Goal streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#FBBF24' : goalStreak >= 2 ? GREEN : MUTED, emoji: goalStreak >= 5 ? '🎯' : '✓' },
+        { label: 'Days logged', value: totalDays,  unit: 'total',     color: PROT,       emoji: '📊' },
+        { label: 'Avg daily',   value: goalPct,    unit: '% of goal', color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE_HEX, emoji: goalPct >= 85 && goalPct <= 115 ? '✅' : '📈' },
+      ].map(({ label, value, unit, color, emoji }) => (
+        <div key={label} style={{
+          padding: '16px 8px 14px', textAlign: 'center',
+          background: `linear-gradient(180deg, ${color}08 0%, ${SURF} 60%)`,
+        }}>
+          <div style={{ fontSize: 14, marginBottom: 6 }}>{emoji}</div>
+          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -2, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums', textShadow: `0 0 16px ${color}40` }}>
             {value}
           </div>
-          <div style={{ fontSize: 9, fontWeight: 600, color: MUTED, marginTop: 3 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.8 }}>
             {unit}
+          </div>
+          <div style={{ fontSize: 8, fontWeight: 600, color: MUTED, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {label}
           </div>
         </div>
       ))}

@@ -295,27 +295,55 @@ export default function App() {
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         background: 'var(--bg)',
-        gap: 0, position: 'relative', overflow: 'hidden',
+        position: 'relative', overflow: 'hidden',
       }}>
+        {/* Animated gradient orbs */}
+        <div className="orb orb-1" style={{ opacity: 0.22 }} />
+        <div className="orb orb-2" style={{ opacity: 0.16 }} />
+        <div className="orb orb-3" style={{ opacity: 0.14 }} />
+
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: "inherit", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--text)' }}>
-            FUEL
+          {/* Glow ring behind logo */}
+          <div style={{
+            position: 'absolute', width: 180, height: 180, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(157,126,255,0.20) 0%, transparent 70%)',
+            filter: 'blur(20px)', top: '50%', left: '50%',
+            transform: 'translate(-50%,-50%)',
+            animation: 'pulse 2.5s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Logo */}
+          <div style={{ lineHeight: 1, textAlign: 'center', animation: 'ringPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+            <div style={{
+              fontFamily: 'inherit', fontSize: 76, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
+              background: 'linear-gradient(135deg, #EEF0FF 0%, rgba(238,240,255,0.7) 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
+              FUEL
+            </div>
+            <div style={{
+              fontFamily: 'inherit', fontSize: 76, fontWeight: 900, letterSpacing: -4, lineHeight: 1,
+              background: 'linear-gradient(135deg, #9D7EFF 0%, #38BDF8 60%, #4ADE80 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
+              SYNC
+            </div>
           </div>
-          <div style={{ fontFamily: "inherit", fontSize: 72, fontWeight: 900, letterSpacing: -3, lineHeight: 1, color: 'var(--accent)' }}>
-            SYNC
-          </div>
-          <div style={{ marginTop: 40, display: 'flex', gap: 6 }}>
+
+          {/* Loading dots */}
+          <div style={{ marginTop: 48, display: 'flex', gap: 8 }}>
             {[0, 1, 2].map((i) => (
               <div key={i} style={{
-                width: 5, height: 5, borderRadius: '50%',
-                background: 'var(--accent)',
-                opacity: i === 0 ? 1 : 0.3,
-                animation: `pulse 1.2s ${i * 0.2}s infinite ease-in-out`,
+                width: 6, height: 6, borderRadius: '50%',
+                background: i === 0 ? '#9D7EFF' : i === 1 ? '#38BDF8' : '#4ADE80',
+                animation: `pulse 1.4s ${i * 0.18}s infinite ease-in-out`,
               }} />
             ))}
           </div>
-          <div style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: 5, marginTop: 20, fontWeight: 700, textTransform: 'uppercase' }}>
-            {stravaConnecting ? 'Syncing with Strava' : 'Loading'}
+
+          <div style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.5em', marginTop: 20, fontWeight: 700, textTransform: 'uppercase', animation: 'fadeIn 0.6s 0.3s ease both' }}>
+            {stravaConnecting ? 'Syncing Strava' : 'Loading'}
           </div>
         </div>
       </div>
