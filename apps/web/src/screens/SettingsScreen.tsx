@@ -2,13 +2,15 @@ import { useThemeStore, ACCENT_COLORS, type AccentKey } from '../store/themeStor
 import { useAppStore } from '../store/appStore';
 
 // ── Section label ────────────────────────────────────────────────────
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, color }: { children: React.ReactNode; color?: string }) {
   return (
     <div style={{
       fontSize: 11, fontWeight: 700, letterSpacing: '0.8px',
-      textTransform: 'uppercase', color: 'var(--muted)',
+      textTransform: 'uppercase', color: color ?? 'var(--muted)',
       marginBottom: 8, paddingLeft: 4,
+      display: 'flex', alignItems: 'center', gap: 6,
     }}>
+      {color && <div style={{ width: 3, height: 11, borderRadius: 99, background: color, flexShrink: 0 }} />}
       {children}
     </div>
   );
@@ -177,19 +179,23 @@ export default function SettingsScreen() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
-      {/* ── Header ── */}
-      <div style={{ padding: '28px 16px 16px' }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.8 }}>
-          Settings
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-          Appearance, profile &amp; preferences
+      {/* ── Hero header ── */}
+      <div style={{ position: 'relative', overflow: 'hidden', padding: '28px 20px 20px' }}>
+        <div style={{ position: 'absolute', top: -50, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.20) 0%, transparent 70%)', filter: 'blur(28px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -20, left: 10, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)', filter: 'blur(20px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1, lineHeight: 1, background: 'linear-gradient(135deg, var(--text) 0%, rgba(167,139,250,0.85) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            Settings
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 5, letterSpacing: 0.2 }}>
+            Appearance, profile &amp; preferences
+          </div>
         </div>
       </div>
 
       {/* ── Appearance ── */}
       <div style={{ margin: '0 16px 16px' }}>
-        <SectionLabel>Appearance</SectionLabel>
+        <SectionLabel color="#A78BFA">Appearance</SectionLabel>
         <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={isDark ? <MoonIcon /> : <SunIcon />}
@@ -260,7 +266,7 @@ export default function SettingsScreen() {
 
       {/* ── Profile shortcut ── */}
       <div style={{ margin: '0 16px 16px' }}>
-        <SectionLabel>Profile</SectionLabel>
+        <SectionLabel color="#38BDF8">Profile</SectionLabel>
         <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={<UserIcon />}
@@ -275,7 +281,7 @@ export default function SettingsScreen() {
 
       {/* ── Nutrition ── */}
       <div style={{ margin: '0 16px 16px' }}>
-        <SectionLabel>Nutrition</SectionLabel>
+        <SectionLabel color="#4ADE80">Nutrition</SectionLabel>
         <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={<PillIcon />}
@@ -298,7 +304,7 @@ export default function SettingsScreen() {
 
       {/* ── About ── */}
       <div style={{ margin: '0 16px 16px' }}>
-        <SectionLabel>About</SectionLabel>
+        <SectionLabel color="#FBBF24">About</SectionLabel>
         <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden' }}>
           <SettingsRow
             icon={<ZapIcon />}

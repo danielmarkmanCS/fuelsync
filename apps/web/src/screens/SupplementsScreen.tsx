@@ -9,12 +9,22 @@ const EDGE    = 'var(--edge)';
 const ACCENT  = 'var(--accent)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
-const RED     = '#FF4444';
+const RED     = '#F87171';
 
 const TIMINGS: Supplement['timing'][] = ['morning', 'pre-workout', 'post-workout', 'evening', 'anytime'];
 const TIMING_LABEL: Record<Supplement['timing'], string> = {
   morning: 'Morning', 'pre-workout': 'Pre-workout', 'post-workout': 'Post-workout',
   evening: 'Evening', anytime: 'Anytime',
+};
+const TIMING_COLOR: Record<Supplement['timing'], string> = {
+  morning:      '#FBBF24',  // amber — sunrise
+  'pre-workout': '#4ADE80', // green — energy
+  'post-workout':'#34D399', // emerald — recovery
+  evening:      '#A78BFA',  // purple — wind-down
+  anytime:      '#38BDF8',  // sky — neutral
+};
+const TIMING_EMOJI: Record<Supplement['timing'], string> = {
+  morning: '☀️', 'pre-workout': '⚡', 'post-workout': '🔄', evening: '🌙', anytime: '⏱',
 };
 const COMMON_UNITS = ['mg', 'g', 'IU', 'mcg', 'caps', 'ml', 'tbsp'];
 
@@ -233,51 +243,64 @@ export default function SupplementsScreen() {
   const takenPct = supplements.length ? (takenCount / supplements.length) * 100 : 0;
 
   return (
-    <div style={{ minHeight: '100%', background: BG, padding: '16px 16px 32px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: syncMsg ? 10 : 16 }}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: -0.5 }}>Supplements</div>
-          <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
-            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? ACCENT : MUTED }}>{takenCount}</span>
-            <span style={{ color: MUTED }}> of {supplements.length} taken today</span>
-            {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FBBF24' }}>· {skippedCount} skipped</span>}
+    <div style={{ minHeight: '100%', background: BG, paddingBottom: 32 }}>
+
+      {/* ── Hero header ──────────────────────────────────────────────── */}
+      <div style={{ position: 'relative', overflow: 'hidden', padding: '28px 20px 24px' }}>
+        {/* Ambient orbs */}
+        <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.18) 0%, transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)', filter: 'blur(24px)', pointerEvents: 'none' }} />
+
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, lineHeight: 1, background: 'linear-gradient(135deg, var(--text) 0%, rgba(251,191,36,0.85) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              Supplements
+            </div>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 5 }}>
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? '#4ADE80' : MUTED }}>{takenCount}</span>
+              <span> of {supplements.length} taken today</span>
+              {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FBBF24', fontWeight: 600 }}>· {skippedCount} skipped</span>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {syncing && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}>
+                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+              </svg>
+            )}
+            {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
+              <button onClick={handleEnableReminders} title="Enable reminders"
+                style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10, padding: '7px 10px', color: '#FBBF24', fontSize: 13, cursor: 'pointer' }}>
+                🔔
+              </button>
+            )}
+            {notifPerm === 'granted' && <span title="Reminders on" style={{ fontSize: 14 }}>🔔</span>}
+            <button
+              onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
+              style={{
+                background: 'linear-gradient(135deg, var(--accent) 0%, #38BDF8 100%)',
+                border: 'none', borderRadius: 14, padding: '10px 18px',
+                color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(157,126,255,0.35)',
+                letterSpacing: 0.3,
+              }}
+            >+ Add</button>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {syncing && (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}>
-              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
-              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-            </svg>
-          )}
-          {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
-            <button onClick={handleEnableReminders} title="Enable reminders"
-              style={{ background: 'none', border: `1px solid ${EDGE}`, borderRadius: 8, padding: '7px 10px', color: MUTED, fontSize: 13, cursor: 'pointer' }}>
-              🔔
-            </button>
-          )}
-          {notifPerm === 'granted' && <span title="Reminders on" style={{ fontSize: 14 }}>🔔</span>}
-          <button
-            onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
-            style={{
-              background: ACCENT, border: 'none', borderRadius: 12, padding: '9px 16px',
-              color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(157,126,255,0.30)',
-            }}
-          >+ Add</button>
-        </div>
       </div>
+
+      <div style={{ padding: '0 16px' }}>
 
       {/* Sync message */}
       {syncMsg && (
         <div style={{
-          marginBottom: 14, padding: '8px 12px', borderRadius: 10,
-          background: syncMsg.startsWith('⚠') ? `${RED}12` : `${ACCENT}12`,
-          border: `1px solid ${syncMsg.startsWith('⚠') ? RED : ACCENT}30`,
+          marginBottom: 14, padding: '10px 14px', borderRadius: 12,
+          background: syncMsg.startsWith('⚠') ? `${RED}12` : 'rgba(74,222,128,0.10)',
+          border: `1px solid ${syncMsg.startsWith('⚠') ? RED + '30' : 'rgba(74,222,128,0.25)'}`,
           fontSize: 12, fontWeight: 600,
-          color: syncMsg.startsWith('⚠') ? RED : ACCENT,
+          color: syncMsg.startsWith('⚠') ? RED : '#4ADE80',
         }}>
           {syncMsg}
         </div>
@@ -285,45 +308,55 @@ export default function SupplementsScreen() {
 
       {/* Progress bar + big count */}
       {supplements.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-            <span className="tabnum" style={{ fontSize: 34, fontWeight: 900, letterSpacing: -1.5, color: ACCENT, lineHeight: 1 }}>
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+            <span className="tabnum" style={{ fontSize: 38, fontWeight: 900, letterSpacing: -2, color: allDone ? '#4ADE80' : ACCENT, lineHeight: 1, transition: 'color 0.3s ease' }}>
               {takenCount}
             </span>
             <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)' }}>
               of {supplements.length} taken today
             </span>
             {allDone && (
-              <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#4ADE80', background: 'rgba(74,222,128,0.12)', borderRadius: 20, padding: '3px 10px', border: '1px solid rgba(74,222,128,0.25)' }}>
+              <span className="num-pop" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#4ADE80', background: 'rgba(74,222,128,0.14)', borderRadius: 20, padding: '4px 12px', border: '1px solid rgba(74,222,128,0.30)', boxShadow: '0 0 12px rgba(74,222,128,0.25)' }}>
                 All done ✓
               </span>
             )}
           </div>
-          <div style={{ height: 5, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
+          {/* Segmented progress track */}
+          <div style={{ position: 'relative', height: 7, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: 99,
               background: allDone
                 ? `linear-gradient(90deg, #4ADE80, #34D399)`
-                : `linear-gradient(90deg, ${ACCENT}, var(--accent-dim))`,
-              boxShadow: allDone ? '0 0 12px rgba(74,222,128,0.40)' : '0 0 10px rgba(157,126,255,0.35)',
+                : `linear-gradient(90deg, var(--accent), #38BDF8)`,
+              boxShadow: allDone ? '0 0 14px rgba(74,222,128,0.50)' : '0 0 12px rgba(157,126,255,0.45)',
               width: `${takenPct}%`,
-              transition: 'width 0.45s cubic-bezier(0.4,0,0.2,1)',
+              transition: 'width 0.55s cubic-bezier(0.4,0,0.2,1)',
             }} />
           </div>
         </div>
       )}
 
       {/* Supplement list grouped by timing */}
-      {TIMINGS.filter(t => supplements.some(s => s.timing === t)).map(t => (
+      {TIMINGS.filter(t => supplements.some(s => s.timing === t)).map(t => {
+        const tColor = TIMING_COLOR[t];
+        return (
         <div key={t} style={{ marginBottom: 20 }}>
-          {/* Timing group header */}
+          {/* Timing group header with vivid color badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, whiteSpace: 'nowrap' }}>
-              {TIMING_LABEL[t]}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: `${tColor}18`, border: `1px solid ${tColor}30`,
+              borderRadius: 20, padding: '4px 10px',
+            }}>
+              <span style={{ fontSize: 12 }}>{TIMING_EMOJI[t]}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: tColor, whiteSpace: 'nowrap' }}>
+                {TIMING_LABEL[t]}
+              </span>
             </div>
-            <div style={{ flex: 1, height: 1, background: EDGE }} />
+            <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${tColor}40, transparent)` }} />
           </div>
-          <div style={{ background: SURF, borderRadius: 18, overflow: 'hidden', border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+          <div style={{ background: SURF, borderRadius: 18, overflow: 'hidden', border: `1px solid ${tColor}20`, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 16px ${tColor}0A` }}>
             {supplements.filter(s => s.timing === t).map((s, i, arr) => {
               const taken   = isTaken(s.id!);
               const skipped = isSkipped(s.id!);
@@ -333,20 +366,22 @@ export default function SupplementsScreen() {
                   display: 'flex', alignItems: 'center', padding: '0 16px', gap: 14,
                   minHeight: 72,
                   borderBottom: i < arr.length - 1 ? `1px solid ${EDGE}` : 'none',
-                  opacity: skipped ? 0.5 : 1,
-                  transition: 'opacity 0.2s ease',
+                  borderLeft: taken ? `3px solid ${tColor}80` : skipped ? '3px solid rgba(251,191,36,0.4)' : `3px solid ${tColor}20`,
+                  background: taken ? `${tColor}0D` : skipped ? 'rgba(251,191,36,0.04)' : 'transparent',
+                  opacity: skipped ? 0.55 : 1,
+                  transition: 'opacity 0.2s ease, background 0.25s ease, border-color 0.25s ease',
                 }}>
-                  {/* Circle checkbox with pop animation */}
+                  {/* Circle checkbox — per-timing color */}
                   <button
                     onClick={() => handleToggleTaken(s)}
                     className={popping ? 'check-pop' : ''}
                     style={{
-                      width: 26, height: 26, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-                      border: `2px solid ${taken ? ACCENT : skipped ? '#FBBF24' : 'var(--edge2)'}`,
-                      background: taken ? ACCENT : 'transparent',
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+                      border: `2px solid ${taken ? tColor : skipped ? '#FBBF24' : tColor + '50'}`,
+                      background: taken ? tColor : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'background 0.18s ease, border-color 0.18s ease',
-                      boxShadow: taken ? '0 0 10px rgba(157,126,255,0.30)' : 'none',
+                      transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
+                      boxShadow: taken ? `0 0 14px ${tColor}55` : 'none',
                     }}
                   >
                     {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -356,28 +391,21 @@ export default function SupplementsScreen() {
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontSize: 15, fontWeight: 500, color: taken ? MUTED : TEXT,
+                      fontSize: 15, fontWeight: taken ? 400 : 600, color: taken ? MUTED : TEXT,
                       transition: 'color 0.2s ease',
-                      textDecoration: taken ? 'line-through' : skipped ? 'line-through' : 'none',
-                      opacity: taken ? 0.5 : 1,
+                      textDecoration: taken || skipped ? 'line-through' : 'none',
+                      opacity: taken ? 0.45 : 1,
                     }}>
                       {s.name}
                     </div>
-                    <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-                      {s.dose} {s.unit}
-                      {skipped && <span style={{ marginLeft: 6, color: '#FBBF24', fontWeight: 700 }}>· Skipped</span>}
+                    <div style={{ fontSize: 12, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: tColor, fontWeight: 700 }}>{s.dose} {s.unit}</span>
+                      {skipped && <span style={{ color: '#FBBF24', fontWeight: 700 }}>· Skipped</span>}
                     </div>
                   </div>
 
-                  {/* Time chip + actions */}
+                  {/* Actions */}
                   <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, color: MUTED,
-                      background: 'var(--surf2)', borderRadius: 6, padding: '3px 7px',
-                      border: `1px solid ${EDGE}`,
-                    }}>
-                      {TIMING_LABEL[t].split('-')[0]}
-                    </span>
                     <button
                       onClick={() => toggleSkipped(s)}
                       title={skipped ? 'Undo skip' : 'Skip today'}
@@ -393,7 +421,8 @@ export default function SupplementsScreen() {
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {supplements.length === 0 && !adding && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: MUTED }}>
@@ -557,6 +586,7 @@ export default function SupplementsScreen() {
           </div>
         </div>
       )}
+      </div>{/* end padding wrapper */}
     </div>
   );
 }
