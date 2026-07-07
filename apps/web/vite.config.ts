@@ -43,6 +43,13 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/app.js',
+      },
+    },
+  },
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../../shared'),
