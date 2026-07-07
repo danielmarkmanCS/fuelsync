@@ -58,3 +58,11 @@ jobs:
       - uses: actions/configure-pages@v4
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Purge Cloudflare cache
+        if: ${{ secrets.CF_ZONE_ID != '' }}
+        run: |
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' | jq '.success'
