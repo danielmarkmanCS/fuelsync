@@ -407,7 +407,7 @@ export default function App() {
       background: 'var(--bg)',
       overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', top: 'env(safe-area-inset-top, 0px)', left: 0, right: 0, bottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, overflowY: 'auto' }}>
+      <div className="main-scroll" style={{ position: 'absolute', top: 'env(safe-area-inset-top, 0px)', left: 0, right: 0, bottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
         {(activeTab === 'home' && profileIncomplete)     && <ProfileSetupScreen />}
         {activeTab === 'food'        && <FoodScreen />}
@@ -445,9 +445,9 @@ export default function App() {
                 transform: 'translateX(-50%)',
                 width: active ? 46 : 0,
                 height: active ? 30 : 0,
-                borderRadius: 10,
-                background: active ? `${color}1A` : 'transparent',
-                boxShadow: active ? `0 0 16px ${color}40` : 'none',
+                borderRadius: 99,
+                background: active ? `${color}20` : 'transparent',
+                boxShadow: active ? `0 0 20px ${color}50` : 'none',
                 transition: 'width 0.3s var(--spring), height 0.3s var(--spring), opacity 0.2s ease',
                 opacity: active ? 1 : 0,
               }} />

@@ -98,6 +98,15 @@ button, input, select, textarea { font-family: inherit; }
 ::-webkit-scrollbar { display: none; }
 * { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Thin scrollbar for main content on desktop (mouse/trackpad) */
+@media (pointer: fine) {
+  .main-scroll { scrollbar-width: thin; scrollbar-color: var(--edge2) transparent; }
+  .main-scroll::-webkit-scrollbar { display: block; width: 4px; }
+  .main-scroll::-webkit-scrollbar-track { background: transparent; }
+  .main-scroll::-webkit-scrollbar-thumb { background: var(--edge2); border-radius: 99px; }
+  .main-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+}
+
 /* ── TYPOGRAPHY SCALE ─────────────────────────────── */
 .t-title    { font-size: 17px; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
 .t-headline { font-size: 15px; font-weight: 600; color: var(--text); }
@@ -170,10 +179,14 @@ button, input, select, textarea { font-family: inherit; }
 
 /* card-lift: subtle scale on press for cards */
 .card-lift {
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .card-lift:active { transform: scale(0.97); transition: transform 0.08s ease; }
+@media (pointer: fine) {
+  .card-lift:hover { background: rgba(255,255,255,0.02); }
+  .press:hover { opacity: 0.88; }
+}
 
 /* FAB success ring — expanding accent border that fades out */
 @keyframes fabRing {

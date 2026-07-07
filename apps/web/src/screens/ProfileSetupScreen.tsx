@@ -320,7 +320,7 @@ export default function ProfileSetupScreen() {
   }, []);
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: BG }}>
+    <div className="main-scroll" style={{ height: '100%', overflowY: 'auto', background: BG }}>
 
       {/* ── HEADER ── */}
       <div className="nrc-a nrc-a1" style={{ padding: '24px 20px 12px', display: 'flex', alignItems: 'center', gap: 14 }}>

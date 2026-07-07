@@ -324,8 +324,8 @@ function MacroRow({ consumed, targets }: { consumed: MacroTargets; targets: Macr
         const cell = (
           <div key={label} style={{
             padding: '16px 12px 14px',
-            borderTop: `3px solid ${c}`,
-            background: `linear-gradient(180deg, ${c}08 0%, transparent 50%)`,
+            borderTop: `4px solid ${c}`,
+            background: `linear-gradient(180deg, ${c}16 0%, transparent 60%)`,
           }}>
             <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: 8 }}>
               {label}
@@ -586,10 +586,11 @@ export default function HomeScreen() {
                   <div key={log.id} className="row-in card-lift"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 14,
-                      padding: '12px 16px', minHeight: 68,
+                      padding: '12px 16px 12px 14px', minHeight: 68,
                       borderBottom: i < Math.min(foodLogs.length, 5) - 1 ? '1px solid var(--edge)' : 'none',
+                      borderLeft: `2px solid ${mealColor}${i === 0 ? '70' : i === 1 ? '45' : '28'}`,
                       animationDelay: `${i * 30}ms`,
-                      background: i === 0 ? `linear-gradient(90deg, ${mealColor}06, transparent)` : 'transparent',
+                      background: `linear-gradient(90deg, ${mealColor}${i === 0 ? '0E' : i === 1 ? '08' : '05'}, transparent 70%)`,
                     }}
                   >
                     {/* Icon tile */}

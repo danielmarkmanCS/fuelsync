@@ -947,32 +947,39 @@ export default function FoodScreen() {
   const calPct   = targets && targets.calories > 0 ? Math.min((consumed.calories / targets.calories) * 100, 100) : 0;
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: BG, position: 'relative' }}>
+    <div className="main-scroll" style={{ height: '100%', overflowY: 'auto', background: BG, position: 'relative' }}>
 
       {/* ── AI INPUT PILL (always visible) ── */}
       <div className="nrc-a nrc-a1" style={{ padding: '20px 16px 0' }}>
-        <button
-          onClick={() => { setMode('ai'); setOpen(true); }}
-          className="press"
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-            padding: '14px 18px', borderRadius: 999,
-            background: 'var(--surf)', border: '1px solid var(--edge2)',
-            backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-            cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
-          </svg>
-          <span style={{ fontSize: 15, color: 'var(--muted2)', fontWeight: 500, flex: 1, textAlign: 'left' }}>
-            Describe what you ate…
-          </span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="9" y="2" width="6" height="11" rx="3"/>
-            <path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/>
-          </svg>
-        </button>
+        {/* Gradient border wrapper */}
+        <div style={{
+          padding: 1.5, borderRadius: 999,
+          background: 'linear-gradient(135deg, var(--accent), #38BDF8 50%, #4ADE80)',
+          boxShadow: '0 0 24px rgba(157,126,255,0.18)',
+        }}>
+          <button
+            onClick={() => { setMode('ai'); setOpen(true); }}
+            className="press"
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              padding: '13px 18px', borderRadius: 999,
+              background: 'var(--surf)', border: 'none',
+              backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+              cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
+            </svg>
+            <span style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500, flex: 1, textAlign: 'left' }}>
+              Describe what you ate…
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+              <rect x="9" y="2" width="6" height="11" rx="3"/>
+              <path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* ── HEADER ── */}
