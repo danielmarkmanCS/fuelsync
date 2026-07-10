@@ -20,6 +20,7 @@ import HistoryScreen from './screens/HistoryScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import SupplementsScreen from './screens/SupplementsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import GlowScreen from './screens/GlowScreen';
 
 import type { AppTab } from './store/appStore';
 const NAV_H = 64;
@@ -79,11 +80,22 @@ function GearIcon({ active }: { active: boolean }) {
   );
 }
 
+function GlowIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/>
+      <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75L19 15z"/>
+      <path d="M5 17l.5 1.5L7 19l-1.5.5L5 21l-.5-1.5L3 19l1.5-.5L5 17z"/>
+    </svg>
+  );
+}
+
 const TABS: Array<{ id: AppTab; label: string; Icon: React.FC<{ active: boolean }>; color: string }> = [
   { id: 'home',        label: 'TODAY', Icon: DiaryIcon,  color: 'var(--accent)' },
   { id: 'food',        label: 'LOG',   Icon: LogIcon,    color: '#38BDF8' },
   { id: 'history',     label: 'STATS', Icon: TrendsIcon, color: '#4ADE80' },
   { id: 'supplements', label: 'PILLS', Icon: PillIcon,   color: '#FBBF24' },
+  { id: 'glow',        label: 'GLOW',  Icon: GlowIcon,   color: '#F472B6' },
   { id: 'settings',    label: 'ME',    Icon: GearIcon,   color: '#A78BFA' },
 ];
 
@@ -414,6 +426,7 @@ export default function App() {
         {activeTab === 'history'     && <HistoryScreen />}
         {activeTab === 'profile'     && <ProfileSetupScreen />}
         {activeTab === 'supplements' && <SupplementsScreen />}
+        {activeTab === 'glow'        && <GlowScreen />}
         {activeTab === 'settings'    && <SettingsScreen />}
       </div>
 
