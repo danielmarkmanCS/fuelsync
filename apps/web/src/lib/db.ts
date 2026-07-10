@@ -145,18 +145,54 @@ export interface PinState {
   securityAnswerAttempts?: number;
 }
 
+// ─── Looksmaxxing / Self-Improvement ─────────────────────────────────────────
+
+export type RoutineCategory = 'SKIN' | 'GROOM' | 'HABITS' | 'MEWING';
+
+export interface GlowRoutineItem {
+  id?: number;
+  name: string;
+  category: RoutineCategory;
+  icon: string;
+  order: number;
+  active: boolean;
+}
+
+export interface GlowRoutineLog {
+  id?: number;
+  item_id: number;
+  date: string;      // YYYY-MM-DD
+  done: boolean;
+  logged_at: string; // ISO timestamp
+}
+
+export type BeardStage = 1 | 2 | 3 | 4 | 5;
+
+export interface GlowMetricEntry {
+  id?: number;
+  date: string;              // YYYY-MM-DD
+  weightKg?: number | null;
+  bodyFatPct?: number | null;
+  beardStage?: BeardStage | null; // 1=clean 5=full
+  notes?: string | null;
+  logged_at: string;
+}
+
 class FuelSyncDB extends Dexie {
-  profile!:            Table<LocalProfile, number>;
-  food_logs!:          Table<LocalFoodLog, number>;
-  pin_state!:          Table<PinState, number>;
-  weight_logs!:        Table<WeightLog, number>;
-  sync_queue!:         Table<SyncQueueItem, number>;
-  supplements!:        Table<Supplement, number>;
-  supplement_logs!:    Table<SupplementLog, number>;
-  workout_exercises!:  Table<WorkoutExercise, number>;
-  water_logs!:         Table<WaterLog, number>;
-  diary_completions!:  Table<DiaryCompletion, number>;
-  body_measurements!:  Table<BodyMeasurement, number>;
+  profile!:              Table<LocalProfile, number>;
+  food_logs!:            Table<LocalFoodLog, number>;
+  pin_state!:            Table<PinState, number>;
+  weight_logs!:          Table<WeightLog, number>;
+  sync_queue!:           Table<SyncQueueItem, number>;
+  supplements!:          Table<Supplement, number>;
+  supplement_logs!:      Table<SupplementLog, number>;
+  workout_exercises!:    Table<WorkoutExercise, number>;
+  water_logs!:           Table<WaterLog, number>;
+  diary_completions!:    Table<DiaryCompletion, number>;
+  body_measurements!:    Table<BodyMeasurement, number>;
+  glow_routine_items!:   Table<GlowRoutineItem, number>;
+  glow_routine_logs!:    Table<GlowRoutineLog, number>;
+  glow_metric_entries!:  Table<GlowMetricEntry, number>;
 
   constructor() {
     super('FuelSyncDB');
@@ -192,6 +228,11 @@ class FuelSyncDB extends Dexie {
     });
     this.version(9).stores({
       body_measurements: '++id, date',
+    });
+    this.version(10).stores({
+      glow_routine_items:  '++id, category, active',
+      glow_routine_logs:   '++id, item_id, date',
+      glow_metric_entries: '++id, date',
     });
   }
 }

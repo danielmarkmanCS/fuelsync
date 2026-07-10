@@ -109,6 +109,22 @@ const MACRO_RATIOS: Record<TrainingType, MacroRatio> = {
 
 const KCAL_PER_G = { protein: 4, carbs: 4, fat: 9 } as const;
 
+// ─── PROTEIN PER KG ──────────────────────────────────────────────────────────
+// Protein is anchored to lean mass demand (g/kg), NOT to a % of calories.
+// Calculating protein as % of kcal produces absurd values (>3g/kg) at high
+// TDEE. Sport-science consensus ranges: 1.6g/kg (endurance) → 2.2g/kg (heavy
+// strength). These ceilings are evidence-based and independent of caloric level.
+const PROTEIN_PER_KG: Record<TrainingType, number> = {
+  strength: 2.2,
+  hybrid:   2.0,
+  hiit:     2.0,
+  cardio:   1.7,
+  cycling:  1.7,
+  yoga:     1.6,
+  walk:     1.6,
+  rest:     1.8,
+};
+
 // ─── CARB TIMING WINDOW ───────────────────────────────────────────────────────
 
 function buildCarbTimingWindow(
@@ -172,9 +188,13 @@ export function computeMacros(
   const recoveryMultiplier = weeklyLoad.recoveryScore < 40 ? 0.95 : 1.0;
   const targetCalories = Math.round(tdee * ratio.caloricAdjustment * activityModifier * recoveryMultiplier);
 
-  const proteinG = Math.round((targetCalories * ratio.protein) / KCAL_PER_G.protein);
-  const carbsG = Math.round((targetCalories * ratio.carbs) / KCAL_PER_G.carbs);
-  const fatG = Math.round((targetCalories * ratio.fat) / KCAL_PER_G.fat);
+  // Protein is weight-anchored, not calorie-derived.
+  // Remaining kcal after protein are split carbs:fat using the original ratio.
+  const proteinG      = Math.round(profile.weightKg * PROTEIN_PER_KG[log.trainingType]);
+  const nonProteinCal = Math.max(0, targetCalories - proteinG * KCAL_PER_G.protein);
+  const carbFatSum    = ratio.carbs + ratio.fat;
+  const carbsG = Math.round((nonProteinCal * (ratio.carbs / carbFatSum)) / KCAL_PER_G.carbs);
+  const fatG   = Math.round((nonProteinCal * (ratio.fat   / carbFatSum)) / KCAL_PER_G.fat);
 
   const carbTimingWindow = buildCarbTimingWindow(
     log.plannedWorkoutTime,
