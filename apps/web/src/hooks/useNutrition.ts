@@ -31,7 +31,6 @@ export function getDailyGoal(date: string): MacroTargets | null {
   return loadGoalLog()[date] ?? null;
 }
 
-const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_KEY ?? '';
 
 export function toUserProfile(user: BackendUser): UserProfile | null {
   if (!user.weightKg || !user.heightCm || !user.age || !user.gender) return null;
@@ -177,13 +176,12 @@ export function useNutrition() {
   );
 
   const refreshWeather = useCallback((): Promise<{ weather: WeatherConditions; alert: EnvironmentAlert } | null> => {
-    if (!WEATHER_API_KEY) return Promise.resolve(null);
     return new Promise((resolve) => {
       if (!navigator.geolocation) { resolve(null); return; }
       navigator.geolocation.getCurrentPosition(
         async ({ coords }) => {
           try {
-            const weather = await fetchWeather(coords.latitude, coords.longitude, WEATHER_API_KEY);
+            const weather = await fetchWeather(coords.latitude, coords.longitude);
             const alert = evaluateEnvironment(weather, store.todayLog?.trainingType ?? 'rest');
             store.setWeather(weather, alert);
             resolve({ weather, alert });

@@ -1,7 +1,5 @@
 import type { WeatherConditions, EnvironmentAlert, TrainingType } from '../../../../shared/types';
 
-const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
-
 // ─── THRESHOLDS ───────────────────────────────────────────────────────────────
 
 const THRESHOLDS = {
@@ -17,21 +15,10 @@ const THRESHOLDS = {
 export async function fetchWeather(
   lat: number,
   lon: number,
-  apiKey: string,
 ): Promise<WeatherConditions> {
-  const url = `${BASE_URL}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-  const res = await fetch(url);
+  const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
   if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
-  const data = await res.json();
-
-  return {
-    tempC: data.main.temp,
-    humidity: data.main.humidity,
-    uvIndex: data.current?.uvi ?? 0, // available in One Call API
-    description: data.weather[0]?.description ?? '',
-    city: data.name,
-    timestamp: Date.now(),
-  };
+  return res.json();
 }
 
 // ─── ENVIRONMENT ALERT ────────────────────────────────────────────────────────

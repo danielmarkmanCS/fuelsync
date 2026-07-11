@@ -7,6 +7,9 @@ import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
+import { calcStreak } from '../lib/streak';
+import { getXP, getLevelInfo } from '../lib/xp';
+import { getWaterTotal, getWaterGoal, addWater } from '../lib/waterLog';
 
 const PROT = '#38BDF8';
 const CARB = '#4ADE80';
@@ -222,6 +225,22 @@ export default function HomeScreen() {
   const targets     = useEffectiveTargets();
   const activeType  = todayLog?.trainingType;
 
+  const [streak,  setStreak]  = useState(0);
+  const [xpInfo,  setXpInfo]  = useState(() => getLevelInfo(getXP()));
+  const [water,   setWater]   = useState(0);
+  const waterGoal = getWaterGoal();
+
+  useEffect(() => {
+    calcStreak().then(s => setStreak(s.current));
+    setXpInfo(getLevelInfo(getXP()));
+    getWaterTotal(todayStr).then(setWater);
+  }, [todayStr]);
+
+  async function quickAddWater(ml: number) {
+    await addWater(todayStr, ml);
+    getWaterTotal(todayStr).then(setWater);
+  }
+
   const handleSelectType = (type: TrainingType) => {
     try {
       const hist = JSON.parse(localStorage.getItem('fs_training_type_history_v1') ?? '{}');
@@ -265,7 +284,18 @@ export default function HomeScreen() {
             <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text)', letterSpacing: -1, lineHeight: 1 }}>
               {displayName || 'Athlete'}
             </div>
-            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>{dateChip}</div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              {streak > 0 && (
+                <button onClick={() => setActiveTab('ascend')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 99, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', cursor: 'pointer' }}>
+                  <span style={{ fontSize: 12 }}>🔥</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B' }}>{streak}d</span>
+                </button>
+              )}
+              <button onClick={() => setActiveTab('ascend')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 99, background: 'rgba(157,126,255,0.15)', border: '1px solid rgba(157,126,255,0.3)', cursor: 'pointer' }}>
+                <span style={{ fontSize: 11 }}>{xpInfo.emoji}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#9D7EFF' }}>Lv.{xpInfo.level} {xpInfo.name}</span>
+              </button>
+            </div>
           </div>
           <button onClick={() => setActiveTab('profile')} className="nrc-press" style={{
             width: 40, height: 40, borderRadius: '50%',
@@ -336,6 +366,37 @@ export default function HomeScreen() {
             </svg>
             Log Food
           </button>
+        </div>
+
+        {/* Water quick-strip */}
+        <div className="a a5" style={{ padding: '0 16px 16px' }}>
+          <div style={{
+            background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)',
+            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <button onClick={() => setActiveTab('body')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+              </svg>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#38BDF8', fontVariantNumeric: 'tabular-nums' }}>{(water/1000).toFixed(1)}L</span>
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>/ {(waterGoal/1000).toFixed(1)}L</span>
+            </button>
+            {/* Mini progress */}
+            <div style={{ flex: 1, height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 99, background: '#38BDF8',
+                width: `${waterGoal > 0 ? Math.min((water/waterGoal)*100, 100) : 0}%`,
+                transition: 'width 0.5s ease',
+              }} />
+            </div>
+            {/* Quick add */}
+            {[250, 500].map(ml => (
+              <button key={ml} onClick={() => quickAddWater(ml)} style={{
+                padding: '5px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)', color: '#38BDF8',
+              }}>+{ml < 1000 ? `${ml}ml` : '1L'}</button>
+            ))}
+          </div>
         </div>
 
         {/* Today's log */}

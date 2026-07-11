@@ -21,6 +21,8 @@ import ProfileSetupScreen from './screens/ProfileSetupScreen';
 import SupplementsScreen from './screens/SupplementsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import GlowScreen from './screens/GlowScreen';
+import BodyScreen from './screens/BodyScreen';
+import AscendScreen from './screens/AscendScreen';
 
 import type { AppTab } from './store/appStore';
 const NAV_H = 64;
@@ -90,13 +92,31 @@ function GlowIcon({ active }: { active: boolean }) {
   );
 }
 
+function BodyIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="5" r="2"/>
+      <path d="M12 9c-2 0-3.5 1-4 2.5L6 16h3l1 5h4l1-5h3l-2-4.5C15.5 10 14 9 12 9z"/>
+      <path d="M9 12.5l-1.5 2M15 12.5l1.5 2"/>
+    </svg>
+  );
+}
+
+function AscendIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  );
+}
+
 const TABS: Array<{ id: AppTab; label: string; Icon: React.FC<{ active: boolean }>; color: string }> = [
-  { id: 'home',        label: 'TODAY', Icon: DiaryIcon,  color: 'var(--accent)' },
-  { id: 'food',        label: 'LOG',   Icon: LogIcon,    color: '#38BDF8' },
-  { id: 'history',     label: 'STATS', Icon: TrendsIcon, color: '#4ADE80' },
-  { id: 'supplements', label: 'PILLS', Icon: PillIcon,   color: '#FBBF24' },
-  { id: 'glow',        label: 'GLOW',  Icon: GlowIcon,   color: '#F472B6' },
-  { id: 'settings',    label: 'ME',    Icon: GearIcon,   color: '#A78BFA' },
+  { id: 'home',        label: 'TODAY',  Icon: DiaryIcon,   color: 'var(--accent)' },
+  { id: 'food',        label: 'LOG',    Icon: LogIcon,     color: '#38BDF8' },
+  { id: 'body',        label: 'BODY',   Icon: BodyIcon,    color: '#4ADE80' },
+  { id: 'ascend',      label: 'ASCEND', Icon: AscendIcon,  color: '#F59E0B' },
+  { id: 'glow',        label: 'GLOW',   Icon: GlowIcon,    color: '#F472B6' },
+  { id: 'supplements', label: 'PILLS',  Icon: PillIcon,    color: '#FBBF24' },
 ];
 
 export default function App() {
@@ -426,6 +446,8 @@ export default function App() {
         {activeTab === 'history'     && <HistoryScreen />}
         {activeTab === 'profile'     && <ProfileSetupScreen />}
         {activeTab === 'supplements' && <SupplementsScreen />}
+        {activeTab === 'body'        && <BodyScreen />}
+        {activeTab === 'ascend'      && <AscendScreen />}
         {activeTab === 'glow'        && <GlowScreen />}
         {activeTab === 'settings'    && <SettingsScreen />}
       </div>

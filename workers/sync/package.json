@@ -1,5 +1,5 @@
 {
-  "dependencies": {
-    "wrangler": "^3.114.17"
+  "devDependencies": {
+    "wrangler": "^4.108.0"
   }
 }

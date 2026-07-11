@@ -166,6 +166,16 @@ export interface GlowRoutineLog {
   logged_at: string; // ISO timestamp
 }
 
+export interface SleepLog {
+  id?: number;
+  date: string;       // YYYY-MM-DD
+  hours: number;
+  quality: 1 | 2 | 3 | 4 | 5;
+  bedtime?: string | null;
+  wakeup?: string | null;
+  logged_at: string;
+}
+
 export type BeardStage = 1 | 2 | 3 | 4 | 5;
 
 export interface GlowMetricEntry {
@@ -193,6 +203,7 @@ class FuelSyncDB extends Dexie {
   glow_routine_items!:   Table<GlowRoutineItem, number>;
   glow_routine_logs!:    Table<GlowRoutineLog, number>;
   glow_metric_entries!:  Table<GlowMetricEntry, number>;
+  sleep_logs!:           Table<SleepLog, number>;
 
   constructor() {
     super('FuelSyncDB');
@@ -233,6 +244,9 @@ class FuelSyncDB extends Dexie {
       glow_routine_items:  '++id, category, active',
       glow_routine_logs:   '++id, item_id, date',
       glow_metric_entries: '++id, date',
+    });
+    this.version(11).stores({
+      sleep_logs: '++id, date',
     });
   }
 }
