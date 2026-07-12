@@ -7,21 +7,21 @@ import { getWaterTotal, getWaterGoal, addWater, removeLastWater, setWaterGoal } 
 import { grantDailyXP } from '../lib/xp';
 import { useThemeStore } from '../store/themeStore';
 
-const PROT  = '#38BDF8';
-const CARB  = '#4ADE80';
-const RED   = '#F87171';
-const PURP  = '#9D7EFF';
-const AMBER = '#FBBF24';
+const PROT  = '#1E88E5';
+const CARB  = '#43A047';
+const RED   = '#E53935';
+const PURP  = '#0091EA';
+const AMBER = '#FB8C00';
 
 type MeasurementField = 'waist_cm' | 'chest_cm' | 'arms_cm' | 'hips_cm' | 'thighs_cm' | 'neck_cm' | 'body_fat_pct';
 
 const MEASURE_CONFIG: Array<{ key: MeasurementField; label: string; unit: string; color: string; icon: string }> = [
   { key: 'waist_cm',    label: 'Waist',    unit: 'cm', color: AMBER,    icon: '📏' },
   { key: 'chest_cm',    label: 'Chest',    unit: 'cm', color: PROT,     icon: '💪' },
-  { key: 'arms_cm',     label: 'Arms',     unit: 'cm', color: '#F97316',icon: '🦾' },
+  { key: 'arms_cm',     label: 'Arms',     unit: 'cm', color: '#E65100',icon: '🦾' },
   { key: 'hips_cm',     label: 'Hips',     unit: 'cm', color: '#EC4899',icon: '📐' },
   { key: 'thighs_cm',   label: 'Thighs',   unit: 'cm', color: CARB,     icon: '🦵' },
-  { key: 'neck_cm',     label: 'Neck',     unit: 'cm', color: '#A78BFA',icon: '🔵' },
+  { key: 'neck_cm',     label: 'Neck',     unit: 'cm', color: '#7E57C2',icon: '🔵' },
   { key: 'body_fat_pct',label: 'Body Fat', unit: '%',  color: RED,      icon: '🎯' },
 ];
 
@@ -408,7 +408,7 @@ function SleepSection() {
   }
 
   const qColor = sleepQualityColor(quality);
-  const MOON   = '#A78BFA';
+  const MOON   = '#7E57C2';
 
   return (
     <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', padding: '20px', marginBottom: 12 }}>

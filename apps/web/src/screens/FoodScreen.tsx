@@ -27,12 +27,12 @@ const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
-const GREEN      = '#4ADE80';   // emerald — carbs
-const ORANGE     = '#9D7EFF';   // violet — accent hex
-const YELLOW     = '#4ADE80';   // carbs alias
-const PROT       = '#38BDF8';   // sky blue — protein
-const RED        = '#F87171';   // rose — errors
-const FAT_CLR    = '#FBBF24';   // amber — fat
+const GREEN      = '#43A047';
+const ORANGE     = '#0091EA';
+const YELLOW     = '#43A047';
+const PROT       = '#1E88E5';
+const RED        = '#E53935';
+const FAT_CLR    = '#FB8C00';
 const CAL_CLR    = 'var(--accent)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
@@ -47,8 +47,8 @@ const MEAL_SHORT: Record<string, string> = {
 };
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: '#F97316', pre_workout: '#4ADE80', lunch: '#38BDF8',
-  post_workout: '#34D399', dinner: '#A78BFA', snack: '#FBBF24', other: '#8B949E',
+  breakfast: '#E65100', pre_workout: '#43A047', lunch: '#1E88E5',
+  post_workout: '#00897B', dinner: '#6D4C41', snack: '#F9A825', other: '#757575',
 };
 
 const SUGGEST_CTX = ['morning', 'pre_workout', 'post_workout', 'rest', 'evening'] as const;

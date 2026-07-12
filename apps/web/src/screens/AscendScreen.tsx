@@ -8,13 +8,13 @@ import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { ALL_ACHIEVEMENTS, getUnlocked } from '../lib/achievements';
 import { db } from '../lib/db';
 
-const CARB  = '#4ADE80';
-const PROT  = '#38BDF8';
-const RED   = '#F87171';
-const PURP  = '#9D7EFF';
-const AMBER = '#FBBF24';
-const PINK  = '#F472B6';
-const MOON  = '#A78BFA';
+const CARB  = '#43A047';
+const PROT  = '#1E88E5';
+const RED   = '#E53935';
+const PURP  = '#0091EA';
+const AMBER = '#FB8C00';
+const PINK  = '#D81B60';
+const MOON  = '#7E57C2';
 
 interface Mission {
   id: string;
@@ -53,7 +53,7 @@ function XPRing({ pct, level, name, emoji }: { pct: number; level: number; name:
           <defs>
             <linearGradient id="xpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor={levelColor} />
-              <stop offset="100%" stopColor={levelColor === CARB ? '#60AFFF' : '#4ADE80'} />
+              <stop offset="100%" stopColor={levelColor === CARB ? '#60AFFF' : '#43A047'} />
             </linearGradient>
           </defs>
           <circle cx={cx} cy={cx} r={R} fill="none" stroke="var(--edge2)" strokeWidth={SW} opacity={0.4} />

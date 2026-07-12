@@ -112,11 +112,11 @@ function AscendIcon({ active }: { active: boolean }) {
 
 const TABS: Array<{ id: AppTab; label: string; Icon: React.FC<{ active: boolean }>; color: string }> = [
   { id: 'home',        label: 'TODAY',  Icon: DiaryIcon,   color: 'var(--accent)' },
-  { id: 'food',        label: 'LOG',    Icon: LogIcon,     color: '#38BDF8' },
-  { id: 'body',        label: 'BODY',   Icon: BodyIcon,    color: '#4ADE80' },
-  { id: 'ascend',      label: 'ASCEND', Icon: AscendIcon,  color: '#F59E0B' },
-  { id: 'glow',        label: 'GLOW',   Icon: GlowIcon,    color: '#F472B6' },
-  { id: 'supplements', label: 'PILLS',  Icon: PillIcon,    color: '#FBBF24' },
+  { id: 'food',        label: 'LOG',    Icon: LogIcon,     color: '#1E88E5' },
+  { id: 'body',        label: 'BODY',   Icon: BodyIcon,    color: '#43A047' },
+  { id: 'ascend',      label: 'ASCEND', Icon: AscendIcon,  color: '#E65100' },
+  { id: 'glow',        label: 'GLOW',   Icon: GlowIcon,    color: '#D81B60' },
+  { id: 'supplements', label: 'PILLS',  Icon: PillIcon,    color: '#6D4C41' },
 ];
 
 export default function App() {
@@ -463,7 +463,7 @@ export default function App() {
         alignItems: 'flex-start',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 -8px 32px rgba(0,0,0,0.25)',
+        boxShadow: '0 -1px 0 rgba(0,0,0,0.08), 0 -4px 12px rgba(0,0,0,0.04)',
       }}>
         {TABS.map(({ id, label, Icon, color }) => {
           const active = activeTab === id;
@@ -481,8 +481,8 @@ export default function App() {
                 width: active ? 46 : 0,
                 height: active ? 30 : 0,
                 borderRadius: 99,
-                background: active ? `${color}20` : 'transparent',
-                boxShadow: active ? `0 0 20px ${color}50` : 'none',
+                background: active ? `${color}15` : 'transparent',
+                boxShadow: 'none',
                 transition: 'width 0.3s var(--spring), height 0.3s var(--spring), opacity 0.2s ease',
                 opacity: active ? 1 : 0,
               }} />

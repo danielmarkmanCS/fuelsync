@@ -6,7 +6,7 @@ export type Units = 'metric' | 'imperial';
 export type GoalMode = 'lose' | 'maintain' | 'gain';
 
 export const ACCENT_COLORS: Record<AccentKey, { dark: string; light: string; label: string; muted: string }> = {
-  blue:   { dark: '#60AFFF', light: '#2563EB', label: 'Ocean',   muted: 'rgba(96,175,255,0.13)'  },
+  blue:   { dark: '#60AFFF', light: '#0091EA', label: 'Ocean',   muted: 'rgba(0,145,234,0.13)'   },
   green:  { dark: '#4ADE80', light: '#16A34A', label: 'Forest',  muted: 'rgba(74,222,128,0.13)'  },
   purple: { dark: '#9D7EFF', light: '#7C3AED', label: 'Galaxy',  muted: 'rgba(157,126,255,0.15)' },
   orange: { dark: '#FB923C', light: '#EA580C', label: 'Ember',   muted: 'rgba(251,146,60,0.13)'  },
@@ -28,8 +28,8 @@ interface ThemeStore {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
-      isDark:      true,
-      accentKey:   'purple',
+      isDark:      false,
+      accentKey:   'blue',
       units:       'metric',
       // Migrate from old fs_goal_mode_v1 key on first load
       goalMode:    (() => {
@@ -41,6 +41,6 @@ export const useThemeStore = create<ThemeStore>()(
       setUnits:    (u)  => set({ units: u }),
       setGoalMode: (m)  => set({ goalMode: m }),
     }),
-    { name: 'fs_theme' }
+    { name: 'fs_theme_v2' }
   )
 );

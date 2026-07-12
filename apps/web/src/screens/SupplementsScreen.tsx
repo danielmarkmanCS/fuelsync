@@ -9,7 +9,7 @@ const EDGE    = 'var(--edge)';
 const ACCENT  = 'var(--accent)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
-const RED     = '#F87171';
+const RED     = '#E53935';
 
 const TIMINGS: Supplement['timing'][] = ['morning', 'pre-workout', 'post-workout', 'evening', 'anytime'];
 const TIMING_LABEL: Record<Supplement['timing'], string> = {
@@ -17,11 +17,11 @@ const TIMING_LABEL: Record<Supplement['timing'], string> = {
   evening: 'Evening', anytime: 'Anytime',
 };
 const TIMING_COLOR: Record<Supplement['timing'], string> = {
-  morning:      '#FBBF24',  // amber — sunrise
-  'pre-workout': '#4ADE80', // green — energy
-  'post-workout':'#34D399', // emerald — recovery
-  evening:      '#A78BFA',  // purple — wind-down
-  anytime:      '#38BDF8',  // sky — neutral
+  morning:      '#FB8C00',  // amber — sunrise
+  'pre-workout': '#43A047', // green — energy
+  'post-workout':'#00897B', // emerald — recovery
+  evening:      '#7E57C2',  // purple — wind-down
+  anytime:      '#1E88E5',  // sky — neutral
 };
 const TIMING_EMOJI: Record<Supplement['timing'], string> = {
   morning: '☀️', 'pre-workout': '⚡', 'post-workout': '🔄', evening: '🌙', anytime: '⏱',
@@ -257,9 +257,9 @@ export default function SupplementsScreen() {
               Supplements
             </div>
             <div style={{ fontSize: 12, color: MUTED, marginTop: 5 }}>
-              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? '#4ADE80' : MUTED }}>{takenCount}</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? '#43A047' : MUTED }}>{takenCount}</span>
               <span> of {supplements.length} taken today</span>
-              {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FBBF24', fontWeight: 600 }}>· {skippedCount} skipped</span>}
+              {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FB8C00', fontWeight: 600 }}>· {skippedCount} skipped</span>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -272,7 +272,7 @@ export default function SupplementsScreen() {
             )}
             {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
               <button onClick={handleEnableReminders} title="Enable reminders"
-                style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10, padding: '7px 10px', color: '#FBBF24', fontSize: 13, cursor: 'pointer' }}>
+                style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10, padding: '7px 10px', color: '#FB8C00', fontSize: 13, cursor: 'pointer' }}>
                 🔔
               </button>
             )}
@@ -300,7 +300,7 @@ export default function SupplementsScreen() {
           background: syncMsg.startsWith('⚠') ? `${RED}12` : 'rgba(74,222,128,0.10)',
           border: `1px solid ${syncMsg.startsWith('⚠') ? RED + '30' : 'rgba(74,222,128,0.25)'}`,
           fontSize: 12, fontWeight: 600,
-          color: syncMsg.startsWith('⚠') ? RED : '#4ADE80',
+          color: syncMsg.startsWith('⚠') ? RED : '#43A047',
         }}>
           {syncMsg}
         </div>
@@ -310,14 +310,14 @@ export default function SupplementsScreen() {
       {supplements.length > 0 && (
         <div style={{ marginBottom: 22 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-            <span className="tabnum" style={{ fontSize: 38, fontWeight: 900, letterSpacing: -2, color: allDone ? '#4ADE80' : ACCENT, lineHeight: 1, transition: 'color 0.3s ease' }}>
+            <span className="tabnum" style={{ fontSize: 38, fontWeight: 900, letterSpacing: -2, color: allDone ? '#43A047' : ACCENT, lineHeight: 1, transition: 'color 0.3s ease' }}>
               {takenCount}
             </span>
             <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)' }}>
               of {supplements.length} taken today
             </span>
             {allDone && (
-              <span className="num-pop" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#4ADE80', background: 'rgba(74,222,128,0.14)', borderRadius: 20, padding: '4px 12px', border: '1px solid rgba(74,222,128,0.30)', boxShadow: '0 0 12px rgba(74,222,128,0.25)' }}>
+              <span className="num-pop" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#43A047', background: 'rgba(74,222,128,0.14)', borderRadius: 20, padding: '4px 12px', border: '1px solid rgba(74,222,128,0.30)', boxShadow: '0 0 12px rgba(74,222,128,0.25)' }}>
                 All done ✓
               </span>
             )}
@@ -377,7 +377,7 @@ export default function SupplementsScreen() {
                     className={popping ? 'check-pop' : ''}
                     style={{
                       width: 28, height: 28, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-                      border: `2px solid ${taken ? tColor : skipped ? '#FBBF24' : tColor + '50'}`,
+                      border: `2px solid ${taken ? tColor : skipped ? '#FB8C00' : tColor + '50'}`,
                       background: taken ? tColor : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
@@ -400,7 +400,7 @@ export default function SupplementsScreen() {
                     </div>
                     <div style={{ fontSize: 12, color: MUTED, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ color: tColor, fontWeight: 700 }}>{s.dose} {s.unit}</span>
-                      {skipped && <span style={{ color: '#FBBF24', fontWeight: 700 }}>· Skipped</span>}
+                      {skipped && <span style={{ color: '#FB8C00', fontWeight: 700 }}>· Skipped</span>}
                     </div>
                   </div>
 
@@ -409,7 +409,7 @@ export default function SupplementsScreen() {
                     <button
                       onClick={() => toggleSkipped(s)}
                       title={skipped ? 'Undo skip' : 'Skip today'}
-                      style={{ background: skipped ? '#FBBF2418' : 'none', border: skipped ? '1px solid #FBBF2430' : 'none', borderRadius: 6, color: skipped ? '#FBBF24' : MUTED, cursor: 'pointer', fontSize: 13, padding: '4px 7px' }}
+                      style={{ background: skipped ? '#FBBF2418' : 'none', border: skipped ? '1px solid #FBBF2430' : 'none', borderRadius: 6, color: skipped ? '#FB8C00' : MUTED, cursor: 'pointer', fontSize: 13, padding: '4px 7px' }}
                     >
                       {skipped ? '↩' : '–'}
                     </button>

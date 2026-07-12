@@ -10,31 +10,19 @@ import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { calcStreak } from '../lib/streak';
 import { getXP, getLevelInfo } from '../lib/xp';
 import { getWaterTotal, getWaterGoal, addWater } from '../lib/waterLog';
+import { T, CARD } from '../theme';
 
-const PROT = '#38BDF8';
-const CARB = '#4ADE80';
-const RED  = '#F87171';
+// ── constants ──────────────────────────────────────────────────────────────
 
-const MEAL_COLORS: Record<string, string> = {
-  breakfast:    '#F97316',
-  lunch:        '#38BDF8',
-  dinner:       '#A78BFA',
-  pre_workout:  '#4ADE80',
-  post_workout: '#34D399',
-  snack:        '#FBBF24',
-  other:        '#8B949E',
-};
-
-const TRAINING_COLORS: Record<string, string> = {
-  rest:     '#64748B',
-  strength: '#38BDF8',
-  cardio:   '#4ADE80',
-  hybrid:   '#9D7EFF',
-  hiit:     '#F87171',
-  cycling:  '#F97316',
-  yoga:     '#A78BFA',
-  walk:     '#34D399',
-};
+const MEAL_SECTIONS: { key: string; label: string; emoji: string }[] = [
+  { key: 'breakfast',    label: 'Breakfast',   emoji: '🌅' },
+  { key: 'lunch',        label: 'Lunch',        emoji: '☀️'  },
+  { key: 'dinner',       label: 'Dinner',       emoji: '🌙' },
+  { key: 'snack',        label: 'Snacks',       emoji: '🍎' },
+  { key: 'pre_workout',  label: 'Pre-Workout',  emoji: '⚡' },
+  { key: 'post_workout', label: 'Post-Workout', emoji: '💪' },
+  { key: 'other',        label: 'Other',        emoji: '🍽️' },
+];
 
 const TRAINING_TYPES: { type: TrainingType; label: string }[] = [
   { type: 'rest',     label: 'Rest'     },
@@ -47,20 +35,16 @@ const TRAINING_TYPES: { type: TrainingType; label: string }[] = [
   { type: 'walk',     label: 'Walk'     },
 ];
 
-function TrainingIcon({ type, size = 16 }: { type: TrainingType; size?: number }) {
-  const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  switch (type) {
-    case 'rest':     return <svg {...p}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>;
-    case 'strength': return <svg {...p}><path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>;
-    case 'cardio':   return <svg {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
-    case 'hybrid':   return <svg {...p}><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
-    case 'hiit':     return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
-    case 'cycling':  return <svg {...p}><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h3"/></svg>;
-    case 'yoga':     return <svg {...p}><circle cx="12" cy="4" r="1"/><path d="M4 15s2-6 8-6 8 6 8 6"/><path d="M9 15l-2 6M15 15l2 6M9 15l3-4 3 4"/></svg>;
-    case 'walk':     return <svg {...p}><circle cx="12" cy="4" r="1"/><path d="M9 20l1-5-2-3 4-8"/><path d="M13 7l3 2 2 5"/><path d="M7 20h4M15 13l2 7"/></svg>;
-    default:         return <svg {...p}><circle cx="12" cy="12" r="10"/></svg>;
-  }
-}
+const TRAINING_COLORS: Record<string, string> = {
+  rest:     T.muted,
+  strength: T.prot,
+  cardio:   T.carb,
+  hybrid:   T.accent,
+  hiit:     T.red,
+  cycling:  T.fat,
+  yoga:     '#AB47BC',
+  walk:     T.carb,
+};
 
 const emptyMacros = (): MacroTargets => ({ calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
 
@@ -73,7 +57,7 @@ function sumLogs(logs: FoodLog[]): MacroTargets {
   }), emptyMacros());
 }
 
-function useCountUp(to: number, ms = 600): number {
+function useCountUp(to: number, ms = 500): number {
   const [val, setVal] = useState(0);
   const prev  = useRef(0);
   const frame = useRef<number>();
@@ -92,110 +76,190 @@ function useCountUp(to: number, ms = 600): number {
   return val;
 }
 
-function ProteinHero({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
-  const protEaten = Math.round(consumed.proteinG);
-  const protGoal  = targets?.proteinG ?? 0;
+// ── calorie ring ───────────────────────────────────────────────────────────
+
+function CalorieRing({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
   const calEaten  = Math.round(consumed.calories);
   const calGoal   = targets?.calories ?? 0;
+  const remaining = calGoal > 0 ? calGoal - calEaten : 0;
+  const isOver    = calGoal > 0 && calEaten > calGoal;
+  const pct       = calGoal > 0 ? Math.min(calEaten / calGoal, 1) : 0;
 
-  const pct    = protGoal > 0 ? Math.min(protEaten / protGoal, 1) : 0;
-  const done   = protGoal > 0 && pct >= 1;
-  const ring   = done ? CARB : 'var(--accent)';
-  const glow   = done ? 'rgba(74,222,128,0.45)' : 'rgba(157,126,255,0.45)';
-  const calPct = calGoal > 0 ? Math.min(calEaten / calGoal, 1) : 0;
-  const calOver = calGoal > 0 && calEaten > calGoal;
+  const ringColor = isOver ? T.red : T.accent;
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
 
-  const animProt = useCountUp(mounted ? protEaten : 0);
-  const animCal  = useCountUp(mounted ? calEaten  : 0);
+  const animRemaining = useCountUp(mounted ? Math.abs(remaining) : 0);
+  const animEaten     = useCountUp(mounted ? calEaten : 0);
 
-  const R  = 84;
-  const SW = 13;
+  const R  = 72;
+  const SW = 9;
   const C  = 2 * Math.PI * R;
   const sz = (R + SW) * 2;
   const cx = sz / 2;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4px 0 24px' }}>
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Ambient glow */}
-        <div style={{
-          position: 'absolute',
-          width: sz * 0.8, height: sz * 0.8,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`,
-          filter: 'blur(22px)',
-          transition: 'background 0.5s ease',
-          pointerEvents: 'none',
-        }} />
-
-        <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', overflow: 'visible', display: 'block' }}>
-          <circle cx={cx} cy={cx} r={R} fill="none" stroke="var(--edge2)" strokeWidth={SW} opacity={0.5} />
-          <circle
-            cx={cx} cy={cx} r={R}
-            fill="none"
-            stroke={ring}
-            strokeWidth={SW}
-            strokeLinecap="round"
-            strokeDasharray={C}
-            strokeDashoffset={C * (1 - pct)}
-            style={{
-              transition: 'stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1), stroke 0.5s ease',
-              filter: `drop-shadow(0 0 14px ${glow})`,
-            }}
-          />
-        </svg>
-
-        {/* Center label */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        }}>
+    <div style={{ ...CARD, padding: '20px 20px 16px', marginBottom: 12 }}>
+      {/* Ring + center */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+            <circle cx={cx} cy={cx} r={R} fill="none" stroke={T.edge2} strokeWidth={SW} />
+            <circle
+              cx={cx} cy={cx} r={R}
+              fill="none" stroke={ringColor} strokeWidth={SW} strokeLinecap="round"
+              strokeDasharray={C} strokeDashoffset={C * (1 - pct)}
+              style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.3s' }}
+            />
+          </svg>
           <div style={{
-            fontSize: 52, fontWeight: 900, lineHeight: 1, letterSpacing: -2,
-            color: ring,
-            textShadow: `0 0 28px ${glow}`,
-            fontVariantNumeric: 'tabular-nums',
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           }}>
-            {animProt}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, marginTop: 5, letterSpacing: 0.3 }}>
-            {protGoal > 0 ? `of ${Math.round(protGoal)}g protein` : 'g protein'}
+            <div style={{ fontSize: 26, fontWeight: 800, color: isOver ? T.red : T.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+              {animRemaining.toLocaleString()}
+            </div>
+            <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, marginTop: 3 }}>
+              {isOver ? 'over' : 'left'}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Calories row */}
-      <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{
-          fontSize: 18, fontWeight: 800,
-          color: calOver ? RED : 'var(--text)',
-          fontVariantNumeric: 'tabular-nums',
-        }}>
-          {animCal.toLocaleString()}
-        </span>
-        <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>
-          {calGoal > 0 ? `/ ${calGoal.toLocaleString()} kcal` : 'kcal'}
-        </span>
-        {calGoal > 0 && (
-          <div style={{ width: 72, height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 99,
-              background: calOver ? RED : PROT,
-              width: `${Math.min(calPct * 100, 100)}%`,
-              transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1)',
-            }} />
-          </div>
-        )}
+        {/* Right side stats */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <StatRow label="Goal"     value={calGoal > 0 ? calGoal.toLocaleString() : '—'} color={T.muted} />
+          <StatRow label="Food"     value={animEaten.toLocaleString()} color={T.text} />
+          <div style={{ height: 1, background: T.edge }} />
+          <StatRow
+            label={isOver ? 'Over' : 'Remaining'}
+            value={Math.abs(remaining).toLocaleString()}
+            color={isOver ? T.red : T.green}
+            bold
+          />
+        </div>
       </div>
     </div>
   );
 }
+
+function StatRow({ label, value, color, bold }: { label: string; value: string; color: string; bold?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: bold ? 700 : 600, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+    </div>
+  );
+}
+
+// ── macro bars ─────────────────────────────────────────────────────────────
+
+function MacroCard({ consumed, targets }: { consumed: MacroTargets; targets: MacroTargets | null }) {
+  const rows = [
+    { label: 'Protein', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0), color: T.prot },
+    { label: 'Carbs',   eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0), color: T.carb },
+    { label: 'Fat',     eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0), color: T.fat  },
+  ];
+
+  return (
+    <div style={{ ...CARD, padding: '14px 16px', marginBottom: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {rows.map(({ label, eaten, goal, color }) => {
+          const pct = goal > 0 ? Math.min(eaten / goal, 1) : 0;
+          return (
+            <div key={label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{label}</div>
+                <div style={{ fontSize: 12, color: T.muted, fontVariantNumeric: 'tabular-nums' }}>
+                  {eaten}g{goal > 0 ? ` / ${goal}g` : ''}
+                </div>
+              </div>
+              <div style={{ height: 5, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 99, background: color,
+                  width: `${pct * 100}%`,
+                  transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+                }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── meal section ───────────────────────────────────────────────────────────
+
+function MealSection({
+  emoji, label, logs, onAdd,
+}: { emoji: string; label: string; logs: FoodLog[]; onAdd: () => void }) {
+  const sectionCals = Math.round(logs.reduce((s, l) => s + +l.calories, 0));
+  const [open, setOpen] = useState(logs.length > 0);
+
+  useEffect(() => { if (logs.length > 0) setOpen(true); }, [logs.length]);
+
+  return (
+    <div style={{ borderBottom: `1px solid ${T.edge}` }}>
+      {/* Header row */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', padding: '13px 16px', gap: 10,
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: 16 }}>{emoji}</span>
+        <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: T.text }}>{label}</span>
+        {sectionCals > 0 && (
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.muted, fontVariantNumeric: 'tabular-nums' }}>
+            {sectionCals} cal
+          </span>
+        )}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="2" strokeLinecap="round"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {/* Items + add button */}
+      {open && (
+        <div style={{ paddingBottom: 4 }}>
+          {logs.map((log) => (
+            <div key={log.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 16px 8px 42px', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {log.food_name}
+                </div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>
+                  {Math.round(+log.protein)}g P · {Math.round(+log.carbs)}g C · {Math.round(+log.fat)}g F
+                </div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                {Math.round(+log.calories)} cal
+              </div>
+            </div>
+          ))}
+          <button onClick={onAdd} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            margin: '4px 16px 8px 42px', padding: '6px 12px',
+            background: T.accentMuted, border: `1px solid rgba(0,145,234,0.18)`,
+            borderRadius: 8, cursor: 'pointer',
+            fontSize: 12, fontWeight: 700, color: T.accent,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Food
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── main screen ────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const { user }                         = useAuthStore();
@@ -222,12 +286,12 @@ export default function HomeScreen() {
     return () => document.removeEventListener('visibilitychange', load);
   }, [todayStr]);
 
-  const targets     = useEffectiveTargets();
-  const activeType  = todayLog?.trainingType;
+  const targets    = useEffectiveTargets();
+  const activeType = todayLog?.trainingType;
 
-  const [streak,  setStreak]  = useState(0);
-  const [xpInfo,  setXpInfo]  = useState(() => getLevelInfo(getXP()));
-  const [water,   setWater]   = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [xpInfo, setXpInfo] = useState(() => getLevelInfo(getXP()));
+  const [water,  setWater]  = useState(0);
   const waterGoal = getWaterGoal();
 
   useEffect(() => {
@@ -260,202 +324,144 @@ export default function HomeScreen() {
 
   const hour        = new Date().getHours();
   const greeting    = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const displayName = user?.displayName || '';
-  const dateChip    = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const displayName = user?.displayName ?? '';
+  const dateStr     = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  // Group logs by meal type
+  const logsByMeal = MEAL_SECTIONS.reduce<Record<string, FoodLog[]>>((acc, s) => {
+    acc[s.key] = foodLogs.filter(l => (l.meal_type ?? 'other') === s.key);
+    return acc;
+  }, {});
+
+  // Only show meal sections that have items OR are the 4 main ones
+  const MAIN_MEALS = new Set(['breakfast', 'lunch', 'dinner', 'snack']);
+  const visibleSections = MEAL_SECTIONS.filter(s => MAIN_MEALS.has(s.key) || logsByMeal[s.key]?.length > 0);
 
   return (
-    <div style={{ position: 'relative', background: 'var(--bg)', minHeight: '100%', paddingBottom: 100, overflow: 'hidden' }}>
+    <div style={{ background: T.bg, minHeight: '100%', paddingBottom: 100 }}>
 
-      {/* Background orbs */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-
-      <div style={{ position: 'relative', zIndex: 1 }}>
-
-        {/* Header */}
-        <div style={{ padding: '28px 20px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div className="a a1">
-            <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, letterSpacing: 0.3, marginBottom: 2 }}>
-              {greeting}{displayName ? ',' : ''}
+      {/* Header */}
+      <div style={{ background: T.surf, borderBottom: `1px solid ${T.edge}`, padding: '20px 16px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, marginBottom: 2 }}>
+              {greeting}{displayName ? `, ${displayName}` : ''}
             </div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text)', letterSpacing: -1, lineHeight: 1 }}>
-              {displayName || 'Athlete'}
-            </div>
-            <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-              {streak > 0 && (
-                <button onClick={() => setActiveTab('ascend')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 99, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', cursor: 'pointer' }}>
-                  <span style={{ fontSize: 12 }}>🔥</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B' }}>{streak}d</span>
-                </button>
-              )}
-              <button onClick={() => setActiveTab('ascend')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 99, background: 'rgba(157,126,255,0.15)', border: '1px solid rgba(157,126,255,0.3)', cursor: 'pointer' }}>
-                <span style={{ fontSize: 11 }}>{xpInfo.emoji}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#9D7EFF' }}>Lv.{xpInfo.level} {xpInfo.name}</span>
-              </button>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.text, letterSpacing: -0.3 }}>
+              {dateStr}
             </div>
           </div>
-          <button onClick={() => setActiveTab('profile')} className="nrc-press" style={{
-            width: 40, height: 40, borderRadius: '50%',
-            background: 'var(--surf2)', border: '1px solid var(--edge2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', flexShrink: 0, marginTop: 4,
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-          }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-            </svg>
-          </button>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {streak > 0 && (
+              <button onClick={() => setActiveTab('ascend')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 99, background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', cursor: 'pointer' }}>
+                <span style={{ fontSize: 12 }}>🔥</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#E65100' }}>{streak}d</span>
+              </button>
+            )}
+            <button onClick={() => setActiveTab('profile')} className="press" style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: T.surf2, border: `1px solid ${T.edge}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Training chips */}
-        <div className="a a2" style={{
-          padding: '0 16px 20px',
-          overflowX: 'auto', display: 'flex', gap: 8,
-          scrollbarWidth: 'none',
-          WebkitOverflowScrolling: 'touch',
-        }}>
+        <div style={{ overflowX: 'auto', display: 'flex', gap: 6, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
           {TRAINING_TYPES.map(({ type, label }) => {
             const active = activeType === type;
-            const color  = TRAINING_COLORS[type] ?? 'var(--accent)';
+            const color  = TRAINING_COLORS[type] ?? T.accent;
             return (
-              <button
-                key={type}
-                onClick={() => { if (!active) handleSelectType(type); }}
-                className="nrc-press"
-                style={{
-                  flexShrink: 0,
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 99,
-                  background: active ? `${color}22` : 'var(--surf)',
-                  border: active ? `1px solid ${color}55` : '1px solid var(--edge)',
-                  color: active ? color : 'var(--muted)',
-                  fontSize: 12, fontWeight: active ? 700 : 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: active ? `0 0 12px ${color}30` : 'none',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <TrainingIcon type={type} size={14} />
+              <button key={type} onClick={() => { if (!active) handleSelectType(type); }} className="press" style={{
+                flexShrink: 0, padding: '5px 12px', borderRadius: 99,
+                background: active ? color : T.surf2,
+                border: `1px solid ${active ? color : T.edge}`,
+                color: active ? '#fff' : T.muted,
+                fontSize: 12, fontWeight: active ? 700 : 500, cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}>
                 {label}
               </button>
             );
           })}
         </div>
-
-        {/* Protein hero */}
-        <div className="a a3" style={{ padding: '0 20px' }}>
-          <ProteinHero consumed={consumed} targets={targets} />
-        </div>
-
-        {/* Log Food CTA */}
-        <div className="a a4" style={{ padding: '0 16px 24px' }}>
-          <button onClick={() => setActiveTab('food')} className="press" style={{
-            width: '100%', padding: '18px 0',
-            background: 'var(--accent)', border: 'none', borderRadius: 20,
-            color: '#fff', fontSize: 16, fontWeight: 800,
-            cursor: 'pointer',
-            boxShadow: '0 4px 24px rgba(157,126,255,0.40)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Log Food
-          </button>
-        </div>
-
-        {/* Water quick-strip */}
-        <div className="a a5" style={{ padding: '0 16px 16px' }}>
-          <div style={{
-            background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)',
-            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
-          }}>
-            <button onClick={() => setActiveTab('body')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-              </svg>
-              <span style={{ fontSize: 13, fontWeight: 800, color: '#38BDF8', fontVariantNumeric: 'tabular-nums' }}>{(water/1000).toFixed(1)}L</span>
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>/ {(waterGoal/1000).toFixed(1)}L</span>
-            </button>
-            {/* Mini progress */}
-            <div style={{ flex: 1, height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: 99, background: '#38BDF8',
-                width: `${waterGoal > 0 ? Math.min((water/waterGoal)*100, 100) : 0}%`,
-                transition: 'width 0.5s ease',
-              }} />
-            </div>
-            {/* Quick add */}
-            {[250, 500].map(ml => (
-              <button key={ml} onClick={() => quickAddWater(ml)} style={{
-                padding: '5px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)', color: '#38BDF8',
-              }}>+{ml < 1000 ? `${ml}ml` : '1L'}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Today's log */}
-        {foodLogs.length > 0 && (
-          <div className="a a5" style={{ padding: '0 16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div className="sec-label">Today</div>
-              <button onClick={() => setActiveTab('food')} style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 11, fontWeight: 700, color: 'var(--accent)', letterSpacing: 0.3,
-              }}>
-                See all →
-              </button>
-            </div>
-            <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', overflow: 'hidden' }}>
-              {foodLogs.slice(0, 4).map((log, i) => {
-                const mealColor = MEAL_COLORS[log.meal_type ?? 'other'] ?? '#8B949E';
-                const timeStr   = new Date(log.logged_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                return (
-                  <div key={log.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '13px 16px',
-                    borderBottom: i < Math.min(foodLogs.length, 4) - 1 ? '1px solid var(--edge)' : 'none',
-                  }}>
-                    <div style={{
-                      width: 8, height: 8, borderRadius: '50%',
-                      background: mealColor, flexShrink: 0,
-                    }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {log.food_name}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                        {Math.round(+log.protein)}g protein · {timeStr}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: 14, fontWeight: 700, color: 'var(--text)',
-                      fontVariantNumeric: 'tabular-nums', flexShrink: 0,
-                    }}>
-                      {Math.round(+log.calories)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {foodLogs.length === 0 && (
-          <div style={{ padding: '0 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
-              Nothing logged yet
-            </div>
-          </div>
-        )}
-
       </div>
+
+      {/* Content */}
+      <div style={{ padding: '12px 12px 0' }}>
+
+        {/* Calorie ring */}
+        <CalorieRing consumed={consumed} targets={targets} />
+
+        {/* Macro bars */}
+        <MacroCard consumed={consumed} targets={targets} />
+
+        {/* XP / level chip */}
+        <button onClick={() => setActiveTab('ascend')} style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          width: '100%', padding: '10px 14px',
+          ...CARD, marginBottom: 12, cursor: 'pointer', textAlign: 'left',
+          background: T.surf,
+        }}>
+          <span style={{ fontSize: 18 }}>{xpInfo.emoji}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Level {xpInfo.level} — {xpInfo.name}</div>
+            <div style={{ marginTop: 4, height: 4, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: T.accent, borderRadius: 99, width: `${xpInfo.progressPct}%`, transition: 'width 0.6s ease' }} />
+            </div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.muted} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+        </button>
+
+        {/* Water strip */}
+        <div style={{ ...CARD, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.prot} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+          </svg>
+          <span style={{ fontSize: 13, fontWeight: 700, color: T.text, fontVariantNumeric: 'tabular-nums' }}>{(water / 1000).toFixed(1)}L</span>
+          <span style={{ fontSize: 12, color: T.muted }}>of {(waterGoal / 1000).toFixed(1)}L</span>
+          <div style={{ flex: 1, height: 4, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: T.prot, borderRadius: 99, width: `${waterGoal > 0 ? Math.min((water / waterGoal) * 100, 100) : 0}%`, transition: 'width 0.5s ease' }} />
+          </div>
+          {[250, 500].map(ml => (
+            <button key={ml} onClick={() => quickAddWater(ml)} className="press" style={{
+              padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              background: 'rgba(30,136,229,0.08)', border: `1px solid rgba(30,136,229,0.20)`, color: T.prot,
+            }}>+{ml}ml</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Meal sections */}
+      <div style={{ ...CARD, margin: '0 12px', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Food Diary</div>
+          <div style={{ fontSize: 12, color: T.muted, fontVariantNumeric: 'tabular-nums' }}>
+            {Math.round(consumed.calories)} cal logged
+          </div>
+        </div>
+        {visibleSections.map((section) => (
+          <MealSection
+            key={section.key}
+            emoji={section.emoji}
+            label={section.label}
+            logs={logsByMeal[section.key] ?? []}
+            onAdd={() => setActiveTab('food')}
+          />
+        ))}
+        {/* Totals row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: T.surf2 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Total</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, fontVariantNumeric: 'tabular-nums' }}>
+            {Math.round(consumed.calories)} cal · {Math.round(consumed.proteinG)}g P · {Math.round(consumed.carbsG)}g C · {Math.round(consumed.fatG)}g F
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

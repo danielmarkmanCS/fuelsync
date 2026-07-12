@@ -2,15 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { verifyPin, verifySecurityAnswer, resetPin, getSecurityQuestion } from '../lib/pin';
 import { db } from '../lib/db';
 import { useAuthStore } from '../store/authStore';
-
-const BG    = '#EEF4FF';
-const SURF  = '#FFFFFF';
-const SURF2 = '#E4EEFF';
-const EDGE  = 'rgba(0,56,168,0.10)';
-const TEXT  = '#0A1628';
-const MUTED = '#6878A0';
-const BLUE  = '#0038A8';
-const RED   = '#C62828';
+import { T, CARD, BTN_PRIMARY, BTN_GHOST, INPUT } from '../theme';
 
 function fmt(ms: number) {
   const s = Math.ceil(ms / 1000);
@@ -23,20 +15,20 @@ type ForgotStep = 'question' | 'newPin';
 export default function PinScreen() {
   const setPinVerified = useAuthStore((s) => s.setPinVerified);
 
-  const [digits, setDigits]     = useState('');
-  const [error, setError]       = useState('');
-  const [locked, setLocked]     = useState(false);
-  const [lockMs, setLockMs]     = useState(0);
-  const [wiped, setWiped]       = useState(false);
-  const [shaking, setShaking]   = useState(false);
+  const [digits, setDigits]   = useState('');
+  const [error, setError]     = useState('');
+  const [locked, setLocked]   = useState(false);
+  const [lockMs, setLockMs]   = useState(0);
+  const [wiped, setWiped]     = useState(false);
+  const [shaking, setShaking] = useState(false);
   const [totalAttempts, setTotalAttempts] = useState(0);
 
-  const [showForgot, setShowForgot]     = useState(false);
-  const [forgotStep, setForgotStep]     = useState<ForgotStep>('question');
-  const [secQuestion, setSecQuestion]   = useState('');
-  const [secAnswer, setSecAnswer]       = useState('');
-  const [secError, setSecError]         = useState('');
-  const [secLoading, setSecLoading]     = useState(false);
+  const [showForgot, setShowForgot]   = useState(false);
+  const [forgotStep, setForgotStep]   = useState<ForgotStep>('question');
+  const [secQuestion, setSecQuestion] = useState('');
+  const [secAnswer, setSecAnswer]     = useState('');
+  const [secError, setSecError]       = useState('');
+  const [secLoading, setSecLoading]   = useState(false);
 
   const [newPin, setNewPin]         = useState('');
   const [newPinConf, setNewPinConf] = useState('');
@@ -78,7 +70,7 @@ export default function PinScreen() {
       setError('Too many attempts.');
     } else {
       const rem = result.attemptsLeft;
-      setError(rem <= 2 ? `Wrong PIN. ${rem} attempt${rem === 1 ? '' : 's'} left before lockout.` : 'Wrong PIN.');
+      setError(rem <= 2 ? `Wrong PIN — ${rem} attempt${rem === 1 ? '' : 's'} left` : 'Wrong PIN');
     }
   }, [setPinVerified]);
 
@@ -112,7 +104,7 @@ export default function PinScreen() {
       setNewPin(''); setNewPinConf(''); setPinError('');
       setForgotStep('newPin');
     } else {
-      setSecError(`Wrong answer. ${result.attemptsLeft} attempt${result.attemptsLeft === 1 ? '' : 's'} left before data wipe.`);
+      setSecError(`Wrong answer — ${result.attemptsLeft} attempt${result.attemptsLeft === 1 ? '' : 's'} left before data wipe.`);
     }
   };
 
@@ -127,14 +119,16 @@ export default function PinScreen() {
 
   if (wiped) {
     return (
-      <div style={fullPage}>
+      <div style={page}>
         <div style={{ textAlign: 'center', padding: '0 32px' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -1, color: TEXT, marginBottom: 10 }}>Data Wiped</div>
-          <div style={{ color: MUTED, fontSize: 14, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: T.text, marginBottom: 8 }}>Data Wiped</div>
+          <div style={{ color: T.muted, fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
             Too many failed attempts. All data has been erased.
           </div>
-          <button onClick={() => window.location.reload()} style={blueBtn}>Restart</button>
+          <button onClick={() => window.location.reload()} style={{ ...BTN_PRIMARY, width: 200 }}>
+            Restart
+          </button>
         </div>
       </div>
     );
@@ -142,47 +136,42 @@ export default function PinScreen() {
 
   if (showForgot && forgotStep === 'question') {
     return (
-      <div style={fullPage}>
-        <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>
-              <span style={{ color: TEXT }}>FUEL</span><span style={{ color: BLUE }}>SYNC</span>
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginTop: 10, textTransform: 'uppercase' }}>
-              Recovery Question
-            </div>
+      <div style={page}>
+        <div style={{ width: '100%', maxWidth: 340, padding: '0 24px' }}>
+          <Logo />
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: T.muted, textTransform: 'uppercase', textAlign: 'center', marginBottom: 28 }}>
+            Recovery Question
           </div>
 
           {secQuestion ? (
             <>
-              <div style={{
-                background: SURF, border: `1px solid ${EDGE}`, borderRadius: 14,
-                padding: '14px 16px', marginBottom: 16, boxShadow: '0 2px 8px rgba(0,56,168,0.06)',
-              }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Question</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, lineHeight: 1.5 }}>{secQuestion}</div>
+              <div style={{ ...CARD, padding: '14px 16px', marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, color: T.muted, textTransform: 'uppercase', marginBottom: 6 }}>Question</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text, lineHeight: 1.5 }}>{secQuestion}</div>
               </div>
-              <input style={inp} type="text" placeholder="Your answer"
+              <input style={INPUT} type="text" placeholder="Your answer"
                 value={secAnswer}
                 onChange={(e) => { setSecAnswer(e.target.value); setSecError(''); }}
                 autoComplete="off"
               />
-              {secError && <div style={{ fontSize: 12, color: RED, fontWeight: 600, marginBottom: 12, padding: '10px 12px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, border: '1px solid rgba(198,40,40,0.18)' }}>{secError}</div>}
-              <button onClick={submitSecurityAnswer} disabled={secLoading} style={blueBtn}>
+              {secError && <ErrMsg msg={secError} />}
+              <button onClick={submitSecurityAnswer} disabled={secLoading} style={{ ...BTN_PRIMARY, marginTop: 12 }}>
                 {secLoading ? 'Checking…' : 'Verify Answer'}
               </button>
             </>
           ) : (
-            <div style={{ textAlign: 'center', color: MUTED, fontSize: 13, lineHeight: 1.6 }}>
-              No recovery question was set up.<br />You must wipe data to start fresh.
+            <div style={{ textAlign: 'center', color: T.muted, fontSize: 14, lineHeight: 1.6 }}>
+              No recovery question set up.<br />You must wipe data to start fresh.
               <button onClick={async () => { await db.delete(); indexedDB.deleteDatabase('FuelSyncDB'); window.location.reload(); }}
-                style={{ ...blueBtn, marginTop: 20, background: RED, boxShadow: `0 4px 20px ${RED}40` }}>
+                style={{ ...BTN_PRIMARY, marginTop: 24, background: T.red, boxShadow: 'none' }}>
                 Wipe & Restart
               </button>
             </div>
           )}
 
-          <button onClick={() => setShowForgot(false)} style={backBtn}>← Back to PIN</button>
+          <button onClick={() => setShowForgot(false)} style={{ ...BTN_GHOST, display: 'block', width: '100%', textAlign: 'center', marginTop: 12 }}>
+            ← Back to PIN
+          </button>
         </div>
       </div>
     );
@@ -190,31 +179,27 @@ export default function PinScreen() {
 
   if (showForgot && forgotStep === 'newPin') {
     return (
-      <div style={fullPage}>
-        <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>
-              <span style={{ color: TEXT }}>FUEL</span><span style={{ color: BLUE }}>SYNC</span>
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginTop: 10, textTransform: 'uppercase' }}>
-              Set New PIN
-            </div>
+      <div style={page}>
+        <div style={{ width: '100%', maxWidth: 340, padding: '0 24px' }}>
+          <Logo />
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: T.muted, textTransform: 'uppercase', textAlign: 'center', marginBottom: 28 }}>
+            Set New PIN
           </div>
 
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>New PIN</div>
-          <input style={{ ...inp, letterSpacing: 10, fontSize: 22, textAlign: 'center' }}
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, color: T.muted, textTransform: 'uppercase', marginBottom: 8 }}>New PIN</div>
+          <input style={{ ...INPUT, letterSpacing: 12, fontSize: 22, textAlign: 'center', marginBottom: 16 }}
             type="password" inputMode="numeric" maxLength={4}
             placeholder="• • • •" value={newPin}
             onChange={(e) => { setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4)); setPinError(''); }} />
 
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 3, color: MUTED, textTransform: 'uppercase', marginBottom: 8, marginTop: 4 }}>Confirm PIN</div>
-          <input style={{ ...inp, letterSpacing: 10, fontSize: 22, textAlign: 'center' }}
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, color: T.muted, textTransform: 'uppercase', marginBottom: 8 }}>Confirm PIN</div>
+          <input style={{ ...INPUT, letterSpacing: 12, fontSize: 22, textAlign: 'center' }}
             type="password" inputMode="numeric" maxLength={4}
             placeholder="• • • •" value={newPinConf}
             onChange={(e) => { setNewPinConf(e.target.value.replace(/\D/g, '').slice(0, 4)); setPinError(''); }} />
 
-          {pinError && <div style={{ fontSize: 12, color: RED, fontWeight: 600, marginBottom: 12, padding: '10px 12px', background: 'rgba(198,40,40,0.06)', borderRadius: 10, border: '1px solid rgba(198,40,40,0.18)' }}>{pinError}</div>}
-          <button onClick={submitNewPin} disabled={pinLoading} style={blueBtn}>
+          {pinError && <ErrMsg msg={pinError} />}
+          <button onClick={submitNewPin} disabled={pinLoading} style={{ ...BTN_PRIMARY, marginTop: 16 }}>
             {pinLoading ? 'Saving…' : 'Save New PIN'}
           </button>
         </div>
@@ -223,42 +208,33 @@ export default function PinScreen() {
   }
 
   return (
-    <div style={fullPage}>
-      <div style={{ width: '100%', maxWidth: 360, padding: '0 32px' }}>
+    <div style={page}>
+      <div style={{ width: '100%', maxWidth: 320, padding: '0 24px' }}>
 
-        <div style={{ textAlign: 'center', marginBottom: 52 }}>
-          <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>
-            <span style={{ color: TEXT }}>FUEL</span><span style={{ color: BLUE }}>SYNC</span>
-          </div>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 4, color: MUTED, marginTop: 12, textTransform: 'uppercase' }}>
-            Enter PIN
-          </div>
+        <Logo />
+
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: T.muted, textTransform: 'uppercase', textAlign: 'center', marginBottom: 40 }}>
+          Enter PIN
         </div>
 
         {/* Dot indicators */}
         <div style={{
-          display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 36,
-          ...(shaking ? { animation: 'shake 0.4s ease' } : {}),
+          display: 'flex', justifyContent: 'center', gap: 18, marginBottom: 32,
+          ...(shaking ? { animation: 'pinShake 0.4s ease' } : {}),
         }}>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} style={{
-              width: 18, height: 18, borderRadius: '50%',
-              background: i < digits.length ? BLUE : SURF,
-              border: `2px solid ${i < digits.length ? BLUE : EDGE}`,
-              boxShadow: i < digits.length ? `0 0 12px ${BLUE}50` : '0 1px 4px rgba(0,56,168,0.08)',
-              transition: 'all 0.15s',
+              width: 16, height: 16, borderRadius: '50%',
+              background: i < digits.length ? T.accent : 'transparent',
+              border: `2px solid ${i < digits.length ? T.accent : T.edge2}`,
+              transition: 'all 0.12s ease',
             }} />
           ))}
         </div>
 
-        {error && (
-          <div style={{ textAlign: 'center', fontSize: 12, color: RED, fontWeight: 700, marginBottom: 20, minHeight: 18 }}>
-            {error}
-          </div>
-        )}
-        {locked && (
-          <div style={{ textAlign: 'center', fontSize: 13, color: MUTED, marginBottom: 20, fontWeight: 600 }}>
-            Try again in {fmt(lockMs)}
+        {(error || locked) && (
+          <div style={{ textAlign: 'center', fontSize: 13, color: locked ? T.muted : T.red, fontWeight: 600, marginBottom: 20, minHeight: 20 }}>
+            {locked ? `Try again in ${fmt(lockMs)}` : error}
           </div>
         )}
 
@@ -266,19 +242,20 @@ export default function PinScreen() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k) => {
             if (k === '') return <div key="empty" />;
+            const isDel = k === '⌫';
             return (
-              <button key={k} onClick={() => k === '⌫' ? del() : press(k)}
-                disabled={locked} className="nrc-press" style={{
-                  height: 68, borderRadius: 18,
-                  border: `1px solid ${EDGE}`,
-                  background: k === '⌫' ? 'transparent' : SURF,
-                  fontSize: k === '⌫' ? 22 : 24,
-                  fontWeight: 700,
-                  color: locked ? MUTED : k === '⌫' ? MUTED : TEXT,
+              <button key={k} onClick={() => isDel ? del() : press(k)}
+                disabled={locked} className="press" style={{
+                  height: 64,
+                  borderRadius: 12,
+                  border: isDel ? 'none' : `1px solid ${T.edge}`,
+                  background: isDel ? 'transparent' : T.surf,
+                  fontSize: isDel ? 20 : 22,
+                  fontWeight: isDel ? 400 : 600,
+                  color: locked ? T.muted2 : isDel ? T.muted : T.text,
                   cursor: locked ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.1s, transform 0.1s',
+                  boxShadow: isDel ? 'none' : T.shadow,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: k !== '⌫' ? '0 1px 4px rgba(0,56,168,0.06)' : 'none',
                 }}>
                 {k}
               </button>
@@ -288,30 +265,24 @@ export default function PinScreen() {
 
         {totalAttempts >= 10 && !locked && (
           <div style={{
-            textAlign: 'center', marginTop: 20,
-            fontSize: 11, fontWeight: 700,
-            color: totalAttempts >= 13 ? RED : MUTED,
+            textAlign: 'center', marginTop: 20, fontSize: 12, fontWeight: 600,
+            color: totalAttempts >= 13 ? T.red : T.muted,
             padding: '8px 12px',
-            background: totalAttempts >= 13 ? 'rgba(198,40,40,0.06)' : SURF,
-            borderRadius: 10,
-            border: `1px solid ${totalAttempts >= 13 ? 'rgba(198,40,40,0.18)' : EDGE}`,
+            background: totalAttempts >= 13 ? 'rgba(229,57,53,0.06)' : T.surf2,
+            borderRadius: 8,
+            border: `1px solid ${totalAttempts >= 13 ? 'rgba(229,57,53,0.18)' : T.edge}`,
           }}>
-            {totalAttempts} of 15 attempts · data wipes at 15
+            {totalAttempts} of 15 attempts — data wipes at 15
           </div>
         )}
 
-        <button onClick={openForgot} style={{
-          marginTop: 32, background: 'none', border: 'none',
-          color: MUTED, fontSize: 12, fontWeight: 600,
-          cursor: 'pointer', padding: '10px 0',
-          display: 'block', margin: '32px auto 0',
-        }}>
+        <button onClick={openForgot} style={{ ...BTN_GHOST, display: 'block', width: '100%', textAlign: 'center', marginTop: 28 }}>
           Forgot PIN?
         </button>
       </div>
 
       <style>{`
-        @keyframes shake {
+        @keyframes pinShake {
           0%,100%{transform:translateX(0)}
           20%{transform:translateX(-8px)}
           40%{transform:translateX(8px)}
@@ -323,29 +294,31 @@ export default function PinScreen() {
   );
 }
 
-const fullPage: React.CSSProperties = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  display: 'flex', flexDirection: 'column',
-  alignItems: 'center', justifyContent: 'center',
-  background: 'linear-gradient(160deg, #EEF4FF 0%, #DDEAFF 100%)',
-  overflowY: 'scroll', WebkitOverflowScrolling: 'touch' as never,
-};
+function Logo() {
+  return (
+    <div style={{ textAlign: 'center', marginBottom: 8 }}>
+      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -1, color: T.text }}>
+        Fuel<span style={{ color: T.accent }}>Sync</span>
+      </div>
+    </div>
+  );
+}
 
-const inp: React.CSSProperties = {
-  width: '100%', background: SURF2, border: `1px solid ${EDGE}`,
-  borderRadius: 12, color: TEXT, fontSize: 15, padding: '14px 15px',
-  outline: 'none', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif', fontWeight: 500,
-  boxSizing: 'border-box',
-};
+function ErrMsg({ msg }: { msg: string }) {
+  return (
+    <div style={{ fontSize: 13, color: T.red, fontWeight: 600, marginTop: 8, marginBottom: 4 }}>
+      {msg}
+    </div>
+  );
+}
 
-const blueBtn: React.CSSProperties = {
-  width: '100%', padding: '16px 0', borderRadius: 14, border: 'none',
-  background: BLUE, color: '#fff', fontWeight: 800, fontSize: 15,
-  cursor: 'pointer', marginTop: 8, display: 'block',
-  boxShadow: `0 4px 20px ${BLUE}40`,
-};
-
-const backBtn: React.CSSProperties = {
-  width: '100%', background: 'none', border: 'none', color: MUTED,
-  fontSize: 13, cursor: 'pointer', marginTop: 12, padding: '10px 0',
+const page: React.CSSProperties = {
+  position:       'fixed',
+  top: 0, left: 0, right: 0, bottom: 0,
+  display:        'flex',
+  flexDirection:  'column',
+  alignItems:     'center',
+  justifyContent: 'center',
+  background:     T.bg,
+  overflowY:      'auto',
 };

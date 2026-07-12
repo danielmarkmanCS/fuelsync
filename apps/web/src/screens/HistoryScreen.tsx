@@ -13,14 +13,14 @@ const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
-const GREEN      = '#4ADE80';   // emerald — carbs
+const GREEN      = '#43A047';   // emerald — carbs
 const ORANGE     = 'var(--accent)';  // CSS var — use only for direct color props, NOT hex-suffix template literals
-const ORANGE_HEX = '#9D7EFF';        // violet accent hex — for template literal opacity suffix
+const ORANGE_HEX = '#0091EA';        // violet accent hex — for template literal opacity suffix
 const ORANGE_MUT = 'var(--accent-muted)';
-const YELLOW     = '#4ADE80';   // carbs (alias)
-const PROT    = '#38BDF8';   // sky blue — protein
-const RED     = '#EF4444';
-const FAT_CLR = '#FBBF24';   // amber — fat
+const YELLOW     = '#43A047';   // carbs (alias)
+const PROT    = '#1E88E5';   // sky blue — protein
+const RED     = '#E53935';
+const FAT_CLR = '#FB8C00';   // amber — fat
 
 const MEAL_LABEL: Record<string, string> = {
   breakfast: 'Breakfast', pre_workout: 'Pre-Workout',
@@ -474,7 +474,7 @@ function StatsRow({ streak, totalDays, avgCal, goalCal, days }: { streak: number
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: EDGE, borderRadius: 20, overflow: 'hidden', marginBottom: 16 }}>
       {[
         { label: 'Streak',      value: streak,     unit: streak === 1 ? 'day' : 'days', color: streak >= 7 ? ORANGE_HEX : streak >= 3 ? GREEN : ORANGE_HEX, emoji: streak >= 7 ? '🔥' : streak >= 3 ? '⚡' : '📅' },
-        { label: 'Goal streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#FBBF24' : goalStreak >= 2 ? GREEN : MUTED, emoji: goalStreak >= 5 ? '🎯' : '✓' },
+        { label: 'Goal streak', value: goalStreak, unit: goalStreak === 1 ? 'day' : 'days', color: goalStreak >= 5 ? '#FB8C00' : goalStreak >= 2 ? GREEN : MUTED, emoji: goalStreak >= 5 ? '🎯' : '✓' },
         { label: 'Days logged', value: totalDays,  unit: 'total',     color: PROT,       emoji: '📊' },
         { label: 'Avg daily',   value: goalPct,    unit: '% of goal', color: goalPct >= 85 && goalPct <= 115 ? GREEN : goalPct > 115 ? RED : ORANGE_HEX, emoji: goalPct >= 85 && goalPct <= 115 ? '✅' : '📈' },
       ].map(({ label, value, unit, color, emoji }) => (
@@ -1008,12 +1008,12 @@ function CoachTab({
           </div>
         ) : error ? (
           <div style={{ padding: '12px', borderRadius: 8, background: '#EF444415', border: '1px solid #EF444440', marginBottom: 12 }}>
-            <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 8 }}>{error}</div>
+            <div style={{ color: '#E53935', fontSize: 12, marginBottom: 8 }}>{error}</div>
             <button
               onClick={onGenerate}
               style={{
                 padding: '7px 14px', borderRadius: 6, border: '1px solid #EF444440',
-                background: '#EF444420', color: '#EF4444', fontSize: 12, fontWeight: 700,
+                background: '#EF444420', color: '#E53935', fontSize: 12, fontWeight: 700,
                 cursor: 'pointer',
               }}
             >Try again</button>
@@ -1275,7 +1275,7 @@ function MealTimingCard({ logs }: { logs: FoodLog[] }) {
           const isBreakfast = h >= 5  && h < 11;
           const isLunch     = h >= 11 && h < 15;
           const isEvening   = h >= 15 && h < 20;
-          const color = isPeak ? '#FBBF24' : isBreakfast ? '#38BDF8' : isLunch ? '#4ADE80' : isEvening ? ORANGE_HEX : '#8B5CF6';
+          const color = isPeak ? '#FB8C00' : isBreakfast ? '#1E88E5' : isLunch ? '#43A047' : isEvening ? ORANGE_HEX : '#8B5CF6';
           return (
             <div key={h} style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
               <div style={{
@@ -1318,7 +1318,7 @@ function MealTimingCard({ logs }: { logs: FoodLog[] }) {
       </div>
 
       <div style={{ marginTop: 10, fontSize: 10, color: MUTED, fontWeight: 700, textAlign: 'center' }}>
-        Peak time: <span style={{ color: '#FBBF24' }}>{formatHour(peakHour)}</span> ({hourBuckets[peakHour]} logs)
+        Peak time: <span style={{ color: '#FB8C00' }}>{formatHour(peakHour)}</span> ({hourBuckets[peakHour]} logs)
       </div>
     </div>
   );
@@ -1368,7 +1368,7 @@ function loadEnergyRatings(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem('fs_energy_ratings_v1') ?? '{}'); } catch { return {}; }
 }
 const ENERGY_ICON: Record<string, string>  = { low: '😴', medium: '😊', high: '⚡' };
-const ENERGY_COLOR: Record<string, string> = { low: '#6B7280', medium: '#FBBF24', high: '#4ADE80' };
+const ENERGY_COLOR: Record<string, string> = { low: '#6B7280', medium: '#FB8C00', high: '#43A047' };
 
 type Tab = 'days' | 'foods' | 'coach';
 

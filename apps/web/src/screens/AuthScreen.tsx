@@ -3,14 +3,14 @@ import { createProfile } from '../api/auth';
 import { setupPin, setupSecurityQuestion } from '../lib/pin';
 import { useAuthStore } from '../store/authStore';
 
-const BG    = '#EEF4FF';
+const BG    = '#F5F7F5';
 const SURF  = '#FFFFFF';
-const SURF2 = '#E4EEFF';
-const EDGE  = 'rgba(0,56,168,0.10)';
-const TEXT  = '#0A1628';
-const MUTED = '#6878A0';
-const BLUE  = '#0038A8';
-const RED   = '#C62828';
+const SURF2 = '#F0F2F0';
+const EDGE  = 'rgba(0,0,0,0.08)';
+const TEXT  = '#1A1A1A';
+const MUTED = '#757575';
+const BLUE  = '#0091EA';
+const RED   = '#E53935';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary',    label: 'Sedentary',   desc: 'Desk job, little or no exercise' },
@@ -93,7 +93,7 @@ export default function AuthScreen() {
 
       {/* Hero */}
       <div style={{
-        background: 'linear-gradient(135deg, #0038A8 0%, #1565E0 100%)',
+        background: 'linear-gradient(135deg, #0077C2 0%, #0091EA 100%)',
         padding: '64px 32px 36px', position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
