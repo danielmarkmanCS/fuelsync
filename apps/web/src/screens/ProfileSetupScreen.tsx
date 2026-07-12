@@ -243,33 +243,78 @@ export default function ProfileSetupScreen() {
   const bmiInfo = bmi ? getBMILabel(bmi) : null;
 
   const handleGoogleConnect = async () => {
+    if (!IS_NATIVE) {
+      // Web: redirect to Google OAuth, come back with id_token in hash
+      const nonce = Math.random().toString(36).slice(2);
+      sessionStorage.setItem('gsi_nonce', nonce);
+      sessionStorage.setItem('gsi_intent', 'connect'); // signal: connect to existing profile
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        redirect_uri: window.location.origin + '/',
+        response_type: 'id_token',
+        scope: 'openid email profile',
+        nonce,
+      });
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+      return;
+    }
     setGoogleConnecting(true); setGoogleError('');
     try {
-      let idToken = '';
-      if (IS_NATIVE) {
-        await GoogleAuth.initialize({ clientId: CLIENT_ID, scopes: ['profile', 'email'], grantOfflineAccess: true });
-        const googleUser = await GoogleAuth.signIn();
-        idToken = googleUser?.authentication?.idToken ?? '';
-        if (!idToken) throw new Error('No ID token');
-      } else {
-        throw new Error('Use the web sign-in button');
-      }
+      await GoogleAuth.initialize({ clientId: CLIENT_ID, scopes: ['profile', 'email'], grantOfflineAccess: true });
+      const googleUser = await GoogleAuth.signIn();
+      const idToken = googleUser?.authentication?.idToken ?? '';
+      if (!idToken) throw new Error('No ID token');
       const { token: t } = await googleSignIn(idToken);
       setSyncToken(t);
+      await pushAllLocalData();
       setGoogleConnected(true);
-      // Push current local profile to cloud
-      if (user) {
-        syncProfile({
-          display_name: user.displayName, weight_kg: user.weightKg ?? undefined,
-          height_cm: user.heightCm ?? undefined, age: user.age ?? undefined,
-          gender: user.gender ?? undefined, activity_level: user.activityLevel,
-          daily_goal: user.dailyGoal,
-        }).catch(() => {});
-      }
     } catch (e: unknown) {
       setGoogleError(e instanceof Error ? e.message : 'Connection failed');
     } finally { setGoogleConnecting(false); }
   };
+
+  // Push all local data to D1 after first-time Google connect
+  async function pushAllLocalData() {
+    if (!getSyncToken()) return;
+    if (user) {
+      syncProfile({
+        display_name: user.displayName, weight_kg: user.weightKg ?? undefined,
+        height_cm: user.heightCm ?? undefined, age: user.age ?? undefined,
+        gender: user.gender ?? undefined, activity_level: user.activityLevel,
+        daily_goal: user.dailyGoal,
+      }).catch(() => {});
+    }
+    // Push all food logs
+    const allFood = await db.food_logs.filter(l => !!l.sync_id).toArray();
+    for (const log of allFood) {
+      syncAddLog({
+        id: log.sync_id!, food_name: log.food_name, calories: log.calories,
+        protein: log.protein, carbs: log.carbs, fat: log.fat,
+        weight_grams: log.weight_grams, meal_type: log.meal_type,
+        image_url: log.image_url, ingredients: log.ingredients,
+        logged_at: log.logged_at, date: log.date,
+        fiber_g: log.fiber_g ?? null, cholesterol_mg: log.cholesterol_mg ?? null,
+        sodium_mg: log.sodium_mg ?? null, vitamin_c_mg: log.vitamin_c_mg ?? null,
+        vitamin_d_mcg: log.vitamin_d_mcg ?? null, calcium_mg: log.calcium_mg ?? null,
+        iron_mg: log.iron_mg ?? null,
+      }).catch(() => {});
+    }
+    // Push all weight logs
+    const allWeights = await db.weight_logs.toArray();
+    for (const w of allWeights) {
+      const sid = w.sync_id ?? crypto.randomUUID();
+      if (!w.sync_id) await db.weight_logs.update(w.id!, { sync_id: sid });
+      syncWeightLog({ id: sid, weight_kg: w.weightKg, date: w.date, logged_at: w.logged_at }).catch(() => {});
+    }
+    // Push all supplements
+    const allSupps = await db.supplements.toArray();
+    for (const s of allSupps) {
+      const sid = s.sync_id ?? crypto.randomUUID();
+      if (!s.sync_id) await db.supplements.update(s.id!, { sync_id: sid });
+      const { syncSupplement } = await import('../api/syncClient');
+      syncSupplement({ id: sid, name: s.name, dose: s.dose, unit: s.unit, timing: s.timing, active: s.active }).catch(() => {});
+    }
+  }
 
   const handleSave = async () => {
     if (isNaN(w) || w < 30 || w > 300)  { setError('Valid weight: 30–300 kg.'); return; }

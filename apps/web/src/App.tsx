@@ -146,6 +146,32 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
+        // Handle redirect-based OAuth return (id_token in URL hash from Profile "Connect" flow)
+        const hash = window.location.hash;
+        if (hash.includes('id_token=')) {
+          const params = new URLSearchParams(hash.slice(1));
+          const idToken = params.get('id_token');
+          const intent  = sessionStorage.getItem('gsi_intent');
+          sessionStorage.removeItem('gsi_intent');
+          sessionStorage.removeItem('gsi_nonce');
+          window.history.replaceState(null, '', window.location.pathname);
+          if (idToken && intent === 'connect') {
+            // User connected Google from the Profile screen — sign in and push local data
+            try {
+              const { googleSignIn: gsi, setSyncToken: sst, syncProfile: sp, syncAddLog: sal, syncWeightLog: swl } = await import('./api/syncClient');
+              const { token: t } = await gsi(idToken);
+              sst(t);
+              // Push local data to D1 (all food logs, weights, supplements)
+              const profile = await getProfile();
+              if (profile) sp({ display_name: profile.displayName, weight_kg: profile.weightKg ?? undefined, height_cm: profile.heightCm ?? undefined, age: profile.age ?? undefined, gender: profile.gender ?? undefined, activity_level: profile.activityLevel, daily_goal: profile.dailyGoal }).catch(() => {});
+              const allFood = await db.food_logs.filter(l => !!l.sync_id).toArray();
+              for (const log of allFood) sal({ id: log.sync_id!, food_name: log.food_name, calories: log.calories, protein: log.protein, carbs: log.carbs, fat: log.fat, weight_grams: log.weight_grams, meal_type: log.meal_type, image_url: log.image_url, ingredients: log.ingredients, logged_at: log.logged_at, date: log.date, fiber_g: log.fiber_g ?? null, cholesterol_mg: log.cholesterol_mg ?? null, sodium_mg: log.sodium_mg ?? null, vitamin_c_mg: log.vitamin_c_mg ?? null, vitamin_d_mcg: log.vitamin_d_mcg ?? null, calcium_mg: log.calcium_mg ?? null, iron_mg: log.iron_mg ?? null }).catch(() => {});
+              const allWeights = await db.weight_logs.toArray();
+              for (const w of allWeights) { const sid = w.sync_id ?? crypto.randomUUID(); if (!w.sync_id) await db.weight_logs.update(w.id!, { sync_id: sid }); swl({ id: sid, weight_kg: w.weightKg, date: w.date, logged_at: w.logged_at }).catch(() => {}); }
+            } catch { /* ignore — will stay local-only */ }
+          }
+        }
+
         // If a sync token exists, load user from D1 and merge into local profile
         if (getSyncToken()) {
           const syncUser = await getMe();
