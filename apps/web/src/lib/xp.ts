@@ -14,16 +14,31 @@ export const LEVELS = [
 ] as const;
 
 export const XP_REWARDS = {
-  LOG_MEAL:         5,
-  HIT_PROTEIN:     25,
-  HIT_CALORIES:    20,
-  HIT_WATER:       15,
-  LOG_MEASUREMENT: 10,
-  LOG_SLEEP:        5,
-  LOG_WEIGHT:       5,
-  STREAK_BONUS:    10,
-  SUPPLEMENT_TAKEN: 3,
+  LOG_MEAL:              5,
+  HIT_PROTEIN:          25,
+  HIT_CALORIES:         20,
+  HIT_WATER:            15,
+  LOG_MEASUREMENT:      10,
+  LOG_SLEEP:             8,
+  LOG_WEIGHT:            5,
+  STREAK_BONUS:         10,
+  SUPPLEMENT_TAKEN:      3,
+  GLOW_CATEGORY_DONE:   20,
+  GLOW_FULL_ROUTINE:    50,
 } as const;
+
+export const LEVEL_PERKS: Record<number, string> = {
+  1:  'Daily missions + streak tracking',
+  2:  'AI food suggestions unlocked',
+  3:  'Advanced sleep quality analysis',
+  4:  'Weekly challenge missions',
+  5:  'Custom glow routine items',
+  6:  'Elite nutrition insights',
+  7:  'Body composition tracking history',
+  8:  'Personalized recovery advisor',
+  9:  'Full analytics dashboard',
+  10: 'Immortal — all features unlocked',
+};
 
 export function getXP(): number {
   try { return parseInt(localStorage.getItem(XP_KEY) ?? '0', 10) || 0; }

@@ -122,6 +122,22 @@ function RoutineItem({
   );
 }
 
+// ─── XP Toast ────────────────────────────────────────────────────────────────
+
+function XPToast({ msg, visible }: { msg: string; visible: boolean }) {
+  return (
+    <div style={{
+      position: 'fixed', top: 80, left: '50%', transform: `translateX(-50%) translateY(${visible ? 0 : -20}px)`,
+      opacity: visible ? 1 : 0, transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+      background: '#43A047', color: '#fff', padding: '8px 18px', borderRadius: 99,
+      fontSize: 13, fontWeight: 800, zIndex: 9999, pointerEvents: 'none',
+      boxShadow: '0 4px 16px rgba(67,160,71,0.4)',
+    }}>
+      {msg}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function RoutineChecklist() {
@@ -132,6 +148,12 @@ export default function RoutineChecklist() {
   const [logs,      setLogs]      = useState<GlowRoutineLog[]>([]);
   const [streaks,   setStreaks]   = useState<Record<number, number>>({});
   const [pct,       setPct]       = useState(0);
+  const [toast,     setToast]     = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false });
+
+  function showToast(msg: string) {
+    setToast({ msg, visible: true });
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 2200);
+  }
 
   const reload = useCallback(async () => {
     const [catItems, dayLogs, dayPct] = await Promise.all([
@@ -162,7 +184,10 @@ export default function RoutineChecklist() {
       if (existing) return prev.map(l => l.item_id === id && l.date === today ? { ...l, done: !done } : l);
       return [...prev, { item_id: id, date: today, done: true, logged_at: new Date().toISOString() }];
     });
-    await toggleRoutineLog(id, today, done);
+    const result = await toggleRoutineLog(id, today, done);
+    if (result.fullRoutineComplete) showToast('🏆 Full routine! +50 XP');
+    else if (result.categoryComplete) showToast(`✅ Category done! +20 XP`);
+    else if (result.xpGranted > 0) showToast(`+${result.xpGranted} XP`);
     const newPct = await getRoutineCompletionPct(today);
     setPct(newPct);
   };
@@ -171,6 +196,7 @@ export default function RoutineChecklist() {
 
   return (
     <div style={{ paddingBottom: 8 }}>
+      <XPToast msg={toast.msg} visible={toast.visible} />
       {/* Completion bar */}
       <CompletionBar pct={pct} />
 

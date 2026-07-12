@@ -178,3 +178,28 @@ export async function saveTrainingState(state: SyncTrainingState): Promise<void>
     body: JSON.stringify(state),
   });
 }
+
+// ── Device pairing ────────────────────────────────────────────────────────────
+
+export async function createPairingCode(): Promise<string> {
+  const res = await fetch(`${SYNC_URL}/pair/create`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to create pairing code');
+  const data = await res.json() as { code: string };
+  return data.code;
+}
+
+export async function redeemPairingCode(code: string): Promise<{ token: string; user: SyncUser }> {
+  const res = await fetch(`${SYNC_URL}/pair/redeem`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(data.error ?? 'Invalid or expired code');
+  }
+  return res.json();
+}

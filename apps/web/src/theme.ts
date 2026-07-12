@@ -2,7 +2,7 @@ import type React from 'react';
 
 // MFP-style light palette — single source of truth for all inline styles
 export const T = {
-  bg:          '#F5F7F5',
+  bg:          '#E8EAED',
   surf:        '#FFFFFF',
   surf2:       '#F0F2F0',
   surf3:       '#E8EAE8',

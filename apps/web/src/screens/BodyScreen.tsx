@@ -6,6 +6,7 @@ import { getSleep, logSleep, sleepQualityLabel, sleepQualityColor } from '../lib
 import { getWaterTotal, getWaterGoal, addWater, removeLastWater, setWaterGoal } from '../lib/waterLog';
 import { grantDailyXP } from '../lib/xp';
 import { useThemeStore } from '../store/themeStore';
+import { syncWeightLog, getSyncToken } from '../api/syncClient';
 
 const PROT  = '#1E88E5';
 const CARB  = '#43A047';
@@ -92,8 +93,17 @@ function WeightSection() {
     const kg = units === 'imperial' ? v / 2.20462 : v;
     const today = new Date().toISOString().split('T')[0];
     const existing = await db.weight_logs.where('date').equals(today).first();
-    if (existing?.id) await db.weight_logs.update(existing.id, { weightKg: kg, logged_at: new Date().toISOString() });
-    else await db.weight_logs.add({ date: today, weightKg: kg, logged_at: new Date().toISOString() });
+    const loggedAt = new Date().toISOString();
+    let syncId = existing?.sync_id;
+    if (existing?.id) {
+      await db.weight_logs.update(existing.id, { weightKg: kg, logged_at: loggedAt });
+    } else {
+      syncId = crypto.randomUUID();
+      await db.weight_logs.add({ sync_id: syncId, date: today, weightKg: kg, logged_at: loggedAt });
+    }
+    if (getSyncToken() && syncId) {
+      syncWeightLog({ id: syncId, weight_kg: kg, date: today, logged_at: loggedAt }).catch(() => {});
+    }
     grantDailyXP('LOG_WEIGHT');
     setLogging(false);
     setInput('');

@@ -388,6 +388,41 @@ export default function App() {
         }
         setUser(local);
         setPinVerified(true);
+        // Background: pull all data from D1 now that we have a token
+        (async () => {
+          try {
+            const { fetchWeightLogs: fwl, fetchSupplements: fsu, fetchSupplementLogs: fsl, syncSupplement: ssu } = await import('./api/syncClient');
+            const remoteWeights = await fwl() as Array<{ id: string; weight_kg: number; date: string; logged_at: string }>;
+            for (const rw of remoteWeights) {
+              const ex = await db.weight_logs.where('date').equals(rw.date).first();
+              if (!ex) await db.weight_logs.add({ sync_id: rw.id, date: rw.date, weightKg: rw.weight_kg, logged_at: rw.logged_at });
+            }
+            const localSupps = await db.supplements.toArray();
+            for (const ls of localSupps.filter(s => !s.sync_id && s.active !== false)) {
+              const sid = crypto.randomUUID();
+              await db.supplements.update(ls.id!, { sync_id: sid });
+              ssu({ id: sid, name: ls.name, dose: ls.dose, unit: ls.unit, timing: ls.timing, active: true }).catch(() => {});
+            }
+            type RS = { id: string; name: string; dose: string; unit: string; timing: string; active: boolean; deleted_at: string | null };
+            const remoteSupps = await fsu() as RS[];
+            for (const rs of remoteSupps) {
+              if (rs.deleted_at) continue;
+              const ex = await db.supplements.where('sync_id').equals(rs.id).first();
+              if (!ex) await db.supplements.add({ sync_id: rs.id, name: rs.name, dose: rs.dose, unit: rs.unit, timing: rs.timing as import('./lib/db').Supplement['timing'], active: !!rs.active });
+            }
+            const tod = new Date().toISOString().split('T')[0];
+            type RL = { id: string; supplement_id: string; date: string; taken: boolean; logged_at: string };
+            const remoteLogs = await fsl(tod) as RL[];
+            for (const rl of remoteLogs) {
+              const localSupp = await db.supplements.where('sync_id').equals(rl.supplement_id).first();
+              if (!localSupp?.id) continue;
+              const ex = await db.supplement_logs.where('supplement_id').equals(localSupp.id).and(l => l.date === rl.date).first();
+              if (!ex) await db.supplement_logs.add({ sync_id: rl.id, supplement_id: localSupp.id, date: rl.date, taken: rl.taken, logged_at: rl.logged_at });
+            }
+            // Clear food log pull cache so today's logs load fresh
+            clearPullCache();
+          } catch { /* offline — will retry on next boot */ }
+        })();
       }}
       onSkip={async () => {
         let local = await getProfile();

@@ -88,9 +88,10 @@ export interface SupplementLog {
 
 export interface WaterLog {
   id?: number;
-  date: string;       // YYYY-MM-DD
-  ml: number;         // amount in ml
-  logged_at: string;  // ISO timestamp
+  date: string;
+  ml: number;
+  note?: string | null;
+  logged_at: string;
 }
 
 export interface DiaryCompletion {

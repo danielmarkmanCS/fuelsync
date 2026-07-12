@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { updateProfile, clearProfile } from '../api/auth';
-import { clearSyncToken, getSyncToken, syncProfile, syncAddLog, googleSignIn, setSyncToken } from '../api/syncClient';
+import { clearSyncToken, getSyncToken, syncProfile, syncAddLog, syncWeightLog, googleSignIn, setSyncToken, createPairingCode, redeemPairingCode } from '../api/syncClient';
 import { db } from '../lib/db';
 import type { WeightLog } from '../lib/db';
 import { getLatestMeasurement, getMeasurements, saveMeasurement } from '../lib/bodyMeasurements';
@@ -83,6 +83,9 @@ export default function ProfileSetupScreen() {
   const [googleConnecting, setGoogleConnecting] = useState(false);
   const [googleConnected,  setGoogleConnected]  = useState(!!getSyncToken());
   const [googleError,      setGoogleError]      = useState('');
+  const [pairCode,         setPairCode]         = useState('');
+  const [pairExpiry,       setPairExpiry]       = useState(0);
+  const [pairLoading,      setPairLoading]      = useState(false);
 
   // Weight log
   const [weightLogs,      setWeightLogs]      = useState<WeightLog[]>([]);
@@ -206,10 +209,16 @@ export default function ProfileSetupScreen() {
     try {
       const today = new Date().toISOString().split('T')[0];
       const existing = await db.weight_logs.where('date').equals(today).first();
+      const loggedAt = new Date().toISOString();
+      let syncId = existing?.sync_id;
       if (existing?.id != null) {
-        await db.weight_logs.update(existing.id, { weightKg: kg, logged_at: new Date().toISOString() });
+        await db.weight_logs.update(existing.id, { weightKg: kg, logged_at: loggedAt });
       } else {
-        await db.weight_logs.add({ date: today, weightKg: kg, logged_at: new Date().toISOString() });
+        syncId = crypto.randomUUID();
+        await db.weight_logs.add({ sync_id: syncId, date: today, weightKg: kg, logged_at: loggedAt });
+      }
+      if (getSyncToken() && syncId) {
+        syncWeightLog({ id: syncId, weight_kg: kg, date: today, logged_at: loggedAt }).catch(() => {});
       }
       const updated = await db.weight_logs.orderBy('date').reverse().limit(14).toArray();
       setWeightLogs(updated);
@@ -1245,27 +1254,36 @@ export default function ProfileSetupScreen() {
                     <div style={{ fontSize: 11, color: MUTED }}>Profile, training & supplements sync to your Google account</div>
                   </div>
                 </div>
-                {/* Copy token — lets user pair this account on another device without Google OAuth */}
-                <button
-                  onClick={async () => {
-                    const token = getSyncToken();
-                    if (!token) return;
-                    await navigator.clipboard.writeText(token).catch(() => {});
-                    // Show brief confirmation
-                    const el = document.getElementById('fs-token-copy-msg');
-                    if (el) { el.style.display = 'block'; setTimeout(() => { el.style.display = 'none'; }, 2000); }
-                  }}
-                  style={{
-                    width: '100%', padding: '8px 0', borderRadius: 6,
-                    background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
-                    color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  }}
-                >
-                  📋 Copy Device Token (for pairing another device)
-                </button>
-                <div id="fs-token-copy-msg" style={{ display: 'none', fontSize: 10, color: GREEN, textAlign: 'center', marginTop: 4 }}>
-                  ✓ Token copied — paste it on the other device
+                {/* Device pairing: generate a 6-char code the phone can redeem */}
+                <div style={{ marginTop: 4 }}>
+                  {pairCode && Date.now() < pairExpiry ? (
+                    <div style={{ background: '#0091EA14', border: '1px solid #0091EA33', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: MUTED, marginBottom: 4 }}>Enter on your phone</div>
+                      <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 6, color: '#0091EA', fontFamily: 'monospace' }}>{pairCode}</div>
+                      <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>Expires in 5 minutes · one-time use</div>
+                    </div>
+                  ) : (
+                    <button
+                      disabled={pairLoading}
+                      onClick={async () => {
+                        setPairLoading(true);
+                        try {
+                          const code = await createPairingCode();
+                          setPairCode(code);
+                          setPairExpiry(Date.now() + 5 * 60 * 1000);
+                        } catch { /* silent */ }
+                        finally { setPairLoading(false); }
+                      }}
+                      style={{
+                        width: '100%', padding: '8px 0', borderRadius: 6,
+                        background: '#0091EA14', border: '1px solid #0091EA33',
+                        color: '#0091EA', fontSize: 12, fontWeight: 700, cursor: pairLoading ? 'wait' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      }}
+                    >
+                      📱 {pairLoading ? 'Generating…' : 'Link a New Device (phone/tablet)'}
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (

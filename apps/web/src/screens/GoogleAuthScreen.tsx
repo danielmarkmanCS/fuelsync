@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { googleSignIn, setSyncToken, getMe } from '../api/syncClient';
+import { googleSignIn, setSyncToken, getMe, redeemPairingCode } from '../api/syncClient';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
@@ -40,8 +40,23 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [pasteToken,     setPasteToken]     = useState('');
   const [tokenError,     setTokenError]     = useState('');
+  const [pairCode,       setPairCode]       = useState('');
+  const [pairError,      setPairError]      = useState('');
+  const [showPairInput,  setShowPairInput]  = useState(false);
 
   useEffect(() => {
+    // Handle redirect-based OAuth return (id_token in URL hash)
+    const hash = window.location.hash;
+    if (hash.includes('id_token=')) {
+      const params = new URLSearchParams(hash.slice(1));
+      const idToken = params.get('id_token');
+      if (idToken) {
+        window.history.replaceState(null, '', window.location.pathname);
+        handleCredential({ credential: idToken });
+        return;
+      }
+    }
+
     if (IS_NATIVE || !CLIENT_ID) return;
     const scriptId = 'google-gsi';
     if (!document.getElementById(scriptId)) {
@@ -55,12 +70,22 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
   }, []);
 
   function initGoogle() {
-    if (!window.google || !btnRef.current || !CLIENT_ID) return;
-    window.google.accounts.id.initialize({ client_id: CLIENT_ID, callback: handleCredential });
-    window.google.accounts.id.renderButton(btnRef.current, {
-      theme: 'outline', size: 'large', width: 280,
-      text: 'signin_with', shape: 'rectangular',
+    if (!window.google || !CLIENT_ID) return;
+    window.google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: handleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: false,
     });
+    // One Tap — works best on Chrome Android; silently ignored on Safari
+    window.google.accounts.id.prompt();
+    // Rendered button — fallback for all browsers
+    if (btnRef.current) {
+      window.google.accounts.id.renderButton(btnRef.current, {
+        theme: 'outline', size: 'large', width: 280,
+        text: 'signin_with', shape: 'rectangular',
+      });
+    }
   }
 
   async function handleCredential(response: { credential: string }) {
@@ -98,6 +123,25 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : JSON.stringify(e);
       setError(`Sign-in failed: ${msg}`);
+    } finally { setLoading(false); }
+  }
+
+  async function handlePairCode() {
+    const code = pairCode.trim().toUpperCase();
+    if (code.length < 6) return;
+    setLoading(true); setPairError('');
+    try {
+      const { token: t, user } = await redeemPairingCode(code);
+      setSyncToken(t);
+      onSignedIn({
+        displayName: user.display_name || user.name,
+        email: user.email, picture: user.picture,
+        weightKg: user.weight_kg ?? null, heightCm: user.height_cm ?? null,
+        age: user.age ?? null, gender: (user.gender as string | null) ?? null,
+        activityLevel: user.activity_level ?? 'moderate', dailyGoal: user.daily_goal ?? 2000,
+      });
+    } catch (e: unknown) {
+      setPairError(e instanceof Error ? e.message : 'Invalid or expired code');
     } finally { setLoading(false); }
   }
 
@@ -161,16 +205,73 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
             Sign in with Google
           </button>
         ) : CLIENT_ID ? (
-          <div ref={btnRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }} />
+          <div>
+            {/* Google's rendered iframe button */}
+            <div ref={btnRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, minHeight: 44 }} />
+            {/* Redirect-based fallback — works on Safari/Firefox iOS */}
+            <button
+              onClick={() => {
+                const nonce = Math.random().toString(36).slice(2);
+                sessionStorage.setItem('gsi_nonce', nonce);
+                const params = new URLSearchParams({
+                  client_id: CLIENT_ID,
+                  redirect_uri: window.location.origin + '/',
+                  response_type: 'id_token',
+                  scope: 'openid email profile',
+                  nonce,
+                });
+                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+              }}
+              style={{
+                width: '100%', padding: '11px 0', borderRadius: 10, marginBottom: 8,
+                background: 'none', border: `1px solid ${T.edge}`, color: T.muted,
+                fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              }}
+            >
+              <GoogleLogo />
+              Open sign-in page (Safari / iOS)
+            </button>
+          </div>
         ) : (
           <div style={{ color: T.red, fontSize: 12, marginBottom: 16, fontWeight: 600 }}>
             Google Sign-In unavailable in this browser.
           </div>
         )}
 
+        {/* Pairing code — primary path for phone linking */}
+        {!showPairInput ? (
+          <button onClick={() => { setShowPairInput(true); setShowTokenInput(false); }} style={{ marginTop: 12, width: '100%', padding: '11px 0', borderRadius: 10, border: `1.5px solid ${T.accent}`, background: T.accent + '14', color: T.accent, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            📱 Enter device pairing code
+          </button>
+        ) : (
+          <div style={{ marginTop: 12, width: '100%' }}>
+            <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, textAlign: 'center' }}>
+              On your other device → Profile → Link New Device
+            </div>
+            <input
+              type="text" value={pairCode}
+              onChange={e => setPairCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+              onKeyDown={e => e.key === 'Enter' && handlePairCode()}
+              placeholder="6-CHAR CODE"
+              maxLength={6}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '14px 12px', borderRadius: 8, border: `1.5px solid ${T.accent}44`, background: T.surf2, color: T.text, fontSize: 22, fontWeight: 900, outline: 'none', fontFamily: 'monospace', textAlign: 'center', letterSpacing: 6, marginBottom: 8 }}
+            />
+            <button onClick={handlePairCode} disabled={loading || pairCode.length < 6} style={{
+              width: '100%', padding: '11px 0', borderRadius: 8, border: 'none',
+              background: pairCode.length === 6 ? T.accent : T.surf2,
+              color: pairCode.length === 6 ? '#fff' : T.muted,
+              fontSize: 13, fontWeight: 700, cursor: pairCode.length === 6 ? 'pointer' : 'not-allowed',
+            }}>
+              {loading ? 'Verifying…' : 'Link Device'}
+            </button>
+            {pairError && <div style={{ color: T.red, fontSize: 11, marginTop: 6, textAlign: 'center' }}>{pairError}</div>}
+          </div>
+        )}
+
         {!showTokenInput ? (
-          <button onClick={() => setShowTokenInput(true)} style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 11, fontWeight: 600 }}>
-            Already have a device token? Paste it here
+          <button onClick={() => { setShowTokenInput(true); setShowPairInput(false); }} style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 11, fontWeight: 600 }}>
+            Have a raw token? Paste it here
           </button>
         ) : (
           <div style={{ marginTop: 12, width: '100%' }}>

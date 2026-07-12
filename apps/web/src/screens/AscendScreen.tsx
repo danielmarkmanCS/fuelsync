@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getLevelInfo, getXP, LEVELS, XP_REWARDS } from '../lib/xp';
+import { getLevelInfo, getXP, LEVELS, XP_REWARDS, LEVEL_PERKS } from '../lib/xp';
 import { calcStreak } from '../lib/streak';
-import { getWaterTotal, getWaterGoal } from '../lib/waterLog';
-import { getSleep } from '../lib/sleep';
+import { getWaterTotal, getWaterGoal, addWater, removeLastWater, parseWaterAI } from '../lib/waterLog';
+import { getSleep, logSleep, calcSleepHours, estimateSleepQuality, sleepQualityLabel, sleepQualityColor } from '../lib/sleep';
 import { getLogs } from '../api/localFood';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { ALL_ACHIEVEMENTS, getUnlocked } from '../lib/achievements';
 import { db } from '../lib/db';
+import { T } from '../theme';
 
 const CARB  = '#43A047';
 const PROT  = '#1E88E5';
@@ -220,57 +221,119 @@ function AchievementBadge({ id, label, icon, color, unlocked }: { id: string; la
 
 export default function AscendScreen() {
   const today   = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   const targets = useEffectiveTargets();
 
-  const [xp,         setXp]         = useState(0);
-  const [streak,     setStreak]      = useState({ current: 0, longest: 0 });
-  const [missions,   setMissions]    = useState<Mission[]>([]);
-  const [loggedDates, setLoggedDates] = useState<Set<string>>(new Set());
-  const [unlocked,   setUnlocked]    = useState<string[]>([]);
+  const [xp,           setXp]          = useState(0);
+  const [streak,       setStreak]       = useState({ current: 0, longest: 0 });
+  const [missions,     setMissions]     = useState<Mission[]>([]);
+  const [loggedDates,  setLoggedDates]  = useState<Set<string>>(new Set());
+  const [unlocked,     setUnlocked]     = useState<string[]>([]);
+  const [waterTotal,   setWaterTotal]   = useState(0);
+  const [waterInput,   setWaterInput]   = useState('');
+  const [waterParsed,  setWaterParsed]  = useState<{ ml: number; label: string } | null>(null);
+  const [waterLoading, setWaterLoading] = useState(false);
+  const [waterError,   setWaterError]   = useState<string | null>(null);
+  const [sleepData,    setSleepData]    = useState<{ bedtime: string; wakeup: string; hours: number | null; quality: number } | null>(null);
+  const [bedtime,      setBedtime]      = useState('22:30');
+  const [wakeup,       setWakeup]       = useState('06:30');
+  const [showSleepForm, setShowSleepForm] = useState(false);
+
+  const waterGoal = getWaterGoal();
 
   const load = useCallback(async () => {
     const total = getXP();
     setXp(total);
-
     const s = await calcStreak();
     setStreak(s);
     setUnlocked(getUnlocked());
 
-    // Build logged dates for week view
     const allLogs = await db.food_logs.filter(l => !l.removed).toArray();
     setLoggedDates(new Set(allLogs.map(l => l.date)));
 
-    // Build today's missions
-    const todayLogs    = await getLogs(today);
-    const activeLogs   = todayLogs.filter(l => !l.removed);
-    const waterTotal   = await getWaterTotal(today);
-    const waterGoal    = getWaterGoal();
-    const sleep        = await getSleep(today);
+    const todayLogs  = await getLogs(today);
+    const activeLogs = todayLogs.filter(l => !l.removed);
+    const wt         = await getWaterTotal(today);
+    setWaterTotal(wt);
+    const sleepLog   = await getSleep(today);
+    if (sleepLog) {
+      setSleepData({ bedtime: sleepLog.bedtime ?? '', wakeup: sleepLog.wakeup ?? '', hours: sleepLog.hours, quality: sleepLog.quality });
+      if (sleepLog.bedtime) setBedtime(sleepLog.bedtime);
+      if (sleepLog.wakeup)  setWakeup(sleepLog.wakeup);
+    }
 
-    const protein   = activeLogs.reduce((s, l) => s + +l.protein, 0);
-    const calories  = activeLogs.reduce((s, l) => s + +l.calories, 0);
-    const protGoal  = targets?.proteinG ?? 0;
-    const calGoal   = targets?.calories ?? 0;
+    const protein  = activeLogs.reduce((s, l) => s + +l.protein, 0);
+    const calories = activeLogs.reduce((s, l) => s + +l.calories, 0);
+    const protGoal = targets?.proteinG ?? 0;
+    const calGoal  = targets?.calories ?? 0;
 
-    const suppLogs   = await db.supplement_logs.where('date').equals(today).toArray();
-    const supps      = await db.supplements.where('active').equals(1).toArray();
-    const allTaken   = supps.length > 0 && suppLogs.filter(s => s.taken).length >= supps.length;
+    const suppLogs = await db.supplement_logs.where('date').equals(today).toArray();
+    const supps    = await db.supplements.where('active').equals(1).toArray();
+    const allTaken = supps.length > 0 && suppLogs.filter(s => s.taken).length >= supps.length;
 
     setMissions([
-      { id: 'log_food',   label: 'Log at least one meal',           xp: XP_REWARDS.LOG_MEAL,       done: activeLogs.length > 0,                  color: CARB,  icon: '🍽️'  },
-      { id: 'protein',    label: `Hit protein goal (${Math.round(protGoal)}g)`, xp: XP_REWARDS.HIT_PROTEIN, done: protGoal > 0 && protein >= protGoal, color: PROT,  icon: '💪'  },
-      { id: 'calories',   label: `Stay in calorie range`,           xp: XP_REWARDS.HIT_CALORIES,   done: calGoal > 0 && calories >= calGoal * 0.85 && calories <= calGoal * 1.05, color: AMBER, icon: '🔥'  },
-      { id: 'water',      label: `Drink ${(waterGoal/1000).toFixed(1)}L water`,  xp: XP_REWARDS.HIT_WATER,     done: waterGoal > 0 && waterTotal >= waterGoal, color: PROT, icon: '💧' },
-      { id: 'sleep',      label: 'Log your sleep',                  xp: XP_REWARDS.LOG_SLEEP,      done: sleep !== null,                          color: MOON,  icon: '🌙'  },
-      { id: 'supps',      label: 'Take all supplements',            xp: XP_REWARDS.SUPPLEMENT_TAKEN * supps.length, done: allTaken,              color: PINK,  icon: '💊'  },
+      { id: 'log_food', label: 'Log at least one meal',                       xp: XP_REWARDS.LOG_MEAL,       done: activeLogs.length > 0,                color: CARB,  icon: '🍽️' },
+      { id: 'protein',  label: `Hit protein goal (${Math.round(protGoal)}g)`, xp: XP_REWARDS.HIT_PROTEIN,    done: protGoal > 0 && protein >= protGoal,  color: PROT,  icon: '💪' },
+      { id: 'calories', label: 'Stay in calorie range',                        xp: XP_REWARDS.HIT_CALORIES,   done: calGoal > 0 && calories >= calGoal * 0.85 && calories <= calGoal * 1.05, color: AMBER, icon: '🔥' },
+      { id: 'water',    label: `Drink ${(waterGoal / 1000).toFixed(1)}L water`, xp: XP_REWARDS.HIT_WATER,   done: waterGoal > 0 && wt >= waterGoal,     color: PROT,  icon: '💧' },
+      { id: 'sleep',    label: 'Log your sleep',                               xp: XP_REWARDS.LOG_SLEEP,      done: sleepLog !== null,                    color: MOON,  icon: '🌙' },
+      { id: 'supps',    label: 'Take all supplements',                         xp: XP_REWARDS.SUPPLEMENT_TAKEN * supps.length, done: allTaken,           color: PINK,  icon: '💊' },
     ].filter(m => m.xp > 0));
-  }, [today, targets]);
+  }, [today, targets, waterGoal]);
 
   useEffect(() => { load(); }, [load]);
 
-  const levelInfo = getLevelInfo(xp);
+  // ── Sleep save ─────────────────────────────────────────────────────────────
+  async function saveSleep() {
+    const hours = calcSleepHours(bedtime, wakeup);
+    if (!hours) return;
+    const hist = (() => { try { return JSON.parse(localStorage.getItem('fs_training_type_history_v1') ?? '{}'); } catch { return {}; } })();
+    const todayTraining     = hist[today] as string | undefined;
+    const yesterdayTraining = hist[yesterday] as string | undefined;
+    const quality = estimateSleepQuality(hours, todayTraining, yesterdayTraining);
+    await logSleep(today, hours, quality, bedtime, wakeup);
+    setSleepData({ bedtime, wakeup, hours, quality });
+    setShowSleepForm(false);
+    load();
+  }
+
+  // ── Water input ────────────────────────────────────────────────────────────
+  async function analyzeWater() {
+    if (!waterInput.trim()) return;
+    setWaterLoading(true);
+    setWaterError(null);
+    setWaterParsed(null);
+    try {
+      const result = await parseWaterAI(waterInput.trim());
+      setWaterParsed(result);
+    } catch {
+      setWaterError('Could not parse — try again');
+    } finally {
+      setWaterLoading(false);
+    }
+  }
+
+  async function addWaterFromInput() {
+    if (!waterParsed) return;
+    await addWater(today, waterParsed.ml, waterParsed.label);
+    setWaterTotal(t => t + waterParsed.ml);
+    setWaterInput('');
+    setWaterParsed(null);
+    setWaterError(null);
+    load();
+  }
+
+  async function undoLastWater() {
+    await removeLastWater(today);
+    const wt = await getWaterTotal(today);
+    setWaterTotal(wt);
+  }
+
+  const levelInfo    = getLevelInfo(xp);
   const doneMissions = missions.filter(m => m.done).length;
   const totalXpToday = missions.filter(m => m.done).reduce((s, m) => s + m.xp, 0);
+
+  const sleepHours = sleepData?.hours ?? calcSleepHours(bedtime, wakeup);
 
   return (
     <div style={{ position: 'relative', background: 'var(--bg)', minHeight: '100%', paddingBottom: 100, overflow: 'hidden' }}>
@@ -347,6 +410,123 @@ export default function AscendScreen() {
           </div>
         </div>
 
+        {/* Sleep card */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', padding: '14px 16px', boxShadow: T.shadow }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>🌙 Sleep</div>
+              {sleepData && !showSleepForm && (
+                <button onClick={() => setShowSleepForm(true)} style={{ background: 'none', border: 'none', fontSize: 11, color: PURP, fontWeight: 700, cursor: 'pointer', padding: 0 }}>Edit</button>
+              )}
+            </div>
+            {sleepData && !showSleepForm ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 30, fontWeight: 900, color: MOON, letterSpacing: -1, fontVariantNumeric: 'tabular-nums' }}>{sleepData.hours?.toFixed(1)}h</div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)' }}>{sleepData.bedtime} – {sleepData.wakeup}</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    display: 'inline-block', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700,
+                    background: sleepQualityColor(sleepData.quality) + '22',
+                    color: sleepQualityColor(sleepData.quality),
+                    border: `1px solid ${sleepQualityColor(sleepData.quality)}44`,
+                  }}>
+                    {sleepQualityLabel(sleepData.quality)}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>Quality estimated from training</div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Bedtime</div>
+                    <input
+                      type="time" value={bedtime}
+                      onChange={e => setBedtime(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid var(--edge2)', background: 'var(--surf2)', color: 'var(--text)', fontSize: 15, fontWeight: 600, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Wake up</div>
+                    <input
+                      type="time" value={wakeup}
+                      onChange={e => setWakeup(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid var(--edge2)', background: 'var(--surf2)', color: 'var(--text)', fontSize: 15, fontWeight: 600, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+                {(() => {
+                  const h = calcSleepHours(bedtime, wakeup);
+                  return h ? (
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+                      = <strong style={{ color: 'var(--text)' }}>{h.toFixed(1)} hours</strong>
+                    </div>
+                  ) : null;
+                })()}
+                <button onClick={saveSleep} style={{ width: '100%', padding: '10px 0', borderRadius: 10, border: 'none', background: MOON, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                  Save sleep
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Water card */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', padding: '14px 16px', boxShadow: T.shadow }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>💧 Hydration</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: PROT, fontVariantNumeric: 'tabular-nums' }}>
+                {(waterTotal / 1000).toFixed(1)}L / {(waterGoal / 1000).toFixed(1)}L
+              </div>
+            </div>
+            {/* Progress bar */}
+            <div style={{ height: 6, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{
+                height: '100%', borderRadius: 99,
+                background: waterTotal >= waterGoal ? CARB : PROT,
+                width: `${Math.min((waterTotal / waterGoal) * 100, 100)}%`,
+                transition: 'width 0.5s ease',
+              }} />
+            </div>
+            {/* Full description textarea */}
+            <textarea
+              placeholder='Describe what you drank today, e.g. "I had 2 glasses of water in the morning, a coffee, and a protein shake after the gym"'
+              value={waterInput}
+              onChange={e => { setWaterInput(e.target.value); setWaterParsed(null); setWaterError(null); }}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) analyzeWater(); }}
+              rows={3}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--edge2)', background: 'var(--surf2)', color: 'var(--text)', fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box', lineHeight: 1.5 }}
+            />
+            {/* AI result */}
+            {waterParsed && (
+              <div style={{ margin: '8px 0', padding: '10px 14px', borderRadius: 10, background: PROT + '12', border: `1px solid ${PROT}33` }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: PROT }}>💧 {waterParsed.ml}ml</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{waterParsed.label}</div>
+              </div>
+            )}
+            {waterError && <div style={{ fontSize: 12, color: RED, margin: '6px 0' }}>{waterError}</div>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button
+                onClick={waterParsed ? addWaterFromInput : analyzeWater}
+                disabled={waterLoading || !waterInput.trim()}
+                style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: (waterLoading || !waterInput.trim()) ? 'var(--edge2)' : PROT, color: (waterLoading || !waterInput.trim()) ? 'var(--muted)' : '#fff', fontWeight: 700, fontSize: 13, cursor: (waterLoading || !waterInput.trim()) ? 'default' : 'pointer', transition: 'all 0.2s' }}
+              >
+                {waterLoading ? 'Analyzing…' : waterParsed ? '+ Log it' : 'Analyze with AI'}
+              </button>
+              <button
+                onClick={undoLastWater}
+                style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid var(--edge)', background: 'none', color: 'var(--muted)', fontSize: 13, cursor: 'pointer' }}
+                title="Undo last entry"
+              >
+                ↩
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Achievements */}
         <div style={{ padding: '0 16px 0' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>Achievements</div>
@@ -380,7 +560,10 @@ export default function AscendScreen() {
                       Lv.{l.level} — {l.name}
                       {isCurrent && <span style={{ fontSize: 9, color: PURP, fontWeight: 700, marginLeft: 6, padding: '2px 6px', background: PURP + '22', borderRadius: 99 }}>YOU</span>}
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>{l.xp.toLocaleString()} XP</div>
+                    {LEVEL_PERKS[l.level] && (
+                      <div style={{ fontSize: 10, color: reached ? PURP : 'var(--muted2)', marginTop: 1, fontWeight: reached ? 600 : 400 }}>{LEVEL_PERKS[l.level]}</div>
+                    )}
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>{l.xp.toLocaleString()} XP</div>
                   </div>
                   {reached && !isCurrent && (
                     <div style={{ color: CARB, fontSize: 14 }}>✓</div>
