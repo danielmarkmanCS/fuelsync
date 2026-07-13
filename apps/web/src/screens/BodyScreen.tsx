@@ -304,10 +304,11 @@ function MeasurementsSection() {
 // ── Water section ─────────────────────────────────────────────────────────────
 function WaterSection() {
   const today = new Date().toISOString().split('T')[0];
-  const [total, setTotal] = useState(0);
-  const [goal,  setGoal]  = useState(getWaterGoal);
-  const [editGoal, setEditGoal] = useState(false);
+  const [total,     setTotal]    = useState(0);
+  const [goal,      setGoal]     = useState(getWaterGoal);
+  const [editGoal,  setEditGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
+  const [customMl,  setCustomMl]  = useState('');
 
   const reload = useCallback(() => { getWaterTotal(today).then(setTotal); }, [today]);
   useEffect(() => { reload(); }, [reload]);
@@ -318,8 +319,9 @@ function WaterSection() {
 
   async function add(ml: number) {
     await addWater(today, ml);
-    reload();
-    if ((total + ml) >= goal) grantDailyXP('HIT_WATER');
+    const newTotal = await getWaterTotal(today);
+    setTotal(newTotal);
+    if (newTotal >= goal) grantDailyXP('HIT_WATER');
   }
 
   async function undo() { await removeLastWater(today); reload(); }
@@ -378,7 +380,7 @@ function WaterSection() {
       </div>
 
       {/* Quick add buttons */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
         {[200, 300, 500, 750, 1000].map(ml => (
           <button key={ml} onClick={() => add(ml)} style={{
             padding: '8px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer',
@@ -386,6 +388,27 @@ function WaterSection() {
             transition: 'all 0.15s ease',
           }}>+{ml >= 1000 ? '1L' : `${ml}ml`}</button>
         ))}
+      </div>
+      {/* Custom amount */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="number"
+          value={customMl}
+          onChange={e => setCustomMl(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              const ml = parseInt(customMl, 10);
+              if (ml >= 1 && ml <= 5000) { add(ml); setCustomMl(''); }
+            }
+          }}
+          placeholder="Custom ml"
+          style={{ flex: 1, padding: '8px 12px', borderRadius: 10, background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--text)', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
+        />
+        <button
+          onClick={() => { const ml = parseInt(customMl, 10); if (ml >= 1 && ml <= 5000) { add(ml); setCustomMl(''); } }}
+          disabled={!customMl}
+          style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: customMl ? PROT : 'var(--edge2)', color: customMl ? '#fff' : 'var(--muted)', fontSize: 14, fontWeight: 700, cursor: customMl ? 'pointer' : 'default', transition: 'all 0.15s' }}
+        >+</button>
       </div>
     </div>
   );

@@ -8,8 +8,8 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { calcStreak } from '../lib/streak';
-import { getXP, getLevelInfo } from '../lib/xp';
-import { getWaterTotal, getWaterGoal, addWater } from '../lib/waterLog';
+import { getXP, getLevelInfo, getTodayXP, getStreakMultiplier, grantDailyXP } from '../lib/xp';
+import { getWaterTotal, getWaterGoal, addWater, removeLastWater } from '../lib/waterLog';
 import { T, CARD } from '../theme';
 
 // ── constants ──────────────────────────────────────────────────────────────
@@ -289,20 +289,44 @@ export default function HomeScreen() {
   const targets    = useEffectiveTargets();
   const activeType = todayLog?.trainingType;
 
-  const [streak, setStreak] = useState(0);
-  const [xpInfo, setXpInfo] = useState(() => getLevelInfo(getXP()));
-  const [water,  setWater]  = useState(0);
+  const [streak,    setStreak]   = useState(0);
+  const [xpInfo,    setXpInfo]   = useState(() => getLevelInfo(getXP()));
+  const [todayXP,   setTodayXP]  = useState(0);
+  const [water,     setWater]    = useState(0);
+  const [waterInput, setWaterInput] = useState('');
   const waterGoal = getWaterGoal();
+
+  const refreshXP = () => {
+    setXpInfo(getLevelInfo(getXP()));
+    setTodayXP(getTodayXP());
+  };
 
   useEffect(() => {
     calcStreak().then(s => setStreak(s.current));
-    setXpInfo(getLevelInfo(getXP()));
+    refreshXP();
     getWaterTotal(todayStr).then(setWater);
+    const handler = () => refreshXP();
+    window.addEventListener('xp-earned', handler);
+    return () => window.removeEventListener('xp-earned', handler);
   }, [todayStr]);
 
   async function quickAddWater(ml: number) {
     await addWater(todayStr, ml);
+    const newTotal = await getWaterTotal(todayStr);
+    setWater(newTotal);
+    if (newTotal >= waterGoal) grantDailyXP('HIT_WATER');
+  }
+
+  async function undoWater() {
+    await removeLastWater(todayStr);
     getWaterTotal(todayStr).then(setWater);
+  }
+
+  async function addCustomWater() {
+    const ml = parseInt(waterInput, 10);
+    if (!ml || ml < 1 || ml > 5000) return;
+    setWaterInput('');
+    await quickAddWater(ml);
   }
 
   const handleSelectType = (type: TrainingType) => {
@@ -402,15 +426,27 @@ export default function HomeScreen() {
 
         {/* XP / level chip */}
         <button onClick={() => setActiveTab('ascend')} style={{
-          display: 'flex', alignItems: 'center', gap: 8,
+          display: 'flex', alignItems: 'center', gap: 10,
           width: '100%', padding: '10px 14px',
           ...CARD, marginBottom: 12, cursor: 'pointer', textAlign: 'left',
           background: T.surf,
         }}>
           <span style={{ fontSize: 18 }}>{xpInfo.emoji}</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Level {xpInfo.level} — {xpInfo.name}</div>
-            <div style={{ marginTop: 4, height: 4, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Lv.{xpInfo.level} {xpInfo.name}</span>
+              {todayXP > 0 && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#F59E0B', padding: '1px 6px', borderRadius: 99, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                  +{todayXP} today
+                </span>
+              )}
+              {getStreakMultiplier(streak) > 1 && (
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#000', padding: '1px 6px', borderRadius: 99, background: '#F59E0B' }}>
+                  {getStreakMultiplier(streak)}x
+                </span>
+              )}
+            </div>
+            <div style={{ height: 4, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
               <div style={{ height: '100%', background: T.accent, borderRadius: 99, width: `${xpInfo.progressPct}%`, transition: 'width 0.6s ease' }} />
             </div>
           </div>
@@ -418,21 +454,45 @@ export default function HomeScreen() {
         </button>
 
         {/* Water strip */}
-        <div style={{ ...CARD, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.prot} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-          </svg>
-          <span style={{ fontSize: 13, fontWeight: 700, color: T.text, fontVariantNumeric: 'tabular-nums' }}>{(water / 1000).toFixed(1)}L</span>
-          <span style={{ fontSize: 12, color: T.muted }}>of {(waterGoal / 1000).toFixed(1)}L</span>
-          <div style={{ flex: 1, height: 4, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ height: '100%', background: T.prot, borderRadius: 99, width: `${waterGoal > 0 ? Math.min((water / waterGoal) * 100, 100) : 0}%`, transition: 'width 0.5s ease' }} />
+        <div style={{ ...CARD, padding: '10px 14px', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.prot} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.text, fontVariantNumeric: 'tabular-nums' }}>{(water / 1000).toFixed(1)}L</span>
+            <span style={{ fontSize: 12, color: T.muted }}>of {(waterGoal / 1000).toFixed(1)}L</span>
+            <div style={{ flex: 1, height: 4, background: T.surf2, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: T.prot, borderRadius: 99, width: `${waterGoal > 0 ? Math.min((water / waterGoal) * 100, 100) : 0}%`, transition: 'width 0.5s ease' }} />
+            </div>
+            {water > 0 && (
+              <button onClick={undoWater} className="press" style={{ padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: T.surf2, border: `1px solid ${T.edge}`, color: T.muted }}>↩</button>
+            )}
           </div>
-          {[250, 500].map(ml => (
-            <button key={ml} onClick={() => quickAddWater(ml)} className="press" style={{
-              padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-              background: 'rgba(30,136,229,0.08)', border: `1px solid rgba(30,136,229,0.20)`, color: T.prot,
-            }}>+{ml}ml</button>
-          ))}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[200, 500, 750].map(ml => (
+              <button key={ml} onClick={() => quickAddWater(ml)} className="press" style={{
+                padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                background: 'rgba(30,136,229,0.08)', border: `1px solid rgba(30,136,229,0.20)`, color: T.prot,
+              }}>+{ml >= 1000 ? '1L' : `${ml}ml`}</button>
+            ))}
+            <input
+              type="number"
+              value={waterInput}
+              onChange={e => setWaterInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addCustomWater(); }}
+              placeholder="ml"
+              style={{
+                flex: 1, padding: '5px 8px', borderRadius: 8, border: `1px solid ${T.edge}`,
+                background: T.surf2, color: T.text, fontSize: 12, fontFamily: 'inherit',
+                outline: 'none', minWidth: 0,
+              }}
+            />
+            <button onClick={addCustomWater} disabled={!waterInput} className="press" style={{
+              padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: waterInput ? 'pointer' : 'default',
+              background: waterInput ? T.prot : T.surf2, border: 'none', color: waterInput ? '#fff' : T.muted,
+              transition: 'all 0.15s',
+            }}>+</button>
+          </div>
         </div>
       </div>
 

@@ -23,6 +23,8 @@ import SettingsScreen from './screens/SettingsScreen';
 import GlowScreen from './screens/GlowScreen';
 import BodyScreen from './screens/BodyScreen';
 import AscendScreen from './screens/AscendScreen';
+import XPPop from './components/XPPop';
+import LevelUpModal from './components/LevelUpModal';
 
 import type { AppTab } from './store/appStore';
 const NAV_H = 64;
@@ -111,12 +113,12 @@ function AscendIcon({ active }: { active: boolean }) {
 }
 
 const TABS: Array<{ id: AppTab; label: string; Icon: React.FC<{ active: boolean }>; color: string }> = [
-  { id: 'home',        label: 'TODAY',  Icon: DiaryIcon,   color: 'var(--accent)' },
-  { id: 'food',        label: 'LOG',    Icon: LogIcon,     color: '#1E88E5' },
-  { id: 'body',        label: 'BODY',   Icon: BodyIcon,    color: '#43A047' },
-  { id: 'ascend',      label: 'ASCEND', Icon: AscendIcon,  color: '#E65100' },
-  { id: 'glow',        label: 'GLOW',   Icon: GlowIcon,    color: '#D81B60' },
-  { id: 'supplements', label: 'PILLS',  Icon: PillIcon,    color: '#6D4C41' },
+  { id: 'home',        label: 'Today',  Icon: DiaryIcon,   color: 'var(--accent)' },
+  { id: 'food',        label: 'Log',    Icon: LogIcon,     color: 'var(--accent)' },
+  { id: 'body',        label: 'Body',   Icon: BodyIcon,    color: 'var(--accent)' },
+  { id: 'ascend',      label: 'Ascend', Icon: AscendIcon,  color: 'var(--accent)' },
+  { id: 'glow',        label: 'Glow',   Icon: GlowIcon,    color: 'var(--accent)' },
+  { id: 'supplements', label: 'Pills',  Icon: PillIcon,    color: 'var(--accent)' },
 ];
 
 export default function App() {
@@ -504,37 +506,31 @@ export default function App() {
           return (
             <button key={id} onClick={() => setActiveTab(id)} className="press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 3,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0 4px',
+              alignItems: 'center', justifyContent: 'center', gap: 4,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 6px',
               minWidth: 0, position: 'relative',
             }}>
-              {/* Glowing pill background */}
+              {/* Top indicator line */}
               <div style={{
-                position: 'absolute', top: 5, left: '50%',
+                position: 'absolute', top: 0, left: '50%',
                 transform: 'translateX(-50%)',
-                width: active ? 46 : 0,
-                height: active ? 30 : 0,
+                width: active ? 24 : 0,
+                height: 2,
                 borderRadius: 99,
-                background: active ? `${color}15` : 'transparent',
-                boxShadow: 'none',
-                transition: 'width 0.3s var(--spring), height 0.3s var(--spring), opacity 0.2s ease',
-                opacity: active ? 1 : 0,
+                background: active ? color : 'transparent',
+                transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1)',
               }} />
               <div style={{
                 color: active ? color : 'var(--muted2)',
-                transition: 'color 0.18s ease, transform 0.28s var(--spring)',
-                transform: active ? 'scale(1.12) translateY(-1px)' : 'scale(1.0)',
-                position: 'relative', zIndex: 1,
+                transition: 'color 0.18s ease',
               }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: 700,
+                fontSize: 9, fontWeight: active ? 700 : 500,
                 color: active ? color : 'var(--muted2)',
                 transition: 'color 0.18s ease',
-                letterSpacing: '0.8px',
-                textTransform: 'uppercase',
-                position: 'relative', zIndex: 1,
+                letterSpacing: '0.5px',
               }}>
                 {label}
               </span>
@@ -542,6 +538,9 @@ export default function App() {
           );
         })}
       </nav>
+
+      <XPPop />
+      <LevelUpModal />
     </div>
   );
 }

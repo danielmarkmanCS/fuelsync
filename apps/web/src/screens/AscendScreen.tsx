@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getLevelInfo, getXP, LEVELS, XP_REWARDS, LEVEL_PERKS } from '../lib/xp';
+import { getLevelInfo, getXP, LEVELS, XP_REWARDS, LEVEL_PERKS, getStreakMultiplier } from '../lib/xp';
 import { calcStreak } from '../lib/streak';
+import { IconMeal, IconProtein, IconFlame, IconDroplet, IconMoon, IconPill, IconCheck, IconBolt, IconTrophy, IconTrendUp, IconCalendar } from '../components/Icon';
 import { getWaterTotal, getWaterGoal, addWater, removeLastWater, parseWaterAI } from '../lib/waterLog';
 import { getSleep, logSleep, calcSleepHours, estimateSleepQuality, sleepQualityLabel, sleepQualityColor } from '../lib/sleep';
 import { getLogs } from '../api/localFood';
@@ -17,13 +18,23 @@ const AMBER = '#FB8C00';
 const PINK  = '#D81B60';
 const MOON  = '#7E57C2';
 
+const MISSION_ICONS: Record<string, React.FC<{size?: number; color?: string}>> = {
+  log_food: IconMeal,
+  protein:  IconProtein,
+  calories: IconFlame,
+  water:    IconDroplet,
+  sleep:    IconMoon,
+  supps:    IconPill,
+};
+
 interface Mission {
   id: string;
   label: string;
   xp: number;
   done: boolean;
   color: string;
-  icon: string;
+  current?: number;
+  goal?: number;
 }
 
 function XPRing({ pct, level, name, emoji }: { pct: number; level: number; name: string; emoji: string }) {
@@ -91,62 +102,96 @@ function XPRing({ pct, level, name, emoji }: { pct: number; level: number; name:
 }
 
 function MissionRow({ mission }: { mission: Mission }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '12px 16px',
-    }}>
-      {/* Check circle */}
-      <div style={{
-        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-        background: mission.done ? `${mission.color}22` : 'var(--surf2)',
-        border: `2px solid ${mission.done ? mission.color : 'var(--edge)'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'all 0.3s ease',
-        boxShadow: mission.done ? `0 0 10px ${mission.color}40` : 'none',
-      }}>
-        {mission.done && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={mission.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-      </div>
+  const hasBar = mission.goal !== undefined && mission.goal > 0;
+  const pct    = hasBar ? Math.min(((mission.current ?? 0) / mission.goal!) * 100, 100) : 0;
+  const MIcon  = MISSION_ICONS[mission.id];
+  const suffix = mission.id === 'protein' || mission.id === 'calories' ? 'g' : mission.id === 'water' ? 'ml' : '';
 
-      {/* Label */}
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: mission.done ? 600 : 500, color: mission.done ? 'var(--text)' : 'var(--muted)', transition: 'color 0.3s' }}>
-          {mission.icon} {mission.label}
+  return (
+    <div style={{ padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Icon container */}
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+          background: mission.done ? `${mission.color}18` : 'var(--surf2)',
+          border: `1px solid ${mission.done ? mission.color + '30' : 'var(--edge)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.25s ease',
+        }}>
+          {mission.done
+            ? <IconCheck size={16} color={mission.color} />
+            : MIcon ? <MIcon size={16} color={mission.done ? mission.color : 'var(--muted)'} /> : null
+          }
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: mission.done ? 'var(--text)' : 'var(--muted)', marginBottom: hasBar && !mission.done ? 2 : 0 }}>
+            {mission.label}
+          </div>
+          {hasBar && !mission.done && (
+            <div style={{ fontSize: 11, color: 'var(--muted2)', fontVariantNumeric: 'tabular-nums' }}>
+              {mission.current}{suffix} <span style={{ color: 'var(--edge2)' }}>·</span> {mission.goal}{suffix}
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          padding: '4px 9px', borderRadius: 8, flexShrink: 0,
+          background: mission.done ? `${mission.color}15` : 'var(--surf2)',
+          border: `1px solid ${mission.done ? mission.color + '30' : 'var(--edge)'}`,
+        }}>
+          <IconBolt size={10} color={mission.done ? mission.color : 'var(--muted2)'} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: mission.done ? mission.color : 'var(--muted2)' }}>+{mission.xp}</span>
         </div>
       </div>
 
-      {/* XP badge */}
-      <div style={{
-        padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-        background: mission.done ? `${mission.color}22` : 'var(--surf2)',
-        color: mission.done ? mission.color : 'var(--muted2)',
-        border: `1px solid ${mission.done ? mission.color + '44' : 'var(--edge)'}`,
-      }}>
-        +{mission.xp} XP
-      </div>
+      {hasBar && (
+        <div style={{ marginTop: 10, marginLeft: 48, height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', borderRadius: 99,
+            background: mission.done ? mission.color : `${mission.color}70`,
+            width: `${pct}%`,
+            transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+          }} />
+        </div>
+      )}
     </div>
   );
 }
 
 function StreakCard({ current, longest }: { current: number; longest: number }) {
+  const mult = getStreakMultiplier(current);
+  const daysToNext = current < 3 ? 3 - current : current < 7 ? 7 - current : current < 14 ? 14 - current : 0;
   return (
     <div style={{
-      background: `linear-gradient(135deg, ${AMBER}18 0%, transparent 60%)`,
-      borderRadius: 20, border: `1px solid ${AMBER}33`,
+      background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)',
       padding: '20px', marginBottom: 12,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
-      <div>
-        <div style={{ fontSize: 12, color: AMBER, fontWeight: 700, letterSpacing: 0.3, marginBottom: 6 }}>🔥 Logging streak</div>
-        <div style={{ fontSize: 48, fontWeight: 900, color: AMBER, letterSpacing: -2, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{current}</div>
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-          {current === 1 ? 'day' : 'days'} in a row
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>Streak</div>
+            {mult > 1 && (
+              <div style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, background: AMBER, color: '#000' }}>
+                {mult}× XP
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontSize: 52, fontWeight: 900, color: AMBER, letterSpacing: -2, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{current}</span>
+            <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 600 }}>days</span>
+          </div>
+          {daysToNext > 0 && (
+            <div style={{ fontSize: 11, color: 'var(--muted2)', marginTop: 6 }}>
+              {daysToNext}d to {mult === 1 ? '1.25' : mult === 1.25 ? '1.5' : '1.75'}× bonus
+            </div>
+          )}
         </div>
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Best ever</div>
-        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--muted2)', letterSpacing: -1, fontVariantNumeric: 'tabular-nums' }}>{longest}</div>
-        <div style={{ fontSize: 10, color: 'var(--muted2)', marginTop: 2 }}>days</div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Best</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--muted2)', letterSpacing: -1, fontVariantNumeric: 'tabular-nums' }}>{longest}</div>
+        </div>
       </div>
     </div>
   );
@@ -159,39 +204,23 @@ function WeekDots({ dates }: { dates: Set<string> }) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    days.push({
-      date: dateStr,
-      label: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1),
-      logged: dates.has(dateStr),
-      isToday: i === 0,
-    });
+    days.push({ date: dateStr, label: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1), logged: dates.has(dateStr), isToday: i === 0 });
   }
-
   return (
-    <div style={{
-      background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)',
-      padding: '16px 20px', marginBottom: 12,
-    }}>
-      <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, marginBottom: 12 }}>This week</div>
-      <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{ background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)', padding: '16px', marginBottom: 12 }}>
+      <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>This week</div>
+      <div style={{ display: 'flex', gap: 4 }}>
         {days.map(day => (
-          <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{ fontSize: 10, color: day.isToday ? PURP : 'var(--muted)', fontWeight: day.isToday ? 700 : 500 }}>
-              {day.label}
-            </div>
+          <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: 10, color: day.isToday ? PURP : 'var(--muted2)', fontWeight: 700, textTransform: 'uppercase' }}>{day.label}</div>
             <div style={{
-              width: 28, height: 28, borderRadius: '50%',
+              width: 30, height: 30, borderRadius: 8,
               background: day.logged ? (day.isToday ? PURP : CARB) : 'var(--surf2)',
-              border: `2px solid ${day.logged ? (day.isToday ? PURP + '66' : CARB + '66') : 'var(--edge)'}`,
-              boxShadow: day.logged ? `0 0 8px ${day.isToday ? PURP : CARB}40` : 'none',
+              border: `1px solid ${day.logged ? 'transparent' : 'var(--edge)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.3s ease',
+              transition: 'all 0.2s ease',
             }}>
-              {day.logged && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              )}
+              {day.logged && <IconCheck size={13} color="#fff" sw={2.5} />}
             </div>
           </div>
         ))}
@@ -200,19 +229,19 @@ function WeekDots({ dates }: { dates: Set<string> }) {
   );
 }
 
-function AchievementBadge({ id, label, icon, color, unlocked }: { id: string; label: string; icon: string; color: string; unlocked: boolean }) {
+function AchievementBadge({ label, icon, color, unlocked }: { id: string; label: string; icon: string; color: string; unlocked: boolean }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-      padding: '12px 8px',
-      background: unlocked ? `${color}14` : 'var(--surf2)',
-      borderRadius: 16,
-      border: `1px solid ${unlocked ? color + '33' : 'var(--edge)'}`,
-      opacity: unlocked ? 1 : 0.45,
-      transition: 'all 0.3s ease',
+      padding: '14px 8px',
+      background: unlocked ? `${color}12` : 'var(--surf2)',
+      borderRadius: 14,
+      border: `1px solid ${unlocked ? color + '28' : 'var(--edge)'}`,
+      opacity: unlocked ? 1 : 0.35,
+      transition: 'all 0.25s ease',
     }}>
-      <div style={{ fontSize: 24, filter: unlocked ? 'none' : 'grayscale(1)' }}>{icon}</div>
-      <div style={{ fontSize: 9, fontWeight: 700, color: unlocked ? color : 'var(--muted)', textAlign: 'center', lineHeight: 1.3 }}>
+      <div style={{ fontSize: 22, filter: unlocked ? 'none' : 'grayscale(1) brightness(0.5)' }}>{icon}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: unlocked ? color : 'var(--muted2)', textAlign: 'center', lineHeight: 1.3, letterSpacing: 0.2 }}>
         {label}
       </div>
     </div>
@@ -272,12 +301,12 @@ export default function AscendScreen() {
     const allTaken = supps.length > 0 && suppLogs.filter(s => s.taken).length >= supps.length;
 
     setMissions([
-      { id: 'log_food', label: 'Log at least one meal',                       xp: XP_REWARDS.LOG_MEAL,       done: activeLogs.length > 0,                color: CARB,  icon: '🍽️' },
-      { id: 'protein',  label: `Hit protein goal (${Math.round(protGoal)}g)`, xp: XP_REWARDS.HIT_PROTEIN,    done: protGoal > 0 && protein >= protGoal,  color: PROT,  icon: '💪' },
-      { id: 'calories', label: 'Stay in calorie range',                        xp: XP_REWARDS.HIT_CALORIES,   done: calGoal > 0 && calories >= calGoal * 0.85 && calories <= calGoal * 1.05, color: AMBER, icon: '🔥' },
-      { id: 'water',    label: `Drink ${(waterGoal / 1000).toFixed(1)}L water`, xp: XP_REWARDS.HIT_WATER,   done: waterGoal > 0 && wt >= waterGoal,     color: PROT,  icon: '💧' },
-      { id: 'sleep',    label: 'Log your sleep',                               xp: XP_REWARDS.LOG_SLEEP,      done: sleepLog !== null,                    color: MOON,  icon: '🌙' },
-      { id: 'supps',    label: 'Take all supplements',                         xp: XP_REWARDS.SUPPLEMENT_TAKEN * supps.length, done: allTaken,           color: PINK,  icon: '💊' },
+      { id: 'log_food', label: 'Log at least one meal',                       xp: XP_REWARDS.LOG_MEAL,       done: activeLogs.length > 0,                color: CARB,  current: activeLogs.length, goal: 3 },
+      { id: 'protein',  label: `Hit protein goal (${Math.round(protGoal)}g)`, xp: XP_REWARDS.HIT_PROTEIN,    done: protGoal > 0 && protein >= protGoal,  color: PROT,  current: Math.round(protein), goal: Math.round(protGoal) },
+      { id: 'calories', label: 'Stay in calorie range',                        xp: XP_REWARDS.HIT_CALORIES,   done: calGoal > 0 && calories >= calGoal * 0.85 && calories <= calGoal * 1.05, color: AMBER, current: Math.round(calories), goal: Math.round(calGoal) },
+      { id: 'water',    label: `Drink ${(waterGoal / 1000).toFixed(1)}L water`, xp: XP_REWARDS.HIT_WATER,   done: waterGoal > 0 && wt >= waterGoal,     color: PROT,  current: wt, goal: waterGoal },
+      { id: 'sleep',    label: 'Log your sleep',                               xp: XP_REWARDS.LOG_SLEEP,      done: sleepLog !== null,                    color: MOON,  current: sleepLog ? 1 : 0, goal: 1 },
+      { id: 'supps',    label: 'Take all supplements',                         xp: XP_REWARDS.SUPPLEMENT_TAKEN * supps.length, done: allTaken,           color: PINK,  current: suppLogs.filter(s => s.taken).length, goal: supps.length },
     ].filter(m => m.xp > 0));
   }, [today, targets, waterGoal]);
 
@@ -336,41 +365,31 @@ export default function AscendScreen() {
   const sleepHours = sleepData?.hours ?? calcSleepHours(bedtime, wakeup);
 
   return (
-    <div style={{ position: 'relative', background: 'var(--bg)', minHeight: '100%', paddingBottom: 100, overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-
-      <div style={{ position: 'relative', zIndex: 1 }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
+      <div>
         {/* Header */}
-        <div style={{ padding: '28px 20px 0' }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+        <div style={{ padding: '24px 20px 0' }}>
+          <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </div>
-          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)', letterSpacing: -1 }}>Ascend</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5 }}>Progress</div>
         </div>
 
         {/* XP level ring */}
         <XPRing pct={levelInfo.progressPct} level={levelInfo.level} name={levelInfo.name} emoji={levelInfo.emoji} />
 
         {/* XP info strip */}
-        <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
-          <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 14, padding: '10px 14px', border: '1px solid var(--edge)' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Total XP</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: PURP, fontVariantNumeric: 'tabular-nums' }}>{xp.toLocaleString()}</div>
-          </div>
-          {!levelInfo.isMaxLevel && (
-            <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 14, padding: '10px 14px', border: '1px solid var(--edge)' }}>
-              <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>To next level</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: CARB, fontVariantNumeric: 'tabular-nums' }}>{levelInfo.xpToNext.toLocaleString()}</div>
+        <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8 }}>
+          {[
+            { label: 'Total XP', value: xp.toLocaleString(), color: PURP },
+            ...(!levelInfo.isMaxLevel ? [{ label: 'To next level', value: levelInfo.xpToNext.toLocaleString(), color: CARB }] : []),
+            { label: 'Today', value: `+${totalXpToday}`, color: AMBER },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ flex: 1, background: 'var(--surf)', borderRadius: 12, padding: '12px', border: '1px solid var(--edge)' }}>
+              <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
             </div>
-          )}
-          <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 14, padding: '10px 14px', border: '1px solid var(--edge)' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600, marginBottom: 2 }}>Today earned</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: AMBER, fontVariantNumeric: 'tabular-nums' }}>+{totalXpToday}</div>
-          </div>
+          ))}
         </div>
 
         {/* Streak */}
@@ -385,24 +404,29 @@ export default function AscendScreen() {
 
         {/* Daily missions */}
         <div style={{ padding: '0 16px 12px' }}>
-          <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Today's missions</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>{doneMissions}/{missions.length} done</div>
+          <div style={{ background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase' }}>Daily missions</div>
+              <div style={{
+                padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                background: doneMissions === missions.length ? `${CARB}18` : 'var(--surf2)',
+                color: doneMissions === missions.length ? CARB : 'var(--muted)',
+                border: `1px solid ${doneMissions === missions.length ? CARB + '30' : 'var(--edge)'}`,
+              }}>
+                {doneMissions}/{missions.length}
+              </div>
             </div>
-            {/* Progress bar */}
-            <div style={{ margin: '10px 16px 0', height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ margin: '0 16px 12px', height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', borderRadius: 99,
-                background: doneMissions === missions.length ? CARB : `linear-gradient(90deg, ${PURP}, ${PROT})`,
+                background: doneMissions === missions.length ? CARB : PURP,
                 width: `${missions.length > 0 ? (doneMissions / missions.length) * 100 : 0}%`,
                 transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1)',
-                boxShadow: doneMissions === missions.length ? `0 0 8px ${CARB}60` : 'none',
               }} />
             </div>
-            <div style={{ display: 'grid', gap: 1, background: 'var(--edge)', margin: '10px 0 0' }}>
-              {missions.map(m => (
-                <div key={m.id} style={{ background: 'var(--surf)' }}>
+            <div style={{ borderTop: '1px solid var(--edge)' }}>
+              {missions.map((m, i) => (
+                <div key={m.id} style={{ borderBottom: i < missions.length - 1 ? '1px solid var(--edge)' : 'none' }}>
                   <MissionRow mission={m} />
                 </div>
               ))}
@@ -529,7 +553,7 @@ export default function AscendScreen() {
 
         {/* Achievements */}
         <div style={{ padding: '0 16px 0' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>Achievements</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>Achievements</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {ALL_ACHIEVEMENTS.map(a => (
               <AchievementBadge
@@ -543,8 +567,8 @@ export default function AscendScreen() {
 
         {/* Levels reference */}
         <div style={{ padding: '20px 16px 0' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>Level road</div>
-          <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', overflow: 'hidden' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>Level path</div>
+          <div style={{ background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--edge)', overflow: 'hidden' }}>
             {LEVELS.map((l, i) => {
               const reached = xp >= l.xp;
               const isCurrent = levelInfo.level === l.level;

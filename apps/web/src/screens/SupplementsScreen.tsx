@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/db';
 import type { Supplement, SupplementLog } from '../lib/db';
 import { getSyncToken, syncSupplement, deleteSyncSupplement, syncSupplementLog, fetchSupplements, fetchSupplementLogs } from '../api/syncClient';
+import { grantXP, XP_REWARDS } from '../lib/xp';
 
 const BG      = 'var(--bg)';
 const SURF    = 'var(--surf)';
@@ -80,19 +81,23 @@ export default function SupplementsScreen() {
     const id = supp.id!;
     const existing = logs.find(l => l.supplement_id === id);
     const now = new Date().toISOString();
+    let becomingTaken = false;
     if (existing) {
       const newTaken = !existing.taken;
+      becomingTaken = newTaken;
       await db.supplement_logs.update(existing.id!, { taken: newTaken, logged_at: now });
       if (getSyncToken() && supp.sync_id && existing.sync_id) {
         syncSupplementLog({ id: existing.sync_id, supplement_id: supp.sync_id, date: today, taken: newTaken, logged_at: now }).catch(() => {});
       }
     } else {
+      becomingTaken = true;
       const syncId = crypto.randomUUID();
       await db.supplement_logs.add({ sync_id: syncId, supplement_id: id, date: today, taken: true, logged_at: now });
       if (getSyncToken() && supp.sync_id) {
         syncSupplementLog({ id: syncId, supplement_id: supp.sync_id, date: today, taken: true, logged_at: now }).catch(() => {});
       }
     }
+    if (becomingTaken) grantXP(`supp_taken_${id}`, XP_REWARDS.SUPPLEMENT_TAKEN);
     load();
   };
 

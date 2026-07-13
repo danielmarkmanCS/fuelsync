@@ -8,12 +8,11 @@ import RoutineChecklist from '../components/RoutineChecklist';
 import GlowMetrics from '../components/GlowMetrics';
 
 const MUTED = 'var(--muted)';
-type GlowSubTab = 'ascend' | 'routine' | 'metrics';
+type GlowSubTab = 'ascend' | 'routine';
 
 const SUB_TABS: { id: GlowSubTab; label: string; color: string }[] = [
   { id: 'ascend',  label: 'ASCEND',  color: '#D81B60' },
   { id: 'routine', label: 'ROUTINE', color: '#43A047' },
-  { id: 'metrics', label: 'METRICS', color: '#1E88E5' },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -367,9 +366,6 @@ export default function GlowScreen() {
 
       {/* ROUTINE tab */}
       {glowTab === 'routine' && <RoutineChecklist />}
-
-      {/* METRICS tab */}
-      {glowTab === 'metrics' && <GlowMetrics />}
 
       {/* ASCEND tab — existing content below */}
       {glowTab === 'ascend' && (<>

@@ -45,10 +45,31 @@ export function getXP(): number {
   catch { return 0; }
 }
 
+export function getStreakMultiplier(streak: number): number {
+  if (streak >= 30) return 2.0;
+  if (streak >= 14) return 1.75;
+  if (streak >= 7)  return 1.5;
+  if (streak >= 3)  return 1.25;
+  return 1.0;
+}
+
 export function addXP(amount: number): number {
-  const next = getXP() + amount;
-  localStorage.setItem(XP_KEY, String(next));
-  return next;
+  const prev  = getLevelInfo(getXP());
+  const total = getXP() + amount;
+  localStorage.setItem(XP_KEY, String(total));
+  const cur = getLevelInfo(total);
+  try {
+    window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount, total } }));
+    if (cur.level > prev.level) {
+      window.dispatchEvent(new CustomEvent('level-up', { detail: cur }));
+    }
+  } catch {}
+  return total;
+}
+
+export function getTodayXP(): number {
+  const d = getDailyXP();
+  return d.granted.reduce((sum, key) => sum + (XP_REWARDS[key as keyof typeof XP_REWARDS] ?? 0), 0);
 }
 
 export interface LevelInfo {
@@ -99,12 +120,22 @@ function getDailyXP(): DailyXP {
   return { date: today, granted: [] };
 }
 
-export function grantDailyXP(key: keyof typeof XP_REWARDS): number | null {
+export function grantXP(customKey: string, amount: number): number | null {
+  const today = new Date().toISOString().split('T')[0];
+  const d = getDailyXP();
+  if (d.granted.includes(customKey)) return null;
+  d.granted.push(customKey);
+  d.date = today;
+  localStorage.setItem(DAILY_XP_KEY, JSON.stringify(d));
+  return addXP(amount);
+}
+
+export function grantDailyXP(key: keyof typeof XP_REWARDS, multiplier = 1): number | null {
   const today = new Date().toISOString().split('T')[0];
   const d = getDailyXP();
   if (d.granted.includes(key)) return null;
   d.granted.push(key);
   d.date = today;
   localStorage.setItem(DAILY_XP_KEY, JSON.stringify(d));
-  return addXP(XP_REWARDS[key]);
+  return addXP(Math.round(XP_REWARDS[key] * multiplier));
 }
