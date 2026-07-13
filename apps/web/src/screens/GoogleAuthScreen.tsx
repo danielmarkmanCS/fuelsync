@@ -206,32 +206,11 @@ export default function GoogleAuthScreen({ onSignedIn, onSkip }: Props) {
           </button>
         ) : CLIENT_ID ? (
           <div>
-            {/* Google's rendered iframe button */}
+            {/* Google's rendered iframe button — popup mode, no redirect URI needed */}
             <div ref={btnRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, minHeight: 44 }} />
-            {/* Redirect-based fallback — works on Safari/Firefox iOS */}
-            <button
-              onClick={() => {
-                const nonce = Math.random().toString(36).slice(2);
-                sessionStorage.setItem('gsi_nonce', nonce);
-                const params = new URLSearchParams({
-                  client_id: CLIENT_ID,
-                  redirect_uri: window.location.origin + '/',
-                  response_type: 'id_token',
-                  scope: 'openid email profile',
-                  nonce,
-                });
-                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-              }}
-              style={{
-                width: '100%', padding: '11px 0', borderRadius: 10, marginBottom: 8,
-                background: 'none', border: `1px solid ${T.edge}`, color: T.muted,
-                fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              }}
-            >
-              <GoogleLogo />
-              Open sign-in page (Safari / iOS)
-            </button>
+            <div style={{ fontSize: 11, color: T.muted, textAlign: 'center', marginBottom: 4 }}>
+              On Safari or iPhone? Use the pairing code below instead.
+            </div>
           </div>
         ) : (
           <div style={{ color: T.red, fontSize: 12, marginBottom: 16, fontWeight: 600 }}>

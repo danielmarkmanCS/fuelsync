@@ -193,6 +193,18 @@ ${scan}`;
         return json({ analysis: text }, 200, allowedOrigin);
       }
 
+      if (url.pathname.endsWith('/water')) {
+        const { description } = body;
+        if (!description) return err('description required', 400, allowedOrigin);
+        const prompt = `You are a hydration tracker. The user described what they drank: "${description}".
+Estimate the total water/fluid intake in millilitres. Count all beverages (water, coffee, tea, juice, shakes, soup, etc.) as fluids.
+Respond ONLY with valid JSON: {"ml":number,"label":"string"}
+- ml: total fluid intake as an integer (minimum 1, maximum 5000)
+- label: short human-readable summary of what was parsed (e.g. "2 glasses + coffee", "500ml bottle")`;
+        const text = await gemini(apiKeys, prompt, 64);
+        return json(parseJSON(text), 200, allowedOrigin);
+      }
+
       return err('Not found', 404, allowedOrigin);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'AI request failed';
