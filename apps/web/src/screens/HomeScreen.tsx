@@ -410,27 +410,46 @@ function TrainingChips({
 }: {
   activeType?: string; onSelect: (t: TrainingType) => void;
 }) {
+  const activeCfg = activeType ? TRAINING_TYPES.find(t => t.type === activeType) : undefined;
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-        color: 'var(--muted)', marginBottom: 8,
-      }}>Today's training</div>
-      <div style={{ overflowX: 'auto', display: 'flex', gap: 6, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+    <div style={{
+      background: 'var(--surf)', borderRadius: 18, border: '1px solid var(--edge)',
+      padding: '12px 14px', marginBottom: 12,
+      boxShadow: activeCfg ? `0 0 18px ${activeCfg.color}18, var(--shadow-sm)` : 'var(--shadow-sm)',
+      transition: 'box-shadow 0.3s ease',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: 'var(--muted)',
+        }}>Today's training</div>
+        {activeCfg && (
+          <div style={{
+            fontSize: 10, fontWeight: 700, color: activeCfg.color,
+            display: 'flex', alignItems: 'center', gap: 4,
+            background: `${activeCfg.color}12`, border: `1px solid ${activeCfg.color}28`,
+            padding: '2px 8px', borderRadius: 99,
+          }}>
+            <span>{activeCfg.emoji}</span>
+            <span>{activeCfg.label}</span>
+          </div>
+        )}
+      </div>
+      <div style={{ overflowX: 'auto', display: 'flex', gap: 6, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
         {TRAINING_TYPES.map(({ type, label, emoji, color }) => {
           const active = activeType === type;
           return (
             <button key={type} onClick={() => { if (!active) onSelect(type); }} className="press" style={{
               flexShrink: 0, padding: '6px 12px', borderRadius: 99,
-              background: active ? color : 'var(--surf)',
-              border: `1px solid ${active ? color : 'var(--edge)'}`,
+              background: active ? color : 'var(--surf2)',
+              border: `1.5px solid ${active ? color : 'var(--edge)'}`,
               color: active ? '#fff' : 'var(--muted)',
-              fontSize: 12, fontWeight: active ? 700 : 500, cursor: 'pointer',
+              fontSize: 11, fontWeight: active ? 700 : 500, cursor: 'pointer',
               transition: 'all 0.18s ease',
-              boxShadow: active ? `0 0 12px ${color}44` : 'none',
+              boxShadow: active ? `0 2px 10px ${color}55` : 'none',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
-              <span style={{ fontSize: 11 }}>{emoji}</span>
+              <span style={{ fontSize: 12 }}>{emoji}</span>
               {label}
             </button>
           );
@@ -675,16 +694,38 @@ export default function HomeScreen() {
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
 
       {/* Top bar */}
-      <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
-            {dateStr}
+      <div style={{ padding: '18px 16px 10px', position: 'relative', overflow: 'hidden' }}>
+        {/* Time-of-day ambient glow */}
+        <div style={{
+          position: 'absolute', top: -40, right: -30, width: 200, height: 200,
+          borderRadius: '50%', pointerEvents: 'none',
+          background: `radial-gradient(circle, ${hour < 12 ? 'rgba(245,158,11,0.16)' : hour < 17 ? 'rgba(56,189,248,0.13)' : 'rgba(167,139,250,0.16)'} 0%, transparent 70%)`,
+          filter: 'blur(24px)',
+        }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.02em' }}>
+              {dateStr}
+            </div>
+            <div style={{ marginTop: 3, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, lineHeight: 1.1 }}>
+              <span style={{
+                fontSize: 22, fontWeight: 900, letterSpacing: -0.6,
+                background: hour < 12
+                  ? 'linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%)'
+                  : hour < 17
+                    ? 'linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%)'
+                    : 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+              }}>{greeting}{name ? ',' : ''}</span>
+              {name && (
+                <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.6 }}>
+                  {name.split(' ')[0]}
+                </span>
+              )}
+              <span style={{ fontSize: 18 }}>👋</span>
+            </div>
           </div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: -0.4, marginTop: 1 }}>
-            {greeting}{name ? `, ${name.split(' ')[0]}` : ''} 👋
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {streak > 0 && (
             <button onClick={() => setActiveTab('ascend')} style={{
               display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px',
@@ -723,6 +764,7 @@ export default function HomeScreen() {
               <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
           </button>
+        </div>
         </div>
       </div>
 

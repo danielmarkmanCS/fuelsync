@@ -510,9 +510,9 @@ export default function GlowScreen() {
         <div>
           <div style={{
             fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
-            background: 'linear-gradient(135deg, var(--c-glow), var(--c-ascend))',
+            background: 'linear-gradient(135deg, var(--c-glow), #FB923C)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          }}>Ascend ✦</div>
+          }}>Glow ✦</div>
           <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
             {glowProfile
               ? `${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.emoji} ${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.label} focus`
