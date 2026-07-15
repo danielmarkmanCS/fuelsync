@@ -1,21 +1,80 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  getRoutineItemsByCategory,
+  getRoutineItems,
   getRoutineLogs,
   toggleRoutineLog,
   getAllStreaks,
   getRoutineCompletionPct,
 } from '../lib/glowRoutine';
-import type { GlowRoutineItem, GlowRoutineLog, RoutineCategory } from '../lib/db';
+import type { GlowRoutineItem, GlowRoutineLog } from '../lib/db';
+import type { GlowProfile, GlowGoal } from '../lib/glowProfile';
 
-// ─── Category config ──────────────────────────────────────────────────────────
+// ─── Time-of-day config ───────────────────────────────────────────────────────
 
-const CATS: { id: RoutineCategory; label: string; color: string }[] = [
-  { id: 'SKIN',   label: 'Skin',    color: '#38BDF8' },
-  { id: 'GROOM',  label: 'Groom',   color: '#F97316' },
-  { id: 'HABITS', label: 'Habits',  color: '#4ADE80' },
-  { id: 'MEWING', label: 'Posture', color: '#A78BFA' },
+type TimeSlot = 'morning' | 'day' | 'evening';
+
+const TIME_SLOTS: { id: TimeSlot; label: string; emoji: string; color: string; tip: string }[] = [
+  { id: 'morning', label: 'Morning', emoji: '🌅', color: '#FB8C00', tip: 'Quick essentials before you head out — aim to finish in 10–15 min.' },
+  { id: 'day',     label: 'Day',     emoji: '☀️', color: '#1E88E5', tip: 'Work-friendly habits. Posture checks cost 0 sec. Water + steps = passive wins.' },
+  { id: 'evening', label: 'Evening', emoji: '🌙', color: '#7E57C2', tip: 'Wind-down mode. These seal in your progress and set up tomorrow.' },
 ];
+
+const ITEM_TIME: Record<string, TimeSlot> = {
+  'Brush teeth (AM)':         'morning',
+  'Morning cleanse':          'morning',
+  'Cold face rinse (30s)':    'morning',
+  'Vitamin C serum (AM)':     'morning',
+  'SPF 30+ applied':          'morning',
+  'Hot shower + cold finish': 'morning',
+  'Mewing practice (15m)':    'morning',
+  'Hair mask (2×/week)':      'morning',
+
+  'Hit water target':         'day',
+  'Walk 8k+ steps':           'day',
+  'No processed food':        'day',
+  'Upright posture check':    'day',
+  'No forward head (desk)':   'day',
+  'Chin tucks ×20':           'day',
+
+  'Brush teeth (PM)':         'evening',
+  'Floss':                    'evening',
+  'Gua sha (3 min face)':     'evening',
+  'Night moisturizer':        'evening',
+  'Retinol/Niacinamide (PM)': 'evening',
+  'Screens off by 10pm':      'evening',
+  '8h sleep target':          'evening',
+  'Dead hang (60s)':          'evening',
+  'Beard / stubble clean':    'evening',
+  'Nails clean':              'evening',
+  'Eyebrow grooming':         'evening',
+};
+
+function getDefaultTime(): TimeSlot {
+  const h = new Date().getHours();
+  if (h < 11) return 'morning';
+  if (h < 18) return 'day';
+  return 'evening';
+}
+
+// ─── Goal → priority items ────────────────────────────────────────────────────
+
+const GOAL_PRIORITY_ITEMS: Record<GlowGoal, string[]> = {
+  glow_skin:    ['Cold face rinse (30s)', 'Vitamin C serum (AM)', 'SPF 30+ applied', 'Gua sha (3 min face)', 'Night moisturizer', 'Retinol/Niacinamide (PM)'],
+  clear_acne:   ['Morning cleanse', 'Cold face rinse (30s)', 'SPF 30+ applied', 'No processed food', 'Hit water target', 'Screens off by 10pm'],
+  hair_growth:  ['Hair mask (2×/week)', 'Hot shower + cold finish', 'Hit water target', 'No processed food', '8h sleep target'],
+  jawline:      ['Mewing practice (15m)', 'Chin tucks ×20', 'Dead hang (60s)', 'Upright posture check', 'No forward head (desk)'],
+  lose_fat:     ['Walk 8k+ steps', 'Hot shower + cold finish', 'Screens off by 10pm', '8h sleep target', 'No processed food'],
+  build_muscle: ['8h sleep target', 'Hit water target', 'No processed food', 'Hot shower + cold finish'],
+};
+
+const GOAL_BANNER: Record<GlowGoal, { emoji: string; label: string; tip: string; color: string }> = {
+  glow_skin:    { emoji: '✨', label: 'Glow skin focus', tip: 'SPF every morning is worth more than any serum. Cold rinse + Vitamin C = the core pair.', color: '#1E88E5' },
+  clear_acne:   { emoji: '🧴', label: 'Clear skin focus', tip: 'Cleansing consistency beats product quality. No processed food = fewer insulin spikes = less sebum.', color: '#43A047' },
+  hair_growth:  { emoji: '💇', label: 'Hair growth focus', tip: 'Scalp massage 4 min/day increased hair growth 68% in studies. Do it in the shower.', color: '#FB8C00' },
+  jawline:      { emoji: '🫦', label: 'Jawline & posture focus', tip: 'Daily mewing + dead hangs resets anterior chain. 15 min mewing = your most impactful daily habit.', color: '#7E57C2' },
+  lose_fat:     { emoji: '🔥', label: 'Fat loss focus', tip: '8k+ steps burns more than most people think. Pair it with screens off by 10pm for GH peak sleep.', color: '#E53935' },
+  build_muscle: { emoji: '💪', label: 'Muscle building focus', tip: 'GH peaks at 11pm–1am in deep sleep. 8h sleep + protein = free anabolic window. Don\'t waste it.', color: '#0091EA' },
+};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -33,11 +92,9 @@ function CompletionBar({ pct }: { pct: number }) {
       </div>
       <div style={{ height: 6, background: 'var(--surf2)', borderRadius: 99, overflow: 'hidden' }}>
         <div style={{
-          height: '100%',
-          width: `${pct}%`,
+          height: '100%', width: `${pct}%`,
           background: `linear-gradient(90deg, ${color}99, ${color})`,
-          borderRadius: 99,
-          transition: 'width 0.6s var(--spring)',
+          borderRadius: 99, transition: 'width 0.6s var(--spring)',
           boxShadow: `0 0 10px ${color}55`,
         }} />
       </div>
@@ -59,8 +116,7 @@ function StreakBadge({ streak }: { streak: number }) {
       fontSize: 9, fontWeight: 800, letterSpacing: '0.06em',
       color: '#FBBF24', background: 'rgba(251,191,36,0.12)',
       border: '1px solid rgba(251,191,36,0.25)',
-      padding: '2px 6px', borderRadius: 99,
-      flexShrink: 0,
+      padding: '2px 6px', borderRadius: 99, flexShrink: 0,
     }}>
       🔥 {streak}d
     </span>
@@ -68,12 +124,13 @@ function StreakBadge({ streak }: { streak: number }) {
 }
 
 function RoutineItem({
-  item, done, streak, onToggle,
+  item, done, streak, onToggle, priority,
 }: {
   item: GlowRoutineItem;
   done: boolean;
   streak: number;
   onToggle: () => void;
+  priority?: boolean;
 }) {
   return (
     <button
@@ -81,17 +138,16 @@ function RoutineItem({
       className="press card-lift"
       style={{
         width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-        background: done ? 'rgba(74,222,128,0.05)' : 'var(--surf)',
-        border: `1px solid ${done ? 'rgba(74,222,128,0.20)' : 'var(--edge)'}`,
+        background: done ? 'rgba(74,222,128,0.05)' : priority ? 'rgba(0,145,234,0.04)' : 'var(--surf)',
+        border: `1px solid ${done ? 'rgba(74,222,128,0.20)' : priority && !done ? 'rgba(0,145,234,0.25)' : 'var(--edge)'}`,
         borderRadius: 14, padding: '12px 14px',
         cursor: 'pointer', textAlign: 'left',
         transition: 'background 0.15s ease, border-color 0.15s ease',
       }}
     >
-      {/* Checkbox */}
       <div style={{
         width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-        border: `2px solid ${done ? '#4ADE80' : 'var(--edge2)'}`,
+        border: `2px solid ${done ? '#4ADE80' : priority ? 'rgba(0,145,234,0.5)' : 'var(--edge2)'}`,
         background: done ? '#4ADE80' : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.18s var(--spring)',
@@ -103,26 +159,24 @@ function RoutineItem({
           </svg>
         )}
       </div>
-
-      {/* Icon */}
       <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>{item.icon}</span>
-
-      {/* Label */}
       <span style={{
-        flex: 1, fontSize: 14, fontWeight: 600,
+        flex: 1, fontSize: 14, fontWeight: priority ? 700 : 600,
         color: done ? 'var(--muted)' : 'var(--text)',
         textDecoration: done ? 'line-through' : 'none',
         transition: 'color 0.15s ease',
       }}>
         {item.name}
       </span>
-
+      {priority && !done && (
+        <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', background: 'rgba(0,145,234,0.10)', border: '1px solid rgba(0,145,234,0.25)', padding: '2px 6px', borderRadius: 99, flexShrink: 0, letterSpacing: 0.3 }}>
+          FOR YOU
+        </span>
+      )}
       <StreakBadge streak={streak} />
     </button>
   );
 }
-
-// ─── XP Toast ────────────────────────────────────────────────────────────────
 
 function XPToast({ msg, visible }: { msg: string; visible: boolean }) {
   return (
@@ -140,15 +194,17 @@ function XPToast({ msg, visible }: { msg: string; visible: boolean }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function RoutineChecklist() {
-  const today = new Date().toISOString().split('T')[0];
+export default function RoutineChecklist({ profile }: { profile?: GlowProfile | null }) {
+  const today        = new Date().toISOString().split('T')[0];
+  const priorityItems: Set<string> = profile ? new Set(GOAL_PRIORITY_ITEMS[profile.goal]) : new Set();
+  const banner       = profile ? GOAL_BANNER[profile.goal] : null;
 
-  const [activeCat, setActiveCat] = useState<RoutineCategory>('SKIN');
-  const [items,     setItems]     = useState<GlowRoutineItem[]>([]);
-  const [logs,      setLogs]      = useState<GlowRoutineLog[]>([]);
-  const [streaks,   setStreaks]   = useState<Record<number, number>>({});
-  const [pct,       setPct]       = useState(0);
-  const [toast,     setToast]     = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false });
+  const [activeTime, setActiveTime] = useState<TimeSlot>(getDefaultTime);
+  const [allItems,   setAllItems]   = useState<GlowRoutineItem[]>([]);
+  const [logs,       setLogs]       = useState<GlowRoutineLog[]>([]);
+  const [streaks,    setStreaks]     = useState<Record<number, number>>({});
+  const [pct,        setPct]        = useState(0);
+  const [toast,      setToast]      = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false });
 
   function showToast(msg: string) {
     setToast({ msg, visible: true });
@@ -156,29 +212,26 @@ export default function RoutineChecklist() {
   }
 
   const reload = useCallback(async () => {
-    const [catItems, dayLogs, dayPct] = await Promise.all([
-      getRoutineItemsByCategory(activeCat),
+    const [fetchedItems, dayLogs, dayPct] = await Promise.all([
+      getRoutineItems(),
       getRoutineLogs(today),
       getRoutineCompletionPct(today),
     ]);
-    setItems(catItems);
+    setAllItems(fetchedItems);
     setLogs(dayLogs);
     setPct(dayPct);
-    const ids = catItems.map(i => i.id!).filter(Boolean);
-    if (ids.length > 0) {
-      const s = await getAllStreaks(ids);
-      setStreaks(s);
-    }
-  }, [activeCat, today]);
+    const ids = fetchedItems.map(i => i.id!).filter(Boolean);
+    if (ids.length > 0) setStreaks(await getAllStreaks(ids));
+  }, [today]);
 
   useEffect(() => { reload(); }, [reload]);
 
   const doneSet = new Set(logs.filter(l => l.done).map(l => l.item_id));
+  const items   = allItems.filter(i => (ITEM_TIME[i.name] ?? 'morning') === activeTime);
 
   const handleToggle = async (item: GlowRoutineItem) => {
     const id   = item.id!;
     const done = doneSet.has(id);
-    // Optimistic update
     setLogs(prev => {
       const existing = prev.find(l => l.item_id === id && l.date === today);
       if (existing) return prev.map(l => l.item_id === id && l.date === today ? { ...l, done: !done } : l);
@@ -186,57 +239,79 @@ export default function RoutineChecklist() {
     });
     const result = await toggleRoutineLog(id, today, done);
     if (result.fullRoutineComplete) showToast('🏆 Full routine! +50 XP');
-    else if (result.categoryComplete) showToast(`✅ Category done! +20 XP`);
+    else if (result.categoryComplete) showToast(`✅ Section done! +20 XP`);
     else if (result.xpGranted > 0) showToast(`+${result.xpGranted} XP`);
     const newPct = await getRoutineCompletionPct(today);
     setPct(newPct);
+    window.dispatchEvent(new CustomEvent('fs_routine_updated'));
   };
 
-  const catColor = CATS.find(c => c.id === activeCat)?.color ?? 'var(--accent)';
+  const slot      = TIME_SLOTS.find(s => s.id === activeTime)!;
+  const slotDone  = items.filter(i => doneSet.has(i.id!)).length;
+  const slotTotal = items.length;
 
   return (
     <div style={{ paddingBottom: 8 }}>
       <XPToast msg={toast.msg} visible={toast.visible} />
+
+      {/* Personalized banner */}
+      {banner && (
+        <div style={{
+          marginBottom: 14, padding: '12px 14px', borderRadius: 14,
+          background: `${banner.color}0E`, border: `1px solid ${banner.color}28`,
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.8, color: banner.color, marginBottom: 4, textTransform: 'uppercase' }}>
+            {banner.emoji} {banner.label}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.55 }}>{banner.tip}</div>
+        </div>
+      )}
+
       {/* Completion bar */}
       <CompletionBar pct={pct} />
 
-      {/* Category tabs */}
+      {/* Time-of-day tabs */}
       <div style={{
-        display: 'flex', gap: 6, marginBottom: 16,
+        display: 'flex', gap: 6, marginBottom: 14,
         background: 'var(--surf)', borderRadius: 14, padding: 5,
         border: '1px solid var(--edge)',
       }}>
-        {CATS.map(cat => {
-          const active = cat.id === activeCat;
+        {TIME_SLOTS.map(s => {
+          const active = s.id === activeTime;
           return (
             <button
-              key={cat.id}
-              onClick={() => setActiveCat(cat.id)}
+              key={s.id}
+              onClick={() => setActiveTime(s.id)}
               className="press"
               style={{
-                flex: 1, padding: '7px 4px',
-                background: active ? `${cat.color}18` : 'transparent',
-                border: `1px solid ${active ? `${cat.color}40` : 'transparent'}`,
-                borderRadius: 10,
-                fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
-                color: active ? cat.color : 'var(--muted)',
-                cursor: 'pointer',
+                flex: 1, padding: '8px 4px',
+                background: active ? `${s.color}18` : 'transparent',
+                border: `1px solid ${active ? `${s.color}40` : 'transparent'}`,
+                borderRadius: 10, cursor: 'pointer',
                 transition: 'all 0.18s var(--spring)',
-                boxShadow: active ? `0 0 14px ${cat.color}30` : 'none',
+                boxShadow: active ? `0 0 14px ${s.color}30` : 'none',
               }}
             >
-              {cat.label.toUpperCase()}
+              <div style={{ fontSize: 16, lineHeight: 1, marginBottom: 2 }}>{s.emoji}</div>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', color: active ? s.color : 'var(--muted)' }}>
+                {s.label.toUpperCase()}
+              </div>
             </button>
           );
         })}
       </div>
 
-      {/* Section label */}
-      <div style={{
-        fontSize: 9, fontWeight: 800, letterSpacing: '0.15em',
-        color: catColor, marginBottom: 10,
-      }}>
-        {CATS.find(c => c.id === activeCat)?.label.toUpperCase()} ROUTINE
+      {/* Section header */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', color: slot.color }}>
+            {slot.emoji} {slot.label.toUpperCase()} ROUTINE
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: slotDone === slotTotal && slotTotal > 0 ? '#4ADE80' : 'var(--muted)' }}>
+            {slotDone}/{slotTotal} done
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>{slot.tip}</div>
       </div>
 
       {/* Items */}
@@ -248,14 +323,12 @@ export default function RoutineChecklist() {
             done={doneSet.has(item.id!)}
             streak={streaks[item.id!] ?? 0}
             onToggle={() => handleToggle(item)}
+            priority={priorityItems.has(item.name)}
           />
         ))}
         {items.length === 0 && (
-          <div style={{
-            padding: '32px 16px', textAlign: 'center',
-            color: 'var(--muted)', fontSize: 13,
-          }}>
-            No items in this category
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+            No items for this time slot
           </div>
         )}
       </div>

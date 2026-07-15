@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNutritionStore } from '../store/nutritionStore';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
@@ -6,9 +6,175 @@ import { getLogs } from '../api/localFood';
 import type { FoodLog } from '../api/localFood';
 import RoutineChecklist from '../components/RoutineChecklist';
 import GlowMetrics from '../components/GlowMetrics';
+import { getGlowProfile, saveGlowProfile, GLOW_PROFILE_KEY } from '../lib/glowProfile';
+import { getRoutineCompletionPct } from '../lib/glowRoutine';
+import type { GlowGoal, RoutineTime, GlowConcern, GlowProfile } from '../lib/glowProfile';
+
+export type { GlowGoal, RoutineTime, GlowConcern, GlowProfile };
 
 const MUTED = 'var(--muted)';
 type GlowSubTab = 'ascend' | 'routine';
+
+const GOAL_OPTIONS: Array<{ id: GlowGoal; emoji: string; label: string; sub: string; color: string }> = [
+  { id: 'glow_skin',      emoji: '✨', label: 'Glow skin',        sub: 'Hydration, collagen, SPF',          color: '#1E88E5' },
+  { id: 'clear_acne',     emoji: '🧴', label: 'Clear acne',       sub: 'Cleansing, diet, stress',           color: '#43A047' },
+  { id: 'hair_growth',    emoji: '💇', label: 'Hair growth',       sub: 'Nutrition, scalp, supplements',     color: '#FB8C00' },
+  { id: 'jawline',        emoji: '🫦', label: 'Jawline & posture', sub: 'Mewing, chin tucks, dead hangs',    color: '#7E57C2' },
+  { id: 'lose_fat',       emoji: '🔥', label: 'Lose fat',          sub: 'Steps, cold, diet discipline',      color: '#E53935' },
+  { id: 'build_muscle',   emoji: '💪', label: 'Build muscle',      sub: 'Sleep, protein, recovery',          color: '#0091EA' },
+];
+
+const CONCERN_OPTIONS: Array<{ id: GlowConcern; emoji: string; label: string }> = [
+  { id: 'dull_skin',  emoji: '😐', label: 'Dull skin'    },
+  { id: 'hair_loss',  emoji: '💆', label: 'Hair loss'    },
+  { id: 'posture',    emoji: '🧍', label: 'Bad posture'  },
+  { id: 'low_energy', emoji: '😴', label: 'Low energy'   },
+  { id: 'poor_sleep', emoji: '😫', label: 'Poor sleep'   },
+  { id: 'acne',       emoji: '😣', label: 'Acne / spots' },
+];
+
+const TIME_OPTIONS: Array<{ id: RoutineTime; label: string; sub: string }> = [
+  { id: '5min',  label: '5 min',  sub: 'Essentials only' },
+  { id: '15min', label: '15 min', sub: 'Standard routine' },
+  { id: '30min', label: '30 min+', sub: 'Full protocol' },
+];
+
+// ─── Glow onboarding wizard ───────────────────────────────────────────────────
+
+function GlowOnboarding({ onDone }: { onDone: (p: GlowProfile) => void }) {
+  const [step,     setStep]     = useState(0);
+  const [goal,     setGoal]     = useState<GlowGoal | null>(null);
+  const [time,     setTime]     = useState<RoutineTime>('15min');
+  const [concerns, setConcerns] = useState<GlowConcern[]>([]);
+
+  function toggleConcern(c: GlowConcern) {
+    setConcerns(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+  }
+
+  function finish() {
+    if (!goal) return;
+    const profile: GlowProfile = { goal, routineTime: time, concerns, setupDate: new Date().toISOString().split('T')[0] };
+    saveGlowProfile(profile);
+    onDone(profile);
+  }
+
+  const selectedGoal = GOAL_OPTIONS.find(g => g.id === goal);
+
+  return (
+    <div style={{ padding: '8px 0 24px' }}>
+      {/* Step indicator */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+        {[0, 1, 2].map(s => (
+          <div key={s} style={{
+            flex: 1, height: 3, borderRadius: 99,
+            background: s <= step ? 'var(--accent)' : 'var(--edge2)',
+            transition: 'background 0.3s',
+          }} />
+        ))}
+      </div>
+
+      {step === 0 && (
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, marginBottom: 6 }}>
+            What's your #1 goal? 🎯
+          </div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
+            I'll build your routine and daily nudges around this.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {GOAL_OPTIONS.map(g => (
+              <button key={g.id} onClick={() => { setGoal(g.id); setStep(1); }} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '14px 16px', borderRadius: 16, border: `1px solid ${goal === g.id ? g.color + '60' : 'var(--edge)'}`,
+                background: goal === g.id ? `${g.color}14` : 'var(--surf)', cursor: 'pointer',
+                textAlign: 'left', transition: 'all 0.18s',
+                boxShadow: goal === g.id ? `0 0 20px ${g.color}20` : 'none',
+              }}>
+                <span style={{ fontSize: 24, flexShrink: 0 }}>{g.emoji}</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{g.label}</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>{g.sub}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === 1 && (
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, marginBottom: 6 }}>
+            How long for your daily routine? ⏱️
+          </div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
+            I'll cut out low-priority steps if you're short on time.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {TIME_OPTIONS.map(t => (
+              <button key={t.id} onClick={() => setTime(t.id)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 16px', borderRadius: 14, border: `1px solid ${time === t.id ? 'var(--accent)60' : 'var(--edge)'}`,
+                background: time === t.id ? 'rgba(0,145,234,0.10)' : 'var(--surf)', cursor: 'pointer',
+                textAlign: 'left', transition: 'all 0.18s',
+              }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{t.label}</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>{t.sub}</div>
+                </div>
+                {time === t.id && <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,8 8,2" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setStep(2)} style={{
+            width: '100%', padding: '13px', borderRadius: 14, border: 'none',
+            background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+          }}>Next →</button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.5, marginBottom: 6 }}>
+            Any specific concerns? 🔍
+          </div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>
+            Pick all that apply — I'll tailor tips and nudges for these.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
+            {CONCERN_OPTIONS.map(c => {
+              const sel = concerns.includes(c.id);
+              return (
+                <button key={c.id} onClick={() => toggleConcern(c.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 14px', borderRadius: 14, border: `1px solid ${sel ? 'var(--accent)50' : 'var(--edge)'}`,
+                  background: sel ? 'rgba(0,145,234,0.10)' : 'var(--surf)', cursor: 'pointer',
+                  textAlign: 'left', transition: 'all 0.15s',
+                }}>
+                  <span style={{ fontSize: 20 }}>{c.emoji}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: sel ? 'var(--accent)' : 'var(--text)' }}>{c.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {selectedGoal && (
+            <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 14, background: `${selectedGoal.color}10`, border: `1px solid ${selectedGoal.color}30` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: selectedGoal.color, marginBottom: 4 }}>YOUR PLAN</div>
+              <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
+                {selectedGoal.emoji} {selectedGoal.label} · {TIME_OPTIONS.find(t => t.id === time)?.label} routine
+              </div>
+            </div>
+          )}
+          <button onClick={finish} style={{
+            width: '100%', padding: '13px', borderRadius: 14, border: 'none',
+            background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+          }}>Build my routine →</button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const SUB_TABS: { id: GlowSubTab; label: string; color: string }[] = [
   { id: 'ascend',  label: 'ASCEND',  color: '#D81B60' },
@@ -288,19 +454,33 @@ export default function GlowScreen() {
   const { user }   = useAuthStore();
   const store      = useNutritionStore();
   const targets    = useEffectiveTargets();
-  const [logs, setLogs]         = useState<FoodLog[]>([]);
-  const [glowTab, setGlowTab]   = useState<GlowSubTab>('ascend');
+  const [logs, setLogs]           = useState<FoodLog[]>([]);
+  const [glowProfile, setGlowProfile] = useState<GlowProfile | null>(() => getGlowProfile());
+  // Default to ROUTINE tab on first visit (no profile yet) so onboarding is the first thing seen
+  const [glowTab, setGlowTab]     = useState<GlowSubTab>(() => getGlowProfile() ? 'ascend' : 'routine');
+  const [routinePct, setRoutinePct] = useState<number | null>(null);
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const refresh = () => getRoutineCompletionPct(today).then(setRoutinePct);
+    refresh();
+    window.addEventListener('fs_routine_updated', refresh);
+    return () => window.removeEventListener('fs_routine_updated', refresh);
+  }, [glowTab]);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     getLogs(today).then(setLogs).catch(() => {});
   }, []);
 
+  const handleProfileDone = useCallback((p: GlowProfile) => {
+    setGlowProfile(p);
+  }, []);
+
   const wl       = store.weeklyLoad;
   const tl       = store.todayLog;
   const daily    = useMemo(() => getDailyTip(), []);
 
-  const nudges = useMemo(() => buildNudges(
+  const nudges = useMemo(() => glowProfile ? buildNudges(
     logs,
     targets,
     tl?.trainingType ?? 'rest',
@@ -313,7 +493,7 @@ export default function GlowScreen() {
     user?.weightKg ?? null,
     user?.age      ?? null,
     user?.gender   ?? null,
-  ), [logs, targets, tl, wl, user]);
+  ) : [], [logs, targets, tl, wl, user, glowProfile]);
 
   const cal     = logs.reduce((s, l) => s + l.calories, 0);
   const prot    = logs.reduce((s, l) => s + l.protein,  0);
@@ -326,11 +506,27 @@ export default function GlowScreen() {
     <div style={{ height: '100%', overflowY: 'auto', padding: '20px 16px 100px', background: 'var(--bg)' }}>
 
       {/* Header */}
-      <div className="a a1" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, color: 'var(--text)' }}>Ascend ✦</div>
-        <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-          Personalized to your training & nutrition
+      <div className="a a1" style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{
+            fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
+            background: 'linear-gradient(135deg, var(--c-glow), var(--c-ascend))',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}>Ascend ✦</div>
+          <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+            {glowProfile
+              ? `${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.emoji} ${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.label} focus`
+              : 'Personalized to your training & nutrition'}
+          </div>
         </div>
+        {glowProfile && (
+          <button
+            onClick={() => { localStorage.removeItem(GLOW_PROFILE_KEY); setGlowProfile(null); setGlowTab('routine'); }}
+            style={{ background: 'none', border: 'none', color: MUTED, fontSize: 11, cursor: 'pointer', padding: '4px 0', fontWeight: 600 }}
+          >
+            Edit goals
+          </button>
+        )}
       </div>
 
       {/* Sub-tab navigation */}
@@ -365,10 +561,60 @@ export default function GlowScreen() {
       </div>
 
       {/* ROUTINE tab */}
-      {glowTab === 'routine' && <RoutineChecklist />}
+      {glowTab === 'routine' && (
+        glowProfile
+          ? <RoutineChecklist profile={glowProfile} />
+          : <GlowOnboarding onDone={handleProfileDone} />
+      )}
 
       {/* ASCEND tab — existing content below */}
       {glowTab === 'ascend' && (<>
+
+      {/* Today's routine completion ring — only when profile exists */}
+      {glowProfile && (() => {
+        const pct = routinePct ?? 0;
+        const color = pct >= 80 ? '#4ADE80' : pct >= 50 ? '#FBBF24' : 'var(--c-glow)';
+        const goal = GOAL_OPTIONS.find(g => g.id === glowProfile.goal);
+        return (
+          <button
+            onClick={() => setGlowTab('routine')}
+            className="press"
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+              background: 'var(--surf)', borderRadius: 18,
+              border: `1px solid ${color}28`, padding: '14px 16px',
+              marginBottom: 16, cursor: 'pointer', textAlign: 'left',
+              boxShadow: `0 0 24px ${color}12`,
+            }}
+          >
+            {/* Mini ring */}
+            <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
+              <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="24" cy="24" r="19" fill="none" stroke="var(--edge2)" strokeWidth="5" />
+                <circle cx="24" cy="24" r="19" fill="none" stroke={color} strokeWidth="5"
+                  strokeLinecap="round" strokeDasharray={2 * Math.PI * 19}
+                  strokeDashoffset={2 * Math.PI * 19 * (1 - pct / 100)}
+                  style={{ transition: 'stroke-dashoffset 0.6s var(--spring)', filter: `drop-shadow(0 0 4px ${color}88)` }}
+                />
+              </svg>
+              <div style={{
+                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 900, color, fontVariantNumeric: 'tabular-nums',
+              }}>{pct}%</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginBottom: 3 }}>
+                Today's Routine {pct === 100 ? '✦' : ''}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                {goal?.emoji} {goal?.label} ·{' '}
+                {pct === 100 ? 'All habits done!' : pct === 0 ? 'Tap to start' : 'Keep going'}
+              </div>
+            </div>
+            <span style={{ fontSize: 13, color: 'var(--muted2)' }}>›</span>
+          </button>
+        );
+      })()}
 
       {/* Dashboard snapshot */}
       <div className="card a a2" style={{ padding: '16px 18px', marginBottom: 20 }}>

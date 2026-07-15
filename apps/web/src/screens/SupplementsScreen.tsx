@@ -7,10 +7,10 @@ import { grantXP, XP_REWARDS } from '../lib/xp';
 const BG      = 'var(--bg)';
 const SURF    = 'var(--surf)';
 const EDGE    = 'var(--edge)';
-const ACCENT  = 'var(--accent)';
+const ACCENT  = 'var(--c-pills)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
-const RED     = '#E53935';
+const RED     = 'var(--red)';
 
 const TIMINGS: Supplement['timing'][] = ['morning', 'pre-workout', 'post-workout', 'evening', 'anytime'];
 const TIMING_LABEL: Record<Supplement['timing'], string> = {
@@ -24,9 +24,14 @@ const TIMING_COLOR: Record<Supplement['timing'], string> = {
   evening:      '#7E57C2',  // purple — wind-down
   anytime:      '#1E88E5',  // sky — neutral
 };
-const TIMING_EMOJI: Record<Supplement['timing'], string> = {
-  morning: '☀️', 'pre-workout': '⚡', 'post-workout': '🔄', evening: '🌙', anytime: '⏱',
-};
+function TimingIcon({ t, color }: { t: Supplement['timing']; color: string }) {
+  const p = { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, style: { display: 'block', flexShrink: 0 } };
+  if (t === 'morning')      return <svg {...p}><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>;
+  if (t === 'pre-workout')  return <svg {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+  if (t === 'post-workout') return <svg {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+  if (t === 'evening')      return <svg {...p}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>;
+  return <svg {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+}
 const COMMON_UNITS = ['mg', 'g', 'IU', 'mcg', 'caps', 'ml', 'tbsp'];
 
 export default function SupplementsScreen() {
@@ -251,16 +256,17 @@ export default function SupplementsScreen() {
     <div style={{ minHeight: '100%', background: BG, paddingBottom: 32 }}>
 
       {/* ── Hero header ──────────────────────────────────────────────── */}
-      <div style={{ position: 'relative', overflow: 'hidden', padding: '28px 20px 24px' }}>
-        {/* Ambient orbs */}
-        <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,191,36,0.18) 0%, transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)', filter: 'blur(24px)', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+      <div style={{ padding: '28px 20px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, lineHeight: 1, background: 'linear-gradient(135deg, var(--text) 0%, rgba(251,191,36,0.85) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Supplements
+            <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </div>
+            <div style={{
+              fontSize: 34, fontWeight: 900, letterSpacing: -1.2, lineHeight: 1,
+              background: 'linear-gradient(135deg, var(--c-pills), #FB923C)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>Pills</div>
             <div style={{ fontSize: 12, color: MUTED, marginTop: 5 }}>
               <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? '#43A047' : MUTED }}>{takenCount}</span>
               <span> of {supplements.length} taken today</span>
@@ -277,21 +283,26 @@ export default function SupplementsScreen() {
             )}
             {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
               <button onClick={handleEnableReminders} title="Enable reminders"
-                style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10, padding: '7px 10px', color: '#FB8C00', fontSize: 13, cursor: 'pointer' }}>
-                🔔
+                style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '7px 10px', color: '#FB8C00', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
               </button>
             )}
-            {notifPerm === 'granted' && <span title="Reminders on" style={{ fontSize: 14 }}>🔔</span>}
+            {notifPerm === 'granted' && (
+              <span title="Reminders on" style={{ display: 'flex', alignItems: 'center', color: '#43A047' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+              </span>
+            )}
             <button
               onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
               style={{
-                background: 'linear-gradient(135deg, var(--accent) 0%, #38BDF8 100%)',
-                border: 'none', borderRadius: 14, padding: '10px 18px',
-                color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(157,126,255,0.35)',
-                letterSpacing: 0.3,
+                background: 'var(--accent)', border: 'none', borderRadius: 12, padding: '9px 16px',
+                color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 5,
               }}
-            >+ Add</button>
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
           </div>
         </div>
       </div>
@@ -333,8 +344,8 @@ export default function SupplementsScreen() {
               height: '100%', borderRadius: 99,
               background: allDone
                 ? `linear-gradient(90deg, #4ADE80, #34D399)`
-                : `linear-gradient(90deg, var(--accent), #38BDF8)`,
-              boxShadow: allDone ? '0 0 14px rgba(74,222,128,0.50)' : '0 0 12px rgba(157,126,255,0.45)',
+                : `linear-gradient(90deg, var(--c-pills), #FB923C)`,
+              boxShadow: allDone ? '0 0 14px rgba(74,222,128,0.50)' : '0 0 12px rgba(244,63,94,0.40)',
               width: `${takenPct}%`,
               transition: 'width 0.55s cubic-bezier(0.4,0,0.2,1)',
             }} />
@@ -351,10 +362,10 @@ export default function SupplementsScreen() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              background: `${tColor}18`, border: `1px solid ${tColor}30`,
+              background: `${tColor}12`, border: `1px solid ${tColor}28`,
               borderRadius: 20, padding: '4px 10px',
             }}>
-              <span style={{ fontSize: 12 }}>{TIMING_EMOJI[t]}</span>
+              <TimingIcon t={t} color={tColor} />
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: tColor, whiteSpace: 'nowrap' }}>
                 {TIMING_LABEL[t]}
               </span>
@@ -418,8 +429,12 @@ export default function SupplementsScreen() {
                     >
                       {skipped ? '↩' : '–'}
                     </button>
-                    <button onClick={() => startEdit(s)} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', fontSize: 14, padding: '4px 6px' }}>✎</button>
-                    <button onClick={() => handleDelete(s.id!)} style={{ background: 'none', border: 'none', color: RED, cursor: 'pointer', fontSize: 14, padding: '4px 6px' }}>✕</button>
+                    <button onClick={() => startEdit(s)} style={{ background: 'none', border: 'none', color: MUTED, cursor: 'pointer', padding: '4px 6px', display: 'flex', alignItems: 'center' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button onClick={() => handleDelete(s.id!)} style={{ background: 'none', border: 'none', color: RED, cursor: 'pointer', padding: '4px 6px', display: 'flex', alignItems: 'center' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    </button>
                   </div>
                 </div>
               );
@@ -430,13 +445,50 @@ export default function SupplementsScreen() {
       })}
 
       {supplements.length === 0 && !adding && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: MUTED }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 12, opacity: 0.5 }}>
-            <path d="M10.5 20H4a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v7"/>
-            <circle cx="17" cy="17" r="5"/><path d="M14.5 19.5l5-5"/>
-          </svg>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>No supplements yet</div>
-          <div style={{ fontSize: 12 }}>Tap + Add to track your daily supplements</div>
+        <div style={{ textAlign: 'center', padding: '32px 0 24px', color: MUTED }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>💊</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>No supplements yet</div>
+          <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 28, maxWidth: 260, margin: '0 auto 28px' }}>
+            Track your daily supplements to earn XP, build streaks, and never miss a dose.
+          </div>
+
+          {/* Quick-add suggestions */}
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: MUTED, marginBottom: 12 }}>
+            Common to start with
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { name: 'Vitamin D3', dose: '5000', unit: 'IU', timing: 'morning' as const, emoji: '☀️', color: '#FB8C00' },
+              { name: 'Creatine', dose: '5', unit: 'g', timing: 'pre-workout' as const, emoji: '⚡', color: '#43A047' },
+              { name: 'Omega-3', dose: '1000', unit: 'mg', timing: 'morning' as const, emoji: '🐟', color: '#1E88E5' },
+              { name: 'Magnesium', dose: '400', unit: 'mg', timing: 'evening' as const, emoji: '🌙', color: '#7E57C2' },
+            ].map(s => (
+              <button key={s.name} onClick={async () => {
+                const syncId = crypto.randomUUID();
+                await (await import('../lib/db')).db.supplements.add({ sync_id: syncId, name: s.name, dose: s.dose, unit: s.unit, timing: s.timing, active: true });
+                load();
+              }} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 16px', borderRadius: 14, cursor: 'pointer',
+                background: `${s.color}0A`, border: `1px solid ${s.color}25`,
+                textAlign: 'left', transition: 'all 0.15s',
+              }}>
+                <span style={{ fontSize: 20 }}>{s.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>{s.dose}{s.unit} · {TIMING_LABEL[s.timing]}</div>
+                </div>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, color: s.color,
+                  background: `${s.color}15`, border: `1px solid ${s.color}30`,
+                  borderRadius: 99, padding: '3px 10px',
+                }}>+ Add</div>
+              </button>
+            ))}
+          </div>
+          <div style={{ marginTop: 16, fontSize: 11, color: 'var(--muted2)' }}>
+            Or tap <strong style={{ color: ACCENT }}>+ Add</strong> to enter your own
+          </div>
         </div>
       )}
 

@@ -10,6 +10,8 @@ COPY apps/web        ./apps/web
 COPY shared          ./shared
 
 # Build
+ARG VITE_GEMINI_API_KEY
+ENV VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY
 RUN cd apps/web && npm run build
 
 # ─── Serve ───────────────────────────────────────────────────────────────────

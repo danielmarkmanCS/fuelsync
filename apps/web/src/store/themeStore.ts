@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type AccentKey = 'blue' | 'green' | 'purple' | 'orange' | 'red';
+export type AccentKey = 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'gold';
 export type Units = 'metric' | 'imperial';
 export type GoalMode = 'lose' | 'maintain' | 'gain';
 
@@ -11,6 +11,7 @@ export const ACCENT_COLORS: Record<AccentKey, { dark: string; light: string; lab
   purple: { dark: '#9D7EFF', light: '#7C3AED', label: 'Galaxy',  muted: 'rgba(157,126,255,0.15)' },
   orange: { dark: '#FB923C', light: '#EA580C', label: 'Ember',   muted: 'rgba(251,146,60,0.13)'  },
   red:    { dark: '#F87171', light: '#DC2626', label: 'Crimson', muted: 'rgba(248,113,113,0.13)' },
+  gold:   { dark: '#EAB308', light: '#CA8A04', label: 'Elite',   muted: 'rgba(234,179,8,0.15)'   },
 };
 
 interface ThemeStore {

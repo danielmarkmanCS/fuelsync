@@ -27,13 +27,13 @@ const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
 const MUTED2  = 'var(--muted2)';
-const GREEN      = '#43A047';
-const ORANGE     = '#0091EA';
-const YELLOW     = '#43A047';
-const PROT       = '#1E88E5';
-const RED        = '#E53935';
-const FAT_CLR    = '#FB8C00';
-const CAL_CLR    = 'var(--accent)';
+const GREEN      = 'var(--carb)';
+const ORANGE     = 'var(--prot)';
+const YELLOW     = 'var(--carb)';
+const PROT       = 'var(--prot)';
+const RED        = 'var(--red)';
+const FAT_CLR    = 'var(--fat)';
+const CAL_CLR    = 'var(--c-log)';
 
 const MEAL_TYPES = ['breakfast', 'pre_workout', 'lunch', 'post_workout', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -954,7 +954,7 @@ export default function FoodScreen() {
         {/* Gradient border wrapper */}
         <div style={{
           padding: 1.5, borderRadius: 999,
-          background: 'linear-gradient(135deg, var(--accent), #38BDF8 50%, #4ADE80)',
+          background: 'linear-gradient(135deg, var(--c-log), #38BDF8 50%, #4ADE80)',
           boxShadow: '0 0 24px rgba(157,126,255,0.18)',
         }}>
           <button
@@ -968,13 +968,13 @@ export default function FoodScreen() {
               cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-log)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
             </svg>
             <span style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500, flex: 1, textAlign: 'left' }}>
               Describe what you ate…
             </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-log)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
               <rect x="9" y="2" width="6" height="11" rx="3"/>
               <path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/>
             </svg>
@@ -991,15 +991,19 @@ export default function FoodScreen() {
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>‹</button>
           <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.8, color: 'var(--text)', lineHeight: 1.1 }}>
+            <div style={{
+              fontSize: 22, fontWeight: 900, letterSpacing: -0.8, lineHeight: 1.1,
+              background: 'linear-gradient(135deg, var(--c-log), #38BDF8)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
               {dateLabel(selectedDate)}
             </div>
             {isToday ? (
               <div style={{ marginTop: 4, fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>{nowTime}</div>
             ) : (
               <button onClick={() => setSelectedDate(todayStr)} style={{
-                marginTop: 6, background: 'var(--accent-muted)', border: 'none',
-                borderRadius: 20, color: 'var(--accent)', fontSize: 12, fontWeight: 600,
+                marginTop: 6, background: 'rgba(16,185,129,0.12)', border: 'none',
+                borderRadius: 20, color: 'var(--c-log)', fontSize: 12, fontWeight: 600,
                 padding: '4px 14px', cursor: 'pointer',
               }}>← Today</button>
             )}
@@ -1018,17 +1022,28 @@ export default function FoodScreen() {
         {/* Big calorie number */}
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 52, fontWeight: 700, letterSpacing: -2.5, color: calPct >= 100 ? RED : CAL_CLR, lineHeight: 1 }}>
+            <div style={{
+              fontSize: 52, fontWeight: 700, letterSpacing: -2.5, lineHeight: 1,
+              color: consumed.calories === 0 ? MUTED2 : calPct >= 100 ? RED : CAL_CLR,
+              transition: 'color 0.4s',
+            }}>
               {Math.round(consumed.calories).toLocaleString()}
             </div>
-            {targets && (
-              <div style={{ paddingBottom: 10 }}>
+            <div style={{ paddingBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {targets ? (
                 <span style={{ fontSize: 16, fontWeight: 400, color: MUTED }}> / {Math.round(targets.calories).toLocaleString()} kcal</span>
-              </div>
-            )}
+              ) : (
+                <span style={{ fontSize: 14, fontWeight: 500, color: MUTED }}>kcal today</span>
+              )}
+            </div>
             {calPct >= 85 && calPct < 100 && (
               <div style={{ marginLeft: 'auto', paddingBottom: 10, background: `${GREEN}12`, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 600, color: GREEN }}>
                 On track
+              </div>
+            )}
+            {consumed.calories === 0 && isToday && (
+              <div style={{ marginLeft: 'auto', paddingBottom: 10, fontSize: 12, fontWeight: 500, color: MUTED }}>
+                Nothing yet
               </div>
             )}
           </div>
@@ -1198,26 +1213,65 @@ export default function FoodScreen() {
       {/* ── FOOD LOG ── */}
       <div className="nrc-a nrc-a3" style={{ padding: '16px 16px 100px' }}>
         {byMeal.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-            {/* Plate illustration */}
-            <div className="float" style={{ display: 'inline-block', marginBottom: 20 }}>
-              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                <circle cx="40" cy="40" r="36" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
-                <circle cx="40" cy="40" r="26" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="3 4" />
-                <path d="M30 38 Q40 30 50 38 Q40 46 30 38Z" fill="rgba(75,111,255,0.20)" />
-                <circle cx="40" cy="38" r="5" fill="rgba(75,111,255,0.28)" />
-                <line x1="40" y1="20" x2="40" y2="14" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" />
-                <line x1="37" y1="20" x2="37" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
-                <line x1="43" y1="20" x2="43" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M48 14 Q52 16 52 20 Q52 24 48 24" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" fill="none" />
-              </svg>
+          <div>
+            <div style={{ textAlign: 'center', padding: '32px 24px 20px' }}>
+              <div className="float" style={{ display: 'inline-block', marginBottom: 16 }}>
+                <svg width="72" height="72" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="36" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+                  <circle cx="40" cy="40" r="26" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="3 4" />
+                  <path d="M30 38 Q40 30 50 38 Q40 46 30 38Z" fill="rgba(75,111,255,0.20)" />
+                  <circle cx="40" cy="38" r="5" fill="rgba(75,111,255,0.28)" />
+                  <line x1="40" y1="20" x2="40" y2="14" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="37" y1="20" x2="37" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="43" y1="20" x2="43" y2="15" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M48 14 Q52 16 52 20 Q52 24 48 24" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                </svg>
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: TEXT, marginBottom: 6, letterSpacing: -0.5 }}>
+                {isToday ? 'Start tracking today' : 'No meals logged'}
+              </div>
+              <div style={{ color: MUTED, fontSize: 13, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>
+                {isToday
+                  ? 'Describe anything in plain English — AI fills in the macros.'
+                  : 'No food was logged for this day.'}
+              </div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8, letterSpacing: -0.5 }}>
-              Nothing logged yet
-            </div>
-            <div style={{ color: MUTED, fontSize: 13, fontWeight: 700, lineHeight: 1.65, maxWidth: 260, margin: '0 auto 24px' }}>
-              Tap <strong style={{ color: ORANGE }}>+</strong> to log a meal — describe anything in plain English and AI will handle the rest.
-            </div>
+            {/* Quick-log suggestions */}
+            {isToday && (
+              <div style={{ padding: '0 0 8px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 2 }}>
+                  Quick ideas to start
+                </div>
+                {[
+                  { emoji: '🥚', label: '3 eggs + toast', cal: 380, query: '3 scrambled eggs with 2 slices of whole wheat toast', meal: 'breakfast' as MealType },
+                  { emoji: '🥤', label: 'Protein shake', cal: 160, query: 'vanilla protein shake 250ml with whole milk', meal: 'pre_workout' as MealType },
+                  { emoji: '🍗', label: 'Chicken & rice', cal: 520, query: '150g grilled chicken breast with 200g cooked white rice', meal: 'lunch' as MealType },
+                  { emoji: '🥜', label: 'Greek yogurt', cal: 140, query: '200g plain greek yogurt', meal: 'snack' as MealType },
+                ].map((item) => (
+                  <button key={item.label} onClick={() => {
+                    setAiQuery(item.query);
+                    setForm((f) => ({ ...f, meal: item.meal }));
+                    setMode('ai');
+                    setOpen(true);
+                  }} className="press" style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    width: '100%', padding: '12px 14px',
+                    background: SURF, border: `1px solid ${EDGE}`,
+                    borderRadius: 12, cursor: 'pointer',
+                    marginBottom: 8, fontFamily: 'inherit', textAlign: 'left',
+                  }}>
+                    <span style={{ fontSize: 24, flexShrink: 0 }}>{item.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{item.label}</div>
+                      <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>~{item.cal} kcal</div>
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: CAL_CLR, background: `${CAL_CLR}14`, padding: '3px 8px', borderRadius: 6, flexShrink: 0 }}>
+                      Log
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : byMeal.map(({ meal, entries }) => {
           const mealTotal  = entries.reduce((s, e) => s + Number(e.calories), 0);

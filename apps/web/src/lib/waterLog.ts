@@ -1,5 +1,4 @@
 import { db } from './db';
-import { workerPost } from '../api/client';
 
 const GOAL_KEY = 'fs_water_goal_ml';
 const DEFAULT_GOAL = 2500;
@@ -61,8 +60,29 @@ export function parseWaterDescription(text: string): { ml: number; label: string
 }
 
 export async function parseWaterAI(description: string): Promise<{ ml: number; label: string }> {
-  const result = await workerPost<{ ml: number; label: string }>('ai', '/water', { description });
-  return { ml: Math.max(1, Math.min(5000, Math.round(result.ml))), label: result.label };
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `You are a hydration tracker. The user describes what they drank. Extract the TOTAL ml of liquid consumed and give it a short label (max 5 words). Respond ONLY with valid JSON, no markdown: {"ml": <integer>, "label": "<string>"}\n\nExamples:\n- "walked to class with a bottle, 2 glasses of water and a coffee" → {"ml":1200,"label":"Bottle + 2 glasses + coffee"}\n- "protein shake and tea" → {"ml":650,"label":"Protein shake + tea"}\n- "just a sip" → {"ml":50,"label":"Small sip"}\n\nUser: "${description}"`,
+          }],
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 64 },
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`Gemini ${res.status}`);
+  const data = await res.json() as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }> };
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+  const match = text.match(/\{[\s\S]*?\}/);
+  if (!match) throw new Error('No JSON in response');
+  const parsed = JSON.parse(match[0]) as { ml: number; label: string };
+  return { ml: Math.max(1, Math.min(5000, Math.round(parsed.ml))), label: parsed.label };
 }
 
 export async function removeLastWater(date: string): Promise<void> {
@@ -74,4 +94,13 @@ export async function removeLastWater(date: string): Promise<void> {
 
 export async function clearWater(date: string): Promise<void> {
   await db.water_logs.where('date').equals(date).delete();
+}
+
+export async function getWaterLogs(date: string): Promise<import('./db').WaterLog[]> {
+  const logs = await db.water_logs.where('date').equals(date).toArray();
+  return logs.sort((a, b) => a.logged_at.localeCompare(b.logged_at));
+}
+
+export async function removeWaterById(id: number): Promise<void> {
+  await db.water_logs.delete(id);
 }

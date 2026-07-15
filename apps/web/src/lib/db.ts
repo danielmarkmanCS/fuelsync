@@ -249,6 +249,9 @@ class FuelSyncDB extends Dexie {
     this.version(11).stores({
       sleep_logs: '++id, date',
     });
+    this.version(12).stores({
+      glow_routine_items: '++id, category, active, order',
+    });
   }
 }
 

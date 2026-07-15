@@ -25,9 +25,15 @@ import BodyScreen from './screens/BodyScreen';
 import AscendScreen from './screens/AscendScreen';
 import XPPop from './components/XPPop';
 import LevelUpModal from './components/LevelUpModal';
+import GamifiedHeader, { HEADER_H } from './components/GamifiedHeader';
+import GameScreen from './screens/GameScreen';
 
+import { migrateXPIfNeeded } from './lib/xp';
 import type { AppTab } from './store/appStore';
 const NAV_H = 64;
+
+// One-time XP schema migration (old thresholds → formula-based)
+migrateXPIfNeeded();
 
 function DiaryIcon({ active }: { active: boolean }) {
   return (
@@ -112,13 +118,22 @@ function AscendIcon({ active }: { active: boolean }) {
   );
 }
 
+function GameIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+    </svg>
+  );
+}
+
 const TABS: Array<{ id: AppTab; label: string; Icon: React.FC<{ active: boolean }>; color: string }> = [
-  { id: 'home',        label: 'Today',  Icon: DiaryIcon,   color: 'var(--accent)' },
-  { id: 'food',        label: 'Log',    Icon: LogIcon,     color: 'var(--accent)' },
-  { id: 'body',        label: 'Body',   Icon: BodyIcon,    color: 'var(--accent)' },
-  { id: 'ascend',      label: 'Ascend', Icon: AscendIcon,  color: 'var(--accent)' },
-  { id: 'glow',        label: 'Glow',   Icon: GlowIcon,    color: 'var(--accent)' },
-  { id: 'supplements', label: 'Pills',  Icon: PillIcon,    color: 'var(--accent)' },
+  { id: 'home',        label: 'Today',  Icon: DiaryIcon,   color: 'var(--c-today)'  },
+  { id: 'food',        label: 'Log',    Icon: LogIcon,     color: 'var(--c-log)'    },
+  { id: 'body',        label: 'Body',   Icon: BodyIcon,    color: 'var(--c-body)'   },
+  { id: 'ascend',      label: 'Ascend', Icon: AscendIcon,  color: 'var(--c-ascend)' },
+  { id: 'glow',        label: 'Glow',   Icon: GlowIcon,    color: 'var(--c-glow)'   },
+  { id: 'supplements', label: 'Pills',  Icon: PillIcon,    color: 'var(--c-pills)'  },
+  { id: 'game',        label: 'Game',   Icon: GameIcon,    color: 'var(--c-game)'   },
 ];
 
 export default function App() {
@@ -475,7 +490,8 @@ export default function App() {
       background: 'var(--bg)',
       overflow: 'hidden',
     }}>
-      <div className="main-scroll" style={{ position: 'absolute', top: 'env(safe-area-inset-top, 0px)', left: 0, right: 0, bottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, overflowY: 'auto' }}>
+      <GamifiedHeader />
+      <div className="main-scroll" style={{ position: 'absolute', top: `calc(env(safe-area-inset-top, 0px) + ${HEADER_H}px)`, left: 0, right: 0, bottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, overflowY: 'auto' }}>
         {(activeTab === 'home' && !profileIncomplete)    && <HomeScreen />}
         {(activeTab === 'home' && profileIncomplete)     && <ProfileSetupScreen />}
         {activeTab === 'food'        && <FoodScreen />}
@@ -486,51 +502,66 @@ export default function App() {
         {activeTab === 'ascend'      && <AscendScreen />}
         {activeTab === 'glow'        && <GlowScreen />}
         {activeTab === 'settings'    && <SettingsScreen />}
+        {activeTab === 'game'        && <GameScreen />}
       </div>
 
       <nav style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
         height: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`,
         background: 'var(--surf)',
-        backdropFilter: 'blur(24px) saturate(200%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+        backdropFilter: 'blur(28px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
         borderTop: '1px solid var(--edge)',
         display: 'flex',
         alignItems: 'flex-start',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 50,
-        boxShadow: '0 -1px 0 rgba(0,0,0,0.08), 0 -4px 12px rgba(0,0,0,0.04)',
+        boxShadow: '0 -1px 0 var(--edge)',
       }}>
         {TABS.map(({ id, label, Icon, color }) => {
           const active = activeTab === id;
           return (
             <button key={id} onClick={() => setActiveTab(id)} className="press" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 4,
-              background: 'none', border: 'none', cursor: 'pointer', padding: '10px 0 6px',
-              minWidth: 0, position: 'relative',
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '9px 0 5px', minWidth: 0, position: 'relative',
             }}>
-              {/* Top indicator line */}
+              {/* Glow indicator dot under icon when active */}
+              {active && (
+                <div style={{
+                  position: 'absolute',
+                  top: 6, left: '50%', transform: 'translateX(-50%)',
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: color,
+                  opacity: 0.12,
+                  filter: 'blur(8px)',
+                  pointerEvents: 'none',
+                }} />
+              )}
+              {/* Top accent bar */}
               <div style={{
                 position: 'absolute', top: 0, left: '50%',
                 transform: 'translateX(-50%)',
-                width: active ? 24 : 0,
+                width: active ? 20 : 0,
                 height: 2,
                 borderRadius: 99,
                 background: active ? color : 'transparent',
-                transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1)',
+                boxShadow: active ? `0 0 8px ${color}` : 'none',
+                transition: 'width 0.28s var(--spring), box-shadow 0.28s ease',
               }} />
               <div style={{
                 color: active ? color : 'var(--muted2)',
-                transition: 'color 0.18s ease',
+                transform: active ? 'translateY(-1px)' : 'none',
+                transition: 'color 0.2s ease, transform 0.28s var(--spring)',
               }}>
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: active ? 700 : 500,
+                fontSize: 9, fontWeight: active ? 800 : 500,
                 color: active ? color : 'var(--muted2)',
-                transition: 'color 0.18s ease',
-                letterSpacing: '0.5px',
+                transition: 'color 0.2s ease, font-weight 0.1s',
+                letterSpacing: active ? '0.3px' : '0.4px',
               }}>
                 {label}
               </span>

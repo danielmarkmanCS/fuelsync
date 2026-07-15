@@ -1,27 +1,29 @@
 import type React from 'react';
 
-// MFP-style light palette — single source of truth for all inline styles
+// All values reference CSS variables defined in index.css.
+// body[data-theme="dark"] overrides those variables — so every
+// component using T.* automatically gets dark-mode colours.
 export const T = {
-  bg:          '#E8EAED',
-  surf:        '#FFFFFF',
-  surf2:       '#F0F2F0',
-  surf3:       '#E8EAE8',
-  edge:        'rgba(0,0,0,0.08)',
-  edge2:       'rgba(0,0,0,0.13)',
-  text:        '#1A1A1A',
-  muted:       '#757575',
-  muted2:      '#9E9E9E',
-  accent:      '#0091EA',
-  accent2:     '#0077C2',
-  accentMuted: 'rgba(0,145,234,0.10)',
-  prot:        '#1E88E5',
-  carb:        '#43A047',
-  fat:         '#FB8C00',
-  red:         '#E53935',
-  green:       '#43A047',
-  shadow:      '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
-  shadowMd:    '0 2px 8px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.05)',
-  shadowLg:    '0 4px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
+  bg:          'var(--bg)',
+  surf:        'var(--surf)',
+  surf2:       'var(--surf2)',
+  surf3:       'var(--surf3)',
+  edge:        'var(--edge)',
+  edge2:       'var(--edge2)',
+  text:        'var(--text)',
+  muted:       'var(--muted)',
+  muted2:      'var(--muted2)',
+  accent:      'var(--accent)',
+  accent2:     'var(--accent2)',
+  accentMuted: 'var(--accent-muted)',
+  prot:        'var(--prot)',
+  carb:        'var(--carb)',
+  fat:         'var(--fat)',
+  red:         'var(--red)',
+  green:       'var(--green)',
+  shadow:      'var(--shadow-md)',
+  shadowMd:    'var(--shadow-lg)',
+  shadowLg:    'var(--shadow-lg)',
 } as const;
 
 export const CARD: React.CSSProperties = {

@@ -52,7 +52,8 @@ function seedRoutineItems(): Promise<void> {
 
 export async function getRoutineItems(): Promise<GlowRoutineItem[]> {
   await seedRoutineItems();
-  return db.glow_routine_items.where('active').equals(1).sortBy('order');
+  const all = await db.glow_routine_items.orderBy('order').toArray();
+  return all.filter(i => i.active);
 }
 
 export async function getRoutineItemsByCategory(cat: RoutineCategory): Promise<GlowRoutineItem[]> {

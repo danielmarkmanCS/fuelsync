@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AppTab = 'home' | 'food' | 'body' | 'ascend' | 'history' | 'glow' | 'supplements' | 'profile' | 'settings';
+export type AppTab = 'home' | 'food' | 'body' | 'ascend' | 'history' | 'glow' | 'supplements' | 'profile' | 'settings' | 'game';
 
 interface AppStore {
   activeTab: AppTab;
