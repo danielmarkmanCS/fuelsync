@@ -88,7 +88,7 @@ function GlowOnboarding({ onDone }: { onDone: (p: GlowProfile) => void }) {
                 padding: '14px 16px', borderRadius: 16, border: `1px solid ${goal === g.id ? g.color + '60' : 'var(--edge)'}`,
                 background: goal === g.id ? `${g.color}14` : 'var(--surf)', cursor: 'pointer',
                 textAlign: 'left', transition: 'all 0.18s',
-                boxShadow: goal === g.id ? `0 0 20px ${g.color}20` : 'none',
+                boxShadow: 'none',
               }}>
                 <span style={{ fontSize: 24, flexShrink: 0 }}>{g.emoji}</span>
                 <div>
@@ -424,7 +424,6 @@ function ScoreBar({ label, value, color }: { label: string; value: number; color
         <div style={{
           height: '100%', width: `${value}%`, background: color, borderRadius: 99,
           transition: 'width 0.7s var(--spring)',
-          boxShadow: `0 0 8px ${color}66`,
         }} />
       </div>
     </div>
@@ -551,7 +550,7 @@ export default function GlowScreen() {
                 color: active ? tab.color : 'var(--muted)',
                 cursor: 'pointer',
                 transition: 'all 0.2s var(--spring)',
-                boxShadow: active ? `0 0 14px ${tab.color}30` : 'none',
+                boxShadow: 'none',
               }}
             >
               {tab.label}
@@ -582,9 +581,10 @@ export default function GlowScreen() {
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 14,
               background: 'var(--surf)', borderRadius: 18,
-              border: `1px solid ${color}28`, padding: '14px 16px',
+              border: '1px solid var(--edge)', borderTop: `4px solid ${color}`,
+              padding: '14px 16px',
               marginBottom: 16, cursor: 'pointer', textAlign: 'left',
-              boxShadow: `0 0 24px ${color}12`,
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             {/* Mini ring */}
@@ -617,7 +617,7 @@ export default function GlowScreen() {
       })()}
 
       {/* Dashboard snapshot */}
-      <div className="card a a2" style={{ padding: '16px 18px', marginBottom: 20 }}>
+      <div className="card a a2" style={{ padding: '16px 18px', marginBottom: 20, borderTop: '4px solid var(--c-glow)' }}>
         <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: MUTED, marginBottom: 14 }}>YOUR STATUS</div>
         <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
           <ScoreBar label="Recovery"    value={wl.recoveryScore}   color={recColor} />
@@ -658,10 +658,11 @@ export default function GlowScreen() {
 
       {/* Daily rotating tip */}
       <div className="a a3" style={{
-        background: `linear-gradient(135deg, ${daily.color}15 0%, var(--surf) 100%)`,
-        border: `1.5px solid ${daily.color}30`,
+        background: 'var(--surf)',
+        border: '1px solid var(--edge)', borderTop: `4px solid ${daily.color}`,
         borderRadius: 18, padding: '18px 18px', marginBottom: 24,
         position: 'relative', overflow: 'hidden',
+        boxShadow: 'var(--shadow-sm)',
       }}>
         <div style={{ position: 'absolute', top: -16, right: -16, fontSize: 72, opacity: 0.06, userSelect: 'none' }}>{daily.icon}</div>
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', color: daily.color, marginBottom: 8 }}>TIP OF THE DAY</div>

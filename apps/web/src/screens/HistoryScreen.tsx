@@ -137,6 +137,8 @@ function StreakMilestone({ streak }: { streak: number }) {
       background: SURF,
       borderRadius: 16, padding: '18px 20px', marginBottom: 16,
       display: 'flex', alignItems: 'center', gap: 16,
+      border: '1px solid var(--edge)', borderTop: `4px solid ${m.color}`,
+      boxShadow: 'var(--shadow-sm)',
     }}>
       <div style={{ width: 52, height: 52, borderRadius: 12, background: `${m.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: m.color, letterSpacing: -1 }}>{streak}</div>
@@ -175,7 +177,7 @@ function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metri
   const trendColor = delta <= 0 ? GREEN : RED;
 
   return (
-    <div style={{ background: SURF, borderRadius: 20, padding: '18px 16px 14px', marginBottom: 16, border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+    <div style={{ background: SURF, borderRadius: 20, padding: '18px 16px 14px', marginBottom: 16, border: `1px solid ${EDGE}`, borderTop: '4px solid var(--c-log)', boxShadow: 'var(--shadow-md)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, marginBottom: 6 }}>Weight Trend</div>
@@ -187,7 +189,7 @@ function WeightChart({ entries, units }: { entries: WeightEntry[]; units: 'metri
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: trendColor, letterSpacing: -0.8, textShadow: `0 0 12px ${trendColor}50` }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: trendColor, letterSpacing: -0.8 }}>
             {delta > 0 ? '+' : ''}{delta.toFixed(1)} {unitLabel}
           </div>
           <div style={{ fontSize: 9, color: MUTED, fontWeight: 700, marginTop: 2 }}>
@@ -245,7 +247,7 @@ function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calor
   ];
 
   return (
-    <div style={{ background: SURF, borderRadius: 20, padding: '18px 16px', marginBottom: 16, border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+    <div style={{ background: SURF, borderRadius: 20, padding: '18px 16px', marginBottom: 16, border: `1px solid ${EDGE}`, borderTop: '4px solid var(--c-log)', boxShadow: 'var(--shadow-md)' }}>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, marginBottom: 16 }}>
         7-Day Averages · {logged.length} days
       </div>
@@ -259,15 +261,14 @@ function MacroAverages({ days, targets }: { days: DaySummary[]; targets: { calor
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: c, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: c, letterSpacing: -0.5, fontVariantNumeric: 'tabular-nums', textShadow: `0 0 10px ${c}40` }}>{val}g</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: c, letterSpacing: -0.5, fontVariantNumeric: 'tabular-nums' }}>{val}g</span>
                 {target > 0 && <span style={{ fontSize: 10, color: MUTED }}>/ {target}g</span>}
               </div>
             </div>
-            <div style={{ height: 6, background: SURF2, borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: 8, background: SURF2, borderRadius: 99, overflow: 'hidden' }}>
               <div className="bar-enter" style={{
                 height: '100%', width: `${Math.min(pct, 100)}%`, borderRadius: 99,
-                background: `linear-gradient(90deg, ${c}, ${c}BB)`,
-                boxShadow: `0 0 8px ${c}40`,
+                background: c,
                 transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
               }} />
             </div>
@@ -310,7 +311,7 @@ function WeeklyChart({ days, goalCal }: { days: DaySummary[]; goalCal: number })
   const hasPrevData = prevTotal > 0;
 
   return (
-    <div style={{ background: SURF, borderRadius: 20, padding: '20px 16px 16px', marginBottom: 16, border: `1px solid ${EDGE}`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+    <div style={{ background: SURF, borderRadius: 20, padding: '20px 16px 16px', marginBottom: 16, border: `1px solid ${EDGE}`, borderTop: '4px solid var(--c-log)', boxShadow: 'var(--shadow-md)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: MUTED, marginBottom: 6 }}>This Week</div>
@@ -483,7 +484,7 @@ function StatsRow({ streak, totalDays, avgCal, goalCal, days }: { streak: number
           background: `linear-gradient(180deg, ${color}08 0%, ${SURF} 60%)`,
         }}>
           <div style={{ fontSize: 14, marginBottom: 6 }}>{emoji}</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -2, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums', textShadow: `0 0 16px ${color}40` }}>
+          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -2, color, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
             {value}
           </div>
           <div style={{ fontSize: 9, fontWeight: 700, color, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.8 }}>

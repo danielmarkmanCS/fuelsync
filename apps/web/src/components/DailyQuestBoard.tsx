@@ -78,11 +78,11 @@ function QuestCard({
       <div style={{
         width: 44, height: 44, borderRadius: 13, flexShrink: 0,
         background: done ? `${quest.color}20` : 'var(--surf2)',
-        border: `1.5px solid ${done ? quest.color + '50' : 'var(--edge)'}`,
+        border: `1px solid ${done ? quest.color + '50' : 'var(--edge)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 22,
         transition: 'all 0.2s ease',
-        boxShadow: done ? `0 0 12px ${quest.color}40` : 'none',
+        boxShadow: 'none',
       }}>
         {done ? '✅' : quest.emoji}
       </div>
@@ -195,10 +195,9 @@ export default function DailyQuestBoard({ compact = false }: { compact?: boolean
       }}>
         <div style={{
           height: '100%', width: `${pct}%`,
-          background: `linear-gradient(90deg, ${barColor}99, ${barColor})`,
+          background: barColor,
           borderRadius: 99,
           transition: 'width 0.6s var(--spring)',
-          boxShadow: `0 0 8px ${barColor}55`,
         }} />
       </div>
 

@@ -106,7 +106,7 @@ export default function WeatherBanner({ weather, alert }: Props) {
       borderRadius: 14,
       border: `1px solid ${theme.border}90`,
       overflow: 'hidden',
-      boxShadow: `0 0 24px ${theme.glow}, inset 0 1px 0 ${theme.border}40`,
+      boxShadow: 'var(--shadow-md)',
     }}>
 
       {/* Colored top accent line */}

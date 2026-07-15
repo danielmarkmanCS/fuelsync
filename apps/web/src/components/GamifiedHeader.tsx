@@ -22,19 +22,8 @@ function XPBar({
         background: `linear-gradient(90deg, ${gradient[0]}, ${gradient[1]})`,
         borderRadius: 99,
         transition: 'width 0.9s cubic-bezier(0.34,1.56,0.64,1)',
-        boxShadow: `0 0 10px ${glow}, 0 0 4px ${glow}`,
         position: 'relative',
       }}>
-        {pct > 4 && pct < 100 && (
-          <div style={{
-            position: 'absolute', right: -3, top: '50%',
-            transform: 'translateY(-50%)',
-            width: 9, height: 9, borderRadius: '50%',
-            background: '#fff',
-            boxShadow: `0 0 8px ${glow}, 0 0 16px ${gradient[1]}`,
-            opacity: 0.95,
-          }} />
-        )}
       </div>
     </div>
   );
@@ -51,10 +40,10 @@ function LevelBadge({ level, color, gradient, glow }: {
       borderRadius: 14,
       flexShrink: 0,
       background: `linear-gradient(145deg, ${gradient[0]}22 0%, ${color}0A 100%)`,
-      border: `1.5px solid ${color}45`,
+      border: `1px solid ${color}45`,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      boxShadow: `0 0 20px ${glow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
+      boxShadow: 'var(--shadow-sm)',
       position: 'relative', overflow: 'hidden',
     }}>
       <div style={{
@@ -70,7 +59,6 @@ function LevelBadge({ level, color, gradient, glow }: {
         fontSize: level >= 10 ? 15 : 17,
         fontWeight: 900, color, lineHeight: 1, zIndex: 1,
         fontVariantNumeric: 'tabular-nums',
-        textShadow: `0 0 12px ${glow}`,
       }}>{level}</span>
     </div>
   );
@@ -155,7 +143,6 @@ export default function GamifiedHeader() {
               fontSize: 12, fontWeight: 800, color: tierColor,
               letterSpacing: 0.2,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              textShadow: `0 0 16px ${tierGlow}`,
             }}>
               {levelInfo.emoji} {levelInfo.name}
             </span>

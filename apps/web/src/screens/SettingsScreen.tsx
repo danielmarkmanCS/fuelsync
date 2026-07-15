@@ -155,7 +155,7 @@ function AccentSwatch({ accentKey, current, onSelect, isDark }: {
         width: 36, height: 36, borderRadius: '50%', border: 'none',
         background: color,
         cursor: 'pointer', padding: 0, position: 'relative',
-        boxShadow: active ? `0 0 0 3px var(--surf), 0 0 0 5px ${color}, 0 0 16px ${color}55` : `0 0 0 2px ${color}40`,
+        boxShadow: active ? `0 0 0 3px var(--surf), 0 0 0 5px ${color}` : `0 0 0 2px ${color}40`,
         transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease',
         transform: active ? 'scale(1.15)' : 'scale(1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -180,16 +180,12 @@ export default function SettingsScreen() {
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 32 }}>
 
       {/* ── Hero header ── */}
-      <div style={{ position: 'relative', overflow: 'hidden', padding: '28px 20px 20px' }}>
-        <div style={{ position: 'absolute', top: -50, right: -30, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.20) 0%, transparent 70%)', filter: 'blur(28px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -20, left: 10, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.12) 0%, transparent 70%)', filter: 'blur(20px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1, lineHeight: 1, background: 'linear-gradient(135deg, var(--text) 0%, rgba(167,139,250,0.85) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-            Settings
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 5, letterSpacing: 0.2 }}>
-            Appearance, profile &amp; preferences
-          </div>
+      <div style={{ padding: '28px 20px 20px' }}>
+        <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1, lineHeight: 1, color: 'var(--text)' }}>
+          Settings
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 5, letterSpacing: 0.2 }}>
+          Appearance, profile &amp; preferences
         </div>
       </div>
 
@@ -253,7 +249,7 @@ export default function SettingsScreen() {
                     fontSize: 12, fontWeight: 700,
                     transition: 'background 0.18s ease, color 0.18s ease',
                     letterSpacing: 0.3,
-                    boxShadow: units === u ? '0 2px 8px rgba(157,126,255,0.25)' : 'none',
+                    boxShadow: 'none',
                   }}
                 >
                   {u === 'metric' ? 'kg · cm' : 'lbs · ft'}

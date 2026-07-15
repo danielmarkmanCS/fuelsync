@@ -144,7 +144,7 @@ function WeightSection() {
             color: goalType === key ? c.color : 'var(--muted)',
             fontSize: 11, fontWeight: 800, cursor: 'pointer',
             transition: 'all 0.18s',
-            boxShadow: goalType === key ? `0 0 14px ${c.color}22` : 'none',
+            boxShadow: 'none',
           }}>
             <div style={{ fontSize: 16, marginBottom: 2 }}>{c.emoji}</div>
             <div>{c.desc}</div>
@@ -215,7 +215,7 @@ function WeightSection() {
             placeholder={`Weight in ${unitLabel}`}
             style={{
               flex: 1, padding: '12px 16px', borderRadius: 14,
-              background: 'var(--surf2)', border: `1.5px solid ${cfg.color}44`,
+              background: 'var(--surf2)', border: `1px solid ${cfg.color}44`,
               color: 'var(--text)', fontSize: 18, fontFamily: 'inherit',
               outline: 'none', fontVariantNumeric: 'tabular-nums', fontWeight: 700,
             }}
@@ -224,7 +224,7 @@ function WeightSection() {
             padding: '12px 20px', borderRadius: 14,
             background: `linear-gradient(135deg, ${cfg.color}, ${cfg.color}CC)`,
             border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-            boxShadow: `0 4px 16px ${cfg.color}44`,
+            boxShadow: 'var(--shadow-md)',
           }}>Save +5 XP</button>
         </div>
       )}
@@ -388,7 +388,7 @@ function WaterSection() {
             flex: 1, height: 8, borderRadius: 4,
             background: i < filled ? color : 'var(--edge2)',
             transition: 'background 0.3s ease, box-shadow 0.3s ease',
-            boxShadow: i < filled ? `0 0 8px ${over ? 'rgba(239,68,68,0.5)' : 'rgba(14,165,233,0.5)'}` : 'none',
+            boxShadow: 'none',
           }} />
         ))}
       </div>
@@ -560,7 +560,7 @@ function SleepSection() {
                 <div key={i} style={{
                   width: 10, height: 10, borderRadius: '50%',
                   background: i <= entry.quality ? sleepQualityColor(entry.quality) : 'var(--edge2)',
-                  boxShadow: i <= entry.quality ? `0 0 6px ${sleepQualityColor(entry.quality)}` : 'none',
+                  boxShadow: 'none',
                   transition: 'all 0.2s',
                 }} />
               ))}
@@ -569,7 +569,7 @@ function SleepSection() {
             <div style={{ height: 6, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', borderRadius: 99,
-                background: `linear-gradient(90deg, ${MOON_COLOR}99, ${MOON_COLOR})`,
+                background: MOON_COLOR,
                 width: `${Math.min((entry.hours / 10) * 100, 100)}%`,
                 transition: 'width 0.7s var(--ease)',
               }} />
@@ -602,10 +602,10 @@ function SleepSection() {
               {([1,2,3,4,5] as const).map(q => (
                 <button key={q} onClick={() => setQuality(q)} style={{
                   flex: 1, padding: '10px 4px', borderRadius: 12,
-                  border: `1.5px solid ${quality >= q ? sleepQualityColor(q) + '55' : 'var(--edge)'}`,
+                  border: `1px solid ${quality >= q ? sleepQualityColor(q) + '55' : 'var(--edge)'}`,
                   background: quality >= q ? sleepQualityColor(q) + '18' : 'var(--surf2)',
                   cursor: 'pointer', fontSize: 18, lineHeight: 1,
-                  boxShadow: quality >= q ? `0 0 10px ${sleepQualityColor(q)}22` : 'none',
+                  boxShadow: 'none',
                   transition: 'all 0.15s',
                 }}>
                   {quality >= q ? '⭐' : '☆'}
@@ -619,9 +619,9 @@ function SleepSection() {
 
           <button onClick={handleSave} style={{
             width: '100%', padding: '14px', borderRadius: 14,
-            background: `linear-gradient(135deg, ${MOON_COLOR}, ${MOON_COLOR}BB)`,
+            background: MOON_COLOR,
             border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-            boxShadow: `0 4px 20px ${MOON_COLOR}44`,
+            boxShadow: 'var(--shadow-md)',
           }}>
             {saved ? '✓ Saved! +8 XP' : '💤 Log sleep +8 XP'}
           </button>

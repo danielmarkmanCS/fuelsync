@@ -641,14 +641,7 @@ export default function HomeScreen() {
 
       {/* Top bar */}
       <div style={{ padding: '18px 16px 10px', position: 'relative', overflow: 'hidden' }}>
-        {/* Time-of-day ambient glow */}
-        <div style={{
-          position: 'absolute', top: -40, right: -30, width: 200, height: 200,
-          borderRadius: '50%', pointerEvents: 'none',
-          background: `radial-gradient(circle, ${hour < 12 ? 'rgba(245,158,11,0.16)' : hour < 17 ? 'rgba(56,189,248,0.13)' : 'rgba(167,139,250,0.16)'} 0%, transparent 70%)`,
-          filter: 'blur(24px)',
-        }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.02em' }}>
               {dateStr}

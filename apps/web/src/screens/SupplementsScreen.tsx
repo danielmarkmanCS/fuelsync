@@ -626,7 +626,7 @@ export default function SupplementsScreen() {
               width: 120, height: 120, borderRadius: '50%', margin: '0 auto 28px',
               background: 'var(--accent-muted)',
               border: '2px solid var(--accent)',
-              boxShadow: '0 0 40px rgba(157,126,255,0.35)',
+              boxShadow: 'var(--shadow-md)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 52,
             }}>🔥</div>

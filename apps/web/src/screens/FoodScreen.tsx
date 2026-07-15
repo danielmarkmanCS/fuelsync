@@ -955,7 +955,7 @@ export default function FoodScreen() {
         <div style={{
           padding: 1.5, borderRadius: 999,
           background: 'linear-gradient(135deg, var(--c-log), #38BDF8 50%, #4ADE80)',
-          boxShadow: '0 0 24px rgba(157,126,255,0.18)',
+          boxShadow: 'none',
         }}>
           <button
             onClick={() => { setMode('ai'); setOpen(true); }}

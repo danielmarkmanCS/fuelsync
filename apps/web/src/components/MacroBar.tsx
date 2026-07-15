@@ -54,8 +54,7 @@ export default function MacroBar({ label, current, target, unit, color }: Props)
           height: '100%',
           width: `${Math.round(pct * 100)}%`,
           borderRadius: 99,
-          background: `linear-gradient(90deg, ${c}, ${c}CC)`,
-          boxShadow: `0 0 10px ${glow}`,
+          background: c,
           transition: 'width 0.65s cubic-bezier(0.4,0,0.2,1)',
         }} />
       </div>

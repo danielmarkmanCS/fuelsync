@@ -60,7 +60,7 @@ function BeardPicker({ value, onChange }: { value: BeardStage | null; onChange: 
                 color: active ? '#FBBF24' : 'var(--muted)',
                 fontWeight: 800, fontSize: 11,
                 transition: 'all 0.18s var(--spring)',
-                boxShadow: active ? '0 0 12px rgba(251,191,36,0.25)' : 'none',
+                boxShadow: 'none',
               }}
             >
               {stage}
@@ -349,7 +349,7 @@ export default function GlowMetrics() {
             color: saved ? '#4ADE80' : '#fff',
             cursor: saving ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s var(--spring)',
-            boxShadow: saved ? '0 0 16px rgba(74,222,128,0.25)' : 'var(--glow-accent)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
           {saved ? '✓ Logged' : saving ? 'Saving…' : 'LOG ENTRY'}

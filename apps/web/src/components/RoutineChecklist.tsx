@@ -93,9 +93,8 @@ function CompletionBar({ pct }: { pct: number }) {
       <div style={{ height: 6, background: 'var(--surf2)', borderRadius: 99, overflow: 'hidden' }}>
         <div style={{
           height: '100%', width: `${pct}%`,
-          background: `linear-gradient(90deg, ${color}99, ${color})`,
+          background: color,
           borderRadius: 99, transition: 'width 0.6s var(--spring)',
-          boxShadow: `0 0 10px ${color}55`,
         }} />
       </div>
       <div style={{ marginTop: 8, fontSize: 11, color: 'var(--muted)' }}>
@@ -151,7 +150,7 @@ function RoutineItem({
         background: done ? '#4ADE80' : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.18s var(--spring)',
-        boxShadow: done ? '0 0 8px rgba(74,222,128,0.40)' : 'none',
+        boxShadow: 'none',
       }}>
         {done && (
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -289,7 +288,7 @@ export default function RoutineChecklist({ profile }: { profile?: GlowProfile | 
                 border: `1px solid ${active ? `${s.color}40` : 'transparent'}`,
                 borderRadius: 10, cursor: 'pointer',
                 transition: 'all 0.18s var(--spring)',
-                boxShadow: active ? `0 0 14px ${s.color}30` : 'none',
+                boxShadow: 'none',
               }}
             >
               <div style={{ fontSize: 16, lineHeight: 1, marginBottom: 2 }}>{s.emoji}</div>
