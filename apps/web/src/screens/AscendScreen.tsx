@@ -116,29 +116,14 @@ const XPRing = memo(function XPRing({ xp }: { xp: number }) {
 
   const dashOffset = C * (1 - displayPct / 100);
   const glowStr    = flash
-    ? `drop-shadow(0 0 28px ${cfg.color}) drop-shadow(0 0 14px ${cfg.color})`
-    : `drop-shadow(0 0 ${14 + (displayPct / 100) * 8}px ${cfg.glow})`;
+    ? `drop-shadow(0 0 12px ${cfg.color})`
+    : undefined;
 
   const gradId  = `xpGrad_${tier}`;
   const trackId = `xpTrack_${tier}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 0 4px', position: 'relative' }}>
-      {/* Ambient glow disc */}
-      <div style={{
-        position:    'absolute',
-        width:       210,
-        height:      210,
-        borderRadius:'50%',
-        background:  `radial-gradient(circle, ${cfg.glow} 0%, transparent 72%)`,
-        filter:      'blur(28px)',
-        top:         8,
-        left:        '50%',
-        transform:   'translateX(-50%)',
-        pointerEvents:'none',
-        opacity:     flash ? 1.6 : 1,
-        transition:  'opacity 0.3s ease',
-      }} />
 
       {/* Flash ring */}
       {flash && (
@@ -227,7 +212,6 @@ const XPRing = memo(function XPRing({ xp }: { xp: number }) {
             lineHeight: 1,
             letterSpacing: -2,
             color:      cfg.color,
-            textShadow: `0 0 40px ${cfg.glow}`,
             fontVariantNumeric: 'tabular-nums',
           }}>
             {levelInfo.level}
@@ -281,7 +265,7 @@ const TierBadges = memo(function TierBadges({ tier }: { tier: Tier }) {
             border:        `1px solid ${active ? cfg.color + '44' : 'transparent'}`,
             opacity:       reached ? 1 : 0.28,
             transition:    'all 0.3s var(--ease)',
-            boxShadow:     active ? `0 0 18px ${cfg.glow}` : 'none',
+            boxShadow: 'none',
           }}>
             <div style={{
               fontSize: 15,
@@ -356,9 +340,10 @@ const StreakCard = memo(function StreakCard({
       background:   'var(--surf)',
       borderRadius: 16,
       border:       '1px solid var(--edge)',
+      borderTop:    '4px solid #F59E0B',
       padding:      20,
       marginBottom: 12,
-      boxShadow:    T.shadowMd,
+      boxShadow:    'var(--shadow-md)',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         {/* Left: streak count */}
@@ -374,7 +359,7 @@ const StreakCard = memo(function StreakCard({
               fontWeight:   900,
               background:   isMaxMult ? AMBER : AMBER + 'CC',
               color:        '#000',
-              boxShadow:    isMaxMult ? `0 0 12px rgba(245,158,11,0.45)` : 'none',
+              boxShadow: 'none',
               transition:   'box-shadow 0.4s ease',
             }}>
               {multLabel} XP
@@ -388,7 +373,6 @@ const StreakCard = memo(function StreakCard({
               letterSpacing: -2,
               lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: current > 0 ? `0 0 24px rgba(245,158,11,0.4)` : 'none',
             }}>
               {current}
             </span>
@@ -428,7 +412,7 @@ const StreakCard = memo(function StreakCard({
             animation:  isMaxMult ? 'shimmer 1.8s linear infinite' : 'none',
             width:      `${pctToMax}%`,
             transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-            boxShadow:  isMaxMult ? `0 0 10px rgba(245,158,11,0.5)` : 'none',
+            boxShadow: 'none',
           }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
@@ -483,7 +467,7 @@ const WeekDots = memo(function WeekDots({ dates }: { dates: Set<string> }) {
               alignItems:     'center',
               justifyContent: 'center',
               transition:     'all 0.2s var(--ease)',
-              boxShadow:      day.logged && day.isToday ? '0 0 10px color-mix(in srgb, var(--accent) 40%, transparent)' : 'none',
+              boxShadow: 'none',
             }}>
               {day.logged && !day.isFuture && <IconCheck size={13} color="#fff" sw={2.5} />}
             </div>
@@ -527,7 +511,7 @@ const MissionRow = memo(function MissionRow({ mission }: { mission: Mission }) {
           alignItems:     'center',
           justifyContent: 'center',
           transition:     'all 0.25s var(--ease)',
-          boxShadow:      mission.done ? `0 0 10px ${mission.color}30` : 'none',
+          boxShadow: 'none',
         }}>
           {mission.done
             ? <IconCheck size={16} color={mission.color} />
@@ -584,7 +568,7 @@ const MissionRow = memo(function MissionRow({ mission }: { mission: Mission }) {
             background:   mission.done ? mission.color : `${mission.color}70`,
             width:        `${pct}%`,
             transition:   'width 0.75s cubic-bezier(0.4,0,0.2,1)',
-            boxShadow:    pct > 0 ? `0 0 6px ${mission.color}88` : 'none',
+            boxShadow: 'none',
           }} />
         </div>
       )}
@@ -609,7 +593,7 @@ const AchievementBadge = memo(function AchievementBadge({
       border:        `1px solid ${unlocked ? color + '28' : 'var(--edge)'}`,
       opacity:       unlocked ? 1 : 0.32,
       transition:    'all 0.25s var(--ease)',
-      boxShadow:     unlocked ? `0 0 12px ${color}20` : 'none',
+      boxShadow: 'none',
     }}>
       <div style={{ fontSize: 22, filter: unlocked ? 'none' : 'grayscale(1) brightness(0.45)' }}>
         {icon}
@@ -870,7 +854,7 @@ export default function AscendScreen() {
               background: doneMissions === missions.length ? CARB : 'var(--accent)',
               width:      `${missions.length > 0 ? (doneMissions / missions.length) * 100 : 0}%`,
               transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1)',
-              boxShadow: doneMissions > 0 ? `0 0 8px ${doneMissions === missions.length ? CARB : 'var(--accent)'}88` : 'none',
+              boxShadow: 'none',
             }} />
           </div>
 
@@ -908,7 +892,7 @@ export default function AscendScreen() {
             background: bonusDone ? `${todayBonus.color}14` : 'var(--surf)',
             borderRadius: 16, border: `1px solid ${bonusDone ? todayBonus.color + '40' : 'var(--edge)'}`,
             padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
-            boxShadow: bonusDone ? `0 0 18px ${todayBonus.color}20` : T.shadow,
+            boxShadow: 'var(--shadow-sm)',
             transition: 'all 0.25s var(--ease)',
           }}
         >
@@ -917,7 +901,7 @@ export default function AscendScreen() {
             background: bonusDone ? `${todayBonus.color}20` : 'var(--surf2)',
             border: `1px solid ${bonusDone ? todayBonus.color + '40' : 'var(--edge)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-            boxShadow: bonusDone ? `0 0 12px ${todayBonus.color}40` : 'none',
+            boxShadow: 'none',
           }}>
             {bonusDone ? <IconCheck size={16} color={todayBonus.color} /> : todayBonus.emoji}
           </div>
@@ -1036,7 +1020,7 @@ export default function AscendScreen() {
               background: waterTotal >= waterGoal ? CARB : PROT,
               width:      `${Math.min((waterTotal / waterGoal) * 100, 100)}%`,
               transition: 'width 0.5s var(--ease)',
-              boxShadow:  waterTotal >= waterGoal ? `0 0 8px ${CARB}66` : 'none',
+              boxShadow: 'none',
             }} />
           </div>
           <textarea

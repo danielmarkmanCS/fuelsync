@@ -43,29 +43,14 @@ function HeroCard() {
 
   return (
     <div style={{
-      borderRadius: 26,
-      background: `linear-gradient(145deg, ${tierColor}18 0%, var(--surf) 55%)`,
-      border: `1.5px solid ${tierColor}30`,
-      padding: '24px 20px 20px',
+      borderRadius: 20,
+      background: 'var(--surf)',
+      border: '1px solid var(--edge)',
+      borderTop: `4px solid ${tierColor}`,
+      padding: '20px 20px 18px',
       marginBottom: 14,
-      position: 'relative',
-      overflow: 'hidden',
-      boxShadow: `0 0 60px ${tierGlow}, var(--inner-glow)`,
+      boxShadow: 'var(--shadow-md)',
     }}>
-      {/* Ambient radial top-right */}
-      <div style={{
-        position: 'absolute', top: -50, right: -50,
-        width: 200, height: 200, borderRadius: '50%',
-        background: `radial-gradient(circle, ${tierGlow} 0%, transparent 65%)`,
-        pointerEvents: 'none',
-      }} />
-      {/* Subtle mesh bottom-left */}
-      <div style={{
-        position: 'absolute', bottom: -30, left: -30,
-        width: 140, height: 140, borderRadius: '50%',
-        background: `radial-gradient(circle, ${tierColor}10 0%, transparent 70%)`,
-        pointerEvents: 'none',
-      }} />
 
       {/* Tier badge */}
       <div style={{
@@ -74,7 +59,6 @@ function HeroCard() {
         background: `${tierColor}18`, border: `1px solid ${tierColor}35`,
         fontSize: 10, fontWeight: 900, letterSpacing: '0.15em',
         color: tierColor, textTransform: 'uppercase', marginBottom: 18,
-        boxShadow: `0 0 12px ${tierGlow}`,
       }}>
         {TIER_ICONS[levelInfo.tier]} {levelInfo.tier}
       </div>
@@ -87,7 +71,6 @@ function HeroCard() {
           border: `2px solid ${tierColor}45`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 38, flexShrink: 0,
-          boxShadow: `0 0 30px ${tierGlow}`,
         }}>
           {levelInfo.emoji}
         </div>
@@ -95,7 +78,6 @@ function HeroCard() {
           <div style={{
             fontSize: 30, fontWeight: 900, color: tierColor,
             letterSpacing: -1.2, lineHeight: 1,
-            textShadow: `0 0 20px ${tierGlow}`,
           }}>
             {levelInfo.name}
           </div>
@@ -125,7 +107,6 @@ function HeroCard() {
             background: `linear-gradient(90deg, ${tierGradient[0]}, ${tierGradient[1]})`,
             borderRadius: 99,
             transition: 'width 0.9s cubic-bezier(0.34,1.56,0.64,1)',
-            boxShadow: `0 0 14px ${tierGlow}`,
           }} />
         </div>
       </div>
@@ -150,8 +131,7 @@ function HeroCard() {
             <div style={{
               fontSize: 14, fontWeight: 900, color: s.color,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: `0 0 10px ${s.color}66`,
-            }}>
+              }}>
               {s.value}
             </div>
             <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
@@ -197,7 +177,7 @@ function LevelRoadmap() {
               background: isCur ? `${cfg.color}12` : 'transparent',
               border: `1px solid ${isCur ? cfg.color + '35' : 'transparent'}`,
               opacity: isFut ? 0.45 : 1,
-              boxShadow: isCur ? `0 0 14px ${cfg.color}18` : 'none',
+              boxShadow: 'none',
               transition: 'all 0.2s ease',
             }}>
               <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>
@@ -207,7 +187,6 @@ function LevelRoadmap() {
                 <span style={{
                   fontSize: 13, fontWeight: 800,
                   color: isCur ? cfg.color : isPast ? '#4ADE80' : 'var(--muted)',
-                  textShadow: isCur ? `0 0 12px ${cfg.color}55` : 'none',
                 }}>
                   Lv.{lv.level} — {lv.name}
                 </span>
@@ -320,7 +299,7 @@ function GoldShop() {
                 textAlign: 'center',
                 opacity: (!isOwned && !canAfford) ? 0.45 : 1,
                 transition: 'all 0.2s ease',
-                boxShadow: isActive ? `0 0 20px ${color}30` : 'none',
+                boxShadow: 'none',
                 cursor: 'pointer', position: 'relative', overflow: 'hidden',
               }}
             >

@@ -322,33 +322,39 @@ export default function SupplementsScreen() {
         </div>
       )}
 
-      {/* Progress bar + big count */}
+      {/* Progress card */}
       {supplements.length > 0 && (
-        <div style={{ marginBottom: 22 }}>
+        <div style={{
+          background: SURF, borderRadius: 16, border: `1px solid var(--edge)`,
+          borderTop: `4px solid ${allDone ? '#22C55E' : ACCENT}`,
+          padding: '16px', marginBottom: 16,
+          boxShadow: 'var(--shadow-md)',
+          transition: 'border-top-color 0.3s ease',
+        }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-            <span className="tabnum" style={{ fontSize: 38, fontWeight: 900, letterSpacing: -2, color: allDone ? '#43A047' : ACCENT, lineHeight: 1, transition: 'color 0.3s ease' }}>
+            <span className="tabnum" style={{ fontSize: 52, fontWeight: 900, letterSpacing: -2.5, color: allDone ? '#22C55E' : ACCENT, lineHeight: 1, transition: 'color 0.3s ease' }}>
               {takenCount}
             </span>
-            <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)' }}>
+            <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--muted)' }}>
               of {supplements.length} taken today
             </span>
             {allDone && (
-              <span className="num-pop" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#43A047', background: 'rgba(74,222,128,0.14)', borderRadius: 20, padding: '4px 12px', border: '1px solid rgba(74,222,128,0.30)', boxShadow: '0 0 12px rgba(74,222,128,0.25)' }}>
+              <span className="num-pop" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: '#22C55E', background: 'rgba(74,222,128,0.12)', borderRadius: 20, padding: '4px 12px', border: '1px solid rgba(74,222,128,0.25)' }}>
                 All done ✓
               </span>
             )}
           </div>
-          {/* Segmented progress track */}
-          <div style={{ position: 'relative', height: 7, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ height: 8, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: 99,
-              background: allDone
-                ? `linear-gradient(90deg, #4ADE80, #34D399)`
-                : `linear-gradient(90deg, var(--c-pills), #FB923C)`,
-              boxShadow: allDone ? '0 0 14px rgba(74,222,128,0.50)' : '0 0 12px rgba(244,63,94,0.40)',
+              background: allDone ? '#22C55E' : ACCENT,
               width: `${takenPct}%`,
               transition: 'width 0.55s cubic-bezier(0.4,0,0.2,1)',
             }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--muted)' }}>{takenCount} taken{skippedCount > 0 ? ` · ${skippedCount} skipped` : ''}</span>
+            <span style={{ fontSize: 11, color: 'var(--muted2)' }}>{supplements.length} total</span>
           </div>
         </div>
       )}
@@ -372,7 +378,7 @@ export default function SupplementsScreen() {
             </div>
             <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${tColor}40, transparent)` }} />
           </div>
-          <div style={{ background: SURF, borderRadius: 18, overflow: 'hidden', border: `1px solid ${tColor}20`, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 16px ${tColor}0A` }}>
+          <div style={{ background: SURF, borderRadius: 14, overflow: 'hidden', border: '1px solid var(--edge)', borderTop: `3px solid ${tColor}`, boxShadow: 'var(--shadow-sm)' }}>
             {supplements.filter(s => s.timing === t).map((s, i, arr) => {
               const taken   = isTaken(s.id!);
               const skipped = isSkipped(s.id!);
@@ -397,7 +403,7 @@ export default function SupplementsScreen() {
                       background: taken ? tColor : 'transparent',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
-                      boxShadow: taken ? `0 0 14px ${tColor}55` : 'none',
+                      boxShadow: 'none',
                     }}
                   >
                     {taken && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
