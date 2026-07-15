@@ -573,7 +573,7 @@ const MissionRow = memo(function MissionRow({ mission }: { mission: Mission }) {
         <div style={{
           marginTop:    9,
           marginLeft:   48,
-          height:       3,
+          height:       4,
           background:   'var(--edge2)',
           borderRadius: 99,
           overflow:     'hidden',
@@ -584,6 +584,7 @@ const MissionRow = memo(function MissionRow({ mission }: { mission: Mission }) {
             background:   mission.done ? mission.color : `${mission.color}70`,
             width:        `${pct}%`,
             transition:   'width 0.75s cubic-bezier(0.4,0,0.2,1)',
+            boxShadow:    pct > 0 ? `0 0 6px ${mission.color}88` : 'none',
           }} />
         </div>
       )}
@@ -862,13 +863,14 @@ export default function AscendScreen() {
           </div>
 
           {/* Overall progress bar */}
-          <div style={{ margin: '0 16px 10px', height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ margin: '0 16px 10px', height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
               height:     '100%',
               borderRadius: 99,
               background: doneMissions === missions.length ? CARB : 'var(--accent)',
               width:      `${missions.length > 0 ? (doneMissions / missions.length) * 100 : 0}%`,
               transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1)',
+              boxShadow: doneMissions > 0 ? `0 0 8px ${doneMissions === missions.length ? CARB : 'var(--accent)'}88` : 'none',
             }} />
           </div>
 

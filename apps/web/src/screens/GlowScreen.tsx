@@ -114,7 +114,7 @@ function GlowOnboarding({ onDone }: { onDone: (p: GlowProfile) => void }) {
               <button key={t.id} onClick={() => setTime(t.id)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '14px 16px', borderRadius: 14, border: `1px solid ${time === t.id ? 'var(--accent)60' : 'var(--edge)'}`,
-                background: time === t.id ? 'rgba(0,145,234,0.10)' : 'var(--surf)', cursor: 'pointer',
+                background: time === t.id ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'var(--surf)', cursor: 'pointer',
                 textAlign: 'left', transition: 'all 0.18s',
               }}>
                 <div>
@@ -149,7 +149,7 @@ function GlowOnboarding({ onDone }: { onDone: (p: GlowProfile) => void }) {
                 <button key={c.id} onClick={() => toggleConcern(c.id)} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '12px 14px', borderRadius: 14, border: `1px solid ${sel ? 'var(--accent)50' : 'var(--edge)'}`,
-                  background: sel ? 'rgba(0,145,234,0.10)' : 'var(--surf)', cursor: 'pointer',
+                  background: sel ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'var(--surf)', cursor: 'pointer',
                   textAlign: 'left', transition: 'all 0.15s',
                 }}>
                   <span style={{ fontSize: 20 }}>{c.emoji}</span>

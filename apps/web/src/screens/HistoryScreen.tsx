@@ -1481,26 +1481,32 @@ export default function HistoryScreen() {
     <div style={{ minHeight: '100%', background: BG }}>
 
       {/* ── HEADER ── */}
-      <div style={{ background: BG, padding: '32px 16px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
-          <div style={{ fontSize: 26, fontWeight: 700, color: TEXT, letterSpacing: -1 }}>
-            Your journey
+      <div style={{ background: BG, padding: '20px 16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div>
+            <div style={{
+              fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
+              background: 'linear-gradient(135deg, var(--c-log), #38BDF8)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
+              Journal ✦
+            </div>
+            <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
+              {totalDays > 0
+                ? tab === 'foods'
+                  ? `${foodDir.length} unique foods · ${allLogs.filter(l => !l.removed).length} total logs`
+                  : `${totalDays} days logged · avg ${avgCal.toLocaleString()} kcal`
+                : 'Log food in the Fuel tab to build your history'}
+            </div>
           </div>
           {streak >= 2 && (
             <div style={{
-              background: ORANGE_MUT, borderRadius: 20, padding: '4px 12px',
-              fontSize: 11, fontWeight: 700, color: ORANGE,
+              background: ORANGE_MUT, borderRadius: 20, padding: '5px 13px',
+              fontSize: 11, fontWeight: 800, color: ORANGE, flexShrink: 0,
             }}>
-              {streak} day streak
+              🔥 {streak}d streak
             </div>
           )}
-        </div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>
-          {totalDays > 0
-            ? tab === 'foods'
-              ? `${foodDir.length} unique foods · ${allLogs.filter(l => !l.removed).length} total logs`
-              : `${totalDays} days · avg ${avgCal.toLocaleString()} kcal`
-            : 'Log food in the Fuel tab to build your history'}
         </div>
 
         {/* Tab bar */}

@@ -438,7 +438,7 @@ function WaterSection() {
 
       {/* Quick add */}
       <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
-        {[200, 300, 500, 750, 1000].map(ml => (
+        {[250, 500, 750, 1000].map(ml => (
           <button key={ml} onClick={() => add(ml)} className="press" style={{
             padding: '8px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer',
             background: 'rgba(14,165,233,0.10)', border: '1px solid rgba(14,165,233,0.25)', color: BODY_COLOR,

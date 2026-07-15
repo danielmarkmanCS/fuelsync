@@ -773,15 +773,16 @@ export default function HomeScreen() {
                   <div style={{ fontSize: 14, marginBottom: 3 }}>
                     {m.done ? '✓' : m.icon}
                   </div>
-                  <div style={{ height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginBottom: 4 }}>
+                  <div style={{ height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginBottom: 4 }}>
                     <div style={{
                       height: '100%', borderRadius: 99,
                       background: m.done ? m.color : `${m.color}80`,
                       width: `${m.pct * 100}%`, transition: 'width 0.6s var(--ease)',
+                      boxShadow: m.pct > 0 ? `0 0 6px ${m.color}88` : 'none',
                     }} />
                   </div>
                   <div style={{ fontSize: 9, fontWeight: 700, color: m.done ? m.color : 'var(--muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                    {m.label}
+                    {m.done ? m.label : `${Math.round(m.pct * 100)}%`}
                   </div>
                 </div>
               ))}

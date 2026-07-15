@@ -1048,8 +1048,13 @@ export default function FoodScreen() {
             )}
           </div>
         </div>
-        <div style={{ height: 3, background: EDGE, borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{ height: '100%', width: `${Math.min(calPct, 100)}%`, background: calPct >= 100 ? RED : GREEN, borderRadius: 2, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
+        <div style={{ height: 6, background: EDGE, borderRadius: 99, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{
+            height: '100%', width: `${Math.min(calPct, 100)}%`,
+            background: calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR,
+            borderRadius: 99, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+            boxShadow: consumed.calories > 0 ? `0 0 10px ${calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR}88` : 'none',
+          }} />
         </div>
 
         {/* Macro row — single surface with hairline dividers */}
@@ -1069,8 +1074,12 @@ export default function FoodScreen() {
                     {Math.round(val)}<span style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginLeft: 1 }}>g</span>
                   </div>
                   {tgt > 0 && <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>of {Math.round(tgt)}g</div>}
-                  <div style={{ height: 3, background: EDGE, borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
-                    <div style={{ height: '100%', borderRadius: 2, background: over ? RED : color, width: `${pct2}%`, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
+                  <div style={{ height: 4, background: EDGE, borderRadius: 99, overflow: 'hidden', marginTop: 8 }}>
+                    <div style={{
+                      height: '100%', borderRadius: 99, background: over ? RED : color,
+                      width: `${pct2}%`, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+                      boxShadow: val > 0 ? `0 0 6px ${over ? RED : color}88` : 'none',
+                    }} />
                   </div>
                 </div>
               );
