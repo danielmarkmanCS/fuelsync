@@ -34,16 +34,16 @@
   --surf:  #FFFFFF;
   --surf2: #ECEFFE;
   --surf3: #E3E6FA;
-  --edge:  rgba(80,90,180,0.09);
-  --edge2: rgba(80,90,180,0.15);
+  --edge:  rgba(80,90,180,0.14);
+  --edge2: rgba(80,90,180,0.22);
 
   --text:   #0D1030;
   --muted:  #6B78AA;
   --muted2: #9AA5CC;
 
-  --shadow-sm: 0 1px 3px rgba(50,60,130,0.08), 0 1px 2px rgba(50,60,130,0.04);
-  --shadow-md: 0 4px 16px rgba(50,60,130,0.09), 0 2px 8px rgba(50,60,130,0.05);
-  --shadow-lg: 0 8px 32px rgba(50,60,130,0.12), 0 4px 12px rgba(50,60,130,0.07);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 3px 12px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,0.11), 0 3px 10px rgba(0,0,0,0.06);
 
   --glow-accent: 0 2px 14px rgba(99,102,241,0.24);
   --glow-prot:   0 2px 10px rgba(59,130,246,0.22);
@@ -75,8 +75,8 @@ body[data-theme="dark"] {
   --surf:  #0D1024;
   --surf2: #131828;
   --surf3: #1A2038;
-  --edge:  rgba(255,255,255,0.07);
-  --edge2: rgba(255,255,255,0.12);
+  --edge:  rgba(255,255,255,0.10);
+  --edge2: rgba(255,255,255,0.16);
 
   --text:   #EEF2FF;
   --muted:  #6E7DAE;

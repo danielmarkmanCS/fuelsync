@@ -129,17 +129,11 @@ function WeightSection() {
   return (
     <div style={{
       background: 'var(--surf)', borderRadius: 22,
-      border: `1.5px solid ${cfg.color}28`,
-      boxShadow: `0 0 40px ${cfg.color}14, var(--inner-glow)`,
+      border: `1px solid var(--edge)`,
+      borderTop: `4px solid ${cfg.color}`,
+      boxShadow: 'var(--shadow-md)',
       padding: '20px', marginBottom: 12, position: 'relative', overflow: 'hidden',
     }}>
-      {/* Ambient top-right glow */}
-      <div style={{
-        position: 'absolute', top: -40, right: -40, width: 150, height: 150,
-        borderRadius: '50%', background: `radial-gradient(circle, ${cfg.color}22 0%, transparent 70%)`,
-        pointerEvents: 'none',
-      }} />
-
       {/* Goal selector */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
         {(Object.entries(GOAL_CONFIG) as [WeightGoal, typeof cfg][]).map(([key, c]) => (
@@ -171,7 +165,6 @@ function WeightSection() {
                   fontSize: 52, fontWeight: 900, color: cfg.color,
                   letterSpacing: -2.5, lineHeight: 1,
                   fontVariantNumeric: 'tabular-nums',
-                  textShadow: `0 0 30px ${cfg.color}44`,
                 }}>
                   {display(latest.weightKg)}
                 </span>
@@ -318,18 +311,11 @@ function WaterSection() {
   return (
     <div style={{
       background: 'var(--surf)', borderRadius: 22,
-      border: `1.5px solid ${over ? 'rgba(239,68,68,0.25)' : 'rgba(14,165,233,0.18)'}`,
-      boxShadow: `0 0 40px ${over ? 'rgba(239,68,68,0.10)' : 'rgba(14,165,233,0.10)'}, var(--inner-glow)`,
+      border: '1px solid var(--edge)',
+      borderTop: `4px solid ${over ? 'var(--red)' : '#0EA5E9'}`,
+      boxShadow: 'var(--shadow-md)',
       padding: '20px', marginBottom: 12, position: 'relative', overflow: 'hidden',
     }}>
-      {/* Ambient glow */}
-      <div style={{
-        position: 'absolute', top: -30, right: -30, width: 130, height: 130,
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${over ? 'rgba(239,68,68,0.18)' : 'rgba(14,165,233,0.18)'} 0%, transparent 70%)`,
-        pointerEvents: 'none',
-      }} />
-
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         <div>
@@ -341,7 +327,6 @@ function WaterSection() {
               fontSize: 52, fontWeight: 900, color,
               letterSpacing: -2.5, lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: `0 0 30px ${over ? 'rgba(239,68,68,0.4)' : 'rgba(14,165,233,0.4)'}`,
             }}>{liters}</span>
             <div>
               <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>litres</div>
@@ -528,18 +513,11 @@ function SleepSection() {
   return (
     <div style={{
       background: 'var(--surf)', borderRadius: 22,
-      border: `1.5px solid ${MOON_COLOR}25`,
-      boxShadow: `0 0 40px ${MOON_COLOR}12, var(--inner-glow)`,
+      border: '1px solid var(--edge)',
+      borderTop: `4px solid ${MOON_COLOR}`,
+      boxShadow: 'var(--shadow-md)',
       padding: '20px', marginBottom: 12, position: 'relative', overflow: 'hidden',
     }}>
-      {/* Ambient glow */}
-      <div style={{
-        position: 'absolute', top: -30, right: -30, width: 120, height: 120,
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${MOON_COLOR}22 0%, transparent 70%)`,
-        pointerEvents: 'none',
-      }} />
-
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
@@ -568,7 +546,6 @@ function SleepSection() {
               <span style={{
                 fontSize: 52, fontWeight: 900, color: MOON_COLOR,
                 letterSpacing: -2.5, lineHeight: 1, fontVariantNumeric: 'tabular-nums',
-                textShadow: `0 0 30px ${MOON_COLOR}44`,
               }}>{entry.hours.toFixed(1)}</span>
               <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 700 }}>hrs</span>
             </div>

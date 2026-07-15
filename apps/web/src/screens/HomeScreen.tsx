@@ -86,166 +86,113 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
   const animRemaining = useCountUp(mounted ? Math.abs(remaining) : 0);
   const animEaten     = useCountUp(mounted ? calEaten : 0);
 
-  // SVG ring — larger, thicker
-  const R  = 94;
-  const SW = 12;
-  const C  = 2 * Math.PI * R;
-  const sz = (R + SW) * 2 + 8;
-  const cx = sz / 2;
-
-  // Gradient IDs (static, one per instance)
-  const gradFill  = 'calRingFill';
-  const gradGlow  = 'calRingGlow';
-
-  const [c0, c1] = isOver
-    ? ['#F87171', '#EF4444']
-    : nearGoal
-      ? ['#4ADE80', '#22C55E']
-      : ['var(--accent)', '#818CF8'];
+  const accentColor = isOver ? 'var(--red)' : nearGoal ? 'var(--success, #22C55E)' : 'var(--accent)';
 
   const macros = [
-    { label: 'Protein', short: 'P', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0), color: 'var(--prot)' },
-    { label: 'Carbs',   short: 'C', eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0), color: 'var(--carb)' },
-    { label: 'Fat',     short: 'F', eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0), color: 'var(--fat)'  },
+    { label: 'Protein', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0), color: 'var(--prot)' },
+    { label: 'Carbs',   eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0), color: 'var(--carb)' },
+    { label: 'Fat',     eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0), color: 'var(--fat)'  },
   ];
 
   return (
     <div style={{
-      borderRadius: 26,
-      border: `1.5px solid ${isOver ? 'var(--danger-border)' : nearGoal ? 'var(--success-border)' : 'var(--edge)'}`,
-      boxShadow: 'var(--shadow-lg), var(--inner-glow)',
-      padding: '22px 20px 20px',
-      marginBottom: 12,
-      position: 'relative', overflow: 'hidden',
+      borderRadius: 20,
+      border: '1px solid var(--edge)',
+      borderTop: `4px solid ${accentColor}`,
       background: 'var(--surf)',
-      transition: 'border-color 0.4s ease',
+      boxShadow: 'var(--shadow-md)',
+      padding: '20px 20px 18px',
+      marginBottom: 12,
+      transition: 'border-top-color 0.4s ease',
     }}>
-      {/* Mesh gradient background — reacts to state */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: isOver
-          ? 'radial-gradient(ellipse 80% 60% at 50% 0%, var(--danger-muted) 0%, transparent 70%)'
-          : nearGoal
-            ? 'radial-gradient(ellipse 80% 60% at 50% 0%, var(--success-muted) 0%, transparent 70%)'
-            : 'radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-muted) 0%, transparent 70%)',
-        transition: 'all 0.5s ease',
-      }} />
 
-      {/* Ring */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, position: 'relative', zIndex: 1 }}>
-        <div style={{ position: 'relative' }}>
-          <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', display: 'block', overflow: 'visible' }}>
-            <defs>
-              <linearGradient id={gradFill} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={c0} stopOpacity="0.85" />
-                <stop offset="100%" stopColor={c1} />
-              </linearGradient>
-              <linearGradient id={gradGlow} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={c0} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={c1} stopOpacity="0.3" />
-              </linearGradient>
-            </defs>
-            {/* Soft glow arc behind */}
-            {pct > 0.02 && (
-              <circle cx={cx} cy={cx} r={R} fill="none"
-                stroke={`url(#${gradGlow})`} strokeWidth={SW + 10}
-                strokeLinecap="round" strokeDasharray={C}
-                strokeDashoffset={C * (1 - (mounted ? pct : 0))}
-                style={{ filter: 'blur(6px)', transition: 'stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)' }}
-              />
-            )}
-            {/* Track */}
-            <circle cx={cx} cy={cx} r={R} fill="none" stroke="var(--edge2)" strokeWidth={SW} />
-            {/* Fill — gradient stroke */}
-            <circle cx={cx} cy={cx} r={R} fill="none"
-              stroke={`url(#${gradFill})`} strokeWidth={SW}
-              strokeLinecap="round" strokeDasharray={C}
-              strokeDashoffset={C * (1 - (mounted ? pct : 0))}
-              style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)', filter: `drop-shadow(0 0 ${4 + pct * 10}px ${isOver ? '#EF4444' : nearGoal ? '#22C55E' : '#818CF8'})` }}
-            />
-          </svg>
-
-          {/* Center */}
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            {calGoal === 0 ? (
-              calEaten > 0 ? <>
-                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 4 }}>eaten</div>
-                <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: -2, color: 'var(--text)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{animEaten.toLocaleString()}</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginTop: 3 }}>kcal</div>
-              </> : <>
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--muted2)', letterSpacing: -1 }}>—</div>
-                <div style={{ fontSize: 10, color: 'var(--muted2)', fontWeight: 600, marginTop: 4 }}>no target set</div>
-              </>
-            ) : <>
-              <div style={{ fontSize: 9, fontWeight: 800, color: isOver ? 'var(--red)' : nearGoal ? 'var(--success)' : 'var(--muted)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 4 }}>
-                {isOver ? 'over by' : nearGoal ? 'almost there' : 'remaining'}
-              </div>
-              <div style={{
-                fontSize: 46, fontWeight: 900, lineHeight: 1, letterSpacing: -2,
-                color: isOver ? 'var(--red)' : 'var(--text)',
-                fontVariantNumeric: 'tabular-nums',
-              }}>
-                {animRemaining.toLocaleString()}
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginTop: 3 }}>kcal</div>
-              <div style={{
-                fontSize: 9, color: 'var(--muted2)', marginTop: 8,
-                fontVariantNumeric: 'tabular-nums',
-                background: 'var(--surf2)', padding: '3px 10px', borderRadius: 99,
-                border: '1px solid var(--edge)',
-              }}>
-                {animEaten.toLocaleString()} / {calGoal.toLocaleString()}
-              </div>
-            </>}
-          </div>
-        </div>
-      </div>
-
-      {/* Training badge */}
-      {activeType && activeType !== 'rest' && trainingCalDelta !== undefined && (() => {
+      {/* Training badge — compact, left-aligned */}
+      {activeType && activeType !== 'rest' && (() => {
         const t = TRAINING_TYPES.find(x => x.type === activeType);
-        const delta = trainingCalDelta;
         return (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, position: 'relative', zIndex: 1 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '5px 14px', borderRadius: 99,
-              background: `${t?.color ?? '#6366F1'}12`,
-              border: `1px solid ${t?.color ?? '#6366F1'}30`,
-              fontSize: 11, fontWeight: 700, color: t?.color ?? 'var(--c-today)',
-            }}>
-              <span>{t?.emoji}</span>
-              <span>{t?.label} day</span>
-              {delta !== 0 && <span style={{ opacity: 0.65 }}>· {delta > 0 ? '+' : ''}{delta} kcal</span>}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: t?.color ?? 'var(--accent)', flexShrink: 0 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.04em' }}>
+              {t?.emoji} {t?.label} day
+              {trainingCalDelta !== undefined && trainingCalDelta !== 0 &&
+                <span style={{ color: t?.color }}> · {trainingCalDelta > 0 ? '+' : ''}{trainingCalDelta} kcal</span>}
+            </span>
           </div>
         );
       })()}
 
-      {/* Macro rows — horizontal bars */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, position: 'relative', zIndex: 1 }}>
-        {macros.map(({ label, short, eaten, goal, color }) => {
+      {/* Big number */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: isOver ? 'var(--red)' : nearGoal ? '#22C55E' : 'var(--muted)',
+          marginBottom: 4,
+        }}>
+          {calGoal === 0 ? 'eaten today' : isOver ? 'over by' : nearGoal ? 'almost there' : 'remaining'}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{
+            fontSize: 72, fontWeight: 900, lineHeight: 1, letterSpacing: -3,
+            color: isOver ? 'var(--red)' : 'var(--text)',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {calGoal === 0 ? animEaten.toLocaleString() : animRemaining.toLocaleString()}
+          </span>
+          <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--muted)', paddingBottom: 6 }}>kcal</span>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {calGoal > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ height: 10, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 99, background: accentColor,
+              width: `${(mounted ? pct : 0) * 100}%`,
+              transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)',
+            }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
+              {animEaten.toLocaleString()} eaten
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--muted2)', fontVariantNumeric: 'tabular-nums' }}>
+              {calGoal.toLocaleString()} goal
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Macro rows — clean with colored left strip */}
+      <div style={{ marginTop: 16 }}>
+        {macros.map(({ label, eaten, goal, color }, i) => {
           const mpct = goal > 0 ? Math.min(eaten / goal, 1) : 0;
           const over = goal > 0 && eaten > goal;
           return (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 11, height: 11, borderRadius: 4, background: over ? 'var(--red)' : color, flexShrink: 0, boxShadow: `0 0 6px ${color}66` }} />
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', width: 38, letterSpacing: '0.04em' }}>{label}</div>
-              <div style={{ flex: 1, height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 99,
-                  background: over ? 'var(--red)' : color,
-                  width: `${mpct * 100}%`,
-                  transition: 'width 0.7s var(--ease)',
-                  boxShadow: mpct > 0.05 ? `0 0 6px ${color}88` : 'none',
-                }} />
+            <div key={label} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 0',
+              borderTop: '1px solid var(--edge)',
+            }}>
+              {/* Color strip */}
+              <div style={{ width: 4, height: 40, borderRadius: 99, background: over ? 'var(--red)' : color, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.04em' }}>{label.toUpperCase()}</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: over ? 'var(--red)' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                    {eaten}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)', marginLeft: 1 }}>g</span>
+                    {goal > 0 && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted2)', marginLeft: 3 }}>/ {goal}g</span>}
+                  </span>
+                </div>
+                <div style={{ height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 99,
+                    background: over ? 'var(--red)' : color,
+                    width: `${mpct * 100}%`,
+                    transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+                  }} />
+                </div>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: over ? 'var(--red)' : 'var(--text)', width: 44, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                {eaten}<span style={{ fontSize: 9, fontWeight: 500, color: 'var(--muted)' }}>g</span>
-              </div>
-              {goal > 0 && (
-                <div style={{ fontSize: 9, color: 'var(--muted2)', width: 30, fontVariantNumeric: 'tabular-nums' }}>/{goal}g</div>
-              )}
             </div>
           );
         })}
@@ -300,20 +247,21 @@ function WaterStrip({
 
   return (
     <div style={{
-      background: 'var(--surf)', borderRadius: 18, border: `1px solid ${done ? 'rgba(14,165,233,0.35)' : 'var(--edge)'}`,
+      background: 'var(--surf)', borderRadius: 18,
+      border: `1px solid var(--edge)`,
+      borderTop: done ? '3px solid #0EA5E9' : '1px solid var(--edge)',
       padding: '14px 16px', marginBottom: 12,
-      boxShadow: done ? '0 0 20px rgba(14,165,233,0.15), var(--inner-glow)' : 'var(--shadow-sm), var(--inner-glow)',
-      transition: 'border-color 0.3s, box-shadow 0.3s',
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'border-top 0.3s',
     }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <div style={{
           width: 32, height: 32, borderRadius: 10,
-          background: done ? 'rgba(14,165,233,0.18)' : 'rgba(14,165,233,0.10)',
-          border: '1px solid rgba(14,165,233,0.24)',
+          background: done ? 'rgba(14,165,233,0.15)' : 'rgba(14,165,233,0.08)',
+          border: '1px solid rgba(14,165,233,0.22)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 15, flexShrink: 0,
-          boxShadow: done ? '0 0 12px rgba(14,165,233,0.4)' : 'none',
           transition: 'all 0.3s',
         }}>
           {done ? '✓' : '💧'}
@@ -330,9 +278,8 @@ function WaterStrip({
           <div style={{ height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginTop: 4 }}>
             <div style={{
               height: '100%', borderRadius: 99,
-              background: done ? 'linear-gradient(90deg, #38BDF8, #0EA5E9)' : 'linear-gradient(90deg, rgba(14,165,233,0.7), #0EA5E9)',
+              background: '#0EA5E9',
               width: `${pct}%`, transition: 'width 0.5s var(--ease)',
-              boxShadow: done ? '0 0 8px rgba(14,165,233,0.6)' : '0 0 6px rgba(14,165,233,0.4)',
             }} />
           </div>
         </div>
@@ -415,8 +362,7 @@ function TrainingChips({
     <div style={{
       background: 'var(--surf)', borderRadius: 18, border: '1px solid var(--edge)',
       padding: '12px 14px', marginBottom: 12,
-      boxShadow: activeCfg ? `0 0 18px ${activeCfg.color}18, var(--shadow-sm)` : 'var(--shadow-sm)',
-      transition: 'box-shadow 0.3s ease',
+      boxShadow: 'var(--shadow-sm)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{
@@ -446,7 +392,7 @@ function TrainingChips({
               color: active ? '#fff' : 'var(--muted)',
               fontSize: 11, fontWeight: active ? 700 : 500, cursor: 'pointer',
               transition: 'all 0.18s ease',
-              boxShadow: active ? `0 2px 10px ${color}55` : 'none',
+              boxShadow: 'none',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
               <span style={{ fontSize: 12 }}>{emoji}</span>
@@ -806,7 +752,6 @@ export default function HomeScreen() {
                 <div key={m.label} style={{
                   flex: 1, background: 'var(--surf)', borderRadius: 12, border: `1px solid ${m.done ? m.color + '30' : 'var(--edge)'}`,
                   padding: '8px 10px', textAlign: 'center',
-                  boxShadow: m.done ? `0 0 10px ${m.color}20` : 'none',
                   transition: 'all 0.3s',
                 }}>
                   <div style={{ fontSize: 14, marginBottom: 3 }}>
@@ -817,7 +762,7 @@ export default function HomeScreen() {
                       height: '100%', borderRadius: 99,
                       background: m.done ? m.color : `${m.color}80`,
                       width: `${m.pct * 100}%`, transition: 'width 0.6s var(--ease)',
-                      boxShadow: m.pct > 0 ? `0 0 6px ${m.color}88` : 'none',
+                      boxShadow: 'none',
                     }} />
                   </div>
                   <div style={{ fontSize: 9, fontWeight: 700, color: m.done ? m.color : 'var(--muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
