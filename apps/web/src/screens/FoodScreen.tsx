@@ -1019,110 +1019,110 @@ export default function FoodScreen() {
 
       {/* ── CALORIE + MACROS ── */}
       <div className="nrc-a nrc-a2" style={{ padding: '4px 16px 12px' }}>
-        {/* Big calorie number */}
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexWrap: 'wrap' }}>
-            <div style={{
-              fontSize: 52, fontWeight: 700, letterSpacing: -2.5, lineHeight: 1,
-              color: consumed.calories === 0 ? MUTED2 : calPct >= 100 ? RED : CAL_CLR,
-              transition: 'color 0.4s',
-            }}>
-              {Math.round(consumed.calories).toLocaleString()}
+        <div style={{
+          background: SURF, borderRadius: 16,
+          border: '1px solid var(--edge)',
+          borderTop: `4px solid ${calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR}`,
+          padding: '18px 18px 16px',
+          boxShadow: 'var(--shadow-md)',
+          transition: 'border-top-color 0.3s ease',
+        }}>
+          {/* Big number */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR, marginBottom: 4 }}>
+              {calPct >= 100 ? 'over goal' : calPct >= 85 ? 'almost there' : 'eaten today'}
             </div>
-            <div style={{ paddingBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
-              {targets ? (
-                <span style={{ fontSize: 16, fontWeight: 400, color: MUTED }}> / {Math.round(targets.calories).toLocaleString()} kcal</span>
-              ) : (
-                <span style={{ fontSize: 14, fontWeight: 500, color: MUTED }}>kcal today</span>
-              )}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{
+                fontSize: 72, fontWeight: 900, lineHeight: 1, letterSpacing: -3,
+                color: consumed.calories === 0 ? MUTED2 : calPct >= 100 ? RED : TEXT,
+                fontVariantNumeric: 'tabular-nums', transition: 'color 0.4s',
+              }}>
+                {Math.round(consumed.calories).toLocaleString()}
+              </span>
+              <span style={{ fontSize: 20, fontWeight: 600, color: MUTED, paddingBottom: 6 }}>kcal</span>
             </div>
-            {calPct >= 85 && calPct < 100 && (
-              <div style={{ marginLeft: 'auto', paddingBottom: 10, background: `${GREEN}12`, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 600, color: GREEN }}>
-                On track
-              </div>
-            )}
-            {consumed.calories === 0 && isToday && (
-              <div style={{ marginLeft: 'auto', paddingBottom: 10, fontSize: 12, fontWeight: 500, color: MUTED }}>
-                Nothing yet
-              </div>
-            )}
           </div>
-        </div>
-        <div style={{ height: 6, background: EDGE, borderRadius: 99, overflow: 'hidden', marginBottom: 16 }}>
-          <div style={{
-            height: '100%', width: `${Math.min(calPct, 100)}%`,
-            background: calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR,
-            borderRadius: 99, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
-            boxShadow: consumed.calories > 0 ? `0 0 10px ${calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR}88` : 'none',
-          }} />
-        </div>
 
-        {/* Macro row — single surface with hairline dividers */}
-        {targets && (
-          <div style={{ background: SURF, borderRadius: 16, display: 'grid', gridTemplateColumns: '1fr 1px 1fr 1px 1fr', overflow: 'hidden' }}>
-            {[
-              { name: 'Protein', val: consumed.protein, tgt: targets.proteinG, color: PROT    },
-              { name: 'Carbs',   val: consumed.carbs,   tgt: targets.carbsG,   color: YELLOW  },
-              { name: 'Fat',     val: consumed.fat,     tgt: targets.fatG,     color: FAT_CLR },
-            ].flatMap(({ name, val, tgt, color }, i) => {
-              const pct2 = tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
-              const over = tgt > 0 && val > tgt;
-              const cell = (
-                <div key={name} style={{ padding: '14px 12px 12px' }}>
-                  <div style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginBottom: 5 }}>{name}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: over ? RED : TEXT, letterSpacing: -0.5, lineHeight: 1 }}>
-                    {Math.round(val)}<span style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginLeft: 1 }}>g</span>
+          {/* Progress bar */}
+          {targets && (
+            <>
+              <div style={{ height: 10, background: EDGE, borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+                <div style={{
+                  height: '100%', borderRadius: 99,
+                  background: calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR,
+                  width: `${Math.min(calPct, 100)}%`,
+                  transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: MUTED }}>{Math.round(consumed.calories).toLocaleString()} eaten</span>
+                <span style={{ fontSize: 11, color: MUTED2, fontVariantNumeric: 'tabular-nums' }}>{Math.round(targets.calories).toLocaleString()} goal</span>
+              </div>
+            </>
+          )}
+
+          {/* Macro rows */}
+          {targets && [
+            { name: 'Protein', val: consumed.protein, tgt: targets.proteinG, color: PROT },
+            { name: 'Carbs',   val: consumed.carbs,   tgt: targets.carbsG,   color: YELLOW },
+            { name: 'Fat',     val: consumed.fat,      tgt: targets.fatG,     color: FAT_CLR },
+          ].map(({ name, val, tgt, color }) => {
+            const pct2 = tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
+            const over = tgt > 0 && val > tgt;
+            return (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: '1px solid var(--edge)' }}>
+                <div style={{ width: 4, height: 36, borderRadius: 99, background: over ? RED : color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.04em' }}>{name.toUpperCase()}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: over ? RED : TEXT, fontVariantNumeric: 'tabular-nums' }}>
+                      {Math.round(val)}g
+                      {tgt > 0 && <span style={{ fontSize: 11, fontWeight: 400, color: MUTED2, marginLeft: 3 }}>/ {Math.round(tgt)}g</span>}
+                    </span>
                   </div>
-                  {tgt > 0 && <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>of {Math.round(tgt)}g</div>}
-                  <div style={{ height: 4, background: EDGE, borderRadius: 99, overflow: 'hidden', marginTop: 8 }}>
-                    <div style={{
-                      height: '100%', borderRadius: 99, background: over ? RED : color,
-                      width: `${pct2}%`, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
-                      boxShadow: val > 0 ? `0 0 6px ${over ? RED : color}88` : 'none',
-                    }} />
+                  <div style={{ height: 5, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 99, background: over ? RED : color, width: `${pct2}%`, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
                   </div>
                 </div>
-              );
-              return i > 0 ? [<div key={`d${i}`} style={{ background: EDGE }} />, cell] : [cell];
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
 
-        {/* Meal distribution — thin bar */}
-        {byMeal.length > 1 && consumed.calories > 0 && (() => {
-          const MEAL_COLORS_MAP: Record<string, string> = {
-            breakfast: '#F97316', pre_workout: '#4ADE80', lunch: '#38BDF8',
-            post_workout: '#34D399', dinner: '#A78BFA', snack: '#FBBF24', other: '#8B949E',
-          };
-          const total = consumed.calories;
-          return (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ display: 'flex', height: 4, borderRadius: 2, overflow: 'hidden', marginBottom: 8, gap: 1 }}>
-                {byMeal.map(({ meal, entries }) => {
-                  const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
-                  const pct  = (mCal / total) * 100;
-                  const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
-                  return pct > 0 ? (
-                    <div key={meal} style={{ width: `${pct}%`, background: col, transition: 'width 0.5s ease' }} />
-                  ) : null;
-                })}
+          {/* Meal distribution bar */}
+          {byMeal.length > 1 && consumed.calories > 0 && (() => {
+            const MEAL_COLORS_MAP: Record<string, string> = {
+              breakfast: '#F97316', pre_workout: '#4ADE80', lunch: '#38BDF8',
+              post_workout: '#34D399', dinner: '#A78BFA', snack: '#FBBF24', other: '#8B949E',
+            };
+            const total = consumed.calories;
+            return (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--edge)' }}>
+                <div style={{ display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', marginBottom: 10, gap: 1 }}>
+                  {byMeal.map(({ meal, entries }) => {
+                    const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
+                    const pct  = (mCal / total) * 100;
+                    const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
+                    return pct > 0 ? <div key={meal} style={{ width: `${pct}%`, background: col, transition: 'width 0.5s ease' }} /> : null;
+                  })}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {byMeal.map(({ meal, entries }) => {
+                    const mCal = Math.round(entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0));
+                    const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
+                    const lbl  = MEAL_LABEL[meal as keyof typeof MEAL_LABEL] ?? meal;
+                    return (
+                      <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 7, height: 7, borderRadius: 2, background: col }} />
+                        <span style={{ fontSize: 11, fontWeight: 500, color: MUTED }}>{lbl} {mCal}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {byMeal.map(({ meal, entries }) => {
-                  const mCal = Math.round(entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0));
-                  const col  = MEAL_COLORS_MAP[meal] ?? '#6B7280';
-                  const lbl  = MEAL_LABEL[meal as keyof typeof MEAL_LABEL] ?? meal;
-                  return (
-                    <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 7, height: 7, borderRadius: 2, background: col }} />
-                      <span style={{ fontSize: 11, fontWeight: 500, color: MUTED }}>{lbl} {mCal}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
+        </div>
       </div>
 
       {/* ── COPY YESTERDAY ── */}
@@ -1292,32 +1292,36 @@ export default function FoodScreen() {
           const mealOver   = mealTarget > 0 && mealTotal > mealTarget;
           const collapsed  = collapsedMeals.has(meal);
           return (
-            <div key={meal} style={{ marginBottom: 10, background: SURF, borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+            <div key={meal} style={{
+              marginBottom: 10, background: SURF,
+              borderRadius: 14, overflow: 'hidden',
+              border: '1px solid var(--edge)',
+              borderLeft: `4px solid ${MEAL_COLOR[meal] ?? MUTED}`,
+              boxShadow: 'var(--shadow-sm)',
+            }}>
               {/* Collapsible meal header */}
               <button onClick={() => toggleMealCollapse(meal)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer',
-                borderBottom: collapsed ? 'none' : `1px solid ${EDGE}`,
+                width: '100%', padding: '12px 14px 12px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                borderBottom: collapsed ? 'none' : `1px solid var(--edge)`,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: MEAL_COLOR[meal] ?? MUTED, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>
                     {MEAL_LABEL[meal as MealType] ?? 'Other'}
                   </span>
-                  <span style={{ fontSize: 12, color: MUTED }}>({entries.length})</span>
+                  <span style={{ fontSize: 11, color: MUTED }}>· {entries.length} item{entries.length !== 1 ? 's' : ''}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {mealTotal > 0 && (
-                    <>
-                      <span style={{ fontSize: 8, fontWeight: 700, color: PROT }}>P{mealProt}</span>
-                      <span style={{ fontSize: 8, fontWeight: 700, color: GREEN }}>C{mealCarbs}</span>
-                      <span style={{ fontSize: 8, fontWeight: 700, color: FAT_CLR }}>F{mealFat}</span>
-                    </>
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: PROT }}>P{mealProt}g</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: GREEN }}>C{mealCarbs}g</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: FAT_CLR }}>F{mealFat}g</span>
+                    </div>
                   )}
-                  <span style={{ fontSize: 11, fontWeight: 700, color: mealOver ? RED : CAL_CLR }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: mealOver ? RED : MEAL_COLOR[meal] ?? CAL_CLR, fontVariantNumeric: 'tabular-nums' }}>
                     {Math.round(mealTotal)}
-                    {mealTarget > 0 && <span style={{ fontWeight: 500, color: mealOver ? RED : MUTED, fontSize: 10 }}> / {mealTarget}</span>}
-                    <span style={{ fontWeight: 400, color: MUTED, fontSize: 9, marginLeft: 2 }}>kcal</span>
+                    <span style={{ fontWeight: 400, color: MUTED, fontSize: 10, marginLeft: 1 }}>kcal</span>
                   </span>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke={MUTED} strokeWidth="2" strokeLinecap="round"
                     style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>
@@ -1326,10 +1330,10 @@ export default function FoodScreen() {
                 </div>
               </button>
               {!collapsed && (
-                <div style={{ padding: '10px 12px 12px' }}>
+                <div style={{ padding: '10px 12px 12px 12px' }}>
                   {mealTarget > 0 && (
-                    <div style={{ height: 2, background: EDGE, borderRadius: 2, marginBottom: 10, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${mealPct * 100}%`, background: mealOver ? RED : GREEN, borderRadius: 2, transition: 'width 0.4s ease' }} />
+                    <div style={{ height: 4, background: EDGE, borderRadius: 99, marginBottom: 10, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${mealPct * 100}%`, background: mealOver ? RED : MEAL_COLOR[meal] ?? GREEN, borderRadius: 99, transition: 'width 0.4s ease' }} />
                     </div>
                   )}
                   {entries.map((entry) => (
