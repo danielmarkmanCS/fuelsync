@@ -8,8 +8,8 @@ import type { FoodLog } from '../api/localFood';
 import type { MacroTargets, TrainingType } from '@shared/types';
 import { useEffectiveTargets } from '../hooks/useEffectiveTargets';
 import { calcStreak } from '../lib/streak';
-import { getXP, getLevelInfo, getTodayXP, getStreakMultiplier, grantDailyXP } from '../lib/xp';
-import { getWaterTotal, getWaterGoal, addWater, removeLastWater, parseWaterDescription } from '../lib/waterLog';
+import { grantDailyXP } from '../lib/xp';
+import { getWaterTotal, getWaterGoal, addWater, removeLastWater, parseWaterDescription, parseWaterAI } from '../lib/waterLog';
 import { useThemeStore } from '../store/themeStore';
 
 // ── constants ──────────────────────────────────────────────────────────────
@@ -260,32 +260,67 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
 // ── Water strip ────────────────────────────────────────────────────────────
 
 function WaterStrip({
-  water, waterGoal, onAdd, onUndo, waterInput, setWaterInput, onCustomAdd,
+  water, waterGoal, onAdd, onUndo,
 }: {
   water: number; waterGoal: number;
-  onAdd: (ml: number) => void; onUndo: () => void;
-  waterInput: string; setWaterInput: (v: string) => void; onCustomAdd: () => void;
+  onAdd: (ml: number, label?: string) => void; onUndo: () => void;
 }) {
-  const pct = waterGoal > 0 ? Math.min((water / waterGoal) * 100, 100) : 0;
-  const liters = (water / 1000).toFixed(1);
-  const goalL  = (waterGoal / 1000).toFixed(1);
+  const pct        = waterGoal > 0 ? Math.min((water / waterGoal) * 100, 100) : 0;
+  const liters     = (water / 1000).toFixed(1);
+  const goalL      = (waterGoal / 1000).toFixed(1);
   const WATER_COLOR = 'var(--c-body)';
+  const done       = pct >= 100;
+
+  const [input,   setInput]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [parsed,  setParsed]  = useState<{ ml: number; label: string } | null>(null);
+  const [error,   setError]   = useState('');
+
+  async function analyze() {
+    const raw = input.trim();
+    if (!raw) return;
+    const isNum = /^\d+$/.test(raw);
+    if (isNum) {
+      const ml = Math.max(1, Math.min(5000, parseInt(raw, 10)));
+      onAdd(ml, `${ml}ml`);
+      setInput(''); return;
+    }
+    const quick = parseWaterDescription(raw);
+    if (quick) { setParsed(quick); return; }
+    setLoading(true); setError('');
+    try {
+      const r = await parseWaterAI(raw);
+      setParsed(r);
+    } catch { setError('Could not parse — try again'); }
+    finally { setLoading(false); }
+  }
+
+  function confirm() {
+    if (!parsed) return;
+    onAdd(parsed.ml, parsed.label);
+    setInput(''); setParsed(null);
+  }
 
   return (
     <div style={{
-      background: 'var(--surf)', borderRadius: 18, border: '1px solid var(--edge)',
+      background: 'var(--surf)', borderRadius: 18, border: `1px solid ${done ? 'rgba(14,165,233,0.35)' : 'var(--edge)'}`,
       padding: '14px 16px', marginBottom: 12,
-      boxShadow: 'var(--shadow-sm), var(--inner-glow)',
+      boxShadow: done ? '0 0 20px rgba(14,165,233,0.15), var(--inner-glow)' : 'var(--shadow-sm), var(--inner-glow)',
+      transition: 'border-color 0.3s, box-shadow 0.3s',
     }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <div style={{
           width: 32, height: 32, borderRadius: 10,
-          background: 'rgba(14,165,233,0.12)',
-          border: '1px solid rgba(14,165,233,0.22)',
+          background: done ? 'rgba(14,165,233,0.18)' : 'rgba(14,165,233,0.10)',
+          border: '1px solid rgba(14,165,233,0.24)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 15, flexShrink: 0,
-        }}>💧</div>
+          boxShadow: done ? '0 0 12px rgba(14,165,233,0.4)' : 'none',
+          transition: 'all 0.3s',
+        }}>
+          {done ? '✓' : '💧'}
+        </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
             <span style={{
@@ -293,13 +328,14 @@ function WaterStrip({
               fontVariantNumeric: 'tabular-nums', letterSpacing: -0.5,
             }}>{liters}</span>
             <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>/ {goalL}L</span>
+            {done && <span style={{ fontSize: 10, fontWeight: 800, color: '#0EA5E9', marginLeft: 4 }}>Goal hit!</span>}
           </div>
-          {/* Progress bar */}
           <div style={{ height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginTop: 4 }}>
             <div style={{
-              height: '100%', borderRadius: 99, background: `linear-gradient(90deg, rgba(14,165,233,0.7), #0EA5E9)`,
+              height: '100%', borderRadius: 99,
+              background: done ? 'linear-gradient(90deg, #38BDF8, #0EA5E9)' : 'linear-gradient(90deg, rgba(14,165,233,0.7), #0EA5E9)',
               width: `${pct}%`, transition: 'width 0.5s var(--ease)',
-              boxShadow: '0 0 6px rgba(14,165,233,0.5)',
+              boxShadow: done ? '0 0 8px rgba(14,165,233,0.6)' : '0 0 6px rgba(14,165,233,0.4)',
             }} />
           </div>
         </div>
@@ -311,34 +347,61 @@ function WaterStrip({
         )}
       </div>
 
-      {/* Quick add + custom */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        {[200, 500, 750].map(ml => (
-          <button key={ml} onClick={() => onAdd(ml)} className="press" style={{
+      {/* Quick add */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: parsed || error ? 8 : 0 }}>
+        {[250, 500, 750].map(ml => (
+          <button key={ml} onClick={() => onAdd(ml, `${ml}ml`)} className="press" style={{
             padding: '6px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: 'pointer',
             background: 'rgba(14,165,233,0.09)', border: '1px solid rgba(14,165,233,0.22)', color: WATER_COLOR,
           }}>+{ml}ml</button>
         ))}
         <input
           type="text"
-          value={waterInput}
-          onChange={e => setWaterInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') onCustomAdd(); }}
-          placeholder="ml or text"
+          value={input}
+          onChange={e => { setInput(e.target.value); setParsed(null); setError(''); }}
+          onKeyDown={e => { if (e.key === 'Enter') parsed ? confirm() : analyze(); }}
+          placeholder="describe what you drank…"
           style={{
-            flex: 1, padding: '6px 8px', borderRadius: 99,
-            border: '1px solid var(--edge)', background: 'var(--surf2)',
-            color: 'var(--text)', fontSize: 11, fontFamily: 'inherit',
-            outline: 'none', minWidth: 0, textAlign: 'center',
+            flex: 1, padding: '6px 10px', borderRadius: 99,
+            border: `1px solid ${input ? 'rgba(14,165,233,0.4)' : 'var(--edge)'}`,
+            background: 'var(--surf2)', color: 'var(--text)',
+            fontSize: 11, fontFamily: 'inherit', outline: 'none', minWidth: 0,
+            transition: 'border-color 0.2s',
           }}
         />
-        <button onClick={onCustomAdd} disabled={!waterInput} className="press" style={{
-          padding: '6px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700,
-          background: waterInput ? WATER_COLOR : 'var(--surf2)',
-          border: 'none', color: waterInput ? '#fff' : 'var(--muted)',
-          cursor: waterInput ? 'pointer' : 'default', transition: 'all 0.15s',
-        }}>+</button>
+        <button
+          onClick={parsed ? confirm : analyze}
+          disabled={loading || !input.trim()}
+          className="press"
+          style={{
+            padding: '6px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+            background: !input.trim() ? 'var(--surf2)' : parsed ? '#0EA5E9' : WATER_COLOR,
+            border: 'none', color: !input.trim() ? 'var(--muted)' : '#fff',
+            cursor: !input.trim() || loading ? 'default' : 'pointer', transition: 'all 0.15s',
+            flexShrink: 0,
+          }}
+        >
+          {loading ? '…' : parsed ? '+ Log' : 'AI'}
+        </button>
       </div>
+
+      {/* AI result preview */}
+      {parsed && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: 10,
+          background: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.22)',
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0EA5E9' }}>{parsed.ml}ml</div>
+            <div style={{ fontSize: 10, color: 'var(--muted)' }}>{parsed.label}</div>
+          </div>
+          <button onClick={() => { setParsed(null); setInput(''); }} style={{
+            background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 16, padding: '2px 4px',
+          }}>×</button>
+        </div>
+      )}
+      {error && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 4 }}>{error}</div>}
     </div>
   );
 }
@@ -559,7 +622,6 @@ export default function HomeScreen() {
 
   const [streak, setStreak]    = useState(0);
   const [water,  setWater]     = useState(0);
-  const [waterInput, setWaterInput] = useState('');
   const waterGoal = getWaterGoal();
 
   useEffect(() => {
@@ -570,8 +632,8 @@ export default function HomeScreen() {
     return () => window.removeEventListener('fs_water_updated', loadWater);
   }, [todayStr]);
 
-  async function quickAddWater(ml: number) {
-    await addWater(todayStr, ml);
+  async function quickAddWater(ml: number, label?: string) {
+    await addWater(todayStr, ml, label);
     const t = await getWaterTotal(todayStr);
     setWater(t);
     window.dispatchEvent(new CustomEvent('fs_water_updated'));
@@ -583,23 +645,6 @@ export default function HomeScreen() {
     setWater(t);
     window.dispatchEvent(new CustomEvent('fs_water_updated'));
   }
-  async function addCustomWater() {
-    const raw = waterInput.trim();
-    if (!raw) return;
-    const isNumberOnly = /^\d+$/.test(raw);
-    let ml: number;
-    if (isNumberOnly) {
-      ml = parseInt(raw, 10);
-    } else {
-      const parsed = parseWaterDescription(raw);
-      if (!parsed) return;
-      ml = parsed.ml;
-    }
-    if (ml < 1 || ml > 5000) return;
-    setWaterInput('');
-    await quickAddWater(ml);
-  }
-
   const handleSelectType = (type: TrainingType) => {
     try {
       const hist = JSON.parse(localStorage.getItem('fs_training_type_history_v1') ?? '{}');
@@ -698,9 +743,51 @@ export default function HomeScreen() {
         <WaterStrip
           water={water} waterGoal={waterGoal}
           onAdd={quickAddWater} onUndo={undoWater}
-          waterInput={waterInput} setWaterInput={setWaterInput}
-          onCustomAdd={addCustomWater}
         />
+
+        {/* Daily missions snapshot */}
+        {targets && targets.calories > 0 && (() => {
+          const calPct  = Math.min(consumed.calories / targets.calories, 1);
+          const protPct = targets.proteinG ? Math.min(consumed.proteinG / targets.proteinG, 1) : 0;
+          const watPct  = waterGoal > 0 ? Math.min(water / waterGoal, 1) : 0;
+          const doneCal  = calPct >= 0.85 && consumed.calories <= targets.calories * 1.05;
+          const doneProt = protPct >= 1;
+          const doneWat  = watPct >= 1;
+          const doneCount = [doneCal, doneProt, doneWat].filter(Boolean).length;
+          if (doneCount === 0 && consumed.calories === 0) return null;
+          return (
+            <div style={{
+              display: 'flex', gap: 6, marginBottom: 12,
+            }}>
+              {[
+                { label: 'Calories',  pct: calPct,  done: doneCal,  color: 'var(--c-today)', icon: '⚡' },
+                { label: 'Protein',   pct: protPct, done: doneProt, color: 'var(--prot)',    icon: '💪' },
+                { label: 'Hydration', pct: watPct,  done: doneWat,  color: 'var(--c-body)',  icon: '💧' },
+              ].map(m => (
+                <div key={m.label} style={{
+                  flex: 1, background: 'var(--surf)', borderRadius: 12, border: `1px solid ${m.done ? m.color + '30' : 'var(--edge)'}`,
+                  padding: '8px 10px', textAlign: 'center',
+                  boxShadow: m.done ? `0 0 10px ${m.color}20` : 'none',
+                  transition: 'all 0.3s',
+                }}>
+                  <div style={{ fontSize: 14, marginBottom: 3 }}>
+                    {m.done ? '✓' : m.icon}
+                  </div>
+                  <div style={{ height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginBottom: 4 }}>
+                    <div style={{
+                      height: '100%', borderRadius: 99,
+                      background: m.done ? m.color : `${m.color}80`,
+                      width: `${m.pct * 100}%`, transition: 'width 0.6s var(--ease)',
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: m.done ? m.color : 'var(--muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {m.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Food diary */}
