@@ -24,13 +24,13 @@ const SURF2   = 'var(--surf2)';
 const EDGE    = 'var(--edge)';
 const TEXT    = 'var(--text)';
 const MUTED   = 'var(--muted)';
-const GREEN      = '#4ADE80';   // emerald green
-const ORANGE     = 'var(--accent)';  // system accent (blue)
+const GREEN      = 'var(--success)';
+const ORANGE     = 'var(--accent)';
 const ORANGE_MUT = 'var(--accent-muted)';
-const YELLOW     = 'var(--accent)';  // weight today highlight
-const PROT       = '#38BDF8';   // sky blue — protein
-const RED     = '#FF4444';
-const FAT_CLR = '#FBBF24';  // amber — fat
+const YELLOW     = 'var(--accent)';
+const PROT       = 'var(--prot)';
+const RED        = 'var(--danger)';
+const FAT_CLR    = 'var(--warning)';
 const CARD_SHADOW = 'var(--shadow-md)';
 
 const ACTIVITY_LEVELS = [
@@ -1257,8 +1257,8 @@ export default function ProfileSetupScreen() {
         {error && (
           <div style={{
             color: RED, fontSize: 13, marginBottom: 16, padding: '12px 14px',
-            background: 'rgba(239,51,64,0.06)', borderRadius: 8, fontWeight: 700,
-            border: '1px solid rgba(239,51,64,0.18)',
+            background: 'var(--danger-muted)', borderRadius: 8, fontWeight: 700,
+            border: '1px solid var(--danger-border)',
           }}>
             {error}
           </div>
@@ -1289,8 +1289,8 @@ export default function ProfileSetupScreen() {
             {/* Google Cloud Sync */}
             {googleConnected ? (
               <div style={{
-                padding: '12px 14px', borderRadius: 8, background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.25)',
+                padding: '12px 14px', borderRadius: 8, background: 'var(--success-muted)',
+                border: '1px solid var(--success-border)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <span style={{ fontSize: 18 }}>☁️</span>
@@ -1302,9 +1302,9 @@ export default function ProfileSetupScreen() {
                 {/* Device pairing: generate a 6-char code the phone can redeem */}
                 <div style={{ marginTop: 4 }}>
                   {pairCode && Date.now() < pairExpiry ? (
-                    <div style={{ background: '#0091EA14', border: '1px solid #0091EA33', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
+                    <div style={{ background: 'var(--accent-muted)', border: '1px solid var(--accent-muted)', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
                       <div style={{ fontSize: 11, color: MUTED, marginBottom: 4 }}>Enter on your phone</div>
-                      <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 6, color: '#0091EA', fontFamily: 'monospace' }}>{pairCode}</div>
+                      <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 6, color: 'var(--accent)', fontFamily: 'monospace' }}>{pairCode}</div>
                       <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>Expires in 5 minutes · one-time use</div>
                     </div>
                   ) : (
@@ -1321,8 +1321,8 @@ export default function ProfileSetupScreen() {
                       }}
                       style={{
                         width: '100%', padding: '8px 0', borderRadius: 6,
-                        background: '#0091EA14', border: '1px solid #0091EA33',
-                        color: '#0091EA', fontSize: 12, fontWeight: 700, cursor: pairLoading ? 'wait' : 'pointer',
+                        background: 'var(--accent-muted)', border: '1px solid var(--accent-muted)',
+                        color: 'var(--accent)', fontSize: 12, fontWeight: 700, cursor: pairLoading ? 'wait' : 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                       }}
                     >
@@ -1339,8 +1339,8 @@ export default function ProfileSetupScreen() {
                   className="nrc-press"
                   style={{
                     width: '100%', padding: 14, borderRadius: 8,
-                    border: '1px solid rgba(66,133,244,0.4)',
-                    background: 'rgba(66,133,244,0.08)',
+                    border: '1px solid var(--info-border)',
+                    background: 'var(--info-muted)',
                     color: '#4285F4', fontWeight: 700, fontSize: 13,
                     cursor: googleConnecting ? 'not-allowed' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

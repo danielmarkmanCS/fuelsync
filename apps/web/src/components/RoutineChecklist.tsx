@@ -138,8 +138,8 @@ function RoutineItem({
       className="press card-lift"
       style={{
         width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-        background: done ? 'rgba(74,222,128,0.05)' : priority ? 'rgba(0,145,234,0.04)' : 'var(--surf)',
-        border: `1px solid ${done ? 'rgba(74,222,128,0.20)' : priority && !done ? 'rgba(0,145,234,0.25)' : 'var(--edge)'}`,
+        background: done ? 'rgba(74,222,128,0.05)' : priority ? 'color-mix(in srgb, var(--accent) 4%, transparent)' : 'var(--surf)',
+        border: `1px solid ${done ? 'rgba(74,222,128,0.20)' : priority && !done ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'var(--edge)'}`,
         borderRadius: 14, padding: '12px 14px',
         cursor: 'pointer', textAlign: 'left',
         transition: 'background 0.15s ease, border-color 0.15s ease',
@@ -147,7 +147,7 @@ function RoutineItem({
     >
       <div style={{
         width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-        border: `2px solid ${done ? '#4ADE80' : priority ? 'rgba(0,145,234,0.5)' : 'var(--edge2)'}`,
+        border: `2px solid ${done ? '#4ADE80' : priority ? 'color-mix(in srgb, var(--accent) 50%, transparent)' : 'var(--edge2)'}`,
         background: done ? '#4ADE80' : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'all 0.18s var(--spring)',
@@ -169,7 +169,7 @@ function RoutineItem({
         {item.name}
       </span>
       {priority && !done && (
-        <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', background: 'rgba(0,145,234,0.10)', border: '1px solid rgba(0,145,234,0.25)', padding: '2px 6px', borderRadius: 99, flexShrink: 0, letterSpacing: 0.3 }}>
+        <span style={{ fontSize: 9, fontWeight: 800, color: 'var(--accent)', background: 'var(--accent-muted)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)', padding: '2px 6px', borderRadius: 99, flexShrink: 0, letterSpacing: 0.3 }}>
           FOR YOU
         </span>
       )}

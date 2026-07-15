@@ -483,7 +483,7 @@ const WeekDots = memo(function WeekDots({ dates }: { dates: Set<string> }) {
               alignItems:     'center',
               justifyContent: 'center',
               transition:     'all 0.2s var(--ease)',
-              boxShadow:      day.logged && day.isToday ? '0 0 10px rgba(0,145,234,0.4)' : 'none',
+              boxShadow:      day.logged && day.isToday ? '0 0 10px color-mix(in srgb, var(--accent) 40%, transparent)' : 'none',
             }}>
               {day.logged && !day.isFuture && <IconCheck size={13} color="#fff" sw={2.5} />}
             </div>

@@ -21,7 +21,7 @@ const GOAL_OPTIONS: Array<{ id: GlowGoal; emoji: string; label: string; sub: str
   { id: 'hair_growth',    emoji: '💇', label: 'Hair growth',       sub: 'Nutrition, scalp, supplements',     color: '#FB8C00' },
   { id: 'jawline',        emoji: '🫦', label: 'Jawline & posture', sub: 'Mewing, chin tucks, dead hangs',    color: '#7E57C2' },
   { id: 'lose_fat',       emoji: '🔥', label: 'Lose fat',          sub: 'Steps, cold, diet discipline',      color: '#E53935' },
-  { id: 'build_muscle',   emoji: '💪', label: 'Build muscle',      sub: 'Sleep, protein, recovery',          color: '#0091EA' },
+  { id: 'build_muscle',   emoji: '💪', label: 'Build muscle',      sub: 'Sleep, protein, recovery',          color: 'var(--c-body)' },
 ];
 
 const CONCERN_OPTIONS: Array<{ id: GlowConcern; emoji: string; label: string }> = [
@@ -298,7 +298,7 @@ function buildNudges(
   // ── Strength volume ─────────────────────────────────────────────────────────
   if (strengthSessions >= 4) {
     n.push({
-      icon: '🏋️', color: '#0091EA', priority: 3,
+      icon: '🏋️', color: 'var(--c-body)', priority: 3,
       title: `${strengthSessions} strength sessions this week`,
       body: 'Heavy lifting depletes zinc and magnesium fast. Zinc is critical for testosterone and collagen synthesis. Pumpkin seeds, beef, dark chocolate — add them this week.',
     });
@@ -631,8 +631,8 @@ export default function GlowScreen() {
         )}
         <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
           {[
-            { label: 'Run km', val: `${wl.totalRunKm.toFixed(0)}km`, color: '#1E88E5' },
-            { label: 'Strength', val: `${wl.strengthSessions.length}x`, color: '#0091EA' },
+            { label: 'Run km', val: `${wl.totalRunKm.toFixed(0)}km`, color: 'var(--c-log)' },
+            { label: 'Strength', val: `${wl.strengthSessions.length}x`, color: 'var(--c-body)' },
             tl?.trainingType ? { label: 'Today', val: tl.trainingType, color: 'var(--accent)' } : null,
             tl?.dailyActivityModifier ? { label: 'Steps', val: tl.dailyActivityModifier, color: '#FB8C00' } : null,
           ].filter(Boolean).map((s) => s && (
