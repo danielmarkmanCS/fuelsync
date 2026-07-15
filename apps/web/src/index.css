@@ -158,7 +158,6 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--surf);
   border-radius: var(--r-lg);
   border: 1px solid var(--edge);
-  box-shadow: var(--shadow-md);
   box-shadow: var(--shadow-md), var(--inner-glow);
 }
 .card-xl {
@@ -492,3 +491,123 @@ body[data-theme="light"] .orb { opacity: 0.07; }
   0%,100% { box-shadow: 0 0 0 0 transparent; }
   50%      { box-shadow: 0 0 14px var(--chip-color, rgba(129,140,248,0.40)); }
 }
+
+/* ══════════════════════════════════════════════════════
+   FUELSYNC DESIGN TOKENS — EXTENDED SYSTEM
+   ══════════════════════════════════════════════════════ */
+
+/* ── 8pt Spacing Scale ────────────────────────────────
+   Use: padding/margin/gap in multiples of 4px.
+   --sp-1 = 4px (half-unit, fine-grain)
+   --sp-2 = 8px (base unit)
+   --sp-3 = 12px
+   --sp-4 = 16px (standard card padding baseline)
+   --sp-5 = 20px
+   --sp-6 = 24px (section gap)
+   --sp-7 = 32px
+   --sp-8 = 40px
+   --sp-9 = 48px
+   --sp-10 = 64px (large section breaks)
+   ──────────────────────────────────────────────────── */
+:root {
+  --sp-1:   4px;
+  --sp-2:   8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-7:  32px;
+  --sp-8:  40px;
+  --sp-9:  48px;
+  --sp-10: 64px;
+}
+
+/* ── Semantic Color Tokens ────────────────────────────
+   Use instead of raw color values for state communication.
+   Never use --success/--warning/--danger as decorative colors —
+   only for actual success, warning, and error states.
+   ──────────────────────────────────────────────────── */
+:root {
+  --success:        #22C55E;
+  --success-muted:  rgba(34, 197,  94, 0.12);
+  --success-border: rgba(34, 197,  94, 0.28);
+
+  --warning:        #F59E0B;
+  --warning-muted:  rgba(245, 158,  11, 0.12);
+  --warning-border: rgba(245, 158,  11, 0.28);
+
+  --danger:         #EF4444;
+  --danger-muted:   rgba(239,  68,  68, 0.12);
+  --danger-border:  rgba(239,  68,  68, 0.28);
+
+  --info:           #3B82F6;
+  --info-muted:     rgba(59, 130, 246, 0.12);
+  --info-border:    rgba(59, 130, 246, 0.28);
+}
+
+body[data-theme="dark"] {
+  --success:        #4ADE80;
+  --success-muted:  rgba(74, 222, 128, 0.12);
+  --success-border: rgba(74, 222, 128, 0.28);
+
+  --warning:        #FBBF24;
+  --warning-muted:  rgba(251, 191,  36, 0.12);
+  --warning-border: rgba(251, 191,  36, 0.28);
+
+  --danger:         #F87171;
+  --danger-muted:   rgba(248, 113, 113, 0.12);
+  --danger-border:  rgba(248, 113, 113, 0.28);
+
+  --info:           #38BDF8;
+  --info-muted:     rgba(56, 189, 248, 0.12);
+  --info-border:    rgba(56, 189, 248, 0.28);
+}
+
+/* ── Typography Scale ─────────────────────────────────
+   Named after function, not size. Use these instead of
+   hard-coding fontSize in inline styles.
+   ──────────────────────────────────────────────────── */
+:root {
+  /* Size tokens */
+  --text-2xs:  10px;  /* nav labels, caps, micro-labels */
+  --text-xs:   11px;  /* captions, timestamps, secondary info */
+  --text-sm:   13px;  /* body secondary, list items */
+  --text-base: 15px;  /* primary body copy, inputs */
+  --text-md:   17px;  /* section headings */
+  --text-lg:   20px;  /* sub-display, card titles */
+  --text-xl:   24px;  /* display numbers, date headers */
+  --text-2xl:  30px;  /* screen titles */
+  --text-3xl:  36px;  /* hero display, XP numbers */
+  --text-4xl:  48px;  /* macro hero numbers */
+  --text-hero: 56px;  /* calorie ring center */
+
+  /* Line height tokens */
+  --leading-none:    1;
+  --leading-tight:   1.2;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* Letter spacing tokens */
+  --tracking-tightest: -0.05em;
+  --tracking-tight:    -0.03em;
+  --tracking-snug:     -0.01em;
+  --tracking-normal:    0;
+  --tracking-wide:      0.04em;
+  --tracking-wider:     0.08em;
+  --tracking-widest:    0.14em;
+
+  /* Font weight tokens */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-extrabold: 800;
+  --fw-black:    900;
+}
+
+/* ── Semantic button/badge utilities ──────────────────── */
+.badge-success { background: var(--success-muted); border: 1px solid var(--success-border); color: var(--success); border-radius: 99px; padding: 3px 10px; font-size: var(--text-2xs); font-weight: 700; }
+.badge-warning { background: var(--warning-muted); border: 1px solid var(--warning-border); color: var(--warning); border-radius: 99px; padding: 3px 10px; font-size: var(--text-2xs); font-weight: 700; }
+.badge-danger  { background: var(--danger-muted);  border: 1px solid var(--danger-border);  color: var(--danger);  border-radius: 99px; padding: 3px 10px; font-size: var(--text-2xs); font-weight: 700; }
+.badge-info    { background: var(--info-muted);    border: 1px solid var(--info-border);    color: var(--info);    border-radius: 99px; padding: 3px 10px; font-size: var(--text-2xs); font-weight: 700; }

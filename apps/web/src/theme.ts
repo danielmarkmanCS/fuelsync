@@ -62,7 +62,7 @@ export const BTN_PRIMARY: React.CSSProperties = {
   fontWeight:   700,
   fontSize:     15,
   cursor:       'pointer',
-  boxShadow:    `0 3px 12px rgba(0,145,234,0.28)`,
+  boxShadow:    'var(--glow-accent)',
 };
 
 export const BTN_GHOST: React.CSSProperties = {

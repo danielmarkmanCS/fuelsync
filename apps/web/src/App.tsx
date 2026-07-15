@@ -371,29 +371,54 @@ export default function App() {
       <div style={{
         height: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg)',
-        position: 'relative', overflow: 'hidden',
+        background: 'var(--bg)', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          {/* Logo */}
-          <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: -2, lineHeight: 1, color: '#1A1A1A', animation: 'fadeIn 0.4s ease both' }}>
-            Fuel<span style={{ color: '#0091EA' }}>Sync</span>
+        {/* Ambient background orbs */}
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
+          {/* Brand mark — lightning bolt */}
+          <div style={{ marginBottom: 20, animation: 'scaleIn 0.4s var(--spring) both' }}>
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+              <path d="M26 5L16 23h10L18 39L34 19H24L30 5H26z" fill="url(#bootGrad)" />
+              <defs>
+                <linearGradient id="bootGrad" x1="16" y1="5" x2="34" y2="39" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="var(--accent)" />
+                  <stop offset="1" stopColor="#38BDF8" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          {/* Wordmark */}
+          <div style={{
+            fontSize: 32, fontWeight: 900, letterSpacing: -1.5, lineHeight: 1,
+            background: 'linear-gradient(135deg, var(--text) 0%, var(--accent) 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            animation: 'fadeIn 0.4s 0.1s ease both',
+          }}>
+            FuelSync
+          </div>
+
+          {/* Tagline */}
+          <div style={{
+            fontSize: 10, color: 'var(--muted)', fontWeight: 600,
+            letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: 8,
+            animation: 'fadeIn 0.4s 0.2s ease both',
+          }}>
+            {stravaConnecting ? 'Connecting Strava…' : 'Hybrid Athlete Platform'}
           </div>
 
           {/* Loading dots */}
-          <div style={{ marginTop: 40, display: 'flex', gap: 8 }}>
+          <div style={{ marginTop: 48, display: 'flex', gap: 6 }}>
             {[0, 1, 2].map((i) => (
               <div key={i} style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: '#0091EA',
-                opacity: 0.3 + i * 0.25,
-                animation: `pulse 1.4s ${i * 0.18}s infinite ease-in-out`,
+                width: 5, height: 5, borderRadius: '50%',
+                background: 'var(--accent)',
+                animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite`,
               }} />
             ))}
-          </div>
-
-          <div style={{ color: '#9E9E9E', fontSize: 11, letterSpacing: '0.4em', marginTop: 16, fontWeight: 600, textTransform: 'uppercase', animation: 'fadeIn 0.6s 0.3s ease both' }}>
-            {stravaConnecting ? 'Syncing Strava' : 'Loading'}
           </div>
         </div>
       </div>
@@ -558,10 +583,10 @@ export default function App() {
                 <Icon active={active} />
               </div>
               <span style={{
-                fontSize: 9, fontWeight: active ? 800 : 500,
+                fontSize: 10, fontWeight: active ? 700 : 500,
                 color: active ? color : 'var(--muted2)',
                 transition: 'color 0.2s ease, font-weight 0.1s',
-                letterSpacing: active ? '0.3px' : '0.4px',
+                letterSpacing: active ? '0.2px' : '0.3px',
               }}>
                 {label}
               </span>
