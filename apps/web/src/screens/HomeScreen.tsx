@@ -78,6 +78,7 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
   const remaining = calGoal > 0 ? calGoal - calEaten : 0;
   const isOver    = calGoal > 0 && calEaten > calGoal;
   const pct       = calGoal > 0 ? Math.min(calEaten / calGoal, 1) : 0;
+  const nearGoal  = pct >= 0.85 && !isOver;
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id); }, []);
@@ -85,169 +86,165 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
   const animRemaining = useCountUp(mounted ? Math.abs(remaining) : 0);
   const animEaten     = useCountUp(mounted ? calEaten : 0);
 
-  // SVG ring
-  const R  = 88;
-  const SW = 10;
+  // SVG ring — larger, thicker
+  const R  = 94;
+  const SW = 12;
   const C  = 2 * Math.PI * R;
-  const sz = (R + SW) * 2 + 4;
+  const sz = (R + SW) * 2 + 8;
   const cx = sz / 2;
 
-  const ringColor = isOver ? 'var(--red)' : ACCENT;
+  // Gradient IDs (static, one per instance)
+  const gradFill  = 'calRingFill';
+  const gradGlow  = 'calRingGlow';
 
-  // Macro bars
+  const [c0, c1] = isOver
+    ? ['#F87171', '#EF4444']
+    : nearGoal
+      ? ['#4ADE80', '#22C55E']
+      : ['var(--accent)', '#818CF8'];
+
   const macros = [
-    { label: 'Protein', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0), color: 'var(--prot)', emoji: '🔵' },
-    { label: 'Carbs',   eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0), color: 'var(--carb)', emoji: '🟢' },
-    { label: 'Fat',     eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0), color: 'var(--fat)',  emoji: '🟠' },
+    { label: 'Protein', short: 'P', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0), color: 'var(--prot)' },
+    { label: 'Carbs',   short: 'C', eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0), color: 'var(--carb)' },
+    { label: 'Fat',     short: 'F', eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0), color: 'var(--fat)'  },
   ];
 
   return (
     <div style={{
-      background: 'var(--surf)',
-      borderRadius: 24, border: '1px solid var(--edge)',
+      borderRadius: 26,
+      border: `1.5px solid ${isOver ? 'var(--danger-border)' : nearGoal ? 'var(--success-border)' : 'var(--edge)'}`,
       boxShadow: 'var(--shadow-lg), var(--inner-glow)',
-      padding: '24px 20px 20px',
+      padding: '22px 20px 20px',
       marginBottom: 12,
       position: 'relative', overflow: 'hidden',
+      background: 'var(--surf)',
+      transition: 'border-color 0.4s ease',
     }}>
-      {/* Ambient glow behind ring */}
+      {/* Mesh gradient background — reacts to state */}
       <div style={{
-        position: 'absolute', top: '20%', left: '50%',
-        transform: 'translateX(-50%)',
-        width: 200, height: 200, borderRadius: '50%',
-        background: isOver ? 'rgba(239,68,68,0.08)' : 'rgba(99,102,241,0.07)',
-        filter: 'blur(50px)', pointerEvents: 'none',
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: isOver
+          ? 'radial-gradient(ellipse 80% 60% at 50% 0%, var(--danger-muted) 0%, transparent 70%)'
+          : nearGoal
+            ? 'radial-gradient(ellipse 80% 60% at 50% 0%, var(--success-muted) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-muted) 0%, transparent 70%)',
+        transition: 'all 0.5s ease',
       }} />
 
-      {/* Ring centered */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+      {/* Ring */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, position: 'relative', zIndex: 1 }}>
         <div style={{ position: 'relative' }}>
-          <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+          <svg width={sz} height={sz} style={{ transform: 'rotate(-90deg)', display: 'block', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id={gradFill} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={c0} stopOpacity="0.85" />
+                <stop offset="100%" stopColor={c1} />
+              </linearGradient>
+              <linearGradient id={gradGlow} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={c0} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={c1} stopOpacity="0.3" />
+              </linearGradient>
+            </defs>
+            {/* Soft glow arc behind */}
+            {pct > 0.02 && (
+              <circle cx={cx} cy={cx} r={R} fill="none"
+                stroke={`url(#${gradGlow})`} strokeWidth={SW + 10}
+                strokeLinecap="round" strokeDasharray={C}
+                strokeDashoffset={C * (1 - (mounted ? pct : 0))}
+                style={{ filter: 'blur(6px)', transition: 'stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)' }}
+              />
+            )}
             {/* Track */}
             <circle cx={cx} cy={cx} r={R} fill="none" stroke="var(--edge2)" strokeWidth={SW} />
-            {/* Fill */}
-            <circle
-              cx={cx} cy={cx} r={R}
-              fill="none"
-              stroke={ringColor}
-              strokeWidth={SW}
-              strokeLinecap="round"
-              strokeDasharray={C}
+            {/* Fill — gradient stroke */}
+            <circle cx={cx} cy={cx} r={R} fill="none"
+              stroke={`url(#${gradFill})`} strokeWidth={SW}
+              strokeLinecap="round" strokeDasharray={C}
               strokeDashoffset={C * (1 - (mounted ? pct : 0))}
-              style={{
-                transition: 'stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1), stroke 0.3s',
-                filter: `drop-shadow(0 0 8px ${isOver ? '#EF4444' : '#6366F1'})`,
-              }}
+              style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)', filter: `drop-shadow(0 0 ${4 + pct * 10}px ${isOver ? '#EF4444' : nearGoal ? '#22C55E' : '#818CF8'})` }}
             />
           </svg>
 
-          {/* Center info */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
+          {/* Center */}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             {calGoal === 0 ? (
-              <>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.4, padding: '0 16px' }}>
-                  {calEaten > 0 ? (
-                    <><span style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1.5, color: 'var(--text)', display: 'block' }}>{calEaten.toLocaleString()}</span>kcal eaten</>
-                  ) : (
-                    <><span style={{ fontSize: 28, letterSpacing: -1, color: 'var(--muted2)', display: 'block' }}>—</span>no target</>
-                  )}
-                </div>
+              calEaten > 0 ? <>
+                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 4 }}>eaten</div>
+                <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: -2, color: 'var(--text)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{animEaten.toLocaleString()}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginTop: 3 }}>kcal</div>
+              </> : <>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--muted2)', letterSpacing: -1 }}>—</div>
+                <div style={{ fontSize: 10, color: 'var(--muted2)', fontWeight: 600, marginTop: 4 }}>no target set</div>
               </>
-            ) : (
-              <>
-                <div style={{
-                  fontSize: 36, fontWeight: 900, lineHeight: 1,
-                  color: isOver ? 'var(--red)' : 'var(--text)',
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: -1.5,
-                }}>
-                  {animRemaining.toLocaleString()}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, marginTop: 3 }}>
-                  {isOver ? 'over goal' : 'kcal left'}
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--muted2)', marginTop: 5 }}>
-                  {animEaten.toLocaleString()} / {calGoal.toLocaleString()}
-                </div>
-              </>
-            )}
+            ) : <>
+              <div style={{ fontSize: 9, fontWeight: 800, color: isOver ? 'var(--red)' : nearGoal ? 'var(--success)' : 'var(--muted)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 4 }}>
+                {isOver ? 'over by' : nearGoal ? 'almost there' : 'remaining'}
+              </div>
+              <div style={{
+                fontSize: 46, fontWeight: 900, lineHeight: 1, letterSpacing: -2,
+                color: isOver ? 'var(--red)' : 'var(--text)',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {animRemaining.toLocaleString()}
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', marginTop: 3 }}>kcal</div>
+              <div style={{
+                fontSize: 9, color: 'var(--muted2)', marginTop: 8,
+                fontVariantNumeric: 'tabular-nums',
+                background: 'var(--surf2)', padding: '3px 10px', borderRadius: 99,
+                border: '1px solid var(--edge)',
+              }}>
+                {animEaten.toLocaleString()} / {calGoal.toLocaleString()}
+              </div>
+            </>}
           </div>
         </div>
       </div>
 
-      {/* Training calorie badge */}
-      {activeType && activeType !== 'rest' && trainingCalDelta !== undefined && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          marginBottom: 12,
-        }}>
-          {(() => {
-            const t = TRAINING_TYPES.find(x => x.type === activeType);
-            const delta = trainingCalDelta;
-            return (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '5px 12px', borderRadius: 99,
-                background: `${t?.color ?? '#6366F1'}10`,
-                border: `1px solid ${t?.color ?? '#6366F1'}28`,
-                fontSize: 11, fontWeight: 700, color: t?.color ?? 'var(--c-today)',
-              }}>
-                <span>{t?.emoji}</span>
-                <span>{t?.label} day</span>
-                {delta !== 0 && (
-                  <span style={{ opacity: 0.75 }}>
-                    · {delta > 0 ? '+' : ''}{delta} kcal vs rest
-                  </span>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Macro tiles */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {macros.map(({ label, eaten, goal, color }) => {
-          const mpct = goal > 0 ? Math.min(eaten / goal, 1) : 0;
-          return (
-            <div key={label} style={{
-              flex: 1,
-              background: 'var(--surf2)',
-              borderRadius: 14,
-              border: '1px solid var(--edge)',
-              padding: '10px 10px 8px',
-              position: 'relative', overflow: 'hidden',
+      {/* Training badge */}
+      {activeType && activeType !== 'rest' && trainingCalDelta !== undefined && (() => {
+        const t = TRAINING_TYPES.find(x => x.type === activeType);
+        const delta = trainingCalDelta;
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, position: 'relative', zIndex: 1 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '5px 14px', borderRadius: 99,
+              background: `${t?.color ?? '#6366F1'}12`,
+              border: `1px solid ${t?.color ?? '#6366F1'}30`,
+              fontSize: 11, fontWeight: 700, color: t?.color ?? 'var(--c-today)',
             }}>
-              {/* Color accent top */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-                background: color, opacity: 0.7,
-              }} />
-              <div style={{
-                fontSize: 16, fontWeight: 900, color,
-                fontVariantNumeric: 'tabular-nums', marginBottom: 2,
-              }}>
-                {eaten}<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.7 }}>g</span>
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
-                {label}
-              </div>
-              {/* Mini bar */}
-              <div style={{ height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+              <span>{t?.emoji}</span>
+              <span>{t?.label} day</span>
+              {delta !== 0 && <span style={{ opacity: 0.65 }}>· {delta > 0 ? '+' : ''}{delta} kcal</span>}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Macro rows — horizontal bars */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, position: 'relative', zIndex: 1 }}>
+        {macros.map(({ label, short, eaten, goal, color }) => {
+          const mpct = goal > 0 ? Math.min(eaten / goal, 1) : 0;
+          const over = goal > 0 && eaten > goal;
+          return (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 11, height: 11, borderRadius: 4, background: over ? 'var(--red)' : color, flexShrink: 0, boxShadow: `0 0 6px ${color}66` }} />
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', width: 38, letterSpacing: '0.04em' }}>{label}</div>
+              <div style={{ flex: 1, height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
                 <div style={{
-                  height: '100%', background: color, borderRadius: 99,
+                  height: '100%', borderRadius: 99,
+                  background: over ? 'var(--red)' : color,
                   width: `${mpct * 100}%`,
                   transition: 'width 0.7s var(--ease)',
+                  boxShadow: mpct > 0.05 ? `0 0 6px ${color}88` : 'none',
                 }} />
               </div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: over ? 'var(--red)' : 'var(--text)', width: 44, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                {eaten}<span style={{ fontSize: 9, fontWeight: 500, color: 'var(--muted)' }}>g</span>
+              </div>
               {goal > 0 && (
-                <div style={{ fontSize: 9, color: 'var(--muted2)', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>
-                  / {goal}g
-                </div>
+                <div style={{ fontSize: 9, color: 'var(--muted2)', width: 30, fontVariantNumeric: 'tabular-nums' }}>/{goal}g</div>
               )}
             </div>
           );
