@@ -1473,57 +1473,73 @@ export default function HistoryScreen() {
   const totalDays  = days.length;
   const streak     = calcStreak(days);
   const avgCal     = totalDays > 0 ? Math.round(days.reduce((s, d) => s + d.totalCal, 0) / totalDays) : 0;
+  const goalStreak = (() => {
+    let s = 0;
+    for (const d of [...days].reverse()) {
+      if (goalCal > 0 && d.totalCal >= goalCal * 0.85 && d.totalCal <= goalCal * 1.15) s++; else break;
+    }
+    return s;
+  })();
   const foodDir    = buildFoodDirectory(allLogs);
   const filteredDir = foodSearch.trim()
     ? foodDir.filter((e) => e.name.toLowerCase().includes(foodSearch.toLowerCase()))
     : foodDir;
 
   return (
-    <div style={{ minHeight: '100%', background: BG }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
 
-      {/* ── HEADER ── */}
-      <div style={{ background: BG, padding: '20px 16px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+      {/* ── HERO BANNER ── */}
+      <div style={{ background: 'linear-gradient(145deg, #059669 0%, #065F46 100%)', padding: '18px 16px 24px' }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
-            <div style={{
-              fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
-              background: 'linear-gradient(135deg, var(--c-log), #38BDF8)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>
-              Journal ✦
-            </div>
-            <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
+            <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1 }}>Journal</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 600, marginTop: 4 }}>
               {totalDays > 0
                 ? tab === 'foods'
                   ? `${foodDir.length} unique foods · ${allLogs.filter(l => !l.removed).length} total logs`
-                  : `${totalDays} days logged · avg ${avgCal.toLocaleString()} kcal`
-                : 'Log food in the Fuel tab to build your history'}
+                  : `${totalDays} days · avg ${avgCal.toLocaleString()} kcal`
+                : 'No logs yet'}
             </div>
           </div>
           {streak >= 2 && (
-            <div style={{
-              background: ORANGE_MUT, borderRadius: 20, padding: '5px 13px',
-              fontSize: 11, fontWeight: 800, color: ORANGE, flexShrink: 0,
-            }}>
-              🔥 {streak}d streak
+            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>🔥 {streak}d streak</div>
             </div>
           )}
         </div>
+        {/* Stat pills */}
+        {totalDays > 0 && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { label: 'Days', value: String(totalDays) },
+              { label: 'Avg kcal', value: avgCal.toLocaleString() },
+              { label: 'Goal streak', value: `${goalStreak}d` },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 6px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)' }}>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>{value}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-        {/* Tab bar */}
-        <div style={{ display: 'flex', borderBottom: `1px solid ${EDGE}` }}>
-          {(['days', 'foods', 'coach'] as Tab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              flex: 1, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600,
-              color: tab === t ? ORANGE : MUTED,
-              borderBottom: tab === t ? `2px solid ${ORANGE}` : '2px solid transparent',
-              marginBottom: -1, transition: 'all 0.15s',
-            }}>
-              {t === 'days' ? 'Days' : t === 'foods' ? 'Foods' : '🧠 Coach'}
-            </button>
-          ))}
-        </div>
+      {/* Tab bar */}
+      <div style={{ background: BG, display: 'flex', borderBottom: `1px solid ${EDGE}` }}>
+        {(['days', 'foods', 'coach'] as Tab[]).map((t) => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            flex: 1, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 13, fontWeight: 600,
+            color: tab === t ? ORANGE : MUTED,
+            borderBottom: tab === t ? `2px solid ${ORANGE}` : '2px solid transparent',
+            marginBottom: -1, transition: 'all 0.15s',
+          }}>
+            {t === 'days' ? 'Days' : t === 'foods' ? 'Foods' : '🧠 Coach'}
+          </button>
+        ))}
       </div>
 
       <div style={{ padding: '18px 16px 40px' }}>

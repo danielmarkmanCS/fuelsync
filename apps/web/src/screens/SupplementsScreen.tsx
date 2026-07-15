@@ -253,24 +253,20 @@ export default function SupplementsScreen() {
   const takenPct = supplements.length ? (takenCount / supplements.length) * 100 : 0;
 
   return (
-    <div style={{ minHeight: '100%', background: BG, paddingBottom: 32 }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 32 }}>
 
-      {/* ── Hero header ──────────────────────────────────────────────── */}
-      <div style={{ padding: '28px 20px 20px' }}>
+      {/* ── Hero banner ──────────────────────────────────────────────── */}
+      <div style={{ background: 'linear-gradient(145deg, #E11D48 0%, #9333EA 100%)', padding: '18px 16px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </div>
-            <div style={{
-              fontSize: 34, fontWeight: 900, letterSpacing: -1.2, lineHeight: 1,
-              background: 'linear-gradient(135deg, var(--c-pills), #FB923C)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>Pills</div>
-            <div style={{ fontSize: 12, color: MUTED, marginTop: 5 }}>
-              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: takenCount > 0 ? '#43A047' : MUTED }}>{takenCount}</span>
+            <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Pills</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: 4 }}>
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 900, color: '#fff' }}>{takenCount}</span>
               <span> of {supplements.length} taken today</span>
-              {skippedCount > 0 && <span style={{ marginLeft: 6, color: '#FB8C00', fontWeight: 600 }}>· {skippedCount} skipped</span>}
+              {skippedCount > 0 && <span style={{ marginLeft: 6, color: 'rgba(255,255,255,0.6)' }}>· {skippedCount} skipped</span>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -283,19 +279,19 @@ export default function SupplementsScreen() {
             )}
             {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
               <button onClick={handleEnableReminders} title="Enable reminders"
-                style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '7px 10px', color: '#FB8C00', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '7px 10px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
               </button>
             )}
             {notifPerm === 'granted' && (
-              <span title="Reminders on" style={{ display: 'flex', alignItems: 'center', color: '#43A047' }}>
+              <span title="Reminders on" style={{ display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.7)' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
               </span>
             )}
             <button
               onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
               style={{
-                background: 'var(--accent)', border: 'none', borderRadius: 12, padding: '9px 16px',
+                background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 12, padding: '9px 16px',
                 color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 5,
               }}

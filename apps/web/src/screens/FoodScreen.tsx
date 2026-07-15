@@ -947,7 +947,7 @@ export default function FoodScreen() {
   const calPct   = targets && targets.calories > 0 ? Math.min((consumed.calories / targets.calories) * 100, 100) : 0;
 
   return (
-    <div className="main-scroll" style={{ height: '100%', overflowY: 'auto', background: BG, position: 'relative' }}>
+    <div className="main-scroll" style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)', position: 'relative' }}>
 
       {/* ── AI INPUT PILL (always visible) ── */}
       <div className="nrc-a nrc-a1" style={{ padding: '20px 16px 0' }}>
@@ -1017,77 +1017,71 @@ export default function FoodScreen() {
         </div>
       </div>
 
-      {/* ── CALORIE + MACROS ── */}
-      <div className="nrc-a nrc-a2" style={{ padding: '4px 16px 12px' }}>
-        <div style={{
-          background: SURF, borderRadius: 16,
-          border: '1px solid var(--edge)',
-          borderTop: `4px solid ${calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR}`,
-          padding: '18px 18px 16px',
-          boxShadow: 'var(--shadow-md)',
-          transition: 'border-top-color 0.3s ease',
-        }}>
+      {/* ── HERO BANNER ── */}
+      <div className="nrc-a nrc-a2" style={{
+        background: calPct >= 100
+          ? 'linear-gradient(145deg, #DC2626, #B91C1C)'
+          : calPct >= 85
+          ? 'linear-gradient(145deg, #059669, #0D9488)'
+          : 'linear-gradient(145deg, #059669, #0369A1)',
+        padding: '18px 16px 20px',
+        transition: 'background 0.4s ease',
+      }}>
           {/* Big number */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR, marginBottom: 4 }}>
-              {calPct >= 100 ? 'over goal' : calPct >= 85 ? 'almost there' : 'eaten today'}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: 2 }}>
+              {calPct >= 100 ? 'over goal' : calPct >= 85 ? 'almost there ✦' : 'eaten today'}
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{
-                fontSize: 72, fontWeight: 900, lineHeight: 1, letterSpacing: -3,
-                color: consumed.calories === 0 ? MUTED2 : calPct >= 100 ? RED : TEXT,
-                fontVariantNumeric: 'tabular-nums', transition: 'color 0.4s',
-              }}>
+              <span style={{ fontSize: 80, fontWeight: 900, lineHeight: 1, letterSpacing: -3, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
                 {Math.round(consumed.calories).toLocaleString()}
               </span>
-              <span style={{ fontSize: 20, fontWeight: 600, color: MUTED, paddingBottom: 6 }}>kcal</span>
+              <span style={{ fontSize: 22, fontWeight: 600, color: 'rgba(255,255,255,0.65)', paddingBottom: 8 }}>kcal</span>
             </div>
           </div>
 
           {/* Progress bar */}
           {targets && (
-            <>
-              <div style={{ height: 10, background: EDGE, borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ height: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{
-                  height: '100%', borderRadius: 99,
-                  background: calPct >= 100 ? RED : calPct >= 85 ? GREEN : CAL_CLR,
+                  height: '100%', borderRadius: 99, background: '#fff',
                   width: `${Math.min(calPct, 100)}%`,
                   transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
                 }} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color: MUTED }}>{Math.round(consumed.calories).toLocaleString()} eaten</span>
-                <span style={{ fontSize: 11, color: MUTED2, fontVariantNumeric: 'tabular-nums' }}>{Math.round(targets.calories).toLocaleString()} goal</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{Math.round(consumed.calories).toLocaleString()} eaten</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(targets.calories).toLocaleString()} goal</span>
               </div>
-            </>
+            </div>
           )}
 
-          {/* Macro rows */}
-          {targets && [
-            { name: 'Protein', val: consumed.protein, tgt: targets.proteinG, color: PROT },
-            { name: 'Carbs',   val: consumed.carbs,   tgt: targets.carbsG,   color: YELLOW },
-            { name: 'Fat',     val: consumed.fat,      tgt: targets.fatG,     color: FAT_CLR },
-          ].map(({ name, val, tgt, color }) => {
-            const pct2 = tgt > 0 ? Math.min((val / tgt) * 100, 100) : 0;
-            const over = tgt > 0 && val > tgt;
-            return (
-              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: '1px solid var(--edge)' }}>
-                <div style={{ width: 4, height: 36, borderRadius: 99, background: over ? RED : color, flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.04em' }}>{name.toUpperCase()}</span>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: over ? RED : TEXT, fontVariantNumeric: 'tabular-nums' }}>
-                      {Math.round(val)}g
-                      {tgt > 0 && <span style={{ fontSize: 11, fontWeight: 400, color: MUTED2, marginLeft: 3 }}>/ {Math.round(tgt)}g</span>}
-                    </span>
+          {/* Macro pills */}
+          {targets && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { name: 'Protein', val: consumed.protein, tgt: targets.proteinG },
+                { name: 'Carbs',   val: consumed.carbs,   tgt: targets.carbsG },
+                { name: 'Fat',     val: consumed.fat,      tgt: targets.fatG },
+              ].map(({ name, val, tgt }) => {
+                const pct2 = tgt > 0 ? Math.min(val / tgt, 1) : 0;
+                return (
+                  <div key={name} style={{ flex: 1, background: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{name}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                      {Math.round(val)}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 1 }}>g</span>
+                    </div>
+                    {tgt > 0 && (
+                      <div style={{ height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
+                        <div style={{ height: '100%', width: `${pct2 * 100}%`, background: '#fff', borderRadius: 99 }} />
+                      </div>
+                    )}
                   </div>
-                  <div style={{ height: 5, background: EDGE, borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: over ? RED : color, width: `${pct2}%`, transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)' }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
 
           {/* Meal distribution bar */}
           {byMeal.length > 1 && consumed.calories > 0 && (() => {
@@ -1097,7 +1091,7 @@ export default function FoodScreen() {
             };
             const total = consumed.calories;
             return (
-              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--edge)' }}>
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
                 <div style={{ display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', marginBottom: 10, gap: 1 }}>
                   {byMeal.map(({ meal, entries }) => {
                     const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
@@ -1114,7 +1108,7 @@ export default function FoodScreen() {
                     return (
                       <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <div style={{ width: 7, height: 7, borderRadius: 2, background: col }} />
-                        <span style={{ fontSize: 11, fontWeight: 500, color: MUTED }}>{lbl} {mCal}</span>
+                        <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>{lbl} {mCal}</span>
                       </div>
                     );
                   })}
@@ -1122,7 +1116,6 @@ export default function FoodScreen() {
               </div>
             );
           })()}
-        </div>
       </div>
 
       {/* ── COPY YESTERDAY ── */}

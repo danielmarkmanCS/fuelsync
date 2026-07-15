@@ -636,20 +636,16 @@ export default function BodyScreen() {
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
-      <div style={{ padding: '20px 16px 0' }}>
-        {/* Page header */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>
-            {dateStr}
-          </div>
-          <div style={{
-            fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
-            background: 'linear-gradient(135deg, var(--c-body), var(--prot))',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>Body</div>
+      {/* ── Hero banner ── */}
+      <div style={{ background: 'linear-gradient(145deg, #0284C7 0%, #0D9488 100%)', padding: '18px 16px 24px' }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+          {dateStr}
         </div>
+        <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Body</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Weight · Hydration · Sleep</div>
+      </div>
 
+      <div style={{ padding: '12px 16px 0' }}>
         <WeightSection />
         <WaterSection />
         <SleepSection />

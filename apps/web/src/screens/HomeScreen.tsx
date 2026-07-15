@@ -86,113 +86,77 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
   const animRemaining = useCountUp(mounted ? Math.abs(remaining) : 0);
   const animEaten     = useCountUp(mounted ? calEaten : 0);
 
-  const accentColor = isOver ? 'var(--red)' : nearGoal ? 'var(--success, #22C55E)' : 'var(--accent)';
-
   const macros = [
-    { label: 'Protein', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0), color: 'var(--prot)' },
-    { label: 'Carbs',   eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0), color: 'var(--carb)' },
-    { label: 'Fat',     eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0), color: 'var(--fat)'  },
+    { label: 'Protein', eaten: Math.round(consumed.proteinG), goal: Math.round(targets?.proteinG ?? 0) },
+    { label: 'Carbs',   eaten: Math.round(consumed.carbsG),   goal: Math.round(targets?.carbsG   ?? 0) },
+    { label: 'Fat',     eaten: Math.round(consumed.fatG),     goal: Math.round(targets?.fatG     ?? 0) },
   ];
 
   return (
-    <div style={{
-      borderRadius: 20,
-      border: '1px solid var(--edge)',
-      borderTop: `4px solid ${accentColor}`,
-      background: 'var(--surf)',
-      boxShadow: 'var(--shadow-md)',
-      padding: '20px 20px 18px',
-      marginBottom: 12,
-      transition: 'border-top-color 0.4s ease',
-    }}>
-
-      {/* Training badge — compact, left-aligned */}
+    <div>
+      {/* Training badge */}
       {activeType && activeType !== 'rest' && (() => {
         const t = TRAINING_TYPES.find(x => x.type === activeType);
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: t?.color ?? 'var(--accent)', flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14,
+            background: 'rgba(255,255,255,0.18)', borderRadius: 99, padding: '4px 12px' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '0.04em' }}>
               {t?.emoji} {t?.label} day
               {trainingCalDelta !== undefined && trainingCalDelta !== 0 &&
-                <span style={{ color: t?.color }}> · {trainingCalDelta > 0 ? '+' : ''}{trainingCalDelta} kcal</span>}
+                <span style={{ color: 'rgba(255,255,255,0.8)' }}> · {trainingCalDelta > 0 ? '+' : ''}{trainingCalDelta} kcal</span>}
             </span>
           </div>
         );
       })()}
 
       {/* Big number */}
-      <div style={{ marginBottom: 18 }}>
-        <div style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: isOver ? 'var(--red)' : nearGoal ? '#22C55E' : 'var(--muted)',
-          marginBottom: 4,
-        }}>
-          {calGoal === 0 ? 'eaten today' : isOver ? 'over by' : nearGoal ? 'almost there' : 'remaining'}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>
+          {calGoal === 0 ? 'eaten today' : isOver ? 'over by' : nearGoal ? 'almost there ✦' : 'remaining'}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{
-            fontSize: 72, fontWeight: 900, lineHeight: 1, letterSpacing: -3,
-            color: isOver ? 'var(--red)' : 'var(--text)',
-            fontVariantNumeric: 'tabular-nums',
-          }}>
+          <span style={{ fontSize: 80, fontWeight: 900, lineHeight: 1, letterSpacing: -3,
+            color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
             {calGoal === 0 ? animEaten.toLocaleString() : animRemaining.toLocaleString()}
           </span>
-          <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--muted)', paddingBottom: 6 }}>kcal</span>
+          <span style={{ fontSize: 22, fontWeight: 600, color: 'rgba(255,255,255,0.65)', paddingBottom: 8 }}>kcal</span>
         </div>
       </div>
 
       {/* Progress bar */}
       {calGoal > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ height: 10, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 99, background: accentColor,
-              width: `${(mounted ? pct : 0) * 100}%`,
-              transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)',
-            }} />
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ height: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 99, background: '#fff',
+              width: `${(mounted ? pct : 0) * 100}%`, transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-            <span style={{ fontSize: 11, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontVariantNumeric: 'tabular-nums' }}>
               {animEaten.toLocaleString()} eaten
             </span>
-            <span style={{ fontSize: 11, color: 'var(--muted2)', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums' }}>
               {calGoal.toLocaleString()} goal
             </span>
           </div>
         </div>
       )}
 
-      {/* Macro rows — clean with colored left strip */}
-      <div style={{ marginTop: 16 }}>
-        {macros.map(({ label, eaten, goal, color }, i) => {
+      {/* Macro pills */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {macros.map(({ label, eaten, goal }) => {
           const mpct = goal > 0 ? Math.min(eaten / goal, 1) : 0;
-          const over = goal > 0 && eaten > goal;
           return (
-            <div key={label} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 0',
-              borderTop: '1px solid var(--edge)',
-            }}>
-              {/* Color strip */}
-              <div style={{ width: 4, height: 40, borderRadius: 99, background: over ? 'var(--red)' : color, flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.04em' }}>{label.toUpperCase()}</span>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: over ? 'var(--red)' : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
-                    {eaten}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)', marginLeft: 1 }}>g</span>
-                    {goal > 0 && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted2)', marginLeft: 3 }}>/ {goal}g</span>}
-                  </span>
-                </div>
-                <div style={{ height: 5, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 99,
-                    background: over ? 'var(--red)' : color,
-                    width: `${mpct * 100}%`,
-                    transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
-                  }} />
-                </div>
+            <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: '10px 12px' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                {eaten}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 1 }}>g</span>
               </div>
+              {goal > 0 && (
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
+                  <div style={{ height: '100%', width: `${mpct * 100}%`, background: '#fff', borderRadius: 99 }} />
+                </div>
+              )}
             </div>
           );
         })}
@@ -636,82 +600,70 @@ export default function HomeScreen() {
   }, {});
   const visibleSections = MEAL_SECTIONS.filter(s => MAIN_MEALS.has(s.key) || logsByMeal[s.key]?.length > 0);
 
+  const heroGrad = `linear-gradient(145deg, #4338CA 0%, #7C3AED 100%)`;
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
 
-      {/* Top bar */}
-      <div style={{ padding: '18px 16px 10px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* ── Hero banner ── */}
+      <div style={{ background: heroGrad, padding: '18px 16px 28px' }}>
+
+        {/* Top row: greeting + actions */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.02em' }}>
-              {dateStr}
-            </div>
-            <div style={{ marginTop: 3, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, lineHeight: 1.1 }}>
-              <span style={{
-                fontSize: 22, fontWeight: 900, letterSpacing: -0.6,
-                background: hour < 12
-                  ? 'linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%)'
-                  : hour < 17
-                    ? 'linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%)'
-                    : 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              }}>{greeting}{name ? ',' : ''}</span>
-              {name && (
-                <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.6 }}>
-                  {name.split(' ')[0]}
-                </span>
-              )}
-              <span style={{ fontSize: 18 }}>👋</span>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.02em' }}>{dateStr}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginTop: 3, letterSpacing: -0.5 }}>
+              {greeting}{name ? `, ${name.split(' ')[0]}` : ''} 👋
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {streak > 0 && (
-            <button onClick={() => setActiveTab('ascend')} style={{
-              display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px',
-              borderRadius: 99, background: 'rgba(245,158,11,0.10)',
-              border: '1px solid rgba(245,158,11,0.28)', cursor: 'pointer',
-            }}>
-              <span style={{ fontSize: 12 }}>🔥</span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>{streak}d</span>
-            </button>
-          )}
-          <button onClick={toggleTheme} className="press" title={isDark ? 'Light mode' : 'Dark mode'} style={{
-            width: 34, height: 34, borderRadius: '50%',
-            background: 'var(--surf2)', border: '1px solid var(--edge)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}>
-            {isDark ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round">
-                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-              </svg>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+            {streak > 0 && (
+              <button onClick={() => setActiveTab('ascend')} style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px',
+                borderRadius: 99, background: 'rgba(255,255,255,0.18)',
+                border: '1px solid rgba(255,255,255,0.25)', cursor: 'pointer',
+              }}>
+                <span style={{ fontSize: 12 }}>🔥</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{streak}d</span>
+              </button>
             )}
-          </button>
-          <button onClick={() => setActiveTab('profile')} className="press" style={{
-            width: 34, height: 34, borderRadius: '50%',
-            background: 'var(--surf2)', border: '1px solid var(--edge)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round">
-              <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-            </svg>
-          </button>
+            <button onClick={toggleTheme} className="press" title={isDark ? 'Light mode' : 'Dark mode'} style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}>
+              {isDark ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                  <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                </svg>
+              )}
+            </button>
+            <button onClick={() => setActiveTab('profile')} className="press" style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </button>
+          </div>
         </div>
-        </div>
+
+        {/* Calorie hero — white on gradient */}
+        <NutritionHero consumed={consumed} targets={targets} activeType={activeType} trainingCalDelta={trainingCalDelta} />
       </div>
 
       {/* Content */}
-      <div style={{ padding: '0 12px' }}>
-
-        {/* Calorie ring + macros */}
-        <NutritionHero consumed={consumed} targets={targets} activeType={activeType} trainingCalDelta={trainingCalDelta} />
+      <div style={{ padding: '12px 12px 0' }}>
 
         {/* Training chips */}
         <TrainingChips activeType={activeType} onSelect={handleSelectType} />

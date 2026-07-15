@@ -43,47 +43,40 @@ function HeroCard() {
 
   return (
     <div style={{
-      borderRadius: 20,
-      background: 'var(--surf)',
-      border: '1px solid var(--edge)',
-      borderTop: `4px solid ${tierColor}`,
-      padding: '20px 20px 18px',
-      marginBottom: 14,
-      boxShadow: 'var(--shadow-md)',
+      background: `linear-gradient(145deg, ${tierGradient[0]}, ${tierGradient[1]})`,
+      padding: '18px 16px 24px',
+      marginBottom: 0,
     }}>
 
       {/* Tier badge */}
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
         padding: '4px 12px', borderRadius: 99,
-        background: `${tierColor}18`, border: `1px solid ${tierColor}35`,
+        background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)',
         fontSize: 10, fontWeight: 900, letterSpacing: '0.15em',
-        color: tierColor, textTransform: 'uppercase', marginBottom: 18,
+        color: '#fff', textTransform: 'uppercase', marginBottom: 16,
       }}>
         {TIER_ICONS[levelInfo.tier]} {levelInfo.tier}
       </div>
 
       {/* Avatar + name */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
         <div style={{
           width: 72, height: 72, borderRadius: 22,
-          background: `${tierColor}16`,
-          border: `2px solid ${tierColor}45`,
+          background: 'rgba(255,255,255,0.18)',
+          border: '2px solid rgba(255,255,255,0.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 38, flexShrink: 0,
         }}>
           {levelInfo.emoji}
         </div>
         <div>
-          <div style={{
-            fontSize: 30, fontWeight: 900, color: tierColor,
-            letterSpacing: -1.2, lineHeight: 1,
-          }}>
+          <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: -1.2, lineHeight: 1 }}>
             {levelInfo.name}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: 4 }}>
             Level {levelInfo.level}
-            {nextLevel && <span style={{ color: tierColor, opacity: 0.7 }}> · Next: {nextLevel.name}</span>}
+            {nextLevel && <span style={{ color: 'rgba(255,255,255,0.55)' }}> · Next: {nextLevel.name}</span>}
           </div>
         </div>
       </div>
@@ -91,21 +84,17 @@ function HeroCard() {
       {/* XP bar */}
       <div style={{ marginBottom: 4 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
             {levelInfo.xpInLevel} / {levelInfo.xpSpanLevel} XP
           </span>
-          <span style={{ fontSize: 11, fontWeight: 800, color: tierColor }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>
             {levelInfo.isMaxLevel ? 'MAX ✦' : `${levelInfo.xpToNext} to Lv.${levelInfo.level + 1}`}
           </span>
         </div>
-        <div style={{
-          height: 10, background: tierTrack, borderRadius: 99, overflow: 'hidden',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
-        }}>
+        <div style={{ height: 10, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
           <div style={{
             height: '100%', width: `${levelInfo.progressPct}%`,
-            background: `linear-gradient(90deg, ${tierGradient[0]}, ${tierGradient[1]})`,
-            borderRadius: 99,
+            background: '#fff', borderRadius: 99,
             transition: 'width 0.9s cubic-bezier(0.34,1.56,0.64,1)',
           }} />
         </div>
@@ -114,27 +103,23 @@ function HeroCard() {
       {/* Stat row */}
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
         {[
-          { icon: '🪙', label: 'Gold',   value: gold,        color: '#EAB308' },
-          { icon: '🔥', label: 'Streak', value: `${streakDays}d`, color: '#FBBF24' },
-          { icon: '⚡', label: 'Today',  value: `${todayXP}/${DAILY_HARD_CAP}`, color: tierColor },
+          { icon: '🪙', label: 'Gold',   value: gold        },
+          { icon: '🔥', label: 'Streak', value: `${streakDays}d` },
+          { icon: '⚡', label: 'Today',  value: `${todayXP}/${DAILY_HARD_CAP}` },
         ].map(s => (
           <div key={s.label} style={{
             flex: 1,
-            background: `${s.color}0A`,
-            border: `1px solid ${s.color}22`,
+            background: 'rgba(255,255,255,0.14)',
+            border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: 14,
             padding: '12px 8px',
             textAlign: 'center',
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`,
           }}>
             <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
-            <div style={{
-              fontSize: 14, fontWeight: 900, color: s.color,
-              fontVariantNumeric: 'tabular-nums',
-              }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
               {s.value}
             </div>
-            <div style={{ fontSize: 9, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
               {s.label}
             </div>
           </div>

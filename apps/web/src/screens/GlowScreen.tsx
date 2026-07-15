@@ -504,15 +504,11 @@ export default function GlowScreen() {
   return (
     <div style={{ height: '100%', overflowY: 'auto', padding: '20px 16px 100px', background: 'var(--bg)' }}>
 
-      {/* Header */}
-      <div className="a a1" style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      {/* Hero banner */}
+      <div style={{ background: 'linear-gradient(145deg, #7C3AED 0%, #DB2777 100%)', padding: '18px 16px 24px', margin: '-20px -16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{
-            fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
-            background: 'linear-gradient(135deg, var(--c-glow), #FB923C)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          }}>Glow ✦</div>
-          <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+          <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Glow ✦</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
             {glowProfile
               ? `${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.emoji} ${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.label} focus`
               : 'Personalized to your training & nutrition'}
@@ -521,7 +517,7 @@ export default function GlowScreen() {
         {glowProfile && (
           <button
             onClick={() => { localStorage.removeItem(GLOW_PROFILE_KEY); setGlowProfile(null); setGlowTab('routine'); }}
-            style={{ background: 'none', border: 'none', color: MUTED, fontSize: 11, cursor: 'pointer', padding: '4px 0', fontWeight: 600 }}
+            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 11, cursor: 'pointer', padding: '6px 12px', fontWeight: 700, borderRadius: 99 }}
           >
             Edit goals
           </button>

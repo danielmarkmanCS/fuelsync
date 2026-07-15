@@ -795,16 +795,26 @@ export default function AscendScreen() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div style={{ padding: '24px 20px 0' }}>
-        <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>
+      {/* ── Hero banner ── */}
+      <div style={{ background: 'linear-gradient(145deg, #D97706 0%, #EA580C 100%)', padding: '18px 16px 24px' }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
         </div>
-        <div style={{
-          fontSize: 34, fontWeight: 900, letterSpacing: -1.2,
-          background: 'linear-gradient(135deg, var(--c-ascend), #F97316)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-        }}>Progress ✦</div>
+        <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Progress ✦</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 16px', textAlign: 'center' }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Streak</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{streak.current}d</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 16px', textAlign: 'center' }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total XP</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{xp}</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 16px', textAlign: 'center' }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Level</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{levelInfo.level}</div>
+          </div>
+        </div>
       </div>
 
       {/* ── XP Ring ─────────────────────────────────────────────────────────── */}
