@@ -9,6 +9,8 @@ import {
 import { grantDailyXP, grantXP } from '../lib/xp';
 import { useThemeStore } from '../store/themeStore';
 import { syncWeightLog, getSyncToken } from '../api/syncClient';
+import { getLatestMeasurement, getMeasurements, saveMeasurement } from '../lib/bodyMeasurements';
+import type { BodyMeasurement } from '../lib/bodyMeasurements';
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const BODY_COLOR  = 'var(--c-body)';     // sky — hydration
@@ -631,24 +633,167 @@ function SleepSection() {
   );
 }
 
+// ─── Body measurements ────────────────────────────────────────────────────────
+const MEASURE_FIELDS: { key: keyof Omit<BodyMeasurement, 'id' | 'date' | 'logged_at'>; label: string; emoji: string; unit: string }[] = [
+  { key: 'waist_cm',    label: 'Waist',    emoji: '📏', unit: 'cm' },
+  { key: 'chest_cm',    label: 'Chest',    emoji: '💪', unit: 'cm' },
+  { key: 'arms_cm',     label: 'Arms',     emoji: '🦾', unit: 'cm' },
+  { key: 'hips_cm',     label: 'Hips',     emoji: '🍑', unit: 'cm' },
+  { key: 'thighs_cm',   label: 'Thighs',   emoji: '🦵', unit: 'cm' },
+  { key: 'neck_cm',     label: 'Neck',     emoji: '🧣', unit: 'cm' },
+  { key: 'body_fat_pct',label: 'Body Fat', emoji: '⚡', unit: '%' },
+];
+
+function MeasurementsSection() {
+  const units = useThemeStore(s => s.units);
+  const [latest,   setLatest]   = useState<BodyMeasurement | null>(null);
+  const [previous, setPrevious] = useState<BodyMeasurement | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    const all = await getMeasurements(2);
+    setLatest(all[0] ?? null);
+    setPrevious(all[1] ?? null);
+    if (all[0]) {
+      const f: Record<string, string> = {};
+      MEASURE_FIELDS.forEach(({ key }) => {
+        const v = all[0][key];
+        if (v != null) f[key] = String(v);
+      });
+      setForm(f);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleSave() {
+    const today = new Date().toISOString().slice(0, 10);
+    const fields: Omit<BodyMeasurement, 'id' | 'date' | 'logged_at'> = {};
+    MEASURE_FIELDS.forEach(({ key }) => {
+      const v = parseFloat(form[key]);
+      if (!isNaN(v) && v > 0) (fields as Record<string, number>)[key] = v;
+    });
+    await saveMeasurement(today, fields);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    await load();
+    setExpanded(false);
+  }
+
+  const hasData = latest && MEASURE_FIELDS.some(({ key }) => latest[key] != null);
+  const toDisplay = (v: number | null | undefined, unit: string) => {
+    if (v == null) return null;
+    if (unit === 'cm' && units === 'imperial') return `${(v / 2.54).toFixed(1)}"`;
+    return `${v}${unit}`;
+  };
+  const displayUnit = (unit: string) => unit === 'cm' && units === 'imperial' ? 'in' : unit;
+
+  function delta(key: keyof Omit<BodyMeasurement, 'id' | 'date' | 'logged_at'>) {
+    const a = latest?.[key]; const b = previous?.[key];
+    if (a == null || b == null) return null;
+    const d = (a as number) - (b as number);
+    if (Math.abs(d) < 0.05) return null;
+    return d;
+  }
+
+  return (
+    <div style={{ background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)', overflow: 'hidden', marginBottom: 16 }}>
+      <button
+        onClick={() => setExpanded(e => !e)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px', background: 'none', border: 'none', cursor: 'pointer' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #0284C7, #0D9488)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📐</div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>Measurements</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>
+              {hasData ? `Last: ${new Date(latest!.logged_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Tap to log'}
+            </div>
+          </div>
+        </div>
+        <span style={{ fontSize: 18, color: 'var(--muted)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+      </button>
+
+      {hasData && !expanded && (
+        <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          {MEASURE_FIELDS.filter(({ key }) => latest![key] != null).map(({ key, label, emoji, unit }) => {
+            const d = delta(key);
+            return (
+              <div key={key} style={{ background: 'var(--surf2)', borderRadius: 12, padding: '10px 8px', textAlign: 'center', border: '1px solid var(--edge)' }}>
+                <div style={{ fontSize: 16 }}>{emoji}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>{toDisplay(latest![key] as number, unit)}</div>
+                <div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{label}</div>
+                {d != null && (
+                  <div style={{ fontSize: 10, fontWeight: 700, marginTop: 2, color: d < 0 ? '#22C55E' : '#EF4444' }}>
+                    {d > 0 ? '+' : ''}{d.toFixed(1)}{displayUnit(unit)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {expanded && (
+        <div style={{ padding: '0 16px 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+            {MEASURE_FIELDS.map(({ key, label, emoji, unit }) => (
+              <div key={key}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {emoji} {label} ({displayUnit(unit)})
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={`e.g. ${key === 'body_fat_pct' ? '15' : '80'}`}
+                  value={form[key] ?? ''}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  style={{
+                    width: '100%', padding: '10px 12px', borderRadius: 10,
+                    border: '1px solid var(--edge)', background: 'var(--surf2)',
+                    color: 'var(--text)', fontSize: 14, fontWeight: 700,
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          <button onClick={handleSave} style={{
+            width: '100%', padding: 13, borderRadius: 14,
+            background: 'linear-gradient(135deg, #0284C7, #0D9488)',
+            border: 'none', color: '#fff', fontSize: 14, fontWeight: 800,
+            cursor: 'pointer', transition: 'opacity 0.15s',
+          }}>
+            {saved ? '✓ Saved!' : '📐 Save Measurements'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function BodyScreen() {
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
       {/* ── Hero banner ── */}
-      <div style={{ background: 'linear-gradient(145deg, #0284C7 0%, #0D9488 100%)', padding: '18px 16px 24px' }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div style={{ background: 'var(--bg)', padding: '18px 16px 24px', borderBottom: '1px solid var(--edge)' }}>
+        <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
           {dateStr}
         </div>
-        <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Body</div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>Weight · Hydration · Sleep</div>
+        <div style={{ fontSize: 38, fontWeight: 900, color: 'var(--text)', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Body</div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>Weight · Hydration · Sleep · Measurements</div>
       </div>
 
       <div style={{ padding: '12px 16px 0' }}>
         <WeightSection />
         <WaterSection />
         <SleepSection />
+        <MeasurementsSection />
       </div>
     </div>
   );

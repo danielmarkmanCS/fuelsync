@@ -11,6 +11,7 @@ import { calcStreak } from '../lib/streak';
 import { grantDailyXP } from '../lib/xp';
 import { getWaterTotal, getWaterGoal, addWater, removeLastWater, parseWaterDescription, parseWaterAI } from '../lib/waterLog';
 import { useThemeStore } from '../store/themeStore';
+import DailyQuestBoard from '../components/DailyQuestBoard';
 
 // ── constants ──────────────────────────────────────────────────────────────
 
@@ -99,11 +100,11 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
         const t = TRAINING_TYPES.find(x => x.type === activeType);
         return (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14,
-            background: 'rgba(255,255,255,0.18)', borderRadius: 99, padding: '4px 12px' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '0.04em' }}>
+            background: 'var(--surf2)', borderRadius: 99, padding: '4px 12px', border: '1px solid var(--edge)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.04em' }}>
               {t?.emoji} {t?.label} day
               {trainingCalDelta !== undefined && trainingCalDelta !== 0 &&
-                <span style={{ color: 'rgba(255,255,255,0.8)' }}> · {trainingCalDelta > 0 ? '+' : ''}{trainingCalDelta} kcal</span>}
+                <span style={{ color: 'var(--muted)' }}> · {trainingCalDelta > 0 ? '+' : ''}{trainingCalDelta} kcal</span>}
             </span>
           </div>
         );
@@ -112,30 +113,30 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
       {/* Big number */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>
+          color: 'var(--muted)', marginBottom: 2 }}>
           {calGoal === 0 ? 'eaten today' : isOver ? 'over by' : nearGoal ? 'almost there ✦' : 'remaining'}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ fontSize: 80, fontWeight: 900, lineHeight: 1, letterSpacing: -3,
-            color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+            color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
             {calGoal === 0 ? animEaten.toLocaleString() : animRemaining.toLocaleString()}
           </span>
-          <span style={{ fontSize: 22, fontWeight: 600, color: 'rgba(255,255,255,0.65)', paddingBottom: 8 }}>kcal</span>
+          <span style={{ fontSize: 22, fontWeight: 600, color: 'var(--muted)', paddingBottom: 8 }}>kcal</span>
         </div>
       </div>
 
       {/* Progress bar */}
       {calGoal > 0 && (
         <div style={{ marginBottom: 18 }}>
-          <div style={{ height: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 99, background: '#fff',
+          <div style={{ height: 8, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 99, background: 'var(--accent)',
               width: `${(mounted ? pct : 0) * 100}%`, transition: 'width 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 11, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
               {animEaten.toLocaleString()} eaten
             </span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 11, color: 'var(--muted2)', fontVariantNumeric: 'tabular-nums' }}>
               {calGoal.toLocaleString()} goal
             </span>
           </div>
@@ -147,14 +148,14 @@ function NutritionHero({ consumed, targets, activeType, trainingCalDelta }: {
         {macros.map(({ label, eaten, goal }) => {
           const mpct = goal > 0 ? Math.min(eaten / goal, 1) : 0;
           return (
-            <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: '10px 12px' }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
-                {eaten}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 1 }}>g</span>
+            <div key={label} style={{ flex: 1, background: 'var(--surf2)', borderRadius: 14, padding: '10px 12px', border: '1px solid var(--edge)' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                {eaten}<span style={{ fontSize: 10, color: 'var(--muted2)', marginLeft: 1 }}>g</span>
               </div>
               {goal > 0 && (
-                <div style={{ height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
-                  <div style={{ height: '100%', width: `${mpct * 100}%`, background: '#fff', borderRadius: 99 }} />
+                <div style={{ height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
+                  <div style={{ height: '100%', width: `${mpct * 100}%`, background: 'var(--accent)', borderRadius: 99 }} />
                 </div>
               )}
             </div>
@@ -600,40 +601,47 @@ export default function HomeScreen() {
   }, {});
   const visibleSections = MEAL_SECTIONS.filter(s => MAIN_MEALS.has(s.key) || logsByMeal[s.key]?.length > 0);
 
-  const heroGrad = `linear-gradient(145deg, #4338CA 0%, #7C3AED 100%)`;
+  const HERO_GRAD = 'var(--bg)';
+  const calPct  = targets && targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
+  const protPct = targets && targets.proteinG  > 0 ? Math.min(consumed.proteinG / targets.proteinG, 1) : 0;
+  const watPct  = waterGoal > 0 ? Math.min(water / waterGoal, 1) : 0;
+  const doneCal  = calPct >= 0.85 && consumed.calories <= (targets?.calories ?? 0) * 1.05;
+  const doneProt = protPct >= 1;
+  const doneWat  = watPct >= 1;
+  const completedMacros = [doneCal, doneProt, doneWat].filter(Boolean).length;
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
 
       {/* ── Hero banner ── */}
-      <div style={{ background: heroGrad, padding: '18px 16px 28px' }}>
+      <div style={{ background: HERO_GRAD, padding: '18px 16px 24px', borderBottom: '1px solid var(--edge)' }}>
 
         {/* Top row: greeting + actions */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.02em' }}>{dateStr}</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginTop: 3, letterSpacing: -0.5 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, letterSpacing: '0.02em' }}>{dateStr}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginTop: 3, letterSpacing: -0.5 }}>
               {greeting}{name ? `, ${name.split(' ')[0]}` : ''} 👋
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
             {streak > 0 && (
               <button onClick={() => setActiveTab('ascend')} style={{
-                display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px',
-                borderRadius: 99, background: 'rgba(255,255,255,0.18)',
-                border: '1px solid rgba(255,255,255,0.25)', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', marginTop: 6,
+                borderRadius: 99, background: 'var(--surf2)',
+                border: '1px solid var(--edge)', cursor: 'pointer',
               }}>
-                <span style={{ fontSize: 12 }}>🔥</span>
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{streak}d</span>
+                <span style={{ fontSize: 11 }}>🔥</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text)' }}>{streak} day streak</span>
               </button>
             )}
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
             <button onClick={toggleTheme} className="press" title={isDark ? 'Light mode' : 'Dark mode'} style={{
               width: 34, height: 34, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
+              background: 'var(--surf2)', border: '1px solid var(--edge)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
             }}>
               {isDark ? (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" strokeLinecap="round">
                   <circle cx="12" cy="12" r="5"/>
                   <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
                   <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -641,29 +649,74 @@ export default function HomeScreen() {
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" strokeLinecap="round">
                   <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
                 </svg>
               )}
             </button>
             <button onClick={() => setActiveTab('profile')} className="press" style={{
               width: 34, height: 34, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)',
+              background: 'var(--surf2)', border: '1px solid var(--edge)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
             }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" strokeLinecap="round">
                 <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Calorie hero — white on gradient */}
+        {/* Calorie hero */}
         <NutritionHero consumed={consumed} targets={targets} activeType={activeType} trainingCalDelta={trainingCalDelta} />
+
+        {/* Macro goal pills row */}
+        {targets && targets.calories > 0 && (consumed.calories > 0 || water > 0) && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            {[
+              { label: 'Cals', pct: calPct, done: doneCal, color: 'var(--c-today)', icon: '⚡', val: `${Math.round(consumed.calories)}` },
+              { label: 'Protein', pct: protPct, done: doneProt, color: 'var(--prot)', icon: '💪', val: `${Math.round(consumed.proteinG)}g` },
+              { label: 'Water', pct: watPct, done: doneWat, color: 'var(--c-body)', icon: '💧', val: `${(water/1000).toFixed(1)}L` },
+            ].map(m => (
+              <div key={m.label} style={{ flex: 1, background: 'var(--surf2)', borderRadius: 12, padding: '8px 10px', textAlign: 'center', border: '1px solid var(--edge)' }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: m.done ? m.color : 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{m.val}</div>
+                <div style={{ height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', margin: '5px 0 4px' }}>
+                  <div style={{ height: '100%', borderRadius: 99, background: m.done ? m.color : 'var(--accent)', width: `${Math.round(m.pct * 100)}%`, transition: 'width 0.6s var(--ease)' }} />
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: m.done ? m.color : 'var(--muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  {m.done ? '✓ ' : ''}{m.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Content */}
+      {/* ── Quick actions strip ── */}
       <div style={{ padding: '12px 12px 0' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {[
+            { label: 'Log Food', emoji: '🍽️', tab: 'food' as const, color: '#059669' },
+            { label: 'Log Water', emoji: '💧', action: () => quickAddWater(250, '1 glass'), color: '#0284C7' },
+            { label: 'Body', emoji: '⚖️', tab: 'body' as const, color: '#7C3AED' },
+            { label: 'Ascend', emoji: '⚡', tab: 'ascend' as const, color: '#D97706' },
+          ].map(a => (
+            <button
+              key={a.label}
+              onClick={a.action ?? (() => setActiveTab(a.tab!))}
+              className="press"
+              style={{
+                flex: 1, padding: '10px 6px', borderRadius: 14,
+                background: 'var(--surf)', border: '1px solid var(--edge)',
+                cursor: 'pointer', textAlign: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{a.emoji}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{a.label}</span>
+            </button>
+          ))}
+        </div>
 
         {/* Training chips */}
         <TrainingChips activeType={activeType} onSelect={handleSelectType} />
@@ -675,49 +728,15 @@ export default function HomeScreen() {
           onAdd={quickAddWater} onUndo={undoWater}
         />
 
-        {/* Daily missions snapshot */}
-        {targets && targets.calories > 0 && (() => {
-          const calPct  = Math.min(consumed.calories / targets.calories, 1);
-          const protPct = targets.proteinG ? Math.min(consumed.proteinG / targets.proteinG, 1) : 0;
-          const watPct  = waterGoal > 0 ? Math.min(water / waterGoal, 1) : 0;
-          const doneCal  = calPct >= 0.85 && consumed.calories <= targets.calories * 1.05;
-          const doneProt = protPct >= 1;
-          const doneWat  = watPct >= 1;
-          const doneCount = [doneCal, doneProt, doneWat].filter(Boolean).length;
-          if (doneCount === 0 && consumed.calories === 0) return null;
-          return (
-            <div style={{
-              display: 'flex', gap: 6, marginBottom: 12,
-            }}>
-              {[
-                { label: 'Calories',  pct: calPct,  done: doneCal,  color: 'var(--c-today)', icon: '⚡' },
-                { label: 'Protein',   pct: protPct, done: doneProt, color: 'var(--prot)',    icon: '💪' },
-                { label: 'Hydration', pct: watPct,  done: doneWat,  color: 'var(--c-body)',  icon: '💧' },
-              ].map(m => (
-                <div key={m.label} style={{
-                  flex: 1, background: 'var(--surf)', borderRadius: 12, border: `1px solid ${m.done ? m.color + '30' : 'var(--edge)'}`,
-                  padding: '8px 10px', textAlign: 'center',
-                  transition: 'all 0.3s',
-                }}>
-                  <div style={{ fontSize: 14, marginBottom: 3 }}>
-                    {m.done ? '✓' : m.icon}
-                  </div>
-                  <div style={{ height: 4, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginBottom: 4 }}>
-                    <div style={{
-                      height: '100%', borderRadius: 99,
-                      background: m.done ? m.color : `${m.color}80`,
-                      width: `${m.pct * 100}%`, transition: 'width 0.6s var(--ease)',
-                      boxShadow: 'none',
-                    }} />
-                  </div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: m.done ? m.color : 'var(--muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                    {m.done ? m.label : `${Math.round(m.pct * 100)}%`}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
+        {/* Daily quests board */}
+        {completedMacros < 3 && (
+          <div style={{
+            background: 'var(--surf)', borderRadius: 20, border: '1px solid var(--edge)',
+            padding: '14px 14px', marginBottom: 12, boxShadow: 'var(--shadow-sm)',
+          }}>
+            <DailyQuestBoard compact />
+          </div>
+        )}
       </div>
 
       {/* Food diary */}

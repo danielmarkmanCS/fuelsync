@@ -204,31 +204,48 @@ export default function SupplementsScreen() {
     if (typeof Notification === 'undefined') return;
     const perm = await Notification.requestPermission();
     setNotifPerm(perm);
-    if (perm === 'granted') {
-      // Schedule one notification per timing group based on time-of-day
-      const TIMING_HOURS: Record<Supplement['timing'], number> = {
-        morning: 8, 'pre-workout': 13, 'post-workout': 15, evening: 20, anytime: 12,
+    if (perm !== 'granted') return;
+
+    const TIMING_HOURS: Record<Supplement['timing'], number> = {
+      morning: 8, 'pre-workout': 13, 'post-workout': 15, evening: 20, anytime: 12,
+    };
+    const now = new Date();
+    const timingsPresent = [...new Set(supplements.map(s => s.timing))];
+
+    const schedules = timingsPresent.map(timing => {
+      const hour = TIMING_HOURS[timing];
+      const fire = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
+      if (fire <= now) fire.setDate(fire.getDate() + 1);
+      const suppsForTiming = supplements.filter(s => s.timing === timing);
+      return {
+        delayMs: fire.getTime() - now.getTime(),
+        title: `💊 ${timing.charAt(0).toUpperCase() + timing.slice(1)} supplements`,
+        body: suppsForTiming.map(s => `${s.name} ${s.dose}${s.unit}`).join(', '),
+        tag: `supp-${timing}`,
+        icon: '/icons/icon-192.png',
       };
-      const timingsPresent = [...new Set(supplements.map(s => s.timing))];
-      for (const timing of timingsPresent) {
-        const hour = TIMING_HOURS[timing];
-        const now = new Date();
-        const fire = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
-        if (fire <= now) fire.setDate(fire.getDate() + 1);
-        const delay = fire.getTime() - now.getTime();
-        setTimeout(() => {
-          const suppsForTiming = supplements.filter(s => s.timing === timing && !isTaken(s.id!));
-          if (suppsForTiming.length === 0) return;
-          new Notification('Supplement reminder', {
-            body: suppsForTiming.map(s => `${s.name} ${s.dose}${s.unit}`).join(', '),
-            icon: '/icons/icon-192.png',
-            tag: `supp-${timing}`,
-          });
-        }, delay);
+    }).filter(s => s.delayMs > 0);
+
+    // Prefer SW-based scheduling (survives page close); fall back to page-side setTimeout
+    try {
+      const reg = await navigator.serviceWorker?.ready;
+      if (reg?.active) {
+        const channel = new MessageChannel();
+        reg.active.postMessage({ type: 'SCHEDULE_NOTIFICATIONS', schedules }, [channel.port2]);
+        setSyncMsg('✓ Reminders scheduled (work even when app is closed)');
+      } else {
+        throw new Error('no sw');
       }
-      setSyncMsg('✓ Reminders enabled for today');
-      setTimeout(() => setSyncMsg(''), 3000);
+    } catch {
+      // Graceful fallback: page-level setTimeout (only fires while app is open)
+      schedules.forEach(s => {
+        setTimeout(() => {
+          new Notification(s.title, { body: s.body, icon: s.icon, tag: s.tag });
+        }, s.delayMs);
+      });
+      setSyncMsg('✓ Reminders set for today');
     }
+    setTimeout(() => setSyncMsg(''), 3500);
   };
 
   // Show congrats once per calendar day when all supplements are marked
@@ -256,17 +273,17 @@ export default function SupplementsScreen() {
     <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 32 }}>
 
       {/* ── Hero banner ──────────────────────────────────────────────── */}
-      <div style={{ background: 'linear-gradient(145deg, #E11D48 0%, #9333EA 100%)', padding: '18px 16px 24px' }}>
+      <div style={{ background: 'var(--bg)', padding: '18px 16px 24px', borderBottom: '1px solid var(--edge)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </div>
-            <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Pills</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: 4 }}>
-              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 900, color: '#fff' }}>{takenCount}</span>
+            <div style={{ fontSize: 38, fontWeight: 900, color: 'var(--text)', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Pills</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600, marginTop: 4 }}>
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 900, color: 'var(--text)' }}>{takenCount}</span>
               <span> of {supplements.length} taken today</span>
-              {skippedCount > 0 && <span style={{ marginLeft: 6, color: 'rgba(255,255,255,0.6)' }}>· {skippedCount} skipped</span>}
+              {skippedCount > 0 && <span style={{ marginLeft: 6, color: 'var(--muted2)' }}>· {skippedCount} skipped</span>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -279,20 +296,20 @@ export default function SupplementsScreen() {
             )}
             {typeof Notification !== 'undefined' && notifPerm !== 'granted' && supplements.length > 0 && (
               <button onClick={handleEnableReminders} title="Enable reminders"
-                style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '7px 10px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                style={{ background: 'var(--surf2)', border: '1px solid var(--edge)', borderRadius: 10, padding: '7px 10px', color: 'var(--text)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
               </button>
             )}
             {notifPerm === 'granted' && (
-              <span title="Reminders on" style={{ display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.7)' }}>
+              <span title="Reminders on" style={{ display: 'flex', alignItems: 'center', color: 'var(--muted)' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
               </span>
             )}
             <button
               onClick={() => { setAdding(true); setEditId(null); setName(''); setDose(''); setUnit('mg'); setTiming('morning'); }}
               style={{
-                background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 12, padding: '9px 16px',
-                color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                background: 'var(--surf2)', border: '1px solid var(--edge2)', borderRadius: 12, padding: '9px 16px',
+                color: 'var(--text)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 5,
               }}
             >

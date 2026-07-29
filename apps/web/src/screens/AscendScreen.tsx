@@ -496,36 +496,41 @@ const MissionRow = memo(function MissionRow({ mission }: { mission: Mission }) {
   const suffix =
     mission.id === 'protein' || mission.id === 'calories' ? 'g' :
     mission.id === 'water' ? 'ml' : '';
+  const pctLabel = hasBar ? `${Math.round(pct)}%` : '';
 
   return (
-    <div style={{ padding: '13px 16px' }}>
+    <div style={{
+      padding: '12px 16px',
+      background: mission.done ? `${mission.color}08` : 'transparent',
+      borderBottom: '1px solid var(--edge)',
+      transition: 'background 0.3s var(--ease)',
+    }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
-          width:          36,
-          height:         36,
-          borderRadius:   10,
+          width:          42,
+          height:         42,
+          borderRadius:   13,
           flexShrink:     0,
-          background:     mission.done ? `${mission.color}18` : 'var(--surf2)',
-          border:         `1px solid ${mission.done ? mission.color + '30' : 'var(--edge)'}`,
+          background:     mission.done ? `${mission.color}20` : 'var(--surf2)',
+          border:         `1.5px solid ${mission.done ? mission.color + '45' : 'var(--edge)'}`,
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'center',
-          transition:     'all 0.25s var(--ease)',
-          boxShadow: 'none',
+          transition:     'all 0.3s var(--spring)',
+          boxShadow:      mission.done ? `0 0 12px ${mission.color}30` : 'none',
         }}>
           {mission.done
-            ? <IconCheck size={16} color={mission.color} />
-            : MIcon ? <MIcon size={16} color="var(--muted2)" /> : null
+            ? <span style={{ fontSize: 18 }}>✓</span>
+            : MIcon ? <MIcon size={18} color={mission.color + 'aa'} /> : null
           }
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize:   13,
-            fontWeight: 600,
-            color:      mission.done ? 'var(--text)' : 'var(--muted)',
-            marginBottom: hasBar && !mission.done ? 2 : 0,
-            textDecoration: mission.done ? 'none' : 'none',
+            fontWeight: mission.done ? 700 : 600,
+            color:      mission.done ? mission.color : 'var(--text)',
+            marginBottom: 1,
           }}>
             {mission.label}
           </div>
@@ -534,42 +539,50 @@ const MissionRow = memo(function MissionRow({ mission }: { mission: Mission }) {
               {mission.current}{suffix} / {mission.goal}{suffix}
             </div>
           )}
+          {mission.done && (
+            <div style={{ fontSize: 11, color: mission.color, fontWeight: 700 }}>Complete ✦</div>
+          )}
         </div>
 
         <div style={{
-          display:        'flex',
-          alignItems:     'center',
-          gap:            4,
-          padding:        '4px 9px',
-          borderRadius:   8,
-          flexShrink:     0,
-          background:     mission.done ? `${mission.color}15` : 'var(--surf2)',
-          border:         `1px solid ${mission.done ? mission.color + '30' : 'var(--edge)'}`,
+          display:    'flex',
+          alignItems: 'center',
+          gap:        4,
+          padding:    '5px 10px',
+          borderRadius: 99,
+          flexShrink: 0,
+          background: mission.done ? `${mission.color}20` : 'var(--surf2)',
+          border:     `1px solid ${mission.done ? mission.color + '40' : 'var(--edge)'}`,
         }}>
           <IconBolt size={10} color={mission.done ? mission.color : 'var(--muted2)'} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: mission.done ? mission.color : 'var(--muted2)' }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: mission.done ? mission.color : 'var(--muted)' }}>
             +{mission.xp}
           </span>
         </div>
       </div>
 
       {hasBar && (
-        <div style={{
-          marginTop:    9,
-          marginLeft:   48,
-          height:       4,
-          background:   'var(--edge2)',
-          borderRadius: 99,
-          overflow:     'hidden',
-        }}>
-          <div style={{
-            height:       '100%',
-            borderRadius: 99,
-            background:   mission.done ? mission.color : `${mission.color}70`,
-            width:        `${pct}%`,
-            transition:   'width 0.75s cubic-bezier(0.4,0,0.2,1)',
-            boxShadow: 'none',
-          }} />
+        <div style={{ marginTop: 10, marginLeft: 54 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: mission.done ? mission.color : 'var(--muted2)' }}>
+              {mission.done ? 'Done!' : pctLabel}
+            </span>
+            {!mission.done && (
+              <span style={{ fontSize: 10, color: 'var(--muted2)', fontVariantNumeric: 'tabular-nums' }}>
+                {mission.current}{suffix}/{mission.goal}{suffix}
+              </span>
+            )}
+          </div>
+          <div style={{ height: 6, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{
+              height:     '100%',
+              borderRadius: 99,
+              background: mission.done ? mission.color : `linear-gradient(90deg, ${mission.color}80, ${mission.color})`,
+              width:      `${pct}%`,
+              transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1)',
+              boxShadow:  mission.done ? `0 0 8px ${mission.color}50` : 'none',
+            }} />
+          </div>
         </div>
       )}
     </div>
@@ -587,26 +600,39 @@ const AchievementBadge = memo(function AchievementBadge({
       flexDirection: 'column',
       alignItems:    'center',
       gap:           5,
-      padding:       '13px 6px',
-      background:    unlocked ? `${color}12` : 'var(--surf2)',
-      borderRadius:  13,
-      border:        `1px solid ${unlocked ? color + '28' : 'var(--edge)'}`,
-      opacity:       unlocked ? 1 : 0.32,
-      transition:    'all 0.25s var(--ease)',
-      boxShadow: 'none',
+      padding:       '14px 6px',
+      background:    unlocked ? `${color}14` : 'var(--surf2)',
+      borderRadius:  14,
+      border:        `1px solid ${unlocked ? color + '35' : 'var(--edge)'}`,
+      opacity:       unlocked ? 1 : 0.4,
+      transition:    'all 0.3s var(--ease)',
+      boxShadow:     unlocked ? `0 2px 12px ${color}20` : 'none',
+      position:      'relative',
     }}>
-      <div style={{ fontSize: 22, filter: unlocked ? 'none' : 'grayscale(1) brightness(0.45)' }}>
-        {icon}
+      {unlocked && (
+        <div style={{
+          position: 'absolute', top: 5, right: 5,
+          width: 8, height: 8, borderRadius: '50%',
+          background: color, boxShadow: `0 0 4px ${color}`,
+        }} />
+      )}
+      <div style={{
+        fontSize: 24,
+        filter: unlocked ? 'none' : 'grayscale(1) brightness(0.4)',
+        lineHeight: 1,
+      }}>
+        {unlocked ? icon : '🔒'}
       </div>
       <div style={{
         fontSize:   9,
-        fontWeight: 700,
+        fontWeight: 800,
         color:      unlocked ? color : 'var(--muted2)',
         textAlign:  'center',
         lineHeight: 1.3,
         letterSpacing: 0.2,
+        textTransform: 'uppercase',
       }}>
-        {label}
+        {unlocked ? label : '???'}
       </div>
     </div>
   );
@@ -796,23 +822,23 @@ export default function AscendScreen() {
     <div style={{ background: 'var(--bg)', minHeight: '100%', paddingBottom: 100 }}>
 
       {/* ── Hero banner ── */}
-      <div style={{ background: 'linear-gradient(145deg, #D97706 0%, #EA580C 100%)', padding: '18px 16px 24px' }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div style={{ background: 'var(--bg)', padding: '18px 16px 24px', borderBottom: '1px solid var(--edge)' }}>
+        <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
         </div>
-        <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Progress ✦</div>
+        <div style={{ fontSize: 38, fontWeight: 900, color: 'var(--text)', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Progress ✦</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Streak</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{streak.current}d</div>
+          <div style={{ background: 'var(--surf2)', borderRadius: 12, padding: '8px 16px', textAlign: 'center', border: '1px solid var(--edge)' }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Streak</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>{streak.current}d</div>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total XP</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{xp}</div>
+          <div style={{ background: 'var(--surf2)', borderRadius: 12, padding: '8px 16px', textAlign: 'center', border: '1px solid var(--edge)' }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total XP</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>{xp}</div>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '8px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Level</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>{levelInfo.level}</div>
+          <div style={{ background: 'var(--surf2)', borderRadius: 12, padding: '8px 16px', textAlign: 'center', border: '1px solid var(--edge)' }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Level</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>{levelInfo.level}</div>
           </div>
         </div>
       </div>
