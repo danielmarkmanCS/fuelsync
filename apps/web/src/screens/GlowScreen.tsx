@@ -505,10 +505,10 @@ export default function GlowScreen() {
     <div style={{ height: '100%', overflowY: 'auto', padding: '20px 16px 100px', background: 'var(--bg)' }}>
 
       {/* Hero banner */}
-      <div style={{ background: 'linear-gradient(145deg, #7C3AED 0%, #DB2777 100%)', padding: '18px 16px 24px', margin: '-20px -16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div style={{ background: 'var(--bg)', padding: '18px 16px 24px', margin: '-20px -16px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', borderBottom: '1px solid var(--edge)' }}>
         <div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Glow ✦</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+          <div style={{ fontSize: 38, fontWeight: 900, color: 'var(--text)', letterSpacing: -1.5, lineHeight: 1, marginBottom: 4 }}>Glow ✦</div>
+          <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
             {glowProfile
               ? `${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.emoji} ${GOAL_OPTIONS.find(g => g.id === glowProfile.goal)?.label} focus`
               : 'Personalized to your training & nutrition'}
@@ -517,7 +517,7 @@ export default function GlowScreen() {
         {glowProfile && (
           <button
             onClick={() => { localStorage.removeItem(GLOW_PROFILE_KEY); setGlowProfile(null); setGlowTab('routine'); }}
-            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 11, cursor: 'pointer', padding: '6px 12px', fontWeight: 700, borderRadius: 99 }}
+            style={{ background: 'var(--surf2)', border: '1px solid var(--edge)', color: 'var(--text)', fontSize: 11, cursor: 'pointer', padding: '6px 12px', fontWeight: 700, borderRadius: 99 }}
           >
             Edit goals
           </button>

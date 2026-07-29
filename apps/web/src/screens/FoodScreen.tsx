@@ -231,7 +231,7 @@ export default function FoodScreen() {
 
   const [logs,       setLogs]       = useState<FoodLog[]>([]);
   const [open,       setOpen]       = useState(false);
-  const [mode,       setMode]       = useState<'ai' | 'photo' | 'manual'>('ai');
+  const [mode,       setMode]       = useState<'ai' | 'search' | 'photo' | 'manual'>('ai');
   const [logSuccess, setLogSuccess] = useState(false);
 
   // Quick Add state
@@ -627,6 +627,7 @@ export default function FoodScreen() {
     setAiError(''); setFormError(''); setAiQuery(''); setEditingId(null); setBasePerGram(null);
     setSuggestResult(null); setEditableIngredients(null);
     setSearchQuery(''); setSearchResults([]); setSearchError('');
+    setMode('ai');
     setScanError(''); setManualBarcode('');
     setRecipeView('list'); setRecipeSearch(''); setRecipeResults([]);
     setLoggingRecipeId(null); setLoggingRecipeServings('1');
@@ -1019,40 +1020,37 @@ export default function FoodScreen() {
 
       {/* ── HERO BANNER ── */}
       <div className="nrc-a nrc-a2" style={{
-        background: calPct >= 100
-          ? 'linear-gradient(145deg, #DC2626, #B91C1C)'
-          : calPct >= 85
-          ? 'linear-gradient(145deg, #059669, #0D9488)'
-          : 'linear-gradient(145deg, #059669, #0369A1)',
+        background: 'var(--bg)',
         padding: '18px 16px 20px',
-        transition: 'background 0.4s ease',
+        borderBottom: '1px solid var(--edge)',
       }}>
           {/* Big number */}
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: 2 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 2 }}>
               {calPct >= 100 ? 'over goal' : calPct >= 85 ? 'almost there ✦' : 'eaten today'}
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 80, fontWeight: 900, lineHeight: 1, letterSpacing: -3, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: 80, fontWeight: 900, lineHeight: 1, letterSpacing: -3, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
                 {Math.round(consumed.calories).toLocaleString()}
               </span>
-              <span style={{ fontSize: 22, fontWeight: 600, color: 'rgba(255,255,255,0.65)', paddingBottom: 8 }}>kcal</span>
+              <span style={{ fontSize: 22, fontWeight: 600, color: 'var(--muted)', paddingBottom: 8 }}>kcal</span>
             </div>
           </div>
 
           {/* Progress bar */}
           {targets && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ height: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+              <div style={{ height: 8, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{
-                  height: '100%', borderRadius: 99, background: '#fff',
+                  height: '100%', borderRadius: 99,
+                  background: calPct >= 100 ? 'var(--danger)' : calPct >= 85 ? 'var(--success)' : 'var(--accent)',
                   width: `${Math.min(calPct, 100)}%`,
                   transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
                 }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{Math.round(consumed.calories).toLocaleString()} eaten</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(targets.calories).toLocaleString()} goal</span>
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>{Math.round(consumed.calories).toLocaleString()} eaten</span>
+                <span style={{ fontSize: 11, color: 'var(--muted2)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(targets.calories).toLocaleString()} goal</span>
               </div>
             </div>
           )}
@@ -1067,14 +1065,14 @@ export default function FoodScreen() {
               ].map(({ name, val, tgt }) => {
                 const pct2 = tgt > 0 ? Math.min(val / tgt, 1) : 0;
                 return (
-                  <div key={name} style={{ flex: 1, background: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: '10px 12px' }}>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{name}</div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
-                      {Math.round(val)}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 1 }}>g</span>
+                  <div key={name} style={{ flex: 1, background: 'var(--surf2)', borderRadius: 14, padding: '10px 12px', border: '1px solid var(--edge)' }}>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{name}</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
+                      {Math.round(val)}<span style={{ fontSize: 10, color: 'var(--muted2)', marginLeft: 1 }}>g</span>
                     </div>
                     {tgt > 0 && (
-                      <div style={{ height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
-                        <div style={{ height: '100%', width: `${pct2 * 100}%`, background: '#fff', borderRadius: 99 }} />
+                      <div style={{ height: 3, background: 'var(--edge2)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
+                        <div style={{ height: '100%', width: `${pct2 * 100}%`, background: 'var(--accent)', borderRadius: 99 }} />
                       </div>
                     )}
                   </div>
@@ -1091,7 +1089,7 @@ export default function FoodScreen() {
             };
             const total = consumed.calories;
             return (
-              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--edge)' }}>
                 <div style={{ display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', marginBottom: 10, gap: 1 }}>
                   {byMeal.map(({ meal, entries }) => {
                     const mCal = entries.reduce((s, e) => s + parseFloat(e.calories as unknown as string), 0);
@@ -1108,7 +1106,7 @@ export default function FoodScreen() {
                     return (
                       <div key={meal} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <div style={{ width: 7, height: 7, borderRadius: 2, background: col }} />
-                        <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.65)' }}>{lbl} {mCal}</span>
+                        <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}>{lbl} {mCal}</span>
                       </div>
                     );
                   })}
@@ -1517,33 +1515,317 @@ export default function FoodScreen() {
             <div style={{ padding: '16px 20px 44px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <div style={{ fontSize: 17, fontWeight: 700, color: TEXT }}>
-                  {editingId ? 'Edit Entry' : mode === 'photo' ? 'Photo Log' : mode === 'manual' && !estimate ? 'Manual Entry' : 'Log Food'}
+                  {editingId ? 'Edit Entry' : mode === 'photo' ? 'Photo Log' : mode === 'search' ? 'Search Foods' : mode === 'manual' && !estimate ? 'Manual Entry' : 'Log Food'}
                 </div>
                 <button onClick={closeSheet} style={{ background: SURF2, border: 'none', color: MUTED, fontSize: 18, cursor: 'pointer', borderRadius: 99, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>×</button>
               </div>
 
-              {/* RECENT CHIPS — quick re-log without opening the form */}
-              {!editingId && mode === 'ai' && recents.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: MUTED, textTransform: 'uppercase', marginBottom: 8 }}>Recent</div>
-                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' as const }}>
-                    {recents.slice(0, 6).map((food) => (
-                      <button key={food.food_name + food.lastUsed} onClick={() => applySavedFood(food)} style={{
-                        flexShrink: 0, padding: '6px 12px', borderRadius: 20,
-                        background: SURF2, border: `1px solid ${EDGE}`,
-                        color: TEXT, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                        fontFamily: 'inherit', whiteSpace: 'nowrap' as const,
-                      }}>
-                        {food.food_name} <span style={{ color: MUTED, fontWeight: 500, fontSize: 11 }}>{Math.round(food.calories)}</span>
-                      </button>
-                    ))}
-                  </div>
+              {/* MODE TAB BAR — shown for non-edit, non-manual states */}
+              {!editingId && mode !== 'manual' && (
+                <div style={{
+                  display: 'flex', gap: 4, marginBottom: 18,
+                  background: SURF2, borderRadius: 12, padding: 4,
+                }}>
+                  {([
+                    { key: 'ai',     label: '✦ AI' },
+                    { key: 'search', label: '⊕ Search' },
+                    { key: 'photo',  label: '📷 Photo' },
+                  ] as const).map(({ key, label }) => (
+                    <button key={key} onClick={() => { setMode(key); setAiError(''); setFormError(''); }} style={{
+                      flex: 1, padding: '9px 4px', borderRadius: 9,
+                      background: mode === key ? 'var(--surf)' : 'transparent',
+                      border: 'none', color: mode === key ? TEXT : MUTED,
+                      fontWeight: mode === key ? 700 : 600, fontSize: 12,
+                      cursor: 'pointer', transition: 'all 0.15s ease',
+                      boxShadow: mode === key ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                      fontFamily: 'inherit',
+                    }}>{label}</button>
+                  ))}
                 </div>
+              )}
+
+              {/* SEARCH MODE */}
+              {mode === 'search' && (
+                <>
+                  {/* Search input row */}
+                  <div style={{ position: 'relative', marginBottom: 10 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2" strokeLinecap="round"
+                      style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input
+                      autoFocus
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search USDA / Open Food Facts…"
+                      style={{
+                        width: '100%', boxSizing: 'border-box' as const,
+                        padding: '13px 14px 13px 42px',
+                        background: SURF2, border: `1px solid ${EDGE}`, borderRadius: 12,
+                        color: TEXT, fontSize: 14, fontFamily: 'inherit',
+                        outline: 'none',
+                      }}
+                    />
+                    {searchQuery && (
+                      <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchError(''); }}
+                        style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: SURF2, border: 'none', color: MUTED, cursor: 'pointer', borderRadius: 99, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, lineHeight: 1 }}>×</button>
+                    )}
+                  </div>
+
+                  {/* Barcode scan button */}
+                  <button onClick={() => { setScanActive(true); setScanError(''); setMode('photo'); }}
+                    style={{
+                      width: '100%', padding: '10px 0', borderRadius: 10,
+                      background: 'none', border: `1px dashed ${EDGE}`,
+                      color: MUTED, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      marginBottom: 16, fontFamily: 'inherit',
+                    }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <rect x="3" y="3" width="4" height="4"/><rect x="17" y="3" width="4" height="4"/>
+                      <rect x="3" y="17" width="4" height="4"/>
+                      <line x1="9" y1="4" x2="15" y2="4"/><line x1="9" y1="20" x2="15" y2="20"/>
+                      <line x1="4" y1="9" x2="4" y2="15"/><line x1="20" y1="9" x2="20" y2="15"/>
+                      <line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/>
+                    </svg>
+                    Scan barcode instead
+                  </button>
+
+                  <MealChips form={form} setForm={setForm} />
+
+                  {/* Search skeletons */}
+                  {searchLoading && (
+                    <div style={{ marginTop: 8 }}>
+                      {[1,2,3].map((i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: `1px solid ${EDGE}` }}>
+                          <div className="skeleton" style={{ width: 44, height: 44, borderRadius: 10, flexShrink: 0 }} />
+                          <div style={{ flex: 1 }}>
+                            <div className="skeleton skeleton-text" style={{ width: '65%', marginBottom: 6 }} />
+                            <div className="skeleton skeleton-text" style={{ width: '40%', height: 10 }} />
+                          </div>
+                          <div className="skeleton" style={{ width: 52, height: 32, borderRadius: 8, flexShrink: 0 }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* No results / error empty state */}
+                  {!searchLoading && searchQuery.trim() && searchResults.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '32px 20px' }}>
+                      <div style={{ fontSize: 36, marginBottom: 12 }}>{searchError ? '📡' : '🔍'}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: TEXT, marginBottom: 6 }}>
+                        {searchError ? 'Search unavailable' : `No results for "${searchQuery}"`}
+                      </div>
+                      <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, marginBottom: 20 }}>
+                        {searchError
+                          ? 'Check your connection or try again in a moment.'
+                          : 'Try a shorter term, a different spelling, or describe it to AI instead.'}
+                      </div>
+                      <button onClick={() => { setMode('ai'); setAiQuery(searchQuery); setSearchQuery(''); }}
+                        style={{ padding: '10px 20px', borderRadius: 20, border: 'none', background: CAL_CLR, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Try with AI →
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Initial prompt (no query yet) */}
+                  {!searchLoading && !searchQuery.trim() && (
+                    <div style={{ textAlign: 'center', padding: '24px 20px' }}>
+                      <div style={{ fontSize: 28, marginBottom: 10 }}>🥫</div>
+                      <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.6 }}>
+                        Search 800 000+ foods from USDA FoodData Central and Open Food Facts.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Search result cards */}
+                  {!searchLoading && searchResults.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: MUTED, textTransform: 'uppercase', marginBottom: 10 }}>
+                        {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                      </div>
+                      {searchResults.map((product, idx) => {
+                        const cal = Math.round(product.caloriesPer100g * ((product.servingSizeG ?? 100) / 100));
+                        const pro = Math.round(product.proteinPer100g  * ((product.servingSizeG ?? 100) / 100));
+                        const crb = Math.round(product.carbsPer100g    * ((product.servingSizeG ?? 100) / 100));
+                        const fat = Math.round(product.fatPer100g      * ((product.servingSizeG ?? 100) / 100));
+                        return (
+                          <button key={`${product.name}-${product.brand}-${idx}`} onClick={() => applyOFFProduct(product)}
+                            className="press"
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              width: '100%', padding: '12px 14px', borderRadius: 12,
+                              background: SURF2, border: `1px solid ${EDGE}`,
+                              marginBottom: 8, cursor: 'pointer', textAlign: 'left',
+                              fontFamily: 'inherit',
+                            }}>
+                            {/* Icon placeholder */}
+                            <div style={{
+                              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                              background: `linear-gradient(135deg, ${ORANGE}20, ${CAL_CLR}20)`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 20,
+                            }}>
+                              {product.brand ? '🏷' : '🥗'}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                                {product.name}
+                              </div>
+                              {product.brand && (
+                                <div style={{ fontSize: 10, color: MUTED, fontWeight: 500, marginTop: 1 }}>{product.brand}</div>
+                              )}
+                              <div style={{ display: 'flex', gap: 8, marginTop: 5 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: ORANGE }}>P {pro}g</span>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: GREEN }}>C {crb}g</span>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: FAT_CLR }}>F {fat}g</span>
+                                {product.servingSizeG && (
+                                  <span style={{ fontSize: 10, color: MUTED }}>· {product.servingSizeG}g serving</span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                              <div style={{ fontSize: 16, fontWeight: 900, color: CAL_CLR }}>{cal}</div>
+                              <div style={{ fontSize: 9, color: MUTED, fontWeight: 600 }}>kcal</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               )}
 
               {/* AI MODE */}
               {mode === 'ai' && (
                 <>
+                  {/* Recents / Favourites / Templates tabs */}
+                  {(recents.length > 0 || favorites.length > 0 || templates.length > 0) && (
+                    <div style={{ marginBottom: 16 }}>
+                      {/* Tab pills */}
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                        {([
+                          { key: 'recent' as const,    label: 'Recent',     count: recents.length },
+                          { key: 'fav' as const,       label: 'Favourites', count: favorites.length },
+                          { key: 'templates' as const, label: 'Templates',  count: templates.length },
+                        ]).filter(t => t.count > 0).map(({ key, label, count }) => (
+                          <button key={key} onClick={() => setFavTab(key)} style={{
+                            padding: '5px 12px', borderRadius: 20,
+                            background: favTab === key ? CAL_CLR : SURF2,
+                            border: `1px solid ${favTab === key ? CAL_CLR : EDGE}`,
+                            color: favTab === key ? '#fff' : MUTED,
+                            fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            fontFamily: 'inherit',
+                          }}>
+                            {label}
+                            <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.7 }}>{count}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Recent foods */}
+                      {favTab === 'recent' && recents.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {recents.slice(0, 5).map((food) => (
+                            <button key={food.food_name + food.lastUsed} onClick={() => applySavedFood(food)}
+                              className="press"
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '10px 12px', borderRadius: 10,
+                                background: SURF2, border: `1px solid ${EDGE}`,
+                                cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                              }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{food.food_name}</div>
+                                <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
+                                  <span style={{ fontSize: 10, color: ORANGE, fontWeight: 600 }}>P {Math.round(food.protein)}g</span>
+                                  <span style={{ fontSize: 10, color: GREEN, fontWeight: 600 }}>C {Math.round(food.carbs)}g</span>
+                                  <span style={{ fontSize: 10, color: FAT_CLR, fontWeight: 600 }}>F {Math.round(food.fat)}g</span>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontSize: 15, fontWeight: 800, color: CAL_CLR }}>{Math.round(food.calories)}</div>
+                                <div style={{ fontSize: 9, color: MUTED }}>kcal</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Favourite foods */}
+                      {favTab === 'fav' && favorites.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {favorites.slice(0, 8).map((food) => (
+                            <button key={food.food_name} onClick={() => applySavedFood(food)}
+                              className="press"
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                padding: '10px 12px', borderRadius: 10,
+                                background: SURF2, border: `1px solid ${EDGE}`,
+                                cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                              }}>
+                              <span style={{ fontSize: 18, flexShrink: 0 }}>⭐</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{food.food_name}</div>
+                                <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
+                                  <span style={{ fontSize: 10, color: ORANGE, fontWeight: 600 }}>P {Math.round(food.protein)}g</span>
+                                  <span style={{ fontSize: 10, color: GREEN, fontWeight: 600 }}>C {Math.round(food.carbs)}g</span>
+                                  <span style={{ fontSize: 10, color: FAT_CLR, fontWeight: 600 }}>F {Math.round(food.fat)}g</span>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontSize: 15, fontWeight: 800, color: CAL_CLR }}>{Math.round(food.calories)}</div>
+                                <div style={{ fontSize: 9, color: MUTED }}>kcal</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Meal templates */}
+                      {favTab === 'templates' && templates.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {templates.map((tmpl) => {
+                            const tmplCal = tmpl.foods.reduce((s, f) => s + f.calories, 0);
+                            const tmplPro = tmpl.foods.reduce((s, f) => s + f.protein, 0);
+                            const isLogging = loggingTemplateId === tmpl.id;
+                            return (
+                              <button key={tmpl.id} onClick={() => handleLogTemplate(tmpl)} disabled={!!loggingTemplateId}
+                                className="press"
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: 10,
+                                  padding: '10px 12px', borderRadius: 10,
+                                  background: SURF2, border: `1px solid ${EDGE}`,
+                                  cursor: loggingTemplateId ? 'not-allowed' : 'pointer',
+                                  textAlign: 'left', fontFamily: 'inherit', opacity: isLogging ? 0.6 : 1,
+                                }}>
+                                <span style={{ fontSize: 18, flexShrink: 0 }}>📋</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{tmpl.name}</div>
+                                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>
+                                    {tmpl.foods.length} items · {MEAL_LABEL[tmpl.mealType as MealType] ?? tmpl.mealType} · P {Math.round(tmplPro)}g
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <div style={{ fontSize: 15, fontWeight: 800, color: CAL_CLR }}>{Math.round(tmplCal)}</div>
+                                  <div style={{ fontSize: 9, color: MUTED }}>{isLogging ? 'Logging…' : 'kcal'}</div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Divider before AI entry */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0 4px' }}>
+                        <div style={{ flex: 1, height: 1, background: EDGE }} />
+                        <span style={{ fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: 1 }}>OR DESCRIBE</span>
+                        <div style={{ flex: 1, height: 1, background: EDGE }} />
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ fontSize: 12, color: MUTED, marginBottom: 12, lineHeight: 1.6 }}>
                     Describe anything — single or multi-ingredient: "2 eggs, yogurt, grapes"
                   </div>
